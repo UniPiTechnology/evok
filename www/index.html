@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"> <![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!--><html lang="en"> <!--<![endif]-->
+<head>
+
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>UniPi</title>
+	<meta name="description" content="">
+	<meta name="author" content="">
+
+	<!-- Favicons
+	================================================== -->
+	<link rel="shortcut icon" href="images/favicon.ico">
+
+    <!-- CSS
+    ================================================== -->
+    <link rel="stylesheet" href="js/jquery/jquery.mobile-1.4.5.min.css" />
+
+    <!-- Javascript
+    ================================================== -->
+    <script rel="javascript" type="text/javascript" src="js/jquery/jquery-2.1.1.min.js"></script>
+    <script rel="javascript" type="text/javascript" src="js/jquery/jquery.mobile-1.4.5.min.js"></script>
+    <script rel="javascript" type="text/javascript" src="js/wsbase.js"></script>
+
+    <script type="text/javascript">
+        window.addEventListener("load", WebSocketRegister, false);
+        window.addEventListener("load", update_values, false);
+    </script>
+
+</head>
+<body>
+<div data-role="page" id="index" data-quicklinks="true">
+    <div data-role="header" data-id="pageHeader" data-position="fixed">
+        <h2>UniPi control panel</h2>
+    </div>
+    <div data-role="tabs">
+        <div data-role="navbar">
+            <ul>
+                <li><a href="#inputs" data-theme="a" data-ajax="false" class="ui-btn-active">Inputs</a></li>
+                <li><a href="#outputs" data-theme="a" data-ajax="false">Outputs</a></li>
+                <!-- TODO
+                <li><a href="#settings" data-theme="a" data-ajax="false">Settings</a></li>
+                -->
+            </ul>
+        </div>
+
+        <div data-role="ui-content">
+            <div id="inputs" class="ui-content">
+                <ul data-role="listview" id="inputs_list">
+                    <li data-role="list-divider" data-theme="a" id="unipi_input_divider">Digital</li>
+                     <li data-role="list-divider" data-theme="a" id="unipi_ai_divider">Analog</li>
+                     <li data-role="list-divider" data-theme="a" id="unipi_temp_divider">Sensors</li>
+                </ul>
+            </div> <!-- /inputs -->
+
+            <div id="outputs" class="ui-content">
+                <ul data-role="listview" id="outputs_list">
+                    <li data-role="list-divider" data-theme="a" id="unipi_relay_divider">Relays</li>
+                    <li data-role="list-divider" data-theme="a" id="unipi_ao_divider">Analog</li>
+                </ul>
+            </div> <!-- /outputs -->
+
+            <div id="settings" class="ui-content">
+            </div> <!-- /settings -->
+
+        </div> <!-- /content -->
+    </div> <!-- /tabs -->
+    <div data-role="footer" data-position="fixed" data-tap-toggle="false" class="jqm-footer">
+        <h1>UniPi.technology</h1>
+    </div> <!-- /footer -->
+</div>
+</body>
+</html>
+
