@@ -2,8 +2,9 @@
 
 
 def _status(device, **kwarg):
-    #print device.simple()
+    # print device.simple()
     pass
+
 
 def _config(device, **kwarg):
     print device.full()
@@ -14,26 +15,30 @@ def _config(device, **kwarg):
 status = _status
 config = _config
 
+
 def register_status_cb(callback):
     global status
     if callback:
         def newstatus(device, **kwarg):
-            try: 
+            try:
                 callback(device, kwarg)
             except:
                 pass
+
         status = newstatus
     else:
         status = _status
+
 
 def register_config_cb(callback):
     global config
     if callback:
         def newconfig(device, **kwarg):
-            try: 
+            try:
                 callback(device, kwarg)
             except:
                 pass
+
         config = newconfig
     else:
         config = _config

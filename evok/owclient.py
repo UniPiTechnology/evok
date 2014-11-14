@@ -1,4 +1,4 @@
-#import logging
+# import logging
 #import threading
 import multiprocessing
 import os
@@ -8,7 +8,7 @@ import devents
 #import math
 #import datetime
 
-MAX_LOSTINTERVAL=300 # 5minut
+MAX_LOSTINTERVAL = 300  # 5minut
 
 OWCMD_INTERVAL = 1
 OWCMD_SCAN = 2
@@ -16,18 +16,20 @@ OWCMD_SCAN_INTERVAL = 3
 OWCMD_DEFAULT_INTERVAL = 4
 
 import fcntl
+
+
 def set_non_blocking(fd):
     flags = fcntl.fcntl(fd, fcntl.F_GETFL)
     fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
 
 class MySensor:
-    def __init__(self, addr, typ, bus, interval=None, dynamic = True, circuit = None, in_subprocess = False):
+    def __init__(self, addr, typ, bus, interval=None, dynamic=True, circuit=None, in_subprocess=False):
         self.type = typ
         self.circuit = circuit if circuit != None else addr
         self.address = addr
-        self.interval = bus.interval if interval is None else interval # seconds
-        self.dynamic = dynamic            # dynamically change interval #TODO
+        self.interval = bus.interval if interval is None else interval  # seconds
+        self.dynamic = dynamic  # dynamically change interval #TODO
         self.last_value = None
         self.value = None
         self.lost = False
@@ -35,7 +37,7 @@ class MySensor:
         self.readtime = 0
         self.sens = None
         if in_subprocess:
-            self.__bus = bus   #can't pickle, must be reset/set  by pickeling/unpicklgin
+            self.__bus = bus  #can't pickle, must be reset/set  by pickeling/unpicklgin
         bus.register_sensor(self)
 
 
@@ -46,7 +48,7 @@ class MySensor:
         return (self.value, self.lost, self.time, self.interval)
 
     def set(self, interval=None):
-        if not(interval is None):   
+        if not (interval is None):
             self.__bus.taskWr.send((OWCMD_INTERVAL, self.circuit, interval))
             self.interval = interval
             devents.config(self)
@@ -58,12 +60,12 @@ class MySensor:
             Invokes Events
         """
         if type(value) is bool:
-            if not self.lost: 
+            if not self.lost:
                 self.lost = True
                 devents.status(self)
         elif type(value) is tuple:
             self.lost = False
-            for old,new in zip(self.value,value): 
+            for old, new in zip(self.value, value):
                 if old != new:
                     self.value = value
                     self.time = time.time()
@@ -75,7 +77,7 @@ class MySensor:
             if self.value != value:
                 self.value = value
                 devents.status(self)
-        #print "Temperature %s is %s" % (self.circuit,self.value)
+                #print "Temperature %s is %s" % (self.circuit,self.value)
 
 
     def read_val_from_sens(self, sens):
@@ -84,7 +86,7 @@ class MySensor:
     def calc_interval(self):
         if self.lost:
             self.lostinterval *= 2
-            if self.lostinterval > MAX_LOSTINTERVAL: self.lostinterval = MAX_LOSTINTERVAL 
+            if self.lostinterval > MAX_LOSTINTERVAL: self.lostinterval = MAX_LOSTINTERVAL
             return self.lostinterval
         if self.dynamic:
             ##TODO
@@ -97,52 +99,50 @@ class MySensor:
         self.lostinterval = self.interval
 
 
-class DS18B20(MySensor): # thermometer
+class DS18B20(MySensor):  # thermometer
 
     def full(self):
-        return {'dev':'temp', 'circuit':self.circuit, 'address':self.address, 
-                'value':self.value, 'lost':self.lost, 'time':self.time, 'interval':self.interval}
+        return {'dev': 'temp', 'circuit': self.circuit, 'address': self.address,
+                'value': self.value, 'lost': self.lost, 'time': self.time, 'interval': self.interval}
 
     def simple(self):
-        return {'dev':'temp','circuit':self.circuit,'temp':self.value,'lost':self.lost}
-    
+        return {'dev': 'temp', 'circuit': self.circuit, 'temp': self.value, 'lost': self.lost}
+
     def read_val_from_sens(self, sens):
         #try:
-            self.value = round(float(sens.temperature)*2,1)/2  # 4 bits for frac part of number
+        self.value = round(float(sens.temperature) * 2, 1) / 2  # 4 bits for frac part of number
         #except:
         #    pass
         #print self.value
 
 
-class DS2438(MySensor): # humidity + thermometer
+class DS2438(MySensor):  # humidity + thermometer
 
     def full(self):
-        if not(type(self.value) is tuple): 
-            self.value=(None,None)
-        return {'dev':'humid','circuit':self.circuit,'value':self.value[0],
-            'temp':self.value[1],'lost':self.lost,'time':self.time,'interval':self.interval}
+        if not (type(self.value) is tuple):
+            self.value = (None, None)
+        return {'dev': 'humid', 'circuit': self.circuit, 'value': self.value[0],
+                'temp': self.value[1], 'lost': self.lost, 'time': self.time, 'interval': self.interval}
 
     def simple(self):
-        if not(type(self.value) is tuple): 
-            self.value=(None,None)
-        return {'dev':'temp','circuit':self.circuit,'humid':self.value[0],'lost':self.lost}
+        if not (type(self.value) is tuple):
+            self.value = (None, None)
+        return {'dev': 'temp', 'circuit': self.circuit, 'humid': self.value[0], 'lost': self.lost}
 
     def read_val_from_sens(self, sens):
         self.value = (sens.humidity.strip(), send.temperature.strip())
 
 
-def MySensorFabric(address, typ, bus, interval=None, dynamic = True, circuit = None):
-
-    if (typ == 'DS18B20')or(typ == 'DS18S20'):
+def MySensorFabric(address, typ, bus, interval=None, dynamic=True, circuit=None):
+    if (typ == 'DS18B20') or (typ == 'DS18S20'):
         return DS18B20(address, typ, bus, interval=interval, circuit=circuit)
     elif (sens.type == 'DS2438'):
         return DS2438(address, typ, bus, interval=interval, circuit=circuit)
-    else: return None
-    
+    else:
+        return None
 
-    
+
 class OwBusDriver(multiprocessing.Process):
-
     def __init__(self, circuit, taskPipe, resultPipe, interval=60, scan_interval=300, bus='/dev/i2c-1'):
         multiprocessing.Process.__init__(self)
         self.circuit = circuit
@@ -155,42 +155,43 @@ class OwBusDriver(multiprocessing.Process):
         self.scanned = set()
         self.mysensors = list()
         self.bus = bus
-        self.register_in_caller = lambda x: None # pro registraci, zatim prazdna funkce 
+        self.register_in_caller = lambda x: None  # pro registraci, zatim prazdna funkce
         ow.init(bus)
-#        self.logger = logging.getLogger(Globals.APP_NAME)
-#        self.logger.debug("owclient initialized")
+
+    #        self.logger = logging.getLogger(Globals.APP_NAME)
+    #        self.logger.debug("owclient initialized")
 
 
     def full(self):
-        return {'dev':'owbus','circuit':self.circuit,'bus':self.bus}
+        return {'dev': 'owbus', 'circuit': self.circuit, 'bus': self.bus}
 
 
-    def set(self, scan_interval = None, do_scan = False, interval = None):
+    def set(self, scan_interval=None, do_scan=False, interval=None):
         chg = False
-        if not(interval is None):   
+        if not (interval is None):
             if interval != self.interval:
                 self.taskWr.send((OWCMD_DEFAULT_INTERVAL, 0, interval))
                 self.interval = interval
                 chg = True
-        if not(scan_interval is None):   
+        if not (scan_interval is None):
             if scan_interval != self.scan_interval:
                 self.taskWr.send((OWCMD_SCAN_INTERVAL, 0, scan_interval))
                 self.scan_interval = scan_interval
                 chg = True
-        if do_scan:   
+        if do_scan:
             self.taskWr.send((OWCMD_SCAN, 0, 0))
 
         if chg:
             devents.config(self)
-        
+
 
     def register_sensor(self, mysensor):
         self.mysensors.append(mysensor)
 
     #use in main process, callback for tornado ioloop = Consumer of results
-    def check_resultq(self, r_pipe, event): #, register_in_caller):
+    def check_resultq(self, r_pipe, event):  #, register_in_caller):
         obj = self.resultRd.recv()
-        if isinstance(obj,MySensor):
+        if isinstance(obj, MySensor):
             self.register_sensor(obj)
             self.register_in_caller(obj)
             obj.__bus = self
@@ -216,7 +217,7 @@ class OwBusDriver(multiprocessing.Process):
             join sens with mysensor
         """
         for sens in ow.Sensor("/uncached").sensors():
-            if not (sens in self.scanned): 
+            if not (sens in self.scanned):
                 address = sens.address
                 try:
                     # find sensor in list self.mysenors by address 
@@ -231,13 +232,13 @@ class OwBusDriver(multiprocessing.Process):
                 if mysensor:
                     mysensor.sens = sens
                     self.scanned.add(sens)
-    
+
     def do_command(self, cmd):
         command, circuit, value = cmd
         #print "cmd %s" % command
         if command == OWCMD_INTERVAL:
             mysensor = next(x for x in self.mysensors if x.circuit == circuit)
-            if mysensor: 
+            if mysensor:
                 mysensor.interval = value
         elif command == OWCMD_SCAN:
             self.do_scan()
@@ -246,13 +247,12 @@ class OwBusDriver(multiprocessing.Process):
         elif command == OWCMD_DEFAULT_INTERVAL:
             self.interval = value
 
-          
 
     def run(self):
         """ Main loop 
             Every scan_interval initiate bus scanning
             Peridocally scan 1wire sensors, else sleep
-        """    
+        """
         print "Entering 1wire loop"
         self.do_scan()
         while len(self.mysensors) == 0:
@@ -267,7 +267,7 @@ class OwBusDriver(multiprocessing.Process):
         while True:
             t1 = time.time()
             #if t1 <= scan_time: 
-            if t1 >= scan_time: 
+            if t1 >= scan_time:
                 self.do_scan()
                 t1 = time.time()
                 scan_time = t1 + self.scan_interval
@@ -275,13 +275,13 @@ class OwBusDriver(multiprocessing.Process):
                 mysensor.read_val_from_sens(mysensor.sens)
                 mysensor.lost = False
                 mysensor.readtime = t1
-                if self.resultQ: 
+                if self.resultQ:
                     # send measurement into result queue
-                    self.resultQ.send((mysensor.circuit,mysensor.value))
+                    self.resultQ.send((mysensor.circuit, mysensor.value))
             except (ow.exUnknownSensor, AttributeError):
                 if not mysensor.lost:
                     mysensor.set_lost()
-                    self.resultQ.send((mysensor.circuit,mysensor.lost))
+                    self.resultQ.send((mysensor.circuit, mysensor.lost))
             mysensor.time = t1 + mysensor.calc_interval()
             mysensor = min(self.mysensors, key=lambda x: x.time)
             t1 = time.time()

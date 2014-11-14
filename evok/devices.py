@@ -5,15 +5,15 @@ import devents
    
 """
 
-class DeviceList(dict):
 
+class DeviceList(dict):
     def __init__(self, altnames):
-        super(DeviceList,self).__init__()
-        self._arr=[]
+        super(DeviceList, self).__init__()
+        self._arr = []
         self.altnames = altnames
 
     def __setitem__(self, key, value):
-        if not(key in self.keys()): self._arr.append(value)
+        if not (key in self.keys()): self._arr.append(value)
         super(DeviceList, self).__setitem__(key, value)
 
     def __getitem__(self, key):
@@ -22,21 +22,21 @@ class DeviceList(dict):
         except KeyError:
             return super(DeviceList, self).__getitem__(self.altnames[key])
 
-    def by_int(self, devtypeid, circuit = None):
+    def by_int(self, devtypeid, circuit=None):
         devdict = self._arr[devtypeid]
-        if circuit is None: 
+        if circuit is None:
             return devdict.values()
         try:
             return devdict[circuit]
         except KeyError:
             raise Exception('Invalid device circuit number %s' % str(circuit))
- 
-    def by_name(self, devtype, circuit = None):
+
+    def by_name(self, devtype, circuit=None):
         try:
             devdict = self[devtype]
         except KeyError:
             raise Exception('Invalid device type %s' % str(devtype))
-        if circuit is None: 
+        if circuit is None:
             return devdict.values()
         try:
             return devdict[circuit]
@@ -52,41 +52,41 @@ class DeviceList(dict):
             devdict = self[devtype]
         devdict[str(device.circuit)] = device
         devents.config(device)
-        
 
-## define device types constants
-RELAY=0
-INPUT=1
-AI=2
-AO=3
-EE=4
-SENSOR=5
-I2CBUS=6
-ADCHIP=7
-OWBUS=8
-MCP=9
-GPIOBUS=10
+
+# # define device types constants
+RELAY = 0
+INPUT = 1
+AI = 2
+AO = 3
+EE = 4
+SENSOR = 5
+I2CBUS = 6
+ADCHIP = 7
+OWBUS = 8
+MCP = 9
+GPIOBUS = 10
 
 ## corresponding device types names !! ORDER IS IMPORTANT
 devtype_names = (
-        'relay',
-        'input',
-        'ai',
-        'ao',
-        'ee',
-        'sensor',
-        'i2cbus',
-        'adchip',
-        'owbus',
-        'mcp',
-        'gpiobus',
-    )
+    'relay',
+    'input',
+    'ai',
+    'ao',
+    'ee',
+    'sensor',
+    'i2cbus',
+    'adchip',
+    'owbus',
+    'mcp',
+    'gpiobus',
+)
 
 devtype_altnames = {
-        'di':'input',
-        'analoginput':'ai',
-        'analogoutput':'ao',
-        'eprom':'ee'}
+    'di': 'input',
+    'analoginput': 'ai',
+    'analogoutput': 'ao',
+    'eprom': 'ee'}
 
 ## 
 Devices = DeviceList(devtype_altnames)
