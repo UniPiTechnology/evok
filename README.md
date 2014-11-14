@@ -1,6 +1,6 @@
 # Evok - the UniPi API
 
-Evok is a main API and WEB interface for the UniPi (Raspberry Pi universal addon) board a sucessfull [IngieGogo] project. It provides REST, JSON, and WebSocket interface to relays, digital and analog inputs, analog output.
+Evok is a main API and WEB interface for the [UniPi] (Raspberry Pi universal addon) board a sucessfull [IngieGogo] project. It provides REST, JSON, and WebSocket interface to relays, digital and analog inputs, analog output.
 
 It is still in very early development state so more testing is appreciated.
 
@@ -11,7 +11,7 @@ It also uses some other python libraries that are not installed on Raspbian by d
 * [tornado]
 * [toro]
 * modified version of [tornardorpc] available in our repo [tornadorpc-unipi]
-* jsonrpclib
+* [jsonrpclib]
 
 
 ### Installation
