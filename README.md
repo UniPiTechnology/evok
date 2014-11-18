@@ -18,23 +18,23 @@ Installation
 ============
 Download the latest revision from our repository using git client
 
-    `git clone https://github.com/UniPiTechnology/evok`
-    `cd evok`
+    git clone https://github.com/UniPiTechnology/evok
+    cd evok
 
 or using wget:
-    `wget https://api.github.com/repos/UniPiTechnology/evok/zipball/master`
-    `unzip master`
-    `cd UniPiTechnology-evok-xxxxxxx`
+    wget https://api.github.com/repos/UniPiTechnology/evok/zipball/master
+    unzip master
+    cd UniPiTechnology-evok-xxxxxxx
 
 And run the installation script
-    `./install-evok.sh`
+    ./install-evok.sh
 
 To uninstall it, run the installation script which is also located in `/opt/evok/` fodler after installation
-    `./uninstall-evok.sh`
+    ./uninstall-evok.sh
 
 After the installation, do not forget to copy the content of www folder to eg. `/var/www` (default location for searching static files).
 
-    `sudo cp -r www/ /var/`
+    sudo cp -r www/ /var/
 
 If you need to change the folder or the listening port, do it in /etc/evok.conf file.
 
@@ -54,7 +54,6 @@ Known issues/bugs
 Todo list:
 ============
 * authentication
-* this readme
 
 Development
 ============
