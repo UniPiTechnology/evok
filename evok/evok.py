@@ -20,8 +20,8 @@ import signal
 import base64
 #from tornado.httpclient import AsyncHTTPClient
 
-from tornadorpc_unipi.json import JSONRPCHandler
-import tornadorpc_unipi as tornadorpc
+from tornadorpc_evok.json import JSONRPCHandler
+import tornadorpc_evok as tornadorpc
 #from tornadorpc import private, start_server, coroutine
 #from tornadorpc.xml import XMLRPCHandler
 
