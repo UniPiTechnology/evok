@@ -1,5 +1,4 @@
 # Evok - the UniPi API
-============
 
 Evok is a main API and WEB interface for the [UniPi] (Raspberry Pi universal addon) board a sucessfull [IngieGogo] project. It provides REST, JSON, and WebSocket interface to relays, digital and analog inputs, analog output.
 
@@ -15,7 +14,7 @@ It also uses some other python libraries that are not installed on Raspbian by d
 * [jsonrpclib]
 
 
-### Installation
+Installation
 ============
 Download the latest revision from our repository using git client
 
@@ -44,23 +43,24 @@ When done simply start the daemon by executing `sudo service evok start`
 The installation script also enables the I2C subsystem (if not enabled before) but the uninstallation script does not disable it back.
 
 
-### Todo list:
+Todo list:
+============
  * todo
 
-### Known issues/bugs
+Known issues/bugs
 ============
 * todo
 
-### Todo list:
+Todo list:
 ============
 * authentication
 * this readme
 
-### Development
+Development
 ============
 Want to contribute? Have any improvements or ideas? Great! We are open to all ideas. Contact us on info at unipi DOT technology
 
-### License
+License
 ============
 Apache License, Version 2.0
 
