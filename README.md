@@ -45,18 +45,57 @@ When done simply start the daemon by executing `sudo service evok start`
 
 The installation script also enables the I2C subsystem (if not enabled before) but the uninstallation script does not disable it back.
 
-
-Todo list:
+API examples
 ============
- * todo
+There are many options of controlling the UniPi, the easiest is using a web browser (make sure to copy the www folder to your desired location and edit evok.conf file) and them simply visit
 
-Known issues/bugs
-============
-* todo
+    http://your.pi.ip.address
+
+It will show you something like this
+
+todo: gif
+
+The web face is using websocket to receive all event from the UniPi and controlls the UniPi via REST api.
+
+Examples of REST API usage:
+
+    GET /rest/DEVICE/CIRCUIT
+
+or
+
+    GET /rest/DEVICE/CIRCUIT/PROPERTY
+
+Where DEVICE can be substituted by any of these: 'relay', 'di' or 'input', 'ai' or 'analoginput, 'ao' or 'analogoutput', 'sensor',  CIRCUIT is the number of circuit (in case of 1Wire sensor, it is its address) corresponding to the number in your configuration file and PROPERTY is mostly 'value'.
+
+Simple example using wget to get status of devices:
+* `wget -qO- http://your.pi.ip.address/rest/all` returns status of all devices configured in evok.conf
+* `wget -qO- http://your.pi.ip.address/rest/relay/1` returns status of relay with circuit nr. 1
+* `wget -qO- http://your.pi.ip.address/rest/relay/1/value` returns whether the relay 1 is on or of (1/0)
+
+To control a device, all requests must be sent by HTTP POST. Here is a small example of controlling a relay:
+* `wget -qO- http://your.pi.ip.address/rest/relay/3 --post-data='value=1'` sets relay on
+* `wget -qO- http://your.pi.ip.address/rest/relay/3 --post-data='value=0'` sets relay off
+
+You can also control the UniPi using the [jsonrpclib]. Below is a simple example, for more information check the evok.py, and unipig.py files.
+
+    from jsonrpclib import Server
+    s=Server("http://your.pi.ip.address/rpc")
+    s.relay_set(1,1)
+    s.relay_get(1)
+    s.relay_set(1,0)
+    s.relay_get(0)
+    s.ai_get(1)
+
+Check the wsbase.js in www/js/ folder to see example of controlling the UniPi using websocket.
+
 
 Todo list:
 ============
 * authentication
+
+Known issues/bugs
+============
+* todo
 
 Development
 ============
