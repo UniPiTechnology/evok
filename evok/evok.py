@@ -310,8 +310,8 @@ class Handler(userBasicHelper, JSONRPCHandler):
 
 def gener_status_cb(mainloop):
     def status_cb(device, *kwargs):
-        #if add_computes(device):
-        #    mainloop.add_callback(compute) 
+        if add_computes(device):
+            mainloop.add_callback(compute)
         if registered_ws.has_key("all"):
             map(lambda x: x.on_event(device), registered_ws['all'])
         pass
@@ -320,15 +320,25 @@ def gener_status_cb(mainloop):
 
 
 def gener_config_cb(mainloop):
+    # from unipig import Input, Relay
     def config_cb(device, *kwargs):
-        if registered_ws.has_key("all"):
-            map(lambda x: x.on_event(device), registered_ws['all'])
+        # if device.circuit == '1' and isinstance(device, owclient.DS18B20): #hack kvuli nedoresenemu computemap pro device
+        # ComputeMap[device] = (TEMP_FAN, )
+        #
+        # if isinstance(device, Input): #hack kvuli nedoresenemu computemap pro device
+        # ComputeMap[device] = (ENGINE_LEFT, BUTTON_RIGHT, )
+        #
+        # if isinstance(device, Relay): #hack kvuli nedoresenemu computemap pro device
+        #     ComputeMap[device] = (ENGINE_LEFT_NOT, )
+        #
+        # if registered_ws.has_key("all"):
+        #     map(lambda x: x.on_event(device), registered_ws['all'])
         pass
-        #if add_computes(device):
-        #    mainloop.add_callback(compute) 
-        #print device
-        #d = device.full()
-        #print "%s%s " %(d['dev'],d['circuit']) 
+        if add_computes(device):
+            mainloop.add_callback(compute)
+            # print device
+            # d = device.full()
+            # print "%s%s " % (d['dev'], d['circuit'])
 
     return config_cb
 
@@ -341,7 +351,7 @@ def main():
 
     tornado.options.parse_command_line()
 
-    Config = ConfigParser.SafeConfigParser(defaults={'webname': 'unipi', 'staticfiles': '/var/www', 'bus': 1})
+    Config = ConfigParser.SafeConfigParser(defaults={'webname': 'unipi', 'staticfiles': '/var/www/evok', 'bus': 1})
     Config.add_section('MAIN')
     path = '/etc/evok.conf'
     if not os.path.isfile(path):
@@ -396,6 +406,10 @@ def main():
     devents.register_status_cb(gener_status_cb(mainLoop))
     config.create_devices(Config)
 
+    # create back loop
+    # todo: find a more sophisticated solution
+    #extcontrols.mainloop = mainLoop
+
     #""" Setting the '_server' attribute if not set - simple link to mainloop"""
     for (srv, urlspecs) in app.handlers:
         for urlspec in urlspecs:
@@ -424,6 +438,10 @@ def main():
 
     #gracefull shutdown
     def shutdown():
+        for bus in Devices.by_int(I2CBUS):
+            bus.switch_to_sync()
+        for bus in Devices.by_int(GPIOBUS):
+            bus.switch_to_sync()
         print "Shutting down"
         httpServer.stop()
         #todo: and shut immediately?

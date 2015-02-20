@@ -438,6 +438,34 @@ Notes
 The \fBset_PWM_range\fP function may be used to change the
 default range of 255.
 
+.IP "\fBint get_PWM_dutycycle(unsigned user_gpio)\fP"
+.IP "" 4
+Return the PWM dutycycle in use on a gpio.
+
+.br
+
+.br
+
+.EX
+user_gpio: 0-31.
+.br
+
+.EE
+
+.br
+
+.br
+Returns 0 if OK, otherwise PI_BAD_USER_GPIO or PI_NOT_PWM_GPIO.
+
+.br
+
+.br
+For normal PWM the dutycycle will be out of the defined range
+for the gpio (see \fBget_PWM_range\fP).  If a hardware clock is
+active on the gpio the reported dutycycle will be 500 (out of 1000).
+If hardware PWM is active on the gpio the reported dutycycle
+will be out of a 1000.
+
 .IP "\fBint set_PWM_range(unsigned user_gpio, unsigned range)\fP"
 .IP "" 4
 Set the range of PWM values to be used on the gpio.
@@ -516,6 +544,12 @@ user_gpio: 0-31.
 Returns the dutycycle range used for the gpio if OK,
 otherwise PI_BAD_USER_GPIO.
 
+.br
+
+.br
+If a hardware clock or hardware PWM is active on the gpio the
+reported range will be 1000.
+
 .IP "\fBint get_PWM_real_range(unsigned user_gpio)\fP"
 .IP "" 4
 Get the real underlying range of PWM values being used on the gpio.
@@ -535,6 +569,12 @@ user_gpio: 0-31.
 .br
 Returns the real range used for the gpio if OK,
 otherwise PI_BAD_USER_GPIO.
+
+.br
+
+.br
+If a hardware clock or hardware PWM is active on the gpio the
+reported real range will be 1000.
 
 .IP "\fBint set_PWM_frequency(unsigned user_gpio, unsigned frequency)\fP"
 .IP "" 4
@@ -636,6 +676,15 @@ user_gpio: 0-31.
 .br
 
 .br
+For normal PWM the frequency will be that defined for the gpio by
+\fBset_PWM_frequency\fP.  If a hardware clock is active on the gpio the
+reported frequency will be that set by \fBhardware_clock\fP.  If hardware
+PWM is active on the gpio the reported frequency will be that set by
+\fBhardware_PWM\fP.
+
+.br
+
+.br
 Returns the frequency (in hertz) used for the gpio if OK,
 otherwise PI_BAD_USER_GPIO.
 
@@ -712,7 +761,7 @@ Firstly set the desired PWM frequency using \fBset_PWM_frequency\fP.
 .br
 Then set the PWM range using \fBset_PWM_range\fP to 1E6/Hz.
 Doing this allows you to use units of microseconds when setting
-the servo pulse width.
+the servo pulsewidth.
 
 .br
 
@@ -737,6 +786,25 @@ set_PWM_range(25, 2500);
 Thereafter use the \fBset_PWM_dutycycle\fP function to move the servo,
 e.g. set_PWM_dutycycle(25, 1500) will set a 1500 us pulse.
 .br
+
+.IP "\fBint get_servo_pulsewidth(unsigned user_gpio)\fP"
+.IP "" 4
+Return the servo pulsewidth in use on a gpio.
+
+.br
+
+.br
+
+.EX
+user_gpio: 0-31.
+.br
+
+.EE
+
+.br
+
+.br
+Returns 0 if OK, otherwise PI_BAD_USER_GPIO or PI_NOT_SERVO_GPIO.
 
 .IP "\fBint notify_open(void)\fP"
 .IP "" 4
@@ -1046,6 +1114,154 @@ Returns 0 if OK, otherwise PI_SOME_PERMITTED.
 A status of PI_SOME_PERMITTED indicates that the user is not
 allowed to write to one or more of the gpios.
 
+.IP "\fBint hardware_clock(unsigned gpio, unsigned clkfreq)\fP"
+.IP "" 4
+Starts a hardware clock on a gpio at the specified frequency.
+
+.br
+
+.br
+
+.EX
+     gpio: see description
+.br
+frequency: 0 (off) or 4689-250M
+.br
+
+.EE
+
+.br
+
+.br
+Returns 0 if OK, otherwise PI_NOT_PERMITTED, PI_BAD_GPIO,
+PI_NOT_HCLK_GPIO, PI_BAD_HCLK_FREQ,or PI_BAD_HCLK_PASS.
+
+.br
+
+.br
+The same clock is available on multiple gpios.  The latest
+frequency setting will be used by all gpios which share a clock.
+
+.br
+
+.br
+The gpio must be one of the following.
+
+.br
+
+.br
+
+.EX
+4   clock 0  All models
+.br
+5   clock 1  A+/B+ and compute module only (reserved for system use)
+.br
+6   clock 2  A+/B+ and compute module only
+.br
+20  clock 0  A+/B+ and compute module only
+.br
+21  clock 1  All models but Rev.2 B (reserved for system use)
+.br
+
+.br
+32  clock 0  Compute module only
+.br
+34  clock 0  Compute module only
+.br
+42  clock 1  Compute module only (reserved for system use)
+.br
+43  clock 2  Compute module only
+.br
+44  clock 1  Compute module only (reserved for system use)
+.br
+
+.EE
+
+.br
+
+.br
+Access to clock 1 is protected by a password as its use will likely
+crash the Pi.  The password is given by or'ing 0x5A000000 with the
+gpio number.
+
+.IP "\fBint hardware_PWM(unsigned gpio, unsigned PWMfreq, uint32_t PWMduty)\fP"
+.IP "" 4
+Starts hardware PWM on a gpio at the specified frequency and dutycycle.
+
+.br
+
+.br
+NOTE: Any waveform started by \fBwave_send_once\fP, \fBwave_send_repeat\fP, \fBwave_tx_start\fP, or \fBwave_tx_repeat\fP will be cancelled.
+
+.br
+
+.br
+This function is only valid if the pigpio main clock is PCM.  The
+main clock defaults to PCM but may be overridden when the pigpio
+daemon is started (option -t).
+
+.br
+
+.br
+
+.EX
+   gpio: see descripton
+.br
+PWMfreq: 0 (off) or 5-50K
+.br
+PWMduty: 0 (off) to 5000 (fully on).
+.br
+
+.EE
+
+.br
+
+.br
+Returns 0 if OK, otherwise PI_NOT_PERMITTED, PI_BAD_GPIO,
+PI_NOT_HPWM_GPIO, PI_BAD_HPWM_DUTY, PI_BAD_HPWM_FREQ,
+or PI_HPWM_ILLEGAL.
+
+.br
+
+.br
+Both PWM channels share the same clock and the same update frequency.
+The latest frequency setting will be used by both PWM channels. The
+same PWM channel is available on multiple gpios.  The latest
+dutycycle setting will be used by all gpios which share a PWM channel.
+
+.br
+
+.br
+The gpio must be one of the following.
+
+.br
+
+.br
+
+.EX
+12  PWM channel 0  A+/B+ and compute module only
+.br
+13  PWM channel 1  A+/B+ and compute module only
+.br
+18  PWM channel 0  All models
+.br
+19  PWM channel 1  A+/B+ and compute module only
+.br
+
+.br
+40  PWM channel 0  Compute module only
+.br
+41  PWM channel 1  Compute module only
+.br
+45  PWM channel 1  Compute module only
+.br
+52  PWM channel 0  Compute module only
+.br
+53  PWM channel 1  Compute module only
+.br
+
+.EE
+
 .IP "\fBuint32_t get_current_tick(void)\fP"
 .IP "" 4
 Gets the current system tick.
@@ -1189,11 +1405,11 @@ for gpio#1 can be added, and then gpio#2 etc.
 If the added waveform is intended to start after or within the existing
 waveform then the first pulse should consist solely of a delay.
 
-.IP "\fBint wave_add_serial(unsigned user_gpio, unsigned bbBaud, unsigned offset, unsigned numChar, char *str)\fP"
+.IP "\fBint wave_add_serial(unsigned user_gpio, unsigned bbBaud, unsigned bbBits, unsigned bbStop, unsigned offset, unsigned numBytes, char *str)\fP"
 .IP "" 4
 This function adds a waveform representing serial data to the
-existing waveform (if any).  The serial data starts offset microseconds
-from the start of the waveform.
+existing waveform (if any).  The serial data starts offset
+microseconds from the start of the waveform.
 
 .br
 
@@ -1204,9 +1420,13 @@ user_gpio: 0-31.
 .br
    bbBaud: 100-250000
 .br
+   bbBits: number of data bits (1-32)
+.br
+   bbStop: number of stop half bits (2-8)
+.br
    offset: 0-
 .br
-  numChar: 1-
+ numBytes: 1-
 .br
       str: an array of chars.
 .br
@@ -1217,8 +1437,9 @@ user_gpio: 0-31.
 
 .br
 Returns the new total number of pulses in the current waveform if OK,
-otherwise PI_BAD_USER_GPIO, PI_BAD_WAVE_BAUD, PI_TOO_MANY_CHARS, or
-PI_TOO_MANY_PULSES.
+otherwise PI_BAD_USER_GPIO, PI_BAD_WAVE_BAUD, PI_BAD_DATABITS,
+PI_BAD_STOP_BITS, PI_TOO_MANY_CHARS, PI_BAD_SER_OFFSET,
+or PI_TOO_MANY_PULSES.
 
 .br
 
@@ -1228,14 +1449,33 @@ NOTES:
 .br
 
 .br
-The serial data is formatted as one start bit, eight data bits, and one
-stop bit.
+The serial data is formatted as one start bit, \fBbbBits\fP data bits,
+and \fBbbStop\fP/2 stop bits.
 
 .br
 
 .br
 It is legal to add serial data streams with different baud rates to
 the same waveform.
+
+.br
+
+.br
+\fBnumBytes\fP is the number of bytes of data in str.
+
+.br
+
+.br
+The bytes required for each character depend upon \fBbbBits\fP.
+
+.br
+
+.br
+For \fBbbBits\fP 1-8 there will be one byte per character.
+.br
+For \fBbbBits\fP 9-16 there will be two bytes per character.
+.br
+For \fBbbBits\fP 17-32 there will be four bytes per character.
 
 .IP "\fBint wave_create(void)\fP"
 .IP "" 4
@@ -1371,18 +1611,41 @@ Returns 0 if OK, otherwise PI_BAD_WAVE_ID.
 
 .IP "\fBint wave_tx_start(void)\fP"
 .IP "" 4
-This function is deprecated and should no longer be used.  Use
-\fBwave_create\fP/\fBwave_send_*\fP instead.
+This function is deprecated and should no longer be used.
+
+.br
+
+.br
+Use \fBwave_create\fP/\fBwave_send_*\fP instead.
+
+.br
+
+.br
+NOTE: Any hardware PWM started by \fBhardware_PWM\fP will be cancelled.
 
 .IP "\fBint wave_tx_repeat(void)\fP"
 .IP "" 4
-This function is deprecated and should no longer be used.  Use
-\fBwave_create\fP/\fBwave_send_*\fP instead.
+This function is deprecated and should no longer be used.
+
+.br
+
+.br
+Use \fBwave_create\fP/\fBwave_send_*\fP instead.
+
+.br
+
+.br
+NOTE: Any hardware PWM started by \fBhardware_PWM\fP will be cancelled.
 
 .IP "\fBint wave_send_once(unsigned wave_id)\fP"
 .IP "" 4
 This function transmits the waveform with id wave_id.  The waveform
 is sent once.
+
+.br
+
+.br
+NOTE: Any hardware PWM started by \fBhardware_PWM\fP will be cancelled.
 
 .br
 
@@ -1405,6 +1668,11 @@ otherwise PI_BAD_WAVE_ID, or PI_BAD_WAVE_MODE.
 This function transmits the waveform with id wave_id.  The waveform
 cycles until cancelled (either by the sending of a new waveform or
 by \fBwave_tx_stop\fP).
+
+.br
+
+.br
+NOTE: Any hardware PWM started by \fBhardware_PWM\fP will be cancelled.
 
 .br
 
@@ -1654,7 +1922,7 @@ script_id: >=0, as returned by \fBstore_script\fP.
 .br
 The function returns 0 if OK, otherwise PI_BAD_SCRIPT_ID.
 
-.IP "\fBint bb_serial_read_open(unsigned user_gpio, unsigned bbBaud)\fP"
+.IP "\fBint bb_serial_read_open(unsigned user_gpio, unsigned bbBaud, unsigned bbBits)\fP"
 .IP "" 4
 This function opens a gpio for bit bang reading of serial data.
 
@@ -1666,6 +1934,8 @@ This function opens a gpio for bit bang reading of serial data.
 user_gpio: 0-31.
 .br
    bbBaud: 100-250000
+.br
+   bbBits: 1-32
 .br
 
 .EE
@@ -1712,6 +1982,19 @@ user_gpio: 0-31, previously opened with \fBbb_serial_read_open\fP.
 .br
 Returns the number of bytes copied if OK, otherwise PI_BAD_USER_GPIO
 or PI_NOT_SERIAL_GPIO.
+
+.br
+
+.br
+The bytes returned for each character depend upon the number of
+data bits \fBbbBits\fP specified in the \fBbb_serial_read_open\fP command.
+
+.br
+
+.br
+For \fBbbBits\fP 1-8 there will be one byte per character.
+For \fBbbBits\fP 9-16 there will be two bytes per character.
+For \fBbbBits\fP 17-32 there will be four bytes per character.
 
 .IP "\fBint bb_serial_read_close(unsigned user_gpio)\fP"
 .IP "" 4
@@ -2388,8 +2671,8 @@ handle: >=0, as returned by a call to \fBspi_open\fP.
 .br
 
 .br
-Returns 0 if OK, otherwise PI_BAD_HANDLE, PI_BAD_SPI_COUNT, or
-PI_SPI_XFER_FAILED.
+Returns the number of bytes transferred if OK, otherwise
+PI_BAD_HANDLE, PI_BAD_SPI_COUNT, or PI_SPI_XFER_FAILED.
 
 .IP "\fBint spi_write(unsigned handle, char *buf, unsigned count)\fP"
 .IP "" 4
@@ -2413,8 +2696,8 @@ handle: >=0, as returned by a call to \fBspi_open\fP.
 .br
 
 .br
-Returns 0 if OK, otherwise PI_BAD_HANDLE, PI_BAD_SPI_COUNT, or
-PI_SPI_XFER_FAILED.
+Returns the number of bytes transferred if OK, otherwise
+PI_BAD_HANDLE, PI_BAD_SPI_COUNT, or PI_SPI_XFER_FAILED.
 
 .IP "\fBint spi_xfer(unsigned handle, char *txBuf, char *rxBuf, unsigned count)\fP"
 .IP "" 4
@@ -2441,8 +2724,8 @@ handle: >=0, as returned by a call to \fBspi_open\fP.
 .br
 
 .br
-Returns 0 if OK, otherwise PI_BAD_HANDLE, PI_BAD_SPI_COUNT, or
-PI_SPI_XFER_FAILED.
+Returns the number of bytes transferred if OK, otherwise
+PI_BAD_HANDLE, PI_BAD_SPI_COUNT, or PI_SPI_XFER_FAILED.
 
 .IP "\fBint serial_open(char *ser_tty, unsigned ser_baud, unsigned ser_flags)\fP"
 .IP "" 4
@@ -2604,6 +2887,75 @@ handle: >=0, as returned by a call to \fBserial_open\fP.
 Returns the number of bytes of data available (>=0) if OK,
 otherwise PI_BAD_HANDLE.
 
+.IP "\fBint custom_1(unsigned arg1, unsigned arg2, char *argx, unsigned count)\fP"
+.IP "" 4
+This function is available for user customisation.
+
+.br
+
+.br
+It returns a single integer value.
+
+.br
+
+.br
+
+.EX
+ arg1: >=0
+.br
+ arg2: >=0
+.br
+ argx: extra (byte) arguments
+.br
+count: number of extra arguments
+.br
+
+.EE
+
+.br
+
+.br
+Returns >= 0 if OK, less than 0 indicates a user defined error.
+
+.IP "\fBint custom_2(unsigned arg1, char *argx, unsigned count, char *retBuf, unsigned retMax)\fP"
+.IP "" 4
+This function is available for user customisation.
+
+.br
+
+.br
+It differs from custom_1 in that it returns an array of bytes
+rather than just an integer.
+
+.br
+
+.br
+The return value is an integer indicating the number of returned bytes.
+
+.EX
+  arg1: >=0
+.br
+  argx: extra (byte) arguments
+.br
+ count: number of extra arguments
+.br
+retBuf: buffer for returned data
+.br
+retMax: maximum number of bytes to return
+.br
+
+.EE
+
+.br
+
+.br
+Returns >= 0 if OK, less than 0 indicates a user defined error.
+
+.br
+
+.br
+Note, the number of returned bytes will be retMax or less.
+
 .IP "\fBint callback(unsigned user_gpio, unsigned edge, CBFunc_t f)\fP"
 .IP "" 4
 This function initialises a new callback.
@@ -2754,6 +3106,54 @@ PI_WAVE_MAX_BAUD 250000
 
 .br
 
+.IP "\fBbbBits\fP: 1-32" 0
+
+.br
+
+.br
+The number of data bits to be used when adding serial data to a
+waveform.
+
+.br
+
+.br
+
+.EX
+#define PI_MIN_WAVE_DATABITS 1
+.br
+#define PI_MAX_WAVE_DATABITS 32
+.br
+
+.EE
+
+.br
+
+.br
+
+.IP "\fBbbStop\fP: 2-8" 0
+
+.br
+
+.br
+The number of (half) stop bits to be used when adding serial data
+to a waveform.
+
+.br
+
+.br
+
+.EX
+#define PI_MIN_WAVE_HALFSTOPBITS 2
+.br
+#define PI_MAX_WAVE_HALFSTOPBITS 8
+.br
+
+.EE
+
+.br
+
+.br
+
 .IP "\fBbit\fP" 0
 A value of 0 or 1.
 
@@ -2840,12 +3240,15 @@ typedef void (*CBFuncEx_t)
 
 .br
 
-.br
-
-.br
-
 .IP "\fBchar\fP" 0
 A single character, an 8 bit quantity able to store 0-255.
+
+.br
+
+.br
+
+.IP "\fBclkfreq\fP: 4689-250M" 0
+The hardware clock frequency.
 
 .br
 
@@ -3100,9 +3503,10 @@ PI_ALT5 2
 
 .br
 
-.IP "\fBnumChar\fP" 0
-The number of characters in a string (used when the string might contain
-null characters, which would normally terminate the string).
+.IP "\fBnumBytes\fP" 0
+The number of bytes used to store characters in a string.  Depending
+on the number of bits per character there may be 1, 2, or 4 bytes
+per character.
 
 .br
 
@@ -3216,6 +3620,38 @@ PI_MAX_SERVO_PULSEWIDTH 2500
 .br
 
 .br
+
+.IP "\fBPWMduty\fP: 0-1000" 0
+The hardware PWM dutycycle.
+
+.br
+
+.br
+
+.EX
+#define PI_HW_PWM_RANGE 1000
+.br
+
+.EE
+
+.br
+
+.br
+
+.IP "\fBPWMfreq\fP: 5-250K" 0
+The hardware PWM frequency.
+
+.br
+
+.br
+
+.EX
+#define PI_HW_PWM_MIN_FREQ 5
+.br
+#define PI_HW_PWM_MAX_FREQ 250000
+.br
+
+.EE
 
 .br
 

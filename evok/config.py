@@ -6,6 +6,10 @@ from apigpio import I2cBus, GpioBus
 from devices import *
 import owclient
 
+globals = {
+    'version': "1.0",
+}
+
 
 def hexint(value):
     if value.startswith('0x'):
@@ -36,7 +40,7 @@ def create_devices(Config):
             if not res: continue
         devclass = res.group(1)
         # devclass = re.sub('[_-]*$','',devclass)
-        #circuit = int(res.group(2))
+        # circuit = int(res.group(2))
         circuit = res.group(2)
         #print "%s %s %s" % (section,devclass, circuit)
         try:
@@ -102,8 +106,9 @@ def create_devices(Config):
             elif devclass in ('EPROM', 'EE'):
                 i2cbus = Config.get(section, "i2cbus")
                 address = hexint(Config.get(section, "address"))
+                size = getintdef(Config, section, "size", 256)
                 bus = Devices.by_int(I2CBUS, i2cbus)
-                ee = unipig.Eprom(bus, circuit, address=address)
+                ee = unipig.Eprom(bus, circuit, size=size, address=address)
                 Devices.register_device(EE, ee)
             elif devclass in ('AICHIP',):
                 i2cbus = Config.get(section, "i2cbus")
@@ -117,10 +122,14 @@ def create_devices(Config):
                 interval = getfloatdef(Config, section, "interval", 0)
                 bits = getintdef(Config, section, "bits", 14)
                 gain = getintdef(Config, section, "gain", 1)
-                correction = getfloatdef(Config, section, "correction", 5.0)
+                correction = getfloatdef(Config, section, "correction", 5.564920867)
+                corr_rom = Config.get(section, "corr_rom")
+                eeprom = Devices.by_int(EE, corr_rom)
+                corr_addr = hexint(Config.get(section, "corr_addr"))
                 mcai = Devices.by_int(ADCHIP, chip)
                 ai = unipig.AnalogInput(circuit, mcai, channel, bits=bits, gain=gain,
-                                        continuous=False, interval=interval, correction=correction)
+                                        continuous=False, interval=interval, correction=correction, rom=eeprom,
+                                        corr_addr=corr_addr)
                 Devices.register_device(AI, ai)
 
         except Exception, E:

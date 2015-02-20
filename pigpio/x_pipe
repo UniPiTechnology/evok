@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION=22
+VERSION=29
 
 GPIO=4
 
@@ -14,6 +14,10 @@ GPIO=4
 # To run the script
 # sudo pigpiod # if not already running
 # ./x_pipe # on the Pi running pigpiod
+#
+# Some tests are statistical in nature and so may on occasion fail.
+# Repeated failures on the same test or many failures in a group
+# of tests indicate a problem.
 #
 
 echo "bc1 0" >/dev/pigpio
@@ -48,14 +52,14 @@ if [[ $s = 0 ]]; then echo "BS2 ok"; else echo "BS2 fail ($s)"; fi
 
 echo "h" >/dev/pigpio
 read -t 1 s </dev/pigout
-if [[ $s = "BC1 bits         Clear specified gpios in bank 1." ]]
+if [[ $s = "BC1 bits         Clear specified gpios in bank 1" ]]
 then echo "HELP-a ok"
 else echo "HELP-a fail ($s)"
 fi
 read -t 1 -N 9000 </dev/pigout # dump rest of help
 echo "help" >/dev/pigpio
 read -t 1 s </dev/pigout
-if [[ $s = "BC1 bits         Clear specified gpios in bank 1." ]]
+if [[ $s = "BC1 bits         Clear specified gpios in bank 1" ]]
 then echo "HELP-b ok"
 else echo "HELP-b fail ($s)"
 fi
@@ -155,6 +159,7 @@ read -t 1 s </dev/pigout
 if [[ $s = 0 ]]; then echo "PROCS($p) ok"; else echo "PROCS($p) fail ($s)"; fi
 
 echo "procd $p" >/dev/pigpio
+sleep 0.1
 read -t 1 s </dev/pigout
 if [[ $s = 0 ]]; then echo "PROCD($p) ok"; else echo "PROCD($p) fail ($s)"; fi
 
@@ -194,12 +199,21 @@ if [[ $s = 0 ]]; then echo "PUD-e ok"; else echo "PUD-e fail ($s)"; fi
 echo "p $GPIO 128" >/dev/pigpio
 read -t 1 s </dev/pigout
 if [[ $s = 0 ]]; then echo "PWM-a ok"; else echo "PWM-a fail ($s)"; fi
+echo "gdc $GPIO" >/dev/pigpio
+read -t 1 s </dev/pigout
+if [[ $s = 128 ]]; then echo "GDC-a ok"; else echo "GDC-a fail ($s)"; fi
 echo "pwm $GPIO 64" >/dev/pigpio
 read -t 1 s </dev/pigout
 if [[ $s = 0 ]]; then echo "PWM-b ok"; else echo "PWM-b fail ($s)"; fi
+echo "GDC $GPIO" >/dev/pigpio
+read -t 1 s </dev/pigout
+if [[ $s = 64 ]]; then echo "GDC-b ok"; else echo "GDC-b fail ($s)"; fi
 echo "pwm $GPIO 0" >/dev/pigpio
 read -t 1 s </dev/pigout
 if [[ $s = 0 ]]; then echo "PWM-c ok"; else echo "PWM-c fail ($s)"; fi
+echo "gdc $GPIO" >/dev/pigpio
+read -t 1 s </dev/pigout
+if [[ $s = 0 ]]; then echo "GDC-c ok"; else echo "GDC-c fail ($s)"; fi
 echo "m $GPIO r" >/dev/pigpio
 read -t 1 s </dev/pigout
 if [[ $s = 0 ]]; then echo "PWM-d ok"; else echo "PWM-d fail ($s)"; fi
@@ -223,12 +237,21 @@ if [[ $s = 0 ]]; then echo "READ-e ok"; else echo "READ-e fail ($s)"; fi
 echo "s $GPIO 500" >/dev/pigpio
 read -t 1 s </dev/pigout
 if [[ $s = 0 ]]; then echo "SERVO-a ok"; else echo "SERVO-a fail ($s)"; fi
+echo "gpw $GPIO" >/dev/pigpio
+read -t 1 s </dev/pigout
+if [[ $s = 500 ]]; then echo "GPW-a ok"; else echo "GPW-a fail ($s)"; fi
 echo "servo $GPIO 2500" >/dev/pigpio
 read -t 1 s </dev/pigout
 if [[ $s = 0 ]]; then echo "SERVO-b ok"; else echo "SERVO-b fail ($s)"; fi
+echo "GPW $GPIO" >/dev/pigpio
+read -t 1 s </dev/pigout
+if [[ $s = 2500 ]]; then echo "GPW-b ok"; else echo "GPW-b fail ($s)"; fi
 echo "servo $GPIO 0" >/dev/pigpio
 read -t 1 s </dev/pigout
 if [[ $s = 0 ]]; then echo "SERVO-c ok"; else echo "SERVO-c fail ($s)"; fi
+echo "gpw $GPIO" >/dev/pigpio
+read -t 1 s </dev/pigout
+if [[ $s = 0 ]]; then echo "GPW-c ok"; else echo "GPW-c fail ($s)"; fi
 echo "w $GPIO 1" >/dev/pigpio
 read -t 1 s </dev/pigout
 if [[ $s = 0 ]]; then echo "SERVO-d ok"; else echo "SERVO-d fail ($s)"; fi
@@ -236,10 +259,10 @@ if [[ $s = 0 ]]; then echo "SERVO-d ok"; else echo "SERVO-d fail ($s)"; fi
 echo "wvclr" >/dev/pigpio
 read -t 1 s </dev/pigout
 if [[ $s = 0 ]]; then echo "SLR-a ok"; else echo "SLR-a fail ($s)"; fi
-echo "slro $GPIO 1200" >/dev/pigpio
+echo "slro $GPIO 1200 8" >/dev/pigpio
 read -t 1 s </dev/pigout
 if [[ $s = 0 ]]; then echo "SLR-b ok"; else echo "SLR-b fail ($s)"; fi
-echo "wvas $GPIO 1200 0 0x6d 0x79 0x20 0x6e 0x61 0x6d 0x65 0x20 0x69 0x73 0x20 0x6a 0x6f 0x61 0x6e" >/dev/pigpio
+echo "wvas $GPIO 1200 8 2 0 0x6d 0x79 0x20 0x6e 0x61 0x6d 0x65 0x20 0x69 0x73 0x20 0x6a 0x6f 0x61 0x6e" >/dev/pigpio
 read -t 1 s </dev/pigout
 if [[ $s = 95 ]]; then echo "SLR-c ok"; else echo "SLR-c fail ($s)"; fi
 echo "m $GPIO w" >/dev/pigpio
@@ -308,7 +331,7 @@ if [[ $s = 0 ]]; then echo "WRITE-d ok"; else echo "WRITE-d fail ($s)"; fi
 echo "wvclr" >/dev/pigpio
 read -t 1 s </dev/pigout
 if [[ $s = 0 ]]; then echo "WVCLR ok"; else echo "WVCLR fail ($s)"; fi
-echo "wvas $GPIO 300 0 0x74 0x68 0x69 0x73 0x20 0x69 0x73 0x20 0x74 0x68 0x65 0x20 0x77 0x69 0x6e 0x74 0x65 0x72 0x20 0x6f 0x66 0x20 0x6d 0x79 0x20 0x64 0x69 0x73 0x63 0x6f 0x6e 0x74 0x65 0x6e 0x74" >/dev/pigpio
+echo "wvas $GPIO 300 8 2 0 0x74 0x68 0x69 0x73 0x20 0x69 0x73 0x20 0x74 0x68 0x65 0x20 0x77 0x69 0x6e 0x74 0x65 0x72 0x20 0x6f 0x66 0x20 0x6d 0x79 0x20 0x64 0x69 0x73 0x63 0x6f 0x6e 0x74 0x65 0x6e 0x74" >/dev/pigpio
 read -t 1 s </dev/pigout
 if [[ $s = 215 ]]; then echo "WVAS ok"; else echo "WVAS fail ($s)"; fi
 echo "wvag 16 0 5000000 0 16 5000000" >/dev/pigpio

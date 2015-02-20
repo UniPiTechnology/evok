@@ -112,7 +112,7 @@ class Hysteresis(Control):
     """ Controls binary result with hystereresis
            
     """
-    _setpoint = 24.0
+    _setpoint = 28.0
     dtplus = 0.1
     dtminus = 0.1
     _value = 0
@@ -214,6 +214,17 @@ class Or(Control):
             return True
 
 
+class Not(Control):
+    def __init__(self, get_input):
+        self.input = lambda: self.eval_later('input', get_input)
+
+    def compute(self):
+        nvalue = int(not bool(self.input()))
+        if nvalue != self._value:
+            self._value = nvalue
+            return True
+
+
 class Set(Control):
     """ Result is input1 and input2
     """
@@ -249,7 +260,7 @@ class Pulse(Control):
         self.generation = 0
 
     def callback(self):
-        if not self._value:  return  # weird situation
+        if not self._value: return  # weird situation
         self._value = 0
         add_computes(self)
         compute()
@@ -258,52 +269,61 @@ class Pulse(Control):
     def compute(self):
         ninput = int(bool(self.input()))
         if ninput is None: return
-        if self._edge == FALLING: ninput = int(not (ninput))  # convert it to rising
-        nvalue = int(ninput and not (self._last_input))  # rising detected
+        if self._edge == FALLING: ninput = int(not ninput)  # convert it to rising
+        nvalue = int(ninput and not self._last_input)  # rising detected
         self._last_input = ninput
-        if nvalue and not (self._value):  # supress double pulse
+        if nvalue and not self._value:  # supress double pulse
             self._value = 1
-            if mainloop:
-                mainloop.call_later(self._pulse, self.callback)
+            # if mainloop:
+            # mainloop.call_later(self._pulse, self.callback)
             return True
 
 
-HYST_FAN = Hysteresis('sensor 1 value')
-SWITCH_ON = Switch()
-SWITCH_HEAT = Switch()
-
-FAN_HEATCOOL = Xor(SWITCH_HEAT, HYST_FAN)
-FAN_ONOFF = And(SWITCH_ON, FAN_HEATCOOL)
-
-PULSE_LATE = Pulse(RISING, 2, FAN_ONOFF)
-FAN_LATE = And(PULSE_LATE.inverted, FAN_ONOFF, )
-
-PULSE_MIN = Pulse(RISING, 5, FAN_LATE)
-FAN_MIN = Or(PULSE_MIN, FAN_LATE, )
-
-FAN = Set(FAN_MIN, 'relay 1 set_state')
-LIGHT = Set(SWITCH_ON, 'relay 2 set_state')
+# HYST_FAN = Hysteresis('sensor 1 value')
+# SWITCH_ON = Switch()
+# SWITCH_HEAT = Switch()
+#
+# FAN_HEATCOOL = Xor(SWITCH_HEAT, HYST_FAN)
+# FAN_ONOFF = And(SWITCH_ON, FAN_HEATCOOL)
+#
+# PULSE_LATE = Pulse(RISING, 2, FAN_ONOFF)
+# FAN_LATE = And(PULSE_LATE.inverted, FAN_ONOFF, )
+#
+# PULSE_MIN = Pulse(RISING, 5, FAN_LATE)
+# FAN_MIN = Or(PULSE_MIN, FAN_LATE, )
+#
+# FAN = Set(FAN_MIN, 'relay 1 set_state')
+# LIGHT = Set(SWITCH_ON, 'relay 2 set_state')
 
 #TODO add all controls to ToCompute for initialization
 
+# RELAY_LEFT_NOT = Not('relay 3 value')
+# BUTTON_LEFT = And(RELAY_LEFT_NOT, 'input 1 value')
+#
+# RELAY_RIGHT_NOT = Not('relay 2 value')
+# BUTTON_RIGHT = And(RELAY_LEFT_NOT, 'input 2 value')
+# ENGINE_RIGHT = Set(BUTTON_RIGHT, 'relay 3 set_state')
+
+
 ComputeMap.update({
-    HYST_FAN: (FAN_HEATCOOL,),
-    SWITCH_ON: (FAN_ONOFF, LIGHT),
-    SWITCH_HEAT: (FAN_HEATCOOL,),
-    FAN_HEATCOOL: (FAN_ONOFF,),
-    FAN_ONOFF: (PULSE_LATE, FAN_LATE,),
-    PULSE_LATE: (FAN_LATE,),
-    FAN_LATE: (PULSE_MIN, FAN_MIN,),
-    PULSE_MIN: (FAN_MIN,),
-    FAN_MIN: (FAN,),
+    # RELAY_LEFT_NOT: (BUTTON_LEFT, ),
+    # ENGINE_LEFT: (BUTTON_LEFT,),
+    #
+    # BUTTON_LEFT: (ENGINE_LEFT,),
+    # BUTTON_RIGHT: (ENGINE_RIGHT,),
 })
 
-_ComputeMap = {}
-_ComputeMap.update({
-    HYST_FAN: (FAN_HEATCOOL,),
-    SWITCH_ON: (FAN_ONOFF, LIGHT),
-    SWITCH_HEAT: (FAN_HEATCOOL,),
-    FAN_HEATCOOL: (FAN_ONOFF,),
-    FAN_ONOFF: (FAN,),
-})
 
+
+
+# ComputeMap.update({
+# HYST_FAN: (FAN_HEATCOOL,),
+# SWITCH_ON: (FAN_ONOFF, LIGHT),
+#     SWITCH_HEAT: (FAN_HEATCOOL,),
+#     FAN_HEATCOOL: (FAN_ONOFF,),
+#     FAN_ONOFF: (PULSE_LATE, FAN_LATE,),
+#     PULSE_LATE: (FAN_LATE,),
+#     FAN_LATE: (PULSE_MIN, FAN_MIN,),
+#     PULSE_MIN: (FAN_MIN,),
+#     FAN_MIN: (FAN,),
+# })

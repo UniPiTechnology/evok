@@ -7,6 +7,8 @@ import ow
 import devents
 #import math
 #import datetime
+import signal
+import apigpio
 
 MAX_LOSTINTERVAL = 300  # 5minut
 
@@ -21,7 +23,6 @@ import fcntl
 def set_non_blocking(fd):
     flags = fcntl.fcntl(fd, fcntl.F_GETFL)
     fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
-
 
 class MySensor:
     def __init__(self, addr, typ, bus, interval=None, dynamic=True, circuit=None, in_subprocess=False):
@@ -136,14 +137,14 @@ class DS2438(MySensor):  # humidity + thermometer
 def MySensorFabric(address, typ, bus, interval=None, dynamic=True, circuit=None):
     if (typ == 'DS18B20') or (typ == 'DS18S20'):
         return DS18B20(address, typ, bus, interval=interval, circuit=circuit)
-    elif (sens.type == 'DS2438'):
+    elif (typ == 'DS2438'):
         return DS2438(address, typ, bus, interval=interval, circuit=circuit)
     else:
         return None
 
 
 class OwBusDriver(multiprocessing.Process):
-    def __init__(self, circuit, taskPipe, resultPipe, interval=60, scan_interval=300, bus='/dev/i2c-1'):
+    def __init__(self, circuit, taskPipe, resultPipe, interval=60, scan_interval=300, bus='--i2c=/dev/i2c-1:ALL'):
         multiprocessing.Process.__init__(self)
         self.circuit = circuit
         self.taskQ = taskPipe[0]
@@ -156,7 +157,7 @@ class OwBusDriver(multiprocessing.Process):
         self.mysensors = list()
         self.bus = bus
         self.register_in_caller = lambda x: None  # pro registraci, zatim prazdna funkce
-        ow.init(bus)
+        # ow.init(bus)
 
     #        self.logger = logging.getLogger(Globals.APP_NAME)
     #        self.logger.debug("owclient initialized")
@@ -208,7 +209,7 @@ class OwBusDriver(multiprocessing.Process):
             #print "Temperature %s is %s" % (obj[0],obj[1])
 
 
-    ######################################
+    # ####################################w.init(b#
     # this part is running used in subprocess
 
     def do_scan(self):
@@ -253,6 +254,15 @@ class OwBusDriver(multiprocessing.Process):
             Every scan_interval initiate bus scanning
             Peridocally scan 1wire sensors, else sleep
         """
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        # apigpio.mainprog = 0
+        # for i in range(25):
+        # try:
+        # if not (i in (0,1,2,self.taskQ.fileno(), self.resultQ.fileno())):
+        #         os.close(i)
+        #   except Exception, E:
+        #     print str(E)
+        ow.init(self.bus)
         print "Entering 1wire loop"
         self.do_scan()
         while len(self.mysensors) == 0:

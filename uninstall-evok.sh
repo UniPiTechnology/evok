@@ -58,7 +58,7 @@ uninstall() {
     sudo rm -f /etc/init.d/evok
     sudo rm -f /etc/init.d/pigpiod
     echo "Evok uninstalled sucessfully"
-    echo "Do not forget to remove its www folder eg. /var/www"
+    echo "Do not forget to remove its www folder /var/www/evok"
 }
 
 if [ "$EUID" -ne 0 ]

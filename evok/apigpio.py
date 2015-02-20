@@ -7,10 +7,17 @@ import toro
 from tornado.iostream import IOStream, PipeIOStream
 from tornado import gen
 from tornado.ioloop import IOLoop
+import fcntl
 
 pipe_name_i = '/dev/pigpio'
 pipe_name_o = '/dev/pigout'
 pipe_name_n = '/dev/pigpio%d'
+
+# mainprog = 1
+
+def set_blocking(fd):
+    flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+    fcntl.fcntl(fd, fcntl.F_SETFL, flags & ~os.O_NONBLOCK)
 
 
 class _PigBus(object, pigpio.pi):
@@ -32,12 +39,20 @@ class _PigBus(object, pigpio.pi):
         self._notify.stop()
         self._notify = None
 
+    # def stop(self):
+    # print "stop pigbus %d" % mainprog
+    # if not mainprog : return
+    #     pigpio.pi.stop(self)
+
     def switch_to_async(self, mainloop):
         '''
         Switch from synchronous to async operations
         '''
         self.iostream = IOStream(self.sl.s)
         self.iostream._add_io_state(self.iostream.io_loop.WRITE)  # not sure if necessary
+
+    def switch_to_sync(self):
+        set_blocking(self.sl.s)
 
     @gen.coroutine
     def apigpio_command(self, cmd, p1, p2):
@@ -108,11 +123,19 @@ class GpioBus(_PigBus):
         return {'dev': 'gpiobus', 'circuit': self.circuit}
 
     def stop(self):
+        # if not mainprog : return
+        # print "shutting gpio"
         try:
-            os.close(self.notify_h)
-        except Exception:
+            os.close(self.notify_handle)
+        except Exception, E:
+            print str(E)
             pass
-        self.notify_close(self.notify_pig)
+        try:
+            self.notify_close(self.notify_pig)
+        except Exception, E:
+            print str(E)
+            pass
+            # pigpio.pi.stop(self)
 
     def register_input(self, inp):
         self.inputs[inp.pin] = inp

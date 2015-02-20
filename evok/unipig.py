@@ -5,20 +5,25 @@ import struct
 import time
 import datetime
 import atexit
+from math import isnan
 
 from tornado import gen
 from tornado.ioloop import IOLoop
 import pigpio
 import devents
+from devices import *
+import config
 
 
 class Eprom(object):
-    def __init__(self, i2cbus, circuit, address=0x50):
+    def __init__(self, i2cbus, circuit, address=0x50, size=256):
         # running with blocking
         self.circuit = circuit
         self.i2cbus = i2cbus
+        self.size = size
         self.i2c = i2cbus.i2c_open(i2cbus.busid, address, 0)
         atexit.register(self.stop)
+        self.__init_board_version()
 
     def full(self):
         return {'dev': 'ee', 'circuit': self.circuit}
@@ -26,27 +31,36 @@ class Eprom(object):
     def stop(self):
         self.i2cbus.i2c_close(self.i2c)
 
+    def __init_board_version(self):
+        prefix = self.i2cbus.i2c_read_byte_data(self.i2c, 0xe2)
+        suffix = self.i2cbus.i2c_read_byte_data(self.i2c, 0xe3)
+        if prefix == 1 and suffix == 1:
+            config.globals['version'] = "1.1"
+        else:
+            config.globals['version'] = "1.0"
+        print "UniPi version:" + config.globals['version']
+
     @gen.coroutine
     def write_byte(self, index, value):
-        assert (index < 16 and index >= 0)
+        assert (index < self.size and index >= 0)
         with (yield self.i2cbus.iolock.acquire()):
             # write byte
             extents = [struct.pack("I", (value & 0xff))]
             result = yield self.i2cbus.apigpio_command_ext(
                 pigpio._PI_CMD_I2CWB,
                 self.i2c, index, 4, extents)
-            pigpio._u2i(result)  #check errors
+            pigpio._u2i(result)  # check errors
 
     @gen.coroutine
     def read_byte(self, index):
-        assert (index < 16 and index >= 0)
+        assert (index < 256 and index >= 0)
         with (yield self.i2cbus.iolock.acquire()):
             result = yield self.i2cbus.apigpio_command(
                 pigpio._PI_CMD_I2CRB, self.i2c, index)
             raise gen.Return(pigpio._u2i(result))
 
 
-#################################################################
+# ################################################################
 #
 # Relays on MCP 23008
 #
@@ -264,6 +278,7 @@ class UnipiMCP342x(object):
             looptime = mainloop.time()
             for channel in self.channels:
                 channel._nextmeasure = looptime
+                yield channel._read_correction()
                 next = channel
 
             while True:
@@ -337,7 +352,8 @@ class UnipiMCP342x(object):
 
 
 class AnalogInput():
-    def __init__(self, circuit, mcp, channel, bits=18, gain=1, continuous=False, interval=5.0, correction=5.0):
+    def __init__(self, circuit, mcp, channel, bits=18, gain=1, continuous=False, interval=5.0, correction=5.0, rom=None,
+                 corr_addr=None):
         self.circuit = circuit
         self.mcp = mcp
         self.channel = channel
@@ -346,11 +362,30 @@ class AnalogInput():
         self.gain = gain
         self.continuous = continuous
         self.interval = interval
-        #self.correction = 5.51681777
+        self.rom = rom
+        self.corr_addr = corr_addr
         self.correction = correction
         self.value = None
         self.mtime = None
         mcp.register_channel(self)
+        self.koef = self.correction / self.gain
+
+    @gen.coroutine
+    def _read_correction(self):
+        if self.rom and self.corr_addr:
+            hexstr = ""
+            for addr in range(self.corr_addr, self.corr_addr + 4):
+                res = yield self.rom.read_byte(addr)
+                result = '{:x}'.format(res)
+                if len(result) == 1:
+                    result = '0' + result
+                hexstr += result
+            correction = struct.unpack('!f', hexstr.decode('hex'))[0]
+            if correction == 0 or isnan(correction):
+                # most probably it is version 1.0 or set by default
+                # correction = 5.564920867
+                correction = self.correction
+            self.correction = correction
         self.koef = self.correction / self.gain
 
     @property  # docasne!!
@@ -399,7 +434,7 @@ class AnalogInput():
 #################################################################
 
 class AnalogOutput():
-    def __init__(self, gpiobus, circuit, pin=18, frequency=400, value=10):
+    def __init__(self, gpiobus, circuit, pin=18, frequency=400, value=0):
         self.bus = gpiobus
         self.circuit = circuit
         self.pin = pin
@@ -407,7 +442,7 @@ class AnalogOutput():
         self.value = value
         gpiobus.set_PWM_frequency(pin, frequency)
         gpiobus.set_PWM_range(pin, 1000)
-        gpiobus.set_PWM_dutycycle(pin, int(round((10 - value) * 100)))
+        gpiobus.set_PWM_dutycycle(pin, self.__calc_value(value))
 
     def full(self):
         return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value, 'frequency': self.frequency}
@@ -415,13 +450,19 @@ class AnalogOutput():
     def simple(self):
         return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value}
 
-    @gen.coroutine
-    def set_value(self, value):
+    def __calc_value(self, value):
         if value > 10.0:
             value = 10.0
         elif value < 0:
             value = 0.0
-        value10 = int(round((10 - value) * 100))
+        if config.globals['version'] == "1.0":
+            return int(round((10 - value) * 100))
+        else:
+            return int(round(value * 100))
+
+    @gen.coroutine
+    def set_value(self, value):
+        value10 = self.__calc_value(value)
         result = pigpio._u2i((yield self.bus.apigpio_command(pigpio._PI_CMD_PWM, self.pin, value10)))
         self.value = value
         devents.status(self)

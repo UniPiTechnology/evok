@@ -26,7 +26,7 @@ For more information, please refer to <http://unlicense.org/>
 */
 
 /*
-This version is for pigpio version 21+
+This version is for pigpio version 26+
 */
 
 #include <stdio.h>
@@ -40,7 +40,7 @@ This version is for pigpio version 21+
 
 cmdInfo_t cmdInfo[]=
 {
-   /* num         str   vfyt retv */
+   /* num          str    vfyt retv */
 
    {PI_CMD_BC1,   "BC1",   111, 1}, // gpioWrite_Bits_0_31_Clear
    {PI_CMD_BC2,   "BC2",   111, 1}, // gpioWrite_Bits_32_53_Clear
@@ -51,8 +51,17 @@ cmdInfo_t cmdInfo[]=
    {PI_CMD_BS1,   "BS1",   111, 1}, // gpioWrite_Bits_0_31_Set
    {PI_CMD_BS2,   "BS2",   111, 1}, // gpioWrite_Bits_32_53_Set
 
+   {PI_CMD_CF1,   "CF1",   195, 2}, // gpioCustom1
+   {PI_CMD_CF2,   "CF2",   195, 6}, // gpioCustom2
+
+   {PI_CMD_GDC,   "GDC",   112, 2}, // gpioGetPWMdutycycle
+   {PI_CMD_GPW,   "GPW",   112, 2}, // gpioGetServoPulsewidth
+
    {PI_CMD_HELP,  "H",     101, 5}, // cmdUsage
    {PI_CMD_HELP,  "HELP",  101, 5}, // cmdUsage
+
+   {PI_CMD_HC,    "HC",    121, 0}, // gpioHardwareClock
+   {PI_CMD_HP,    "HP",    131, 0}, // gpioHardwarePWM
 
    {PI_CMD_HWVER, "HWVER", 101, 4}, // gpioHardwareRevision
 
@@ -130,7 +139,7 @@ cmdInfo_t cmdInfo[]=
 
    {PI_CMD_SLR,   "SLR",   121, 6}, // gpioSerialRead
    {PI_CMD_SLRC,  "SLRC",  112, 0}, // gpioSerialReadClose
-   {PI_CMD_SLRO,  "SLRO",  121, 0}, // gpioSerialReadOpen
+   {PI_CMD_SLRO,  "SLRO",  131, 0}, // gpioSerialReadOpen
 
    {PI_CMD_SPIC,  "SPIC",  112, 0}, // spiClose
    {PI_CMD_SPIO,  "SPIO",  131, 2}, // spiOpen
@@ -211,151 +220,167 @@ cmdInfo_t cmdInfo[]=
 
 
 char * cmdUsage = "\
-BC1 bits         Clear specified gpios in bank 1.\n\
-BC2 bits         Clear specified gpios in bank 2.\n\
-BR1              Read bank 1 gpios.\n\
-BR2              Read bank 2 gpios.\n\
-BS1 bits         Set specified gpios in bank 2.\n\
-BS2 bits         Set specified gpios in bank 2.\n\
+BC1 bits         Clear specified gpios in bank 1\n\
+BC2 bits         Clear specified gpios in bank 2\n\
+BR1              Read bank 1 gpios\n\
+BR2              Read bank 2 gpios\n\
+BS1 bits         Set specified gpios in bank 2\n\
+BS2 bits         Set specified gpios in bank 2\n\
 \n\
-H/HELP           Display command help.\n\
+CF1 uvs          Custom function 1\n\
+CF2 uvs          Custom function 2\n\
 \n\
-HWVER            Get hardware version.\n\
+GDC u            Get PWM dutycycle for gpio\n\
+GPW u            Get servo pulsewidth for gpio\n\
 \n\
-I2CC h           Close I2C handle.\n\
-I2CO ib id if    Open I2C bus and device with flags.\n\
+H/HELP           Display command help\n\
 \n\
-I2CPC h r wv     smb Process Call: exchange register with word.\n\
-I2CPK h r bvs    smb Block Process Call: exchange data bytes with register.\n\
+HC g cf          Set hardware clock frequency\n\
+HP g pf pdc      Set hardware PWM frequency and dutycycle\n\
 \n\
-I2CRB h r        smb Read Byte Data: read byte from register.\n\
-I2CRD h num      i2c Read bytes.\n\
-I2CRI h r num    smb Read I2C Block Data: read bytes from register.\n\
-I2CRK h r        smb Read Block Data: read data from register.\n\
-I2CRS h          smb Read Byte: read byte.\n\
-I2CRW h r        smb Read Word Data: read word from register.\n\
+HWVER            Get hardware version\n\
 \n\
-I2CWB h r bv     smb Write Byte Data: write byte to register.\n\
-I2CWD h bvs      i2c Write data.\n\
-I2CWI h r bvs    smb Write I2C Block Data.\n\
-I2CWK h r bvs    smb Write Block Data: write data to register.\n\
-I2CWQ h bit      smb Write Quick: write bit.\n\
-I2CWS h bv       smb Write Byte: write byte.\n\
-I2CWW h r wv     smb Write Word Data: write word to register.\n\
+I2CC h           Close I2C handle\n\
+I2CO ib id if    Open I2C bus and device with flags\n\
 \n\
-M/MODES g m      Set gpio mode.\n\
-MG/MODEG g       Get gpio mode.\n\
+I2CPC h r wv     smb Process Call: exchange register with word\n\
+I2CPK h r bvs    smb Block Process Call: exchange data bytes with register\n\
 \n\
-MICS v           Delay for microseconds.\n\
-MILS v           Delay for milliseconds.\n\
+I2CRB h r        smb Read Byte Data: read byte from register\n\
+I2CRD h num      i2c Read bytes\n\
+I2CRI h r num    smb Read I2C Block Data: read bytes from register\n\
+I2CRK h r        smb Read Block Data: read data from register\n\
+I2CRS h          smb Read Byte: read byte\n\
+I2CRW h r        smb Read Word Data: read word from register\n\
 \n\
-NB h bits        Start notification.\n\
-NC h             Close notification.\n\
-NO               Request a notification.\n\
-NP h             Pause notification.\n\
+I2CWB h r bv     smb Write Byte Data: write byte to register\n\
+I2CWD h bvs      i2c Write data\n\
+I2CWI h r bvs    smb Write I2C Block Data\n\
+I2CWK h r bvs    smb Write Block Data: write data to register\n\
+I2CWQ h bit      smb Write Quick: write bit\n\
+I2CWS h bv       smb Write Byte: write byte\n\
+I2CWW h r wv     smb Write Word Data: write word to register\n\
 \n\
-P/PWM u v        Set gpio PWM value.\n\
+M/MODES g m      Set gpio mode\n\
+MG/MODEG g       Get gpio mode\n\
 \n\
-PARSE t          Validate script.\n\
+MICS v           Delay for microseconds\n\
+MILS v           Delay for milliseconds\n\
 \n\
-PFG u            Get gpio PWM frequency.\n\
-PFS u v          Set gpio PWM frequency.\n\
+NB h bits        Start notification\n\
+NC h             Close notification\n\
+NO               Request a notification\n\
+NP h             Pause notification\n\
 \n\
-PIGPV            Get pigpio library version.\n\
+P/PWM u v        Set gpio PWM value\n\
 \n\
-PRG u            Get gpio PWM range.\n\
+PARSE t          Validate script\n\
 \n\
-PROC t           Store script.\n\
-PROCD sid        Delete script.\n\
-PROCP sid        Get script status and parameters.\n\
-PROCR sid pars   Run script.\n\
-PROCS sid        Stop script.\n\
+PFG u            Get gpio PWM frequency\n\
+PFS u v          Set gpio PWM frequency\n\
 \n\
-PRRG u           Get gpio PWM real range.\n\
-PRS u v          Set gpio PWM range.\n\
+PIGPV            Get pigpio library version\n\
 \n\
-PUD g p          Set gpio pull up/down.\n\
+PRG u            Get gpio PWM range\n\
 \n\
-R/READ g         Read gpio level.\n\
+PROC t           Store script\n\
+PROCD sid        Delete script\n\
+PROCP sid        Get script status and parameters\n\
+PROCR sid pars   Run script\n\
+PROCS sid        Stop script\n\
 \n\
-S/SERVO u v      Set gpio servo pulsewidth.\n\
+PRRG u           Get gpio PWM real range\n\
+PRS u v          Set gpio PWM range\n\
 \n\
-SERC h           Close serial handle.\n\
-SERDA h          Check for serial data ready to read.\n\
-SERO srd srb srf Open serial device at baud with flags.\n\
+PUD g p          Set gpio pull up/down\n\
 \n\
-SERR h num       Read bytes from serial handle.\n\
-SERRB            Read byte from serial handle.\n\
-SERW h bvs       Write bytes to serial handle.\n\
-SERWB h bv       Write byte to serial handle.\n\
+R/READ g         Read gpio level\n\
 \n\
-SLR u num        Read bit bang serial data from gpio.\n\
-SLRC u           Close gpio for bit bang serial data.\n\
-SLRO u b         Open gpio for bit bang serial data.\n\
+S/SERVO u v      Set gpio servo pulsewidth\n\
 \n\
-SPIC h           SPI close handle.\n\
-SPIO sc sb sf    SPI open channel at baud with flags.\n\
-SPIR h num       SPI read bytes from handle.\n\
-SPIW h bvs       SPI write bytes to handle.\n\
-SPIX h bvs       SPI transfer bytes to handle.\n\
+SERC h           Close serial handle\n\
+SERDA h          Check for serial data ready to read\n\
+SERO srd srb srf Open serial device at baud with flags\n\
 \n\
-T/TICK           Get current tick.\n\
+SERR h num       Read bytes from serial handle\n\
+SERRB h          Read byte from serial handle\n\
+SERW h bvs       Write bytes to serial handle\n\
+SERWB h bv       Write byte to serial handle\n\
 \n\
-TRIG u pl L      Trigger level for micros on gpio.\n\
+SLR u num        Read bit bang serial data from gpio\n\
+SLRC u           Close gpio for bit bang serial data\n\
+SLRO u b db      Open gpio for bit bang serial data\n\
 \n\
-W/WRITE g L      Write level to gpio.\n\
+SPIC h           SPI close handle\n\
+SPIO sc sb sf    SPI open channel at baud with flags\n\
+SPIR h num       SPI read bytes from handle\n\
+SPIW h bvs       SPI write bytes to handle\n\
+SPIX h bvs       SPI transfer bytes to handle\n\
 \n\
-WDOG u v         Set millisecond watchdog on gpio.\n\
+T/TICK           Get current tick\n\
 \n\
-WVAG trips       Wave add generic pulses.\n\
-WVAS u b o bvs   Wave add serial data with offset for gpio at baud.\n\
-WVBSY            Check if wave busy.\n\
-WVCLR            Wave clear.\n\
-WVCRE            Create wave from added pulses.\n\
-WVDEL wid        Delete waves w and higher.\n\
-WVGO             Wave transmit (DEPRECATED).\n\
-WVGOR            Wave transmit repeatedly (DEPRECATED).\n\
-WVHLT            Wave stop.\n\
-WVNEW            Start a new empty wave.\n\
-WVSC ws          Wave get DMA control block stats.\n\
-WVSM ws          Wave get micros stats.\n\
-WVSP ws          Wave get pulses stats.\n\
-WVTX wid         Transmit wave as one-shot.\n\
-WVTXR wid        Transmit wave repeatedly.\n\
+TRIG u pl L      Trigger level for micros on gpio\n\
 \n\
-bits  = a mask where (1<<g) is set for each gpio g of interest.\n\
-bv    = byte value (0-255).\n\
-bvs   = one or more byte values (0-255).\n\
-g     = any gpio (0-53).\n\
-h     = handle (>=0).\n\
-ib    = I2C bus (0-1).\n\
-id    = I2C device (0-127).\n\
-if    = I2C flags (0).\n\
-L     = level (0-1).\n\
-m     = mode (RW540123).\n\
-num   = number of bytes to read.\n\
-o     = offset (>=0).\n\
-p     = pud (ODU).\n\
-pars  = 0 to 10 parameters for script.\n\
-pl    = pulse length (1-50).\n\
-r     = register.\n\
-sid   = script id (>=0).\n\
-sb    = SPI baud.\n\
-sc    = SPI channel (0-1).\n\
-sf    = SPI flags (0-3).\n\
-srd   = serial device (/dev/tty*).\n\
-srb   = serial baud rate.\n\
-srf   = serial flags (0).\n\
-t     = text.\n\
-trips = 1 or more triplets of gpios on, gpios off, delay.\n\
-u     = user gpio (0-31).\n\
-v     = value.\n\
-w     = wave id (>=0).\n\
-ws    = 0=now, 1=high, 2=max.\n\
-wv    = word value (0-65535).\n\
+W/WRITE g L      Write level to gpio\n\
+\n\
+WDOG u v         Set millisecond watchdog on gpio\n\
+\n\
+WVAG trips       Wave add generic pulses\n\
+WVAS u b db hb   Wave add serial data for gpio u at b baud, db databits,\n\
+     o bvs            hb (half)stopbits, offset o micros from wave start\n\
+WVBSY            Check if wave busy\n\
+WVCLR            Wave clear\n\
+WVCRE            Create wave from added pulses\n\
+WVDEL wid        Delete waves w and higher\n\
+WVGO             Wave transmit (DEPRECATED)\n\
+WVGOR            Wave transmit repeatedly (DEPRECATED)\n\
+WVHLT            Wave stop\n\
+WVNEW            Start a new empty wave\n\
+WVSC ws          Wave get DMA control block stats\n\
+WVSM ws          Wave get micros stats\n\
+WVSP ws          Wave get pulses stats\n\
+WVTX wid         Transmit wave as one-shot\n\
+WVTXR wid        Transmit wave repeatedly\n\
+\n\
+bits  = a mask where (1<<g) is set for each gpio g of interest\n\
+bv    = byte value (0-255)\n\
+bvs   = one or more byte values (0-255)\n\
+cf    = hardware clock frequency (4689-25M)\n\
+db    = data bits (1-32)\n\
+g     = any gpio (0-53)\n\
+h     = handle (>=0)\n\
+hb    = (half) stop bits (2-8)\n\
+ib    = I2C bus (0-1)\n\
+id    = I2C device (0-127)\n\
+if    = I2C flags (0)\n\
+L     = level (0-1)\n\
+m     = mode (RW540123)\n\
+num   = number of bytes to read\n\
+o     = offset (>=0)\n\
+p     = pud (ODU)\n\
+pars  = 0 to 10 parameters for script\n\
+pdc   = hardware PWM dutycycle (0-5000)\n\
+pf    = hardware PWM frequency (5-50K)\n\
+pl    = pulse length (1-100)\n\
+r     = register\n\
+sid   = script id (>=0)\n\
+sb    = SPI baud\n\
+sc    = SPI channel (0-1)\n\
+sf    = SPI flags (0-3)\n\
+srd   = serial device (/dev/tty*)\n\
+srb   = serial baud rate\n\
+srf   = serial flags (0)\n\
+t     = text\n\
+trips = 1 or more triplets of gpios on, gpios off, delay\n\
+u     = user gpio (0-31)\n\
+uvs   = zero or more values >= 0, any after the first two must <= 255\n\
+v     = value\n\
+w     = wave id (>=0)\n\
+ws    = 0=now, 1=high, 2=max\n\
+wv    = word value (0-65535)\n\
 \n\
 Numbers may be entered as hex (prefix 0x), octal (prefix 0),\n\
-otherwise they are assumed to be decimal.\n\
+otherwise they are assumed to be decimal\n\
 ";
 
 typedef struct
@@ -383,7 +408,7 @@ static errInfo_t errInfo[]=
    {PI_BAD_WDOG_TIMEOUT , "timeout not 0-60000"},
    {PI_NO_ALERT_FUNC    , "DEPRECATED"},
    {PI_BAD_CLK_PERIPH   , "clock peripheral not 0-1"},
-   {PI_BAD_CLK_SOURCE   , "clock source not 0-1"},
+   {PI_BAD_CLK_SOURCE   , "DEPRECATED"},
    {PI_BAD_CLK_MICROS   , "clock micros not 1, 2, 4, 5, 8, or 10"},
    {PI_BAD_BUF_MILLIS   , "buf millis not 100-10000"},
    {PI_BAD_DUTYRANGE    , "dutycycle range not 25-40000"},
@@ -400,7 +425,7 @@ static errInfo_t errInfo[]=
    {PI_INITIALISED      , "function called after gpioInitialise"},
    {PI_BAD_WAVE_MODE    , "waveform mode not 0-1"},
    {PI_BAD_CFG_INTERNAL , "bad parameter in gpioCfgInternals call"},
-   {PI_BAD_WAVE_BAUD    , "baud rate not 100-250000"},
+   {PI_BAD_WAVE_BAUD    , "baud rate not 50-250K(RX)/50-1M(TX)"},
    {PI_TOO_MANY_PULSES  , "waveform has too many pulses"},
    {PI_TOO_MANY_CHARS   , "waveform has too many chars"},
    {PI_NOT_SERIAL_GPIO  , "no serial read in progress on gpio"},
@@ -411,22 +436,22 @@ static errInfo_t errInfo[]=
    {PI_BAD_WVSC_COMMND  , "bad WVSC subcommand"},
    {PI_BAD_WVSM_COMMND  , "bad WVSM subcommand"},
    {PI_BAD_WVSP_COMMND  , "bad WVSP subcommand"},
-   {PI_BAD_PULSELEN     , "trigger pulse > 100 microseconds"},
+   {PI_BAD_PULSELEN     , "trigger pulse length not 1-100"},
    {PI_BAD_SCRIPT       , "invalid script"},
    {PI_BAD_SCRIPT_ID    , "unknown script id"},
    {PI_BAD_SER_OFFSET   , "add serial data offset > 30 minute"},
    {PI_GPIO_IN_USE      , "gpio already in use"},
    {PI_BAD_SERIAL_COUNT , "must read at least a byte at a time"},
-   {PI_BAD_PARAM_NUM    , "script parameter must be 0-9"},
+   {PI_BAD_PARAM_NUM    , "script parameter id not 0-9"},
    {PI_DUP_TAG          , "script has duplicate tag"},
    {PI_TOO_MANY_TAGS    , "script has too many tags"},
    {PI_BAD_SCRIPT_CMD   , "illegal script command"},
-   {PI_BAD_VAR_NUM      , "script variable must be 0-149"},
+   {PI_BAD_VAR_NUM      , "script variable id not 0-149"},
    {PI_NO_SCRIPT_ROOM   , "no more room for scripts"},
    {PI_NO_MEMORY        , "can't allocate temporary memory"},
    {PI_SOCK_READ_FAILED , "socket read failed"},
    {PI_SOCK_WRIT_FAILED , "socket write failed"},
-   {PI_TOO_MANY_PARAM   , "too many script parameters > 10"},
+   {PI_TOO_MANY_PARAM   , "too many script parameters (> 10)"},
    {PI_NOT_HALTED       , "script already running or failed"},
    {PI_BAD_TAG          , "script has unresolved tag"},
    {PI_BAD_MICS_DELAY   , "bad MICS delay (too large)"},
@@ -457,6 +482,18 @@ static errInfo_t errInfo[]=
    {PI_SPI_XFER_FAILED  , "spi xfer/read/write failed"},
    {PI_BAD_POINTER      , "bad (NULL) pointer"},
    {PI_NO_AUX_SPI       , "need a B+ for auxiliary SPI"},
+   {PI_NOT_PWM_GPIO     , "gpio is not in use for PWM"},
+   {PI_NOT_SERVO_GPIO   , "gpio is not in use for servo pulses"},
+   {PI_NOT_HCLK_GPIO    , "gpio has no hardware clock"},
+   {PI_NOT_HPWM_GPIO    , "gpio has no hardware PWM"},
+   {PI_BAD_HPWM_FREQ    , "hardware PWM frequency not 5-50K"},
+   {PI_BAD_HPWM_DUTY    , "hardware PWM dutycycle not 0-5000"},
+   {PI_BAD_HCLK_FREQ    , "hardware clock frequency not 4689-25M"},
+   {PI_BAD_HCLK_PASS    , "need password to use hardware clock 1"},
+   {PI_HPWM_ILLEGAL     , "illegal, PWM in use for main clock"},
+   {PI_BAD_DATABITS     , "serial data bits not 1-32"},
+   {PI_BAD_STOPBITS     , "serial (half) stop bits not 2-8"},
+
 
 };
 
@@ -527,8 +564,8 @@ int cmdParse(
    char *p8;
    int32_t *p32;
    char c;
-   uint32_t tp1;
-   int8_t to1;
+   uint32_t tp1, tp2, tp3;
+   int8_t to1, to2, to3;
 
    /* Check that ext is big enough for the largest message. */
    if (ext_len < (4 * CMD_MAX_PARAM)) return CMD_EXT_TOO_SMALL;
@@ -577,7 +614,7 @@ int cmdParse(
 
          break;
 
-      case 112: /* I2CC
+      case 112: /* GDC  GPW  I2CC
                    I2CRB MG  MICS  MILS  MODEG  NC  NP  PFG  PRG
                    PROCD  PROCP  PROCS  PRRG  R  READ  SLRC  SPIC
                    WVDEL  WVSC  WVSM  WVSP  WVTX  WVTXR
@@ -651,8 +688,8 @@ int cmdParse(
 
          break;
 
-      case 121: /* I2CRD  I2CRR  I2CRW  I2CWB I2CWQ  P  PFS  PRS
-                   PWM  S  SERVO  SLR  SLRO  W  WDOG  WRITE
+      case 121: /* HC I2CRD  I2CRR  I2CRW  I2CWB I2CWQ  P  PFS  PRS
+                   PWM  S  SERVO  SLR  W  WDOG  WRITE
 
                    Two positive parameters.
                 */
@@ -748,7 +785,7 @@ int cmdParse(
 
          break;
 
-      case 131: /* I2CO  I2CPC  I2CRI  I2CWB  I2CWW  SPIO  TRIG
+      case 131: /* HP I2CO  I2CPC  I2CRI  I2CWB  I2CWW  SLRO  SPIO  TRIG
 
                    Three positive parameters.
                 */
@@ -910,6 +947,52 @@ int cmdParse(
 
          break;
 
+      case 195: /* CF1  CF2
+
+                   Zero or more parameters, first two >=0, rest 0-255.
+                */
+         valid = 1;
+
+         ctl->eaten += getNum(buf+ctl->eaten, &p[1], &ctl->opt[1]);
+
+         if (ctl->opt[1] == CMD_NUMERIC)
+         {
+            if ((int)p[1] >= 0)
+            {
+               ctl->eaten += getNum(buf+ctl->eaten, &p[2], &ctl->opt[2]);
+
+               if (ctl->opt[2] == CMD_NUMERIC)
+               {
+                  if ((int)p[2] >= 0)
+                  {
+                     pars = 0;
+                     p8 = ext;
+
+                     while (pars < CMD_MAX_PARAM)
+                     {
+                        ctl->eaten += getNum(buf+ctl->eaten, &tp1, &to1);
+                        if (to1 == CMD_NUMERIC)
+                        {
+                           if (((int)tp1>=0) && ((int)tp1<=255))
+                           {
+                              pars++;
+                              *p8++ = tp1;
+                           }
+                           else valid = 0;
+                        }
+                        else break;
+                     }
+
+                     p[3] = pars;
+                  }
+                  else valid = 0;
+               }
+            }
+            else valid = 0;
+         }
+
+         break;
+
       case 196: /* WVAS
 
                    gpio baud offset char...
@@ -918,21 +1001,29 @@ int cmdParse(
                    p2 baud
                    p3 len + 4
                    ---------
+                   uint32_t databits
+                   uint32_t stophalfbits
                    uint32_t offset
                    uint8_t[len]
                 */
          ctl->eaten += getNum(buf+ctl->eaten, &p[1], &ctl->opt[1]);
          ctl->eaten += getNum(buf+ctl->eaten, &p[2], &ctl->opt[2]);
          ctl->eaten += getNum(buf+ctl->eaten, &tp1, &to1);
+         ctl->eaten += getNum(buf+ctl->eaten, &tp2, &to2);
+         ctl->eaten += getNum(buf+ctl->eaten, &tp3, &to3);
 
          if ((ctl->opt[1] == CMD_NUMERIC) && ((int)p[1] >= 0) &&
              (ctl->opt[2] == CMD_NUMERIC) && ((int)p[2] > 0) &&
-             (to1 == CMD_NUMERIC))
+             (to1 == CMD_NUMERIC) &&
+             (to2 == CMD_NUMERIC) &&
+             (to3 == CMD_NUMERIC))
          {
             pars = 0;
 
             memcpy(ext, &tp1, 4);
-            p8 = ext + 4;
+            memcpy(ext+4, &tp2, 4);
+            memcpy(ext+8, &tp3, 4);
+            p8 = ext + 12;
             while (pars < CMD_MAX_PARAM)
             {
                ctl->eaten += getNum(buf+ctl->eaten, &tp1, &to1);
@@ -945,7 +1036,7 @@ int cmdParse(
                else break;
             }
 
-            p[3] = pars + 4;
+            p[3] = pars + 12;
 
             if (pars > 0) valid = 1;
          }

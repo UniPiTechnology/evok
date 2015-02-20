@@ -3,7 +3,7 @@ $.fn.exists = function () {
 }
 
 function sortResults(data) {
-    return data.sort(function(a,b){
+    return data.sort(function (a, b) {
         return a.circuit - b.circuit;
     });
 }
@@ -44,7 +44,7 @@ function SyncDevice(msg) {
         }
     }
     //todo: unite names of device types here and in evok
-    if (! $('#'+ns+'_li').length > 0) {
+    if (!$('#' + ns + '_li').length > 0) {
         li = document.createElement("li");
         li.id = ns + "_li";
 
@@ -78,7 +78,9 @@ function SyncDevice(msg) {
         else {
             main_el = document.createElement("h1");
             var state = "Off";
-            if (value == 1) {state = "On;"}
+            if (value == 1) {
+                state = "On;"
+            }
             main_el.innerText = state + unit;
             main_el.className = "ui-li-aside";
         }
@@ -105,20 +107,20 @@ function SyncDevice(msg) {
         }
         else if (dev_type == 'ao') {
             $('#outputs_list').append(li);
-            $('#'+main_el.id).slider();
+            $('#' + main_el.id).slider();
             $('#outputs_list').listview('refresh');
-            $('#'+main_el.id).bind("slidestop", function(event, ui) {
-                do_action('ao/'+circuit,'value='+$( this ).val());
+            $('#' + main_el.id).bind("slidestop", function (event, ui) {
+                do_action('ao/' + circuit, 'value=' + $(this).val());
             });
         }
         else if (dev_type == 'relay') {
             var divider = document.getElementById("unipi_ao_divider");
             var list = document.getElementById("outputs_list");
             list.insertBefore(li, divider);
-            $('#'+main_el.id).flipswitch();
+            $('#' + main_el.id).flipswitch();
             $('#outputs_list').listview('refresh');
-            $('#'+main_el.id).bind("change", function(event, ui) {
-                do_action('relay/'+circuit,'value='+$( this ).val());
+            $('#' + main_el.id).bind("change", function (event, ui) {
+                do_action('relay/' + circuit, 'value=' + $(this).val());
             });
         }
         else if (dev_type == 'input') {
@@ -142,20 +144,22 @@ function SyncDevice(msg) {
         if (dev_type == 'relay') {
             //TODO: remove re-binding when/if more events for flispwitch are available to prevent looping
             //unbind to prevent looping
-            $('#'+main_el.id).unbind("change");
+            $('#' + main_el.id).unbind("change");
             $("#" + ns + "_value").val(value).flipswitch("refresh");
             //and bind again
-            $('#'+main_el.id).bind("change", function(event, ui) {
-                do_action('relay/'+circuit,'value='+$( this ).val());
+            $('#' + main_el.id).bind("change", function (event, ui) {
+                do_action('relay/' + circuit, 'value=' + $(this).val());
             });
         }
-        else if ( dev_type == 'ao') {
+        else if (dev_type == 'ao') {
             $("#" + ns + "_value").val(value).slider("refresh");
         }
         //inputs
         else if (dev_type == 'input') {
             var state = "Off";
-            if (value == 1) {state = "On";}
+            if (value == 1) {
+                state = "On";
+            }
             main_el.innerHTML = state;
         }
         else {
@@ -166,14 +170,16 @@ function SyncDevice(msg) {
 
 function update_values() {
     $.ajax({
-                url:'rest/all/',
-                dataType:'json',
-                success:function (data) {
-                    data = sortResults(data);
-                    $.each(data, function(name,msg) {SyncDevice(msg);});
-                },
-                error:function (data) {
-                }
+        url: 'rest/all/',
+        dataType: 'json',
+        success: function (data) {
+            data = sortResults(data);
+            $.each(data, function (name, msg) {
+                SyncDevice(msg);
+            });
+        },
+        error: function (data) {
+        }
     });
 }
 
@@ -183,63 +189,62 @@ var use_polling = false;
 var timer = null;
 
 
-function WebSocketRegister()
-{
-  if ("WebSocket" in window)
-  {
-     if ( ws ) { return }
-     var loc = window.location;
-     uri = ((loc.protocol === "https:") ? "wss://" : "ws://") + loc.hostname + 
-           (((loc.port != 80) && (loc.port != 443)) ? ":" + loc.port : "");
+function WebSocketRegister() {
+    if ("WebSocket" in window) {
+        if (ws) {
+            return
+        }
+        var loc = window.location;
+        uri = ((loc.protocol === "https:") ? "wss://" : "ws://") + loc.hostname +
+            (((loc.port != 80) && (loc.port != 443)) ? ":" + loc.port : "");
 
-     ws = new WebSocket(uri+"/ws");
-     //var wnd = null;
+        ws = new WebSocket(uri + "/ws");
+        //var wnd = null;
 
-     if (! ws) {
-        setTimeout(WebSocketRegister,1000);
-        return;
-     }
+        if (!ws) {
+            setTimeout(WebSocketRegister, 1000);
+            return;
+        }
 
-     window.onbeforeunload = function() {
-        ws.onclose = function () {}; // disable onclose handler first
-        ws.close()
-     };
+        window.onbeforeunload = function () {
+            ws.onclose = function () {
+            }; // disable onclose handler first
+            ws.close()
+        };
 
-     ws.onopen = function()
-     {
-        ws.send("register_all");
-        update_values();
-     };
+        ws.onopen = function () {
+            ws.send("register_all");
+            update_values();
+        };
 
-     ws.onmessage = function (evt)
-     {
-        var received_msg = evt.data;
-        var msg = JSON.parse(evt.data);
-        SyncDevice(msg);
-     };
+        ws.onmessage = function (evt) {
+            var received_msg = evt.data;
+            var msg = JSON.parse(evt.data);
+            SyncDevice(msg);
+        };
 
-     ws.onclose = function()
-     {
-        //alert("Connection is closed...");
-        setTimeout(WebSocketRegister,1000);
-        ws = null;
-     };
-  }
-  else
-  {
-     //alert("WebSocket NOT supported by your Browser!");
-    use_polling = true;
-  }
+        ws.onclose = function () {
+            //alert("Connection is closed...");
+            setTimeout(WebSocketRegister, 1000);
+            ws = null;
+        };
+    }
+    else {
+        //alert("WebSocket NOT supported by your Browser!");
+        use_polling = true;
+    }
 }
 
-function do_action(action,params) {
+function do_action(action, params) {
     $.ajax({
-        url:'/rest/'+action,
+        url: '/rest/' + action,
         //dataType:'json',
         type: 'POST',
         data: params || null,
         //crossDomain: false,
-        success:function (data){},
-        error:function (data) {}
+        success: function (data) {
+        },
+        error: function (data) {
+        }
     });
 }
