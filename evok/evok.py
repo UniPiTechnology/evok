@@ -13,6 +13,11 @@ from tornado import websocket
 from tornado import escape
 from tornado.concurrent import is_future
 
+try:
+    from urllib.parse import urlparse  # py2
+except ImportError:
+    from urlparse import urlparse  # py3
+
 import signal
 
 #import types
@@ -90,10 +95,21 @@ class IndexHandler(UserCookieHelper, tornado.web.RequestHandler):
 
 registered_ws = {}
 
-
 class WsHandler(websocket.WebSocketHandler):
+    def check_origin(self, origin):
+        # fix issue when Node-RED removes the 'prefix://'
+        origin_origin = origin
+        parsed_origin = urlparse(origin)
+        origin = parsed_origin.netloc
+        origin = origin.lower()
+        host = self.request.headers.get("Host")
+        return origin == host or origin_origin == host
+
     def open(self):
-        #print "Opening %s" % (str(self))
+        print "New client connected"
+        if not registered_ws.has_key("all"):
+            registered_ws["all"] = set()
+        registered_ws["all"].add(self)
         pass
 
     def on_event(self, device):
@@ -104,14 +120,25 @@ class WsHandler(websocket.WebSocketHandler):
             print "Exc: %s" % str(e)
             pass
 
+    @tornado.gen.coroutine
     def on_message(self, message):
-        #self.write_message(u''+ message)
-        if message == 'register_all':
-            if not registered_ws.has_key("all"):
-                registered_ws["all"] = set()
-            registered_ws["all"].add(self)
-            #elif message == 'nfc2':
-            #    registered_ws["nfc2"] = self
+        try:
+            message = json.loads(message)
+            dev = message["dev"]
+            circuit = message["circuit"]
+            value = message["value"]
+            try:
+                device = Devices.by_name(dev, circuit)
+                result = device.set(value)
+                if is_future(result):
+                    result = yield result
+                print result
+            except Exception, E:
+                print E
+        except:
+            print "Skipping WS message: " + message
+            # skip it since we do not understand this message....
+            pass
 
     def on_close(self):
         #print "Closing %s" % (str(self))

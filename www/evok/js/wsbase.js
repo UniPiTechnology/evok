@@ -213,7 +213,6 @@ function WebSocketRegister() {
         };
 
         ws.onopen = function () {
-            ws.send("register_all");
             update_values();
         };
 

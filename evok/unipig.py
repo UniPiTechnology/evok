@@ -429,6 +429,20 @@ class AnalogInput():
 
 #################################################################
 #
+# PCA9685 16-channel, 12-bit PWM Fm+ I2C-bus LED controller Driver
+#
+# ################################################################
+
+class UnipiPCA9685(object):
+    def __init__(self, i2cbus, circuit, address):
+        self.circuit = circuit
+        self.i2cbus = i2cbus
+        self.i2c = i2cbus.i2c_open(i2cbus.busid, address, 0)
+        atexit.register(self.stop)
+
+
+#################################################################
+#
 # PWM on pin 18
 #
 #################################################################
