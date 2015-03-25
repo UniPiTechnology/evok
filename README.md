@@ -106,8 +106,8 @@ List of available methods:
 * 1-Wire bus
     * `owbus_scan(circuit)` - force to scan 1Wire network for new devices
 * 1-Wire sensors
-    * sensor_get(circuit) - returns all infomation in array [value, is_lost, timestamp_of_value, scan_interval] of sensor by given circuit or 1Wire address
-    * `sensor_get_value(circuit) - returns value of a circuit by given circuit or 1Wire address
+    * `sensor_get(circuit)` - returns all infomation in array [value, is_lost, timestamp_of_value, scan_interval] of sensor by given circuit or 1Wire address
+    * `sensor_get_value(circuit)` - returns value of a circuit by given circuit or 1Wire address
 
 More methods can be found in the src file evok.py or owclient.py.
 
