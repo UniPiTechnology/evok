@@ -88,6 +88,28 @@ You can also control the UniPi using the [jsonrpclib]. Below is a simple example
 
 Check the wsbase.js in www/js/ folder to see example of controlling the UniPi using websocket.
 
+List of available methods:
+============
+* Digital Inputs
+    * `input_get(circuit)` - get all information of input by circuit number
+    * `input_get_value(circuit)` - get actual state f input by circuit number, returns 0=off/1=on
+    * `input_set(circuit)` - sets the debounce timeout
+* Relays
+    * `relay_get(circuit)` - get state of relay by circuit number
+    * `relay_set(circuit, value)` - set relay by circuit number according value 0=off, 1=on
+    * `relay_set_for_time(circuit, value, timeout)` - set relay by circuit number according value 0=off, 1=on for time(seconds) timeout
+* Analog Inputs
+    * `ai_get(circuit)` - get value of analog input by circuit number
+    * `input_get`
+* Analog Output
+    * `ao_set_value(circuit, value)` - set the value(0-10) of Analog Output by circuit number
+* 1-Wire bus
+    * `owbus_scan(circuit)` - force to scan 1Wire network for new devices
+* 1-Wire sensors
+    * sensor_get(circuit) - returns all infomation in array [value, is_lost, timestamp_of_value, scan_interval] of sensor by given circuit or 1Wire address
+    * `sensor_get_value(circuit) - returns value of a circuit by given circuit or 1Wire address
+
+More methods can be found in the src file evok.py or owclient.py.
 
 Todo list:
 ============
