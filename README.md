@@ -76,7 +76,7 @@ To control a device, all requests must be sent by HTTP POST. Here is a small exa
 * `wget -qO- http://your.pi.ip.address/rest/relay/3 --post-data='value=1'` sets relay on
 * `wget -qO- http://your.pi.ip.address/rest/relay/3 --post-data='value=0'` sets relay off
 
-You can also control the UniPi using the [jsonrpclib]. Below is a simple example, for more information check the evok.py, and unipig.py files.
+You can also control the UniPi using Python library [jsonrpclib]. See the list of all available methods below.
 
     from jsonrpclib import Server
     s=Server("http://your.pi.ip.address/rpc")
