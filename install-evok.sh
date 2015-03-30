@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 ask() {
     # http://djm.me/ask
     while true; do

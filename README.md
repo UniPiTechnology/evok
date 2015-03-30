@@ -26,6 +26,7 @@ or using wget:
     wget https://api.github.com/repos/UniPiTechnology/evok/zipball/master
     unzip master
     cd UniPiTechnology-evok-xxxxxxx
+    chmod +x install-evok.sh uninstall-evok.sh
 
 And run the installation script
 
