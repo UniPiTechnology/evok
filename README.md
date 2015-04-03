@@ -14,8 +14,8 @@ It also uses some other python libraries that are not installed on Raspbian by d
 * [jsonrpclib]
 
 
-Installation
-============
+# Installation
+
 Download the latest revision from our repository using git client
 
     git clone https://github.com/UniPiTechnology/evok
@@ -46,8 +46,8 @@ When done simply start the daemon by executing `sudo service evok start`
 
 The installation script also enables the I2C subsystem (if not enabled before) but the uninstallation script does not disable it back.
 
-API examples
-============
+# API examples
+
 There are many options of controlling the UniPi, the easiest is using a web browser (make sure to copy the www folder to your desired location and edit evok.conf file) and them simply visit
 
     http://your.pi.ip.address
@@ -58,7 +58,9 @@ todo: gif
 
 The web face is using websocket to receive all event from the UniPi and controlls the UniPi via REST api.
 
-Examples of REST API usage:
+## REST API:
+### HTTP GET
+To get a state of a device HTTP GET request can be send to the evok
 
     GET /rest/DEVICE/CIRCUIT
 
@@ -68,6 +70,7 @@ or
 
 Where DEVICE can be substituted by any of these: 'relay', 'di' or 'input', 'ai' or 'analoginput, 'ao' or 'analogoutput', 'sensor',  CIRCUIT is the number of circuit (in case of 1Wire sensor, it is its address) corresponding to the number in your configuration file and PROPERTY is mostly 'value'.
 
+### HTTP POST
 Simple example using wget to get status of devices:
 * `wget -qO- http://your.pi.ip.address/rest/all` returns status of all devices configured in evok.conf
 * `wget -qO- http://your.pi.ip.address/rest/relay/1` returns status of relay with circuit nr. 1
@@ -77,6 +80,12 @@ To control a device, all requests must be sent by HTTP POST. Here is a small exa
 * `wget -qO- http://your.pi.ip.address/rest/relay/3 --post-data='value=1'` sets relay on
 * `wget -qO- http://your.pi.ip.address/rest/relay/3 --post-data='value=0'` sets relay off
 
+### Websocket
+Register your client at ws://your.unipi.ip.address/ws to receive status messages. Once it is connected, you can also send various commands to the UniPi
+All messages in websocket are sent in JSON string format, eg. {"dev":"relay", "circuit":"1", "value":"1"} to set Relay 1 On.
+Check the wsbase.js in www/js/ folder to see example of controlling the UniPi using websocket.
+
+### Python using JsonRPC
 You can also control the UniPi using Python library [jsonrpclib]. See the list of all available methods below.
 
     from jsonrpclib import Server
@@ -87,10 +96,24 @@ You can also control the UniPi using Python library [jsonrpclib]. See the list o
     s.relay_get(0)
     s.ai_get(1)
 
-Check the wsbase.js in www/js/ folder to see example of controlling the UniPi using websocket.
+Also make sure to check the [websocket Python library]
 
-List of available methods:
-============
+### Perl using JsonRPC
+A simple example of controlling the UniPi via RPC
+    use JSON::RPC::Client;
+
+    use JSON::RPC::Client;
+
+    my $client = new JSON::RPC::Client;
+    my $url    = 'http://your.pi.ip.address/rpc';
+
+    $client->prepare($url, ['relay_set']);
+    $client->relay_set(1,1);
+
+There is also a [websocket client library for Perl] to get more control.
+
+##List of available methods:
+
 * Digital Inputs
     * `input_get(circuit)` - get all information of input by circuit number
     * `input_get_value(circuit)` - get actual state f input by circuit number, returns 0=off/1=on
@@ -138,3 +161,5 @@ Raspberry Pi is a trademark of the Raspberry Pi Foundation
 [toro]:https://pypi.python.org/pypi/toro/
 [tornardorpc]:https://github.com/joshmarshall/tornadorpc
 [jsonrpclib]:https://github.com/joshmarshall/jsonrpclib
+[websocket client library for Perl]https://metacpan.org/pod/AnyEvent::WebSocket::Client
+[websocket Python library]https://pypi.python.org/pypi/websocket-client/
