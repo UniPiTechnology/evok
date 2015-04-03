@@ -30,11 +30,11 @@ or using wget:
 
 And run the installation script
 
-    ./install-evok.sh
+    sudo ./install-evok.sh
 
 To uninstall it, run the installation script which is also located in `/opt/evok/` fodler after installation
 
-    ./uninstall-evok.sh
+    sudo ./uninstall-evok.sh
 
 After the installation, do not forget to copy the content of www folder to eg. `/var/www/` (default location for searching static files).
 
