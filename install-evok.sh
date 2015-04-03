@@ -48,7 +48,7 @@ enable_ic2() {
     if kernelgt 3185 ;then
         echo "Using kernel newer than 3.18.5"
         if ! grep -q 'device_tree_param=i2c1=on' /boot/cmdline.txt ;then
-            sudo echo "$(cat /boot/config.txt) device_tree_param=i2c1=on" > /boot/config.txt
+            sudo echo -e "$(cat /boot/config.txt) \n\n#Enable i2c bus 1\ndevice_tree_param=i2c1=on" > /boot/config.txt
         fi
     else #comment out blacklisted i2c on kernel < 3.18.5
         echo "Using kernel older than 3.18.5"
