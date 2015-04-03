@@ -161,5 +161,5 @@ Raspberry Pi is a trademark of the Raspberry Pi Foundation
 [toro]:https://pypi.python.org/pypi/toro/
 [tornardorpc]:https://github.com/joshmarshall/tornadorpc
 [jsonrpclib]:https://github.com/joshmarshall/jsonrpclib
-[websocket client library for Perl]https://metacpan.org/pod/AnyEvent::WebSocket::Client
-[websocket Python library]https://pypi.python.org/pypi/websocket-client/
+[websocket client library for Perl]:https://metacpan.org/pod/AnyEvent::WebSocket::Client
+[websocket Python library]:https://pypi.python.org/pypi/websocket-client/
