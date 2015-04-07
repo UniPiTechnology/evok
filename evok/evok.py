@@ -126,10 +126,22 @@ class WsHandler(websocket.WebSocketHandler):
             message = json.loads(message)
             dev = message["dev"]
             circuit = message["circuit"]
-            value = message["value"]
+            try:
+                value = message["value"]
+            except:
+                value = None
+            try:
+                cmd = message["cmd"]
+            except:
+                cmd = "set"
             try:
                 device = Devices.by_name(dev, circuit)
-                result = device.set(value)
+                # result = device.set(value)
+                func = getattr(device, cmd)
+                if value is not None:
+                    result = func(value)
+                else:
+                    result = func()
                 if is_future(result):
                     result = yield result
                 print result
@@ -308,6 +320,10 @@ class Handler(userBasicHelper, JSONRPCHandler):
     def owbus_scan(self, circuit):
         ow = Devices.by_int(OWBUS, str(circuit))
         return ow.set(do_scan=True)
+
+    def owbus_list(self, circuit):
+        ow = Devices.by_int(OWBUS, str(circuit))
+        return ow.list()
 
     ###### Sensors (1wire thermo,humidity) ######
     def sensor_set(self, circuit, interval):

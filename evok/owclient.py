@@ -166,6 +166,9 @@ class OwBusDriver(multiprocessing.Process):
     def full(self):
         return {'dev': 'owbus', 'circuit': self.circuit, 'bus': self.bus}
 
+    def list(self):
+        temp_list = [sens.address for sens in self.mysensors if sens.type == "DS18S20" or sens.type == "DS18B20"]
+        return {'ds18b20': temp_list}
 
     def set(self, scan_interval=None, do_scan=False, interval=None):
         chg = False
@@ -184,7 +187,6 @@ class OwBusDriver(multiprocessing.Process):
 
         if chg:
             devents.config(self)
-
 
     def register_sensor(self, mysensor):
         self.mysensors.append(mysensor)
