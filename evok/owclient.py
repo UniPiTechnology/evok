@@ -16,6 +16,7 @@ OWCMD_INTERVAL = 1
 OWCMD_SCAN = 2
 OWCMD_SCAN_INTERVAL = 3
 OWCMD_DEFAULT_INTERVAL = 4
+SUPPORTED_DEVICES = ["DS18S20", "DS18B20", "DS2438"]
 
 import fcntl
 
@@ -66,6 +67,8 @@ class MySensor:
                 devents.status(self)
         elif type(value) is tuple:
             self.lost = False
+            if self.value is None:
+                self.value = (None, None)
             for old, new in zip(self.value, value):
                 if old != new:
                     self.value = value
@@ -131,7 +134,7 @@ class DS2438(MySensor):  # humidity + thermometer
         return {'dev': 'temp', 'circuit': self.circuit, 'humid': self.value[0], 'lost': self.lost}
 
     def read_val_from_sens(self, sens):
-        self.value = (sens.humidity.strip(), send.temperature.strip())
+        self.value = (sens.humidity.strip(), sens.temperature.strip())
 
 
 def MySensorFabric(address, typ, bus, interval=None, dynamic=True, circuit=None):
@@ -140,6 +143,7 @@ def MySensorFabric(address, typ, bus, interval=None, dynamic=True, circuit=None)
     elif (typ == 'DS2438'):
         return DS2438(address, typ, bus, interval=interval, circuit=circuit)
     else:
+        print "Unsupported 1wire device %s (%s) detected" % (typ, address)
         return None
 
 
@@ -167,8 +171,11 @@ class OwBusDriver(multiprocessing.Process):
         return {'dev': 'owbus', 'circuit': self.circuit, 'bus': self.bus}
 
     def list(self):
-        temp_list = [sens.address for sens in self.mysensors if sens.type == "DS18S20" or sens.type == "DS18B20"]
-        return {'ds18b20': temp_list}
+        list = dict()
+        for dev in SUPPORTED_DEVICES:
+            temp_list = [sens.address for sens in self.mysensors if sens.type == dev]
+            list[dev] = temp_list
+        return list
 
     def set(self, scan_interval=None, do_scan=False, interval=None):
         chg = False
