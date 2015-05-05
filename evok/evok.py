@@ -20,15 +20,15 @@ except ImportError:
 
 import signal
 
-#import types
+# import types
 
 import base64
-#from tornado.httpclient import AsyncHTTPClient
+# from tornado.httpclient import AsyncHTTPClient
 
 from tornadorpc_evok.json import JSONRPCHandler
 import tornadorpc_evok as tornadorpc
-#from tornadorpc import private, start_server, coroutine
-#from tornadorpc.xml import XMLRPCHandler
+# from tornadorpc import private, start_server, coroutine
+# from tornadorpc.xml import XMLRPCHandler
 
 import time
 import random
@@ -36,7 +36,7 @@ import datetime
 import multiprocessing
 import json
 
-#from apigpio import I2cBus, GpioBus
+# from apigpio import I2cBus, GpioBus
 import unipig
 import owclient
 import config
@@ -45,8 +45,6 @@ from devices import *
 from extcontrols import *
 import extcontrols
 
-define("port", default=80, help="run on the given port", type=int)
-
 
 class UserCookieHelper():
     _passwords = []
@@ -54,6 +52,16 @@ class UserCookieHelper():
     def get_current_user(self):
         if len(self._passwords) == 0: return True
         return self.get_secure_cookie("user")
+
+
+def enable_cors(handler):
+    if options.cors:
+        handler.set_header("Access-Control-Allow-Headers", "*")
+        handler.set_header("Access-Control-Allow-Headers", "Content-Type, Depth, User-Agent, X-File-Size,"
+                                                           "X-Requested-With, X-Requested-By, If-Modified-Since, X-File-Name, Cache-Control")
+        handler.set_header("Access-Control-Allow-Origin", options.corsdomains)
+        handler.set_header("Access-Control-Allow-Credentials", "true")
+        handler.set_header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
 
 
 class userBasicHelper():
@@ -86,6 +94,7 @@ class userBasicHelper():
 class IndexHandler(UserCookieHelper, tornado.web.RequestHandler):
     def initialize(self, staticfiles):
         self.index = '%s/index.html' % staticfiles
+        enable_cors(self)
 
     @tornado.web.authenticated
     @tornado.gen.coroutine
@@ -103,10 +112,15 @@ class WsHandler(websocket.WebSocketHandler):
         origin = parsed_origin.netloc
         origin = origin.lower()
         host = self.request.headers.get("Host")
+        '''if config.cors:
+            domains = config.corsdomains.split()
+            if origin in domains or origin_origin in domains:
+                return True
+        '''
         return origin == host or origin_origin == host
 
     def open(self):
-        print "New client connected"
+        print "New WebSocket client connected"
         if not registered_ws.has_key("all"):
             registered_ws["all"] = set()
         registered_ws["all"].add(self)
@@ -161,6 +175,9 @@ class WsHandler(websocket.WebSocketHandler):
 
 
 class LoginHandler(tornado.web.RequestHandler):
+    def initialize(self):
+        enable_cors(self)
+
     def get(self):
         try:
             errormessage = self.get_argument("error")
@@ -176,6 +193,7 @@ class LoginHandler(tornado.web.RequestHandler):
             return True
         return False
 
+    #testing
     def post(self):
         username = self.get_argument("name")
         if self.check_permission(username, username):
@@ -187,6 +205,9 @@ class LoginHandler(tornado.web.RequestHandler):
 
 
 class RestHandler(UserCookieHelper, tornado.web.RequestHandler):
+    def initialize(self):
+        enable_cors(self)
+
     # usage: GET /rest/DEVICE/CIRCUIT
     #        or
     #        GET /rest/DEVICE/CIRCUIT/PROPERTY
@@ -223,6 +244,9 @@ class RestHandler(UserCookieHelper, tornado.web.RequestHandler):
 
 
 class LoadAllHandler(UserCookieHelper, tornado.web.RequestHandler):
+    def initialize(self):
+        enable_cors(self)
+
     #@tornado.gen.coroutine
     @tornado.web.authenticated
     def get(self):
@@ -338,6 +362,12 @@ class Handler(userBasicHelper, JSONRPCHandler):
         sens = Devices.by_int(SENSOR, str(circuit))
         return sens.get_value()
 
+    @tornadorpc.coroutine
+    def pca_set(self, circuit, channel, on, off=0):
+        pca = Devices.by_int(PCA9685, str(circuit))
+        result = yield pca.set(channel, on, off)
+        raise gen.Return(result)
+
     ###### EEprom ######
     @tornadorpc.coroutine
     def ee_read_byte(self, circuit, index):
@@ -415,6 +445,24 @@ def main():
         print pw
     except:
         pass
+
+    try:
+        cors = Config.getboolean("MAIN", "enable_cors")
+        define("cors", default=cors, help="enable CORS support", type=bool)
+    except:
+        define("cors", default=False, help="enable CORS support", type=bool)
+
+    try:
+        corsdomains = Config.get("MAIN", "cors_domains")
+        define("corsdomains", default=corsdomains, help="CORS domains separated by whitespace", type=str)
+    except:
+        define("corsdomains", default="*", help="CORS domains separated by whitespace", type=str)
+
+    try:
+        port = Config.getint("MAIN", "port")
+        define("port", default=port, help="run on the given port", type=int)
+    except:
+        define("port", default=80, help="run on the given port", type=int)
 
     app = tornado.web.Application(
         handlers=[
