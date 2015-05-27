@@ -66,6 +66,7 @@ ADCHIP = 7
 OWBUS = 8
 MCP = 9
 GPIOBUS = 10
+PCA9685 = 11
 
 ## corresponding device types names !! ORDER IS IMPORTANT
 devtype_names = (
@@ -80,6 +81,7 @@ devtype_names = (
     'owbus',
     'mcp',
     'gpiobus',
+    'pca9685',
 )
 
 devtype_altnames = {
