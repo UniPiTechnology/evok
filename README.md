@@ -96,7 +96,35 @@ You can also control the UniPi using Python library [jsonrpclib]. See the list o
     s.relay_get(0)
     s.ai_get(1)
 
-Also make sure to check the [websocket Python library]
+### Python using WebSocket
+
+    import websocket
+    import json
+
+    url = "ws://your.unipi.ip.address/ws"
+
+    def on_message(ws, message):
+        obj = json.loads(message)
+        dev = obj['dev']
+        circuit = obj['circuit']
+        value = obj['value']
+        print message
+
+    def on_error(ws, error):
+        print error
+
+    def on_close(ws):
+        print "Connection closed"
+
+    #receiving messages
+    ws = websocket.WebSocketApp(url, on_message = on_message, on_error = on_error, on_close = on_close)
+    ws.run_forever()
+
+    #sending messages
+    ws = websocket.WebSocket()
+    ws.connect(url)
+    ws.send('{"cmd":"set","dev":"relay","circuit":"3","value":"1"}')
+    ws.close()
 
 ### Perl using JsonRPC
 A simple example of controlling the UniPi via RPC
