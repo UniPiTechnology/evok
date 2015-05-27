@@ -33,19 +33,42 @@ ask() {
     done
 }
 
-kernelgt() {
-    kver=$(uname -r|cut -d\- -f1|tr -d '.+'| tr -d '[A-Z][a-z]')
-    kver=${kver:0:4}
-    if [ $kver -ge $1 ] ; then
-	    return 0;
-    else
-    	return 1;
+kernelget() {
+    kver=$(uname -r|cut -d\- -f1|tr -d '+'| tr -d '[A-Z][a-z]')
+    #echo "Verze '$1 $kver'"
+    if [[ $1 == $kver ]]
+    then
+        return 1
     fi
+    local IFS=.
+    local i ver1=($1) ver2=($kver)
+    # fill empty fields in ver1 with zeros
+    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
+    do
+        ver1[i]=0
+    done
+    for ((i=0; i<${#ver1[@]}; i++))
+    do
+        if [[ -z ${ver2[i]} ]]
+        then
+            # fill empty fields in ver2 with zeros
+            ver2[i]=0
+        fi
+        if ((10#${ver1[i]} > 10#${ver2[i]}))
+        then
+            return 1
+        fi
+        if ((10#${ver1[i]} < 10#${ver2[i]}))
+        then
+            return 0
+        fi
+    done
+    return 1
 }
 
 enable_ic2() {
     #enable i2c for kernel after 3.18.5
-    if kernelgt 3185 ;then
+    if kernelget 3.18.5 ;then
         echo "Using kernel newer than 3.18.5"
         if ! grep -q 'device_tree_param=i2c1=on' /boot/cmdline.txt ;then
             sudo echo -e "$(cat /boot/config.txt) \n\n#Enable i2c bus 1\ndevice_tree_param=i2c1=on" > /boot/config.txt
