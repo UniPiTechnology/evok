@@ -135,7 +135,7 @@ class DS2438(MySensor):  # humidity + thermometer
 
     def read_val_from_sens(self, sens):
         self.value = (sens.humidity.strip(), sens.temperature.strip())
-
+        # print self.value
 
 def MySensorFabric(address, typ, bus, interval=None, dynamic=True, circuit=None):
     if (typ == 'DS18B20') or (typ == 'DS18S20'):
