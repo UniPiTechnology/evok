@@ -5,7 +5,7 @@ import struct
 import time
 import datetime
 import atexit
-from math import isnan
+from math import isnan, floor
 
 from tornado import gen
 from tornado.ioloop import IOLoop
@@ -324,7 +324,7 @@ class UnipiMCP342x(object):
 
     @gen.coroutine
     def read_raw(self):
-        # reads the raw value from the selected previously planned one-shot operation or continuos
+        # reads the raw value from the selected previously planned one-shot operation or continuous
         # requires correctly bits
         readlen = 4 if self.lastmeasure.bits == 18 else 3  # if bits=18 : 4 else: 3
         with (yield self.i2cbus.iolock.acquire()):
@@ -434,11 +434,173 @@ class AnalogInput():
 # ################################################################
 
 class UnipiPCA9685(object):
-    def __init__(self, i2cbus, circuit, address):
+    #Registers
+    __MODE1             = 0x00
+    __MODE2             = 0x01
+    __SUBADR1           = 0x02
+    __SUBADR2           = 0x03
+    __SUBADR3           = 0x04
+    __PRESCALE          = 0xFE
+    __LED0_ON_L         = 0x06
+    __LED0_ON_H         = 0x07
+    __LED0_OFF_L        = 0x08
+    __LED0_OFF_H        = 0x09
+
+    #Bits
+    __RESTART           = 0x80
+    __SLEEP             = 0x10
+    __OUTDRV            = 0x04
+    __INVRT             = 0x10
+
+    #Constants
+    __LED_MULTIPLIER    = 0x04
+    __CLOCK_FREQ        = 25000000.0
+
+
+    def __init__(self, i2cbus, circuit, address, frequency=400):
         self.circuit = circuit
         self.i2cbus = i2cbus
         self.i2c = i2cbus.i2c_open(i2cbus.busid, address, 0)
         atexit.register(self.stop)
+        self.channels = []
+        self.nr_channels = 16
+        #read state of all outputs
+        for channel in range(0, self.nr_channels):
+            on = int(self.i2cbus.i2c_read_byte_data(self.i2c, self.__LED0_ON_H + self.__LED_MULTIPLIER * channel) << 8)
+            on += int(self.i2cbus.i2c_read_byte_data(self.i2c, self.__LED0_ON_L + self.__LED_MULTIPLIER * channel))
+            off = int(self.i2cbus.i2c_read_byte_data(self.i2c, self.__LED0_OFF_H + self.__LED_MULTIPLIER * channel) << 8)
+            off += int(self.i2cbus.i2c_read_byte_data(self.i2c, self.__LED0_OFF_L + self.__LED_MULTIPLIER * channel))
+            self.channels.append((on, off))
+            print "Channel: " + str(channel) + " - " + str(self.channels[channel])
+
+        #set open-drain structure
+        i2cbus.i2c_write_byte_data(self.i2c, self.__MODE2, self.__OUTDRV)
+
+        #set open-drain structure and non-inverting function
+        #i2cbus.i2c_write_byte_data(self.i2c, self.__MODE2, self.__OUTDRV | self.__INVRT)
+
+        time.sleep(0.005)
+        i2cbus.i2c_write_byte_data(self.i2c, self.__MODE1, 0x01 & self.__SLEEP)
+        time.sleep(0.005)
+
+        #set frequency
+        self.frequency = frequency
+        self.__set_freq(self.frequency)
+
+    def __set_freq(self, freq):
+        """
+        Set frequency of all channels between 40Hz - 1 000Hz using internal oscillator
+        """
+        # todo: test frequencies less than 40Hz
+        # freq = freq if freq >= 40 else 40
+        prescale = int(floor((self.__CLOCK_FREQ / 4096 / freq) - 1 + 0.5))
+        prescale = prescale if prescale >= 3 else 3 #hw forces min value of prescale value to 3
+        print "Setting PWM frequency on PCA9685 %d to %d with prescale %d" % (self.circuit, freq, prescale)
+        old_mode = self.i2cbus.i2c_read_byte_data(self.i2c, self.__MODE1) #backup old mode
+        new_mode = (old_mode & 0x7F) | self.__SLEEP #sleep mode
+        self.i2cbus.i2c_write_byte_data(self.i2c, self.__MODE1, new_mode) #set SLEEP bit on register MODE1
+        self.i2cbus.i2c_write_byte_data(self.i2c, self.__PRESCALE, prescale) #set PRESCALE register
+        self.i2cbus.i2c_write_byte_data(self.i2c, self.__MODE1, old_mode) #restore previous MODE1 register value
+        time.sleep(0.005)
+        self.i2cbus.i2c_write_byte_data(self.i2c, self.__MODE1, old_mode | self.__RESTART) #restart!]
+        self.frequency = freq
+
+    @gen.coroutine
+    def set_pwm(self, channel, val):
+        """
+        Set PWM value on channel 0 - 4095
+        """
+        val = val if val <= 4095 else 4095
+        val = val if val >= 0 else 0
+        yield self.set(channel, 0, val)
+
+    @gen.coroutine
+    def set(self, channel, on, off):
+        """
+        Set LED_on and LED_OFF registers value on channel, on(off) values between 0-4096
+        """
+        if channel > self.nr_channels - 1: #numbering from 0 to 15
+            return
+        on = on if on <= 4096 else 4096
+        on = on if on >= 0 else 0
+        off = off if off <= 4096 else 4096
+        off = off if off >= 0 else 0
+
+        with (yield self.i2cbus.iolock.acquire()):
+            byte_val = on & 0xFF
+            extents = [struct.pack("I", byte_val)]
+            result = yield self.i2cbus.apigpio_command_ext(
+                pigpio._PI_CMD_I2CWB,
+                self.i2c, self.__LED0_ON_L + self.__LED_MULTIPLIER*channel, 4, extents)
+            result = yield self.i2cbus.apigpio_command(
+                pigpio._PI_CMD_I2CRB,
+                self.i2c, self.__LED0_ON_L + self.__LED_MULTIPLIER*channel)
+            pigpio._u2i(result)  # check errors
+
+            byte_val = on >> 8
+            extents = [struct.pack("I", byte_val)]
+            result = yield self.i2cbus.apigpio_command_ext(
+                pigpio._PI_CMD_I2CWB,
+                self.i2c, self.__LED0_ON_H + self.__LED_MULTIPLIER*channel, 4, extents)
+            pigpio._u2i(result)  # check errors
+
+            byte_val = off & 0xFF
+            extents = [struct.pack("I", byte_val)]
+            result = yield self.i2cbus.apigpio_command_ext(
+                pigpio._PI_CMD_I2CWB,
+                self.i2c, self.__LED0_OFF_L + self.__LED_MULTIPLIER*channel, 4, extents)
+            pigpio._u2i(result)  # check errors
+
+            byte_val = off >> 8
+            extents = [struct.pack("I", byte_val)]
+            result = yield self.i2cbus.apigpio_command_ext(
+                pigpio._PI_CMD_I2CWB,
+                self.i2c, self.__LED0_OFF_H + self.__LED_MULTIPLIER*channel, 4, extents)
+            pigpio._u2i(result)  # check errors
+
+            #update object's channels registers
+            self.channels[channel] = (on, off)
+            #print "PCA9685 "+ str(self.circuit) +" Channel: " + str(channel) + " - " + str((on, off))
+            raise gen.Return(True)
+
+    def stop(self):
+        self.i2cbus.i2c_close(self.i2c)
+
+    def full(self):
+        return {'dev': 'pca9685', 'circuit': self.circuit}
+
+    def register_output(self, output):
+        if not (output in self.channels):
+            self.channels.append(output)
+
+
+class AnalogOutputPCA():
+    def __init__(self, circuit, pca, channel):
+        self.circuit = circuit
+        self.pca = pca
+        self.channel = channel
+        self.value = 0
+        self.value = self.pca.channels[self.channel][1]/409.5
+
+    def full(self):
+        return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value, 'frequency': self.pca.frequency}
+
+    def simple(self):
+        return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value}
+
+    @gen.coroutine
+    def set_value(self, value):
+        value = float(value)
+        result = yield self.pca.set_pwm(self.channel, int(floor(value*409.5+0.5)))
+        self.value = value
+        raise gen.Return(result)
+
+    @gen.coroutine
+    def set(self, value=None, frequency=None):
+        value = float(value)
+        result = yield self.pca.set_pwm(self.channel, int(floor(value*409.5+0.5)))
+        self.value = value
+        raise gen.Return(result)
 
 
 #################################################################
@@ -446,8 +608,7 @@ class UnipiPCA9685(object):
 # PWM on pin 18
 #
 #################################################################
-
-class AnalogOutput():
+class AnalogOutputGPIO():
     def __init__(self, gpiobus, circuit, pin=18, frequency=400, value=0):
         self.bus = gpiobus
         self.circuit = circuit
@@ -560,7 +721,7 @@ class Input():
         self.tick = tick
         devents.status(self)
 
-    #@gen.coroutine    
+    #@gen.coroutine
     def set(self, debounce=None):
         if not (debounce is None):
             if not debounce:
