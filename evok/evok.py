@@ -61,7 +61,7 @@ def enable_cors(handler):
                                                            "X-Requested-With, X-Requested-By, If-Modified-Since, X-File-Name, Cache-Control")
         handler.set_header("Access-Control-Allow-Origin", options.corsdomains)
         handler.set_header("Access-Control-Allow-Credentials", "true")
-        handler.set_header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
+        handler.set_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
 
 
 class userBasicHelper():
@@ -237,7 +237,7 @@ class RestHandler(UserCookieHelper, tornado.web.RequestHandler):
             result = device.set(**kw)
             if is_future(result):
                 result = yield result
-            #print result        
+            #print result
             self.write(json.dumps({'success': True, 'result': result}))
         except Exception, E:
             self.write(json.dumps({'success': False, 'errors': {'__all__': str(E)}}))
@@ -363,9 +363,15 @@ class Handler(userBasicHelper, JSONRPCHandler):
         return sens.get_value()
 
     @tornadorpc.coroutine
-    def pca_set(self, circuit, channel, on, off=0):
+    def pca_set(self, circuit, channel, on, off):
         pca = Devices.by_int(PCA9685, str(circuit))
         result = yield pca.set(channel, on, off)
+        raise gen.Return(result)
+
+    @tornadorpc.coroutine
+    def pca_set_pwm(self, circuit, channel, val):
+        pca = Devices.by_int(PCA9685, str(circuit))
+        result = yield pca.set_pwm(channel, val)
         raise gen.Return(result)
 
     ###### EEprom ######
