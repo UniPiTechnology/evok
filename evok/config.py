@@ -87,13 +87,29 @@ def create_devices(Config):
                 # access to GPIO via pigpio daemon
                 bus = GpioBus(circuit=circuit, host='localhost')
                 Devices.register_device(GPIOBUS, bus)
-            elif devclass in ('AO', 'ANALOGOUTPUT', 'PWM'):
-                # analog output (PWM) on GPIO via pigpio daemon
-                gpiobus = Config.get(section, "gpiobus")
-                bus = Devices.by_int(GPIOBUS, gpiobus)
-                frequency = getintdef(Config, section, "frequency", 100)
-                value = getfloatdef(Config, section, "value", 0)
-                ao = unipig.AnalogOutput(bus, circuit, frequency=frequency, value=value)
+            elif devclass == 'PCA9685':
+                #PCA9685 on I2C
+                i2cbus = Config.get(section, "i2cbus")
+                address = hexint(Config.get(section, "address"))
+                frequency = getintdef(Config, section, "frequency", 400)
+                bus = Devices.by_int(I2CBUS, i2cbus)
+                pca = unipig.UnipiPCA9685(bus, int(circuit), address=address, frequency=frequency)
+                Devices.register_device(PCA9685, pca)
+            elif devclass in ('AO', 'ANALOGOUTPUT'):
+                try:
+                    #analog output on PCA9685
+                    pca = Config.get(section, "pca")
+                    channel = Config.getint(section, "channel")
+                    #value = getfloatdef(Config, section, "value", 0)
+                    driver = Devices.by_int(PCA9685, pca)
+                    ao = unipig.AnalogOutputPCA(circuit, driver, channel)
+                except:
+                    # analog output (PWM) on GPIO via pigpio daemon
+                    gpiobus = Config.get(section, "gpiobus")
+                    bus = Devices.by_int(GPIOBUS, gpiobus)
+                    frequency = getintdef(Config, section, "frequency", 100)
+                    value = getfloatdef(Config, section, "value", 0)
+                    ao = unipig.AnalogOutputGPIO(bus, circuit, frequency=frequency, value=value)
                 Devices.register_device(AO, ao)
             elif devclass in ('INPUT', 'DI'):
                 # digital inputs on GPIO via pigpio daemon
