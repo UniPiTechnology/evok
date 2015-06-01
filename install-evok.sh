@@ -153,9 +153,15 @@ sudo service pigpiod start
 #sudo service evok start
 
 echo "Evok installed sucessfully."
-echo "!REBOOT MIGHT BE NECESSARY FOR  THE CHANGES TO TAKE EFFECT!"
-echo "Then:"
+echo "Info:"
 echo "     1. Edit /etc/evok.conf file according to your choice."
 echo "        If you are running Apache, you must set either evok or apache port different than the other."
 echo "     2. Run 'sudo service evok start/restart/stop' to control the daemon."
 echo "     (3. To uninstall evok run /opt/evok/uninstall-evok.sh)"
+
+if ask "Is it OK to reboot now?"; then
+    reboot
+else
+    echo 'Remember to reboot your Raspberry Pi in order to start using Evok'
+fi
+echo ' '
