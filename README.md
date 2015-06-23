@@ -19,30 +19,26 @@ It also uses some other python libraries that are not installed on Raspbian by d
 Download the latest revision from our repository using git client
 
     git clone https://github.com/UniPiTechnology/evok
-    cd evok
 
 or using wget:
 
     wget https://api.github.com/repos/UniPiTechnology/evok/zipball/master
-    unzip master
-    cd UniPiTechnology-evok-xxxxxxx
+    unzip master && mv UniPiTechnology-evok* evok  
+
+And run the installation script and follow the given instructions
+
+    cd evok
     chmod +x install-evok.sh uninstall-evok.sh
-
-And run the installation script
-
     sudo ./install-evok.sh
 
 To uninstall it, run the installation script which is also located in `/opt/evok/` fodler after installation
 
     sudo ./uninstall-evok.sh
 
-After the installation, do not forget to copy the content of www folder to eg. `/var/www/` (default location for searching static files).
-
-    sudo cp -r www/ /var/
 
 If you need to change the folder or the listening port, do it in /etc/evok.conf file.
 
-When done simply start the daemon by executing `sudo service evok start`
+When done, simply start the daemon by executing `sudo service evok start`
 
 The installation script also enables the I2C subsystem (if not enabled before) but the uninstallation script does not disable it back.
 
