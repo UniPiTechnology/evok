@@ -71,10 +71,13 @@ Simple example using wget to get status of devices:
 * `wget -qO- http://your.pi.ip.address/rest/all` returns status of all devices configured in evok.conf
 * `wget -qO- http://your.pi.ip.address/rest/relay/1` returns status of relay with circuit nr. 1
 * `wget -qO- http://your.pi.ip.address/rest/relay/1/value` returns whether the relay 1 is on or of (1/0)
+* `wget -qO- http://your.pi.ip.address/rest/ao/1/value` returns the value of analog output
+* `wget -qO- http://your.pi.ip.address/rest/ai/1/value` returns the value of analog input
 
 To control a device, all requests must be sent by HTTP POST. Here is a small example of controlling a relay:
 * `wget -qO- http://your.pi.ip.address/rest/relay/3 --post-data='value=1'` sets relay on
 * `wget -qO- http://your.pi.ip.address/rest/relay/3 --post-data='value=0'` sets relay off
+* `wget -qO- http://localhost/rest/ao/1 --post-data='value=5'` set AO to 5V 
 
 ### Websocket
 Register your client at ws://your.unipi.ip.address/ws to receive status messages. Once it is connected, you can also send various commands to the UniPi
