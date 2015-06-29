@@ -77,7 +77,7 @@ Simple example using wget to get status of devices:
 To control a device, all requests must be sent by HTTP POST. Here is a small example of controlling a relay:
 * `wget -qO- http://your.pi.ip.address/rest/relay/3 --post-data='value=1'` sets relay on
 * `wget -qO- http://your.pi.ip.address/rest/relay/3 --post-data='value=0'` sets relay off
-* `wget -qO- http://localhost/rest/ao/1 --post-data='value=5'` set AO to 5V 
+* `wget -qO- http://your.pi.ip.address/rest/ao/1 --post-data='value=5'` set AO to 5V 
 
 ### Websocket
 Register your client at ws://your.unipi.ip.address/ws to receive status messages. Once it is connected, you can also send various commands to the UniPi
