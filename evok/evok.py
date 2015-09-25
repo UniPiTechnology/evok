@@ -430,7 +430,7 @@ def main():
 
     tornado.options.parse_command_line()
 
-    Config = ConfigParser.SafeConfigParser(defaults={'webname': 'unipi', 'staticfiles': '/var/www/evok', 'bus': 1})
+    Config = ConfigParser.RawConfigParser(defaults={'webname': 'unipi', 'staticfiles': '/var/www/evok', 'bus': 1})
     Config.add_section('MAIN')
     path = '/etc/evok.conf'
     if not os.path.isfile(path):
@@ -452,23 +452,14 @@ def main():
     except:
         pass
 
-    try:
-        cors = Config.getboolean("MAIN", "enable_cors")
-        define("cors", default=cors, help="enable CORS support", type=bool)
-    except:
-        define("cors", default=False, help="enable CORS support", type=bool)
+    cors = config.getbooldef(Config, "MAIN", "enable_cors", False)
+    define("cors", default=cors, help="enable CORS support", type=bool)
 
-    try:
-        corsdomains = Config.get("MAIN", "cors_domains")
-        define("corsdomains", default=corsdomains, help="CORS domains separated by whitespace", type=str)
-    except:
-        define("corsdomains", default="*", help="CORS domains separated by whitespace", type=str)
+    corsdomains = config.getstringdef(Config, "MAIN", "cors_domains", "*")
+    define("corsdomains", default=corsdomains, help="CORS domains separated by whitespace", type=bool)
 
-    try:
-        port = Config.getint("MAIN", "port")
-        define("port", default=port, help="run on the given port", type=int)
-    except:
-        define("port", default=80, help="run on the given port", type=int)
+    port = config.getintdef(Config, "MAIN", "port", 80)
+    define("port", default=port, help="Listening port settings", type=bool)
 
     app = tornado.web.Application(
         handlers=[
