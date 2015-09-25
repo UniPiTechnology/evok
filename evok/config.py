@@ -30,6 +30,24 @@ def getfloatdef(Config, section, key, default):
     except:
         return default
 
+def getbooldef(Config, section, key, default):
+    true_booleans = ['yes', 'true', '1']
+    false_booleans = ['no', 'false', '0']
+    try:
+        val = Config.get(section, key).lower()
+        if val in true_booleans:
+            return True
+        if val in false_booleans:
+            return False
+        return default
+    except:
+        return default
+
+def getstringdef(Config, section, key, default):
+    try:
+        return Config.get(section, key)
+    except:
+        return default
 
 def create_devices(Config):
     for section in Config.sections():
@@ -55,15 +73,29 @@ def create_devices(Config):
                 owbus = owclient.OwBusDriver(circuit, taskPipe, resultPipe, bus=bus,
                                              interval=interval, scan_interval=scan_interval)
                 Devices.register_device(OWBUS, owbus)
-            elif devclass == 'SENSOR':
+            elif devclass == 'SENSOR' or devclass == '1WDEVICE':
                 #permanent thermometer
                 bus = Config.get(section, "bus")
                 owbus = Devices.by_int(OWBUS, bus)
                 typ = Config.get(section, "type")
                 address = Config.get(section, "address")
-                interval = Config.getfloat(section, "interval")
-                therm1 = owclient.MySensorFabric(address, typ, owbus, interval=1, circuit=circuit)
-                Devices.register_device(SENSOR, therm1)
+                interval = getintdef(Config, section, "interval", 15)
+                sensor = owclient.MySensorFabric(address, typ, owbus, interval=interval, circuit=circuit, is_static=True)
+                Devices.register_device(SENSOR, sensor)
+            elif devclass == '1WRELAY':
+                # Relays on DS2404
+                sensor = Config.get(section, "sensor")
+                sensor = Devices.by_int(SENSOR, sensor)
+                pin = Config.getint(section, "pin")
+                r = unipig.DS2408_relay(circuit, sensor, pin)
+                Devices.register_device(RELAY, r)
+            elif devclass == '1WINPUT':
+                # Inputs on DS2404
+                sensor = Config.get(section, "sensor")
+                sensor = Devices.by_int(SENSOR, sensor)
+                pin = Config.getint(section, "pin")
+                i = unipig.DS2408_input(circuit, sensor, pin)
+                Devices.register_device(INPUT, i)
             elif devclass == 'I2CBUS':
                 # I2C bus on /dev/i2c-1 via pigpio daemon
                 busid = Config.getint(section, "busid")
