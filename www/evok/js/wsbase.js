@@ -34,7 +34,7 @@ function SyncDevice(msg) {
         name = "Input " + circuit;
     }
     else if (dev_type == 'temp') {
-        name = "Sensor " + circuit;
+        name = "Sensor " + msg.typ + " - " + circuit;
         if (msg.value == null) {
             value = "null";
         }
