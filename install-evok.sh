@@ -70,28 +70,28 @@ enable_ic2() {
     #enable i2c for kernel after 3.18.5
     if kernelget 3.18.5 ;then
         echo "Using kernel newer than 3.18.5"
-        if ! grep -q 'device_tree_param=i2c1=on' /boot/cmdline.txt ;then
-            sudo echo -e "$(cat /boot/config.txt) \n\n#Enable i2c bus 1\ndevice_tree_param=i2c1=on" > /boot/config.txt
+        if ! grep -q 'device_tree_param=i2c1=on' /boot/config.txt ;then
+            echo -e "$(cat /boot/config.txt) \n\n#Enable i2c bus 1\ndevice_tree_param=i2c1=on" > /boot/config.txt
         fi
     else #comment out blacklisted i2c on kernel < 3.18.5
         echo "Using kernel older than 3.18.5"
         if ! grep -q '#blacklist i2c-bcm2708' /etc/modprobe.d/raspi-blacklist.conf ;then
-            sudo sed -i '/blacklist i2c-bcm2708/s/^/#/g' /etc/modprobe.d/raspi-blacklist.conf
+            sed -i '/blacklist i2c-bcm2708/s/^/#/g' /etc/modprobe.d/raspi-blacklist.conf
         fi
     fi
 
     #load modules
     if ! grep -q 'i2c-bcm2708' /etc/modules ;then
-        sudo echo i2c-bcm2708 >> /etc/modules
+        echo i2c-bcm2708 >> /etc/modules
     fi
 
     if ! grep -q 'i2c-dev' /etc/modules ;then
-        sudo echo i2c-dev >> /etc/modules
+        echo i2c-dev >> /etc/modules
     fi
 
     #load modules manually
-    sudo modprobe i2c-bcm2708
-    sudo modprobe i2c-dev
+    modprobe i2c-bcm2708
+    modprobe i2c-dev
 }
 
 
@@ -103,8 +103,9 @@ fi
 echo "Installing evok..."
 enable_ic2
 
-sudo apt-get install -y python-ow python-pip
-sudo pip install tornado toro jsonrpclib
+apt-get update
+apt-get install -y python-ow python-pip make
+pip install tornado toro jsonrpclib
 
 if [ "$(pidof pigpiod)" ]
 then
@@ -118,45 +119,45 @@ make install
 cd ..
 
 #copy tornadorpc
-sudo cp -r tornadorpc_evok /usr/local/lib/python2.7/dist-packages/
+cp -r tornadorpc_evok /usr/local/lib/python2.7/dist-packages/
 
 #copy evok
-sudo cp -r evok/ /opt/
-sudo mkdir -p /var/www/evok && sudo cp -r www/* /var/www/
+cp -r evok/ /opt/
+mkdir -p /var/www/evok && cp -r www/* /var/www/
 
 #copy default config file and init scipts
 if [ -f /etc/evok.conf ]; then
     echo "/etc/evok.conf file already exists"
     if ask "Do you want to overwrite your /etc/evok.conf file?"; then
-        sudo cp etc/evok.conf /etc/
+        cp etc/evok.conf /etc/
     else
         echo "Your current config file was not overwritten."
         echo "Please see a diff between the new and your current config file."
     fi
 else
-    sudo cp etc/evok.conf /etc/
+    cp etc/evok.conf /etc/
 fi
 
-sudo cp etc/init.d/evok /etc/init.d/
-sudo cp etc/init.d/pigpiod /etc/init.d/
-sudo chmod +x /etc/init.d/evok
-sudo chmod +x /etc/init.d/pigpiod
-sudo chmod +x /opt/evok/evok.py
+cp etc/init.d/evok /etc/init.d/
+cp etc/init.d/pigpiod /etc/init.d/
+chmod +x /etc/init.d/evok
+chmod +x /etc/init.d/pigpiod
+chmod +x /opt/evok/evok.py
 
 update-rc.d pigpiod defaults
 update-rc.d evok defaults
 
 #backup uninstallation script
-sudo cp uninstall-evok.sh /opt/evok/
+cp uninstall-evok.sh /opt/evok/
 
-sudo service pigpiod start
-#sudo service evok start
+service pigpiod start
+#service evok start
 
 echo "Evok installed sucessfully."
 echo "Info:"
 echo "     1. Edit /etc/evok.conf file according to your choice."
 echo "        If you are running Apache, you must set either evok or apache port different than the other."
-echo "     2. Run 'sudo service evok start/restart/stop' to control the daemon."
+echo "     2. Run 'service evok start/restart/stop' to control the daemon."
 echo "     (3. To uninstall evok run /opt/evok/uninstall-evok.sh)"
 
 if ask "Is it OK to reboot now?"; then
