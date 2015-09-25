@@ -743,3 +743,79 @@ class Input():
         return self.value
 
 
+class DS2408_pio(object):
+    def __init__(self, circuit, ds2408, pin):
+        self.circuit = circuit
+        self.ds2408 = ds2408
+        self.pin = pin
+        self.value = None
+        self.ds2408.register_pio(self)
+
+    def full(self):
+        pass
+
+    def simple(self):
+        pass
+
+    def set(self, value):
+        pass
+
+    def get_value(self):
+        """ Returns value
+              current on/off value is taken from last value without reading it from hardware
+        """
+        return self.value
+
+    def get(self):
+        return self.get_value()
+
+
+    def set_value(self, value):
+        #value = int(not value)
+        if self.value != value:
+            self.value = value
+            devents.status(self)
+
+
+class DS2408_input(DS2408_pio):
+    def full(self):
+        return {'dev': 'input', 'circuit': self.circuit, 'value': self.value,
+                'time': 0, 'debounce': 0}
+
+    def simple(self):
+        return {'dev': 'input', 'circuit': self.circuit, 'value': self.value}
+
+class DS2408_relay(DS2408_pio):
+    pending_id = 0
+
+    def full(self):
+        return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value, 'pending': self.pending_id != 0}
+
+    def simple(self):
+        return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value}
+
+    @gen.coroutine
+    def set_state(self, value):
+        self.set(value)
+
+    @gen.coroutine
+    def set(self, value=None, timeout=None):
+        if value is None:
+            raise Exception('Value must be specified')
+        value = int(value)
+
+        if not (timeout is None):
+            timeout = float(timeout)
+
+        self.ds2408.m_set_pio(self.circuit, (self.pin, value))
+
+        if timeout is None:
+            raise gen.Return(1 if self.value & value else 0)
+
+        def timercallback():
+            self.pending_id = None
+            self.ds2408.m_set_pio(self.circuit, (self.pin, int(not value)))
+
+        self.pending_id = IOLoop.instance().add_timeout(
+            datetime.timedelta(seconds=float(timeout)), timercallback)
+        raise gen.Return(1 if self.value & value else 0)
