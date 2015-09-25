@@ -46,6 +46,8 @@ class DeviceList(dict):
     def register_device(self, devtype, device):
         """ can be called with devtype = INTEGER or NAME
         """
+        if devtype is None:
+            raise Exception('Devicetype must contain INTEGER OR NAME')
         if type(devtype) is int:
             devdict = self._arr[devtype]
         else:
@@ -67,6 +69,7 @@ OWBUS = 8
 MCP = 9
 GPIOBUS = 10
 PCA9685 = 11
+DS2408 = 12
 
 ## corresponding device types names !! ORDER IS IMPORTANT
 devtype_names = (
@@ -82,6 +85,7 @@ devtype_names = (
     'mcp',
     'gpiobus',
     'pca9685',
+    'ds2408',
 )
 
 devtype_altnames = {
