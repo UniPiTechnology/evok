@@ -31,7 +31,7 @@ For more information, please refer to <http://unlicense.org/>
 #include <stdint.h>
 #include <pthread.h>
 
-#define PIGPIO_VERSION 29
+#define PIGPIO_VERSION 37
 
 /*TEXT
 
@@ -93,7 +93,7 @@ For examples of usage see the C programs within the pigpio archive file.
 
 All the functions which return an int return < 0 on error.
 
-If the library isn't initialised all but the [*gpioCfg**], [*gpioVersion*],
+If the library is not initialised all but the [*gpioCfg**], [*gpioVersion*],
 and [*gpioHardwareRevision*] functions will return PI_NOT_INITIALISED.
 
 If the library is initialised the [*gpioCfg**] functions will
@@ -174,6 +174,7 @@ gpioNotifyPause            Pause notifications
 gpioNotifyClose            Close a notification
 
 gpioSerialReadOpen         Opens a gpio for bit bang serial reads
+gpioSerialReadInvert       Configures normal/inverted for serial reads
 gpioSerialRead             Reads bit bang serial data from a gpio
 gpioSerialReadClose        Closes a gpio for bit bang serial reads
 
@@ -197,9 +198,12 @@ gpioWaveAddGeneric         Adds a series of pulses to the waveform
 gpioWaveAddSerial          Adds serial data to the waveform
 
 gpioWaveCreate             Creates a waveform from added data
-gpioWaveDelete             Deletes one or more waveforms
+gpioWaveDelete             Deletes a waveform
 
 gpioWaveTxSend             Transmits a waveform
+
+gpioWaveChain              Transmits a chain of waveforms
+
 gpioWaveTxBusy             Checks to see if the waveform has ended
 gpioWaveTxStop             Aborts the current waveform
 
@@ -211,34 +215,42 @@ gpioWaveGetPulses          Length in pulses of the current waveform
 gpioWaveGetHighPulses      Length of longest waveform so far
 gpioWaveGetMaxPulses       Absolute maximum allowed pulses
 
-gpioWaveGetCbs             Length in cbs of the current waveform
+gpioWaveGetCbs             Length in control blocks of the current waveform
 gpioWaveGetHighCbs         Length of longest waveform so far
-gpioWaveGetMaxCbs          Absolute maximum allowed cbs
-
-gpioWaveTxStart            Creates/transmits a waveform (DEPRECATED)
+gpioWaveGetMaxCbs          Absolute maximum allowed control blocks
 
 I2C
 
 i2cOpen                    Opens an I2C device
 i2cClose                   Closes an I2C device
 
+i2cWriteQuick              SMBus write quick
+i2cWriteByte               SMBus write byte
+i2cReadByte                SMBus read byte
+i2cWriteByteData           SMBus write byte data
+i2cWriteWordData           SMBus write word data
+i2cReadByteData            SMBus read byte data
+i2cReadWordData            SMBus read word data
+i2cProcessCall             SMBus process call
+i2cWriteBlockData          SMBus write block data
+i2cReadBlockData           SMBus read block data
+i2cBlockProcessCall        SMBus block process call
+
+i2cWriteI2CBlockData       SMBus write I2C block data
+i2cReadI2CBlockData        SMBus read I2C block data
+
 i2cReadDevice              Reads the raw I2C device
 i2cWriteDevice             Writes the raw I2C device
 
-i2cWriteQuick              smbus write quick
-i2cWriteByte               smbus write byte
-i2cReadByte                smbus read byte
-i2cWriteByteData           smbus write byte data
-i2cWriteWordData           smbus write word data
-i2cReadByteData            smbus read byte data
-i2cReadWordData            smbus read word data
-i2cProcessCall             smbus process call
-i2cWriteBlockData          smbus write block data
-i2cReadBlockData           smbus read block data
-i2cBlockProcessCall        smbus block process call
+i2cSwitchCombined          Sets or clears the combined flag
 
-i2cWriteI2CBlockData       smbus write I2C block data
-i2cReadI2CBlockData        smbus read I2C block data
+i2cSegments                Performs multiple I2C transactions
+
+i2cZip                     Performs multiple I2C transactions
+
+bbI2COpen                  Opens gpios for bit banging I2C
+bbI2CClose                 Closes gpios for bit banging I2C
+bbI2CZip                   Performs multiple bit banged I2C transactions
 
 SPI
 
@@ -271,6 +283,12 @@ gpioCfgPermissions         Configure the gpio access permissions
 gpioCfgInterfaces          Configure user interfaces
 gpioCfgInternals           Configure miscellaneous internals
 gpioCfgSocketPort          Configure socket port
+gpioCfgMemAlloc            Configure DMA memory allocation mode
+
+CUSTOM
+
+gpioCustom1                User custom function 1
+gpioCustom2                User custom function 2
 
 UTILITIES
 
@@ -313,85 +331,113 @@ OVERVIEW*/
 
 #define PI_LOCKFILE "/var/run/pigpio.pid"
 
+#define PI_I2C_COMBINED "/sys/module/i2c_bcm2708/parameters/combined"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct
 {
-uint16_t func;
-uint16_t size;
+   uint16_t func;
+   uint16_t size;
 } gpioHeader_t;
 
 typedef struct
 {
-size_t size;
-void *ptr;
-uint32_t data;
+   size_t size;
+   void *ptr;
+   uint32_t data;
 } gpioExtent_t;
 
 typedef struct
 {
-uint32_t tick;
-uint32_t level;
+   uint32_t tick;
+   uint32_t level;
 } gpioSample_t;
 
 typedef struct
 {
-uint16_t seqno;
-uint16_t flags;
-uint32_t tick;
-uint32_t level;
+   uint16_t seqno;
+   uint16_t flags;
+   uint32_t tick;
+   uint32_t level;
 } gpioReport_t;
 
 typedef struct
 {
-uint32_t gpioOn;
-uint32_t gpioOff;
-uint32_t usDelay;
+   uint32_t gpioOn;
+   uint32_t gpioOff;
+   uint32_t usDelay;
 } gpioPulse_t;
 
 #define WAVE_FLAG_READ  1
 #define WAVE_FLAG_TICK  2
-#define WAVE_FLAG_COUNT 4
 
 typedef struct
 {
-uint32_t gpioOn;
-uint32_t gpioOff;
-uint32_t usDelay;
-uint32_t flags;
+   uint32_t gpioOn;
+   uint32_t gpioOff;
+   uint32_t usDelay;
+   uint32_t flags;
 } rawWave_t;
+
+/*
+CBs are used in order from the lowest numbered CB up to
+the maximum NUM_WAVE_CBS.
+
+OOLS are used from the bottom climbing up and from
+the top climbing down.
+
+The gpio on and off settings climb up from the bottom (botOOL/numBOOL).
+
+The level and tick read values are stored in descending locations
+from the top (topOOL/numTOOL).
+*/
 
 typedef struct
 {
    uint16_t botCB;  /* first CB used by wave  */
    uint16_t topCB;  /* last CB used by wave   */
-   uint16_t botOOL; /* last OOL used by wave  */
-   uint16_t topOOL; /* first OOL used by wave */
+   uint16_t botOOL; /* first bottom OOL used by wave  */
+                    /* botOOL to botOOL + numBOOL -1 are in use */
+   uint16_t topOOL; /* last top OOL used by wave */
+                    /* topOOL - numTOOL to topOOL are in use.*/
+   uint16_t deleted;
+   uint16_t numCB;
+   uint16_t numBOOL;
+   uint16_t numTOOL;
 } rawWaveInfo_t;
 
 typedef struct
 {
-int clk;     /* gpio for clock           */
-int mosi;    /* gpio for MOSI            */
-int miso;    /* gpio for MISO            */
-int ss_pol;  /* slave select off state   */
-int ss_us;   /* delay after slave select */
-int clk_pol; /* clock off state          */
-int clk_pha; /* clock phase              */
-int clk_us;  /* clock micros             */
+   int clk;     /* gpio for clock           */
+   int mosi;    /* gpio for MOSI            */
+   int miso;    /* gpio for MISO            */
+   int ss_pol;  /* slave select off state   */
+   int ss_us;   /* delay after slave select */
+   int clk_pol; /* clock off state          */
+   int clk_pha; /* clock phase              */
+   int clk_us;  /* clock micros             */
 } rawSPI_t;
 
 typedef struct { /* linux/arch/arm/mach-bcm2708/include/mach/dma.h */
-uint32_t info;
-uint32_t src;
-uint32_t dst;
-uint32_t length;
-uint32_t stride;
-uint32_t next;
-uint32_t pad[2];
+   uint32_t info;
+   uint32_t src;
+   uint32_t dst;
+   uint32_t length;
+   uint32_t stride;
+   uint32_t next;
+   uint32_t pad[2];
 } rawCbs_t;
+
+typedef struct
+{
+   uint16_t addr;  /* slave address       */
+   uint16_t flags;
+   uint16_t len;   /* msg length          */
+   uint8_t  *buf;  /* pointer to msg data */
+} pi_i2c_msg_t;
 
 typedef void (*gpioAlertFunc_t)    (int      gpio,
                                     int      level,
@@ -441,7 +487,7 @@ typedef void *(gpioThreadFunc_t) (void *);
 #define PI_LOW   0
 #define PI_HIGH  1
 
-/* level: only reported for gpio timeout, see gpioSetWatchdog */
+/* level: only reported for gpio time-out, see gpioSetWatchdog */
 
 #define PI_TIMEOUT 2
 
@@ -479,9 +525,9 @@ typedef void *(gpioThreadFunc_t) (void *);
 
 /* hardware PWM */
 
-#define PI_HW_PWM_MIN_FREQ 5
-#define PI_HW_PWM_MAX_FREQ 50000
-#define PI_HW_PWM_RANGE 5000
+#define PI_HW_PWM_MIN_FREQ 1
+#define PI_HW_PWM_MAX_FREQ 125000000
+#define PI_HW_PWM_RANGE 1000000
 
 /* hardware clock */
 
@@ -490,6 +536,7 @@ typedef void *(gpioThreadFunc_t) (void *);
 
 #define PI_NOTIFY_SLOTS  32
 
+#define PI_NTFY_FLAGS_ALIVE    (1 <<6)
 #define PI_NTFY_FLAGS_WDOG     (1 <<5)
 #define PI_NTFY_FLAGS_BIT(x) (((x)<<0)&31)
 
@@ -497,9 +544,23 @@ typedef void *(gpioThreadFunc_t) (void *);
 #define PI_WAVE_MAX_PULSES (PI_WAVE_BLOCKS * 3000)
 #define PI_WAVE_MAX_CHARS  (PI_WAVE_BLOCKS *  300)
 
-#define PI_BB_MIN_BAUD         50
-#define PI_BB_RX_MAX_BAUD  250000
-#define PI_BB_TX_MAX_BAUD 1000000
+#define PI_BB_I2C_MIN_BAUD     50
+#define PI_BB_I2C_MAX_BAUD 500000
+
+#define PI_BB_SER_MIN_BAUD     50
+#define PI_BB_SER_MAX_BAUD 250000
+
+#define PI_BB_SER_NORMAL 0
+#define PI_BB_SER_INVERT 1
+
+#define PI_WAVE_MIN_BAUD      50
+#define PI_WAVE_MAX_BAUD 1000000
+
+//#define PI_SPI_MIN_BAUD     32000
+//#define PI_SPI_MAX_BAUD 125000000
+
+#define PI_SPI_MIN_BAUD     1
+#define PI_SPI_MAX_BAUD 500000000
 
 #define PI_MIN_WAVE_DATABITS 1
 #define PI_MAX_WAVE_DATABITS 32
@@ -509,7 +570,12 @@ typedef void *(gpioThreadFunc_t) (void *);
 
 #define PI_WAVE_MAX_MICROS (30 * 60 * 1000000) /* half an hour */
 
-#define PI_MAX_WAVES 512
+#define PI_MAX_WAVES 250
+
+#define PI_MAX_WAVE_CYCLES 65535
+#define PI_MAX_WAVE_DELAY  65535
+
+#define PI_WAVE_COUNT_PAGES 10
 
 /* wave tx mode */
 
@@ -518,20 +584,48 @@ typedef void *(gpioThreadFunc_t) (void *);
 
 /* I2C, SPI, SER */
 
-#define MIN_SPI_SPEED 32000
-#define MAX_SPI_SPEED 125000000
-
 #define PI_I2C_SLOTS 32
 #define PI_SPI_SLOTS 16
 #define PI_SER_SLOTS 8
 
 #define PI_NUM_I2C_BUS 2
+#define PI_MAX_I2C_ADDR 0x7F
 
 #define PI_NUM_AUX_SPI_CHANNEL 3
 #define PI_NUM_STD_SPI_CHANNEL 2
 
 #define PI_MAX_I2C_DEVICE_COUNT (1<<16)
 #define PI_MAX_SPI_DEVICE_COUNT (1<<16)
+
+/* max pi_i2c_msg_t per transaction */
+
+#define  PI_I2C_RDRW_IOCTL_MAX_MSGS 42
+
+/* flags for i2cTransaction, pi_i2c_msg_t */
+
+#define PI_I2C_M_WR           0x0000 /* write data */
+#define PI_I2C_M_RD           0x0001 /* read data */
+#define PI_I2C_M_TEN          0x0010 /* ten bit chip address */
+#define PI_I2C_M_RECV_LEN     0x0400 /* length will be first received byte */
+#define PI_I2C_M_NO_RD_ACK    0x0800 /* if I2C_FUNC_PROTOCOL_MANGLING */
+#define PI_I2C_M_IGNORE_NAK   0x1000 /* if I2C_FUNC_PROTOCOL_MANGLING */
+#define PI_I2C_M_REV_DIR_ADDR 0x2000 /* if I2C_FUNC_PROTOCOL_MANGLING */
+#define PI_I2C_M_NOSTART      0x4000 /* if I2C_FUNC_PROTOCOL_MANGLING */
+
+/* bbI2CZip and i2cZip commands */
+
+#define PI_I2C_END          0
+#define PI_I2C_ESC          1
+#define PI_I2C_START        2
+#define PI_I2C_COMBINED_ON  2
+#define PI_I2C_STOP         3
+#define PI_I2C_COMBINED_OFF 3
+#define PI_I2C_ADDR         4
+#define PI_I2C_FLAGS        5
+#define PI_I2C_READ         6
+#define PI_I2C_WRITE        7
+
+/* SPI */
 
 #define PI_SPI_FLAGS_BITLEN(x) ((x&63)<<16)
 #define PI_SPI_FLAGS_RX_LSB(x)  ((x&1)<<15)
@@ -620,6 +714,11 @@ typedef void *(gpioThreadFunc_t) (void *);
 #define PI_DISABLE_FIFO_IF 1
 #define PI_DISABLE_SOCK_IF 2
 
+/* memAllocMode */
+
+#define PI_MEM_ALLOC_AUTO    0
+#define PI_MEM_ALLOC_PAGEMAP 1
+#define PI_MEM_ALLOC_MAILBOX 2
 
 /*F*/
 int gpioInitialise(void);
@@ -654,7 +753,7 @@ Returns nothing.
 
 Call before program exit.
 
-This function resets the DMA and PWM peripherals, releases memory, and
+This function resets the used DMA channels, releases memory, and
 terminates any running threads.
 
 ...
@@ -814,10 +913,13 @@ Returns between 0 (off) and range (fully on) if OK, otherwise
 PI_BAD_USER_GPIO or PI_NOT_PWM_GPIO.
 
 For normal PWM the dutycycle will be out of the defined range
-for the gpio (see [*gpioGetPWMrange*]).  If a hardware clock is
-active on the gpio the reported dutycycle will be 500 (out of 1000).
+for the gpio (see [*gpioGetPWMrange*]).
+
+If a hardware clock is active on the gpio the reported dutycycle
+will be 500000 (500k) out of 1000000 (1M).
+
 If hardware PWM is active on the gpio the reported dutycycle
-will be out of a 1000.
+will be out of a 1000000 (1M).
 
 Normal PWM range defaults to 255.
 D*/
@@ -869,7 +971,7 @@ user_gpio: 0-31
 . .
 
 If a hardware clock or hardware PWM is active on the gpio
-the reported range will be 1000.
+the reported range will be 1000000 (1M).
 
 ...
 r = gpioGetPWMrange(23);
@@ -887,8 +989,11 @@ PI_BAD_USER_GPIO.
 user_gpio: 0-31
 . .
 
-If a hardware clock or hardware PWM is active on the gpio
-the reported real range will be 1000.
+If a hardware clock is active on the gpio the reported real
+range will be 1000000 (1M).
+
+If hardware PWM is active on the gpio the reported real range
+will be approximately 250M divided by the set PWM frequency.
 
 ...
 rr = gpioGetPWMrealRange(17);
@@ -964,8 +1069,11 @@ user_gpio: 0-31
 . .
 
 For normal PWM the frequency will be that defined for the gpio by
-[*gpioSetPWMfrequency*].  If a hardware clock is active on the gpio
-the reported frequency will be that set by [*gpioHardwareClock*].
+[*gpioSetPWMfrequency*].
+
+If a hardware clock is active on the gpio the reported frequency
+will be that set by [*gpioHardwareClock*].
+
 If hardware PWM is active on the gpio the reported frequency
 will be that set by [*gpioHardwarePWM*].
 
@@ -1209,15 +1317,21 @@ typedef struct
 } gpioReport_t;
 . .
 
-seqno starts at 0 each time the handle is opened and then increments
+seqno: starts at 0 each time the handle is opened and then increments
 by one for each report.
 
-flags, if bit 5 is set then bits 0-4 of the flags indicate a gpio
-which has had a watchdog timeout.
+flags: two flags are defined, PI_NTFY_FLAGS_WDOG and PI_NTFY_FLAGS_ALIVE.
+If bit 5 is set (PI_NTFY_FLAGS_WDOG) then bits 0-4 of the flags
+indicate a gpio which has had a watchdog timeout; if bit 6 is set
+(PI_NTFY_FLAGS_ALIVE) this indicates a keep alive signal on the
+pipe/socket and is sent once a minute in the absence of other
+notification activity.
 
-tick is the number of microseconds since system boot.
+tick: the number of microseconds since system boot.  It wraps around
+after 1h12m.
 
-level indicates the level of each gpio.
+level: indicates the level of each gpio.  If bit 1<<x is set then
+gpio x is high.
 
 ...
 // Start notifications for gpios 1, 4, 6, 7, 10.
@@ -1361,9 +1475,9 @@ D*/
 /*F*/
 int gpioWaveAddSerial
    (unsigned user_gpio,
-    unsigned bbBaud,
-    unsigned bbBits,
-    unsigned bbStop,
+    unsigned baud,
+    unsigned data_bits,
+    unsigned stop_bits,
     unsigned offset,
     unsigned numBytes,
     char     *str);
@@ -1374,9 +1488,9 @@ microseconds from the start of the waveform.
 
 . .
 user_gpio: 0-31
-   bbBaud: 100-1000000
-   bbBits: 1-32
-   bbStop: 2-8
+     baud: 50-1000000
+data_bits: 1-32
+stop_bits: 2-8
    offset: 0-
  numBytes: 1-
       str: an array of chars (which may contain nulls)
@@ -1389,19 +1503,19 @@ or PI_TOO_MANY_PULSES.
 
 NOTES:
 
-The serial data is formatted as one start bit, bbBits data bits, and
-bbStop/2 stop bits.
+The serial data is formatted as one start bit, data_bits data bits, and
+stop_bits/2 stop bits.
 
 It is legal to add serial data streams with different baud rates to
 the same waveform.
 
 numBytes is the number of bytes of data in str.
 
-The bytes required for each character depend upon bbBits.
+The bytes required for each character depend upon data_bits.
 
-For bbBits 1-8 there will be one byte per character. 
-For bbBits 9-16 there will be two bytes per character. 
-For bbBits 17-32 there will be four bytes per character.
+For data_bits 1-8 there will be one byte per character. 
+For data_bits 9-16 there will be two bytes per character. 
+For data_bits 17-32 there will be four bytes per character.
 
 ...
 #define MSG_LEN 8
@@ -1426,8 +1540,9 @@ D*/
 int gpioWaveCreate(void);
 /*D
 This function creates a waveform from the data provided by the prior
-calls to the [*gpioWaveAdd**] functions.  Upon success a positive wave id
-is returned.
+calls to the [*gpioWaveAdd**] functions.  Upon success a wave id
+greater than or equal to 0 is returned, otherwise PI_EMPTY_WAVEFORM,
+PI_TOO_MANY_CBS, PI_TOO_MANY_OOL, or PI_NO_WAVEFORM_ID.
 
 The data provided by the [*gpioWaveAdd**] functions is consumed by this
 function.
@@ -1479,8 +1594,7 @@ D*/
 /*F*/
 int gpioWaveDelete(unsigned wave_id);
 /*D
-This function deletes all created waveforms with ids greater than or
-equal to wave_id.
+This function deletes the waveform with id wave_id.
 
 . .
 wave_id: >=0, as returned by [*gpioWaveCreate*]
@@ -1489,26 +1603,6 @@ wave_id: >=0, as returned by [*gpioWaveCreate*]
 Wave ids are allocated in order, 0, 1, 2, etc.
 
 Returns 0 if OK, otherwise PI_BAD_WAVE_ID.
-D*/
-
-
-/*F*/
-int gpioWaveTxStart(unsigned wave_mode); /* DEPRECATED */
-/*D
-This function creates and then transmits a waveform.  The mode
-determines whether the waveform is sent once or cycles endlessly.
-
-NOTE: Any hardware PWM started by [*gpioHardwarePWM*] will be cancelled.
-
-. .
-wave_mode: 0 (PI_WAVE_MODE_ONE_SHOT), 1 (PI_WAVE_MODE_REPEAT)
-. .
-
-This function is deprecated and should no longer be used.  Use
-[*gpioWaveCreate*] and [*gpioWaveTxSend*] instead.
-
-Returns the number of DMA control blocks in the waveform if OK,
-otherwise PI_BAD_WAVE_MODE.
 D*/
 
 
@@ -1527,6 +1621,101 @@ wave_mode: 0 (PI_WAVE_MODE_ONE_SHOT), 1 (PI_WAVE_MODE_REPEAT)
 
 Returns the number of DMA control blocks in the waveform if OK,
 otherwise PI_BAD_WAVE_ID, or PI_BAD_WAVE_MODE.
+D*/
+
+
+/*F*/
+int gpioWaveChain(char *buf, unsigned bufSize);
+/*D
+This function transmits a chain of waveforms.
+
+NOTE: Any hardware PWM started by [*gpioHardwarePWM*] will be cancelled.
+
+The waves to be transmitted are specified by the contents of buf
+which contains an ordered list of [*wave_id*]s and optional command
+codes and related data.
+
+. .
+    buf: pointer to the wave_ids and optional command codes
+bufSize: the number of bytes in buf
+. .
+
+Returns 0 if OK, otherwise PI_CHAIN_NESTING, PI_CHAIN_LOOP_CNT, PI_BAD_CHAIN_LOOP, PI_BAD_CHAIN_CMD, PI_CHAIN_COUNTER,
+PI_BAD_CHAIN_DELAY, PI_CHAIN_TOO_BIG, or PI_BAD_WAVE_ID.
+
+Each wave is transmitted in the order specified.  A wave may
+occur multiple times per chain.
+
+A blocks of waves may be transmitted multiple times by using
+the loop commands. The block is bracketed by loop start and
+end commands.  Loops may be nested.
+
+Delays between waves may be added with the delay command.
+
+The following command codes are supported:
+
+Name        @ Cmd & Data @ Meaning
+Loop Start  @ 255 0      @ Identify start of a wave block
+Loop Repeat @ 255 1 x y  @ loop x + y*256 times
+Delay       @ 255 2 x y  @ delay x + y*256 microseconds
+
+The code is currently dimensioned to support a chain with roughly
+600 entries and 20 loop counters.
+
+...
+#include <stdio.h>
+#include <pigpio.h>
+
+#define WAVES 5
+#define GPIO 4
+
+int main(int argc, char *argv[])
+{
+   int i, wid[WAVES];
+
+   if (gpioInitialise()<0) return -1;
+
+   gpioSetMode(GPIO, PI_OUTPUT);
+
+   printf("start piscope, press return\n"); getchar();
+
+   for (i=0; i<WAVES; i++)
+   {
+      gpioWaveAddGeneric(2, (gpioPulse_t[])
+         {{1<<GPIO, 0,        20},
+          {0, 1<<GPIO, (i+1)*200}});
+
+      wid[i] = gpioWaveCreate();
+   }
+
+   gpioWaveChain((char []) {
+      wid[4], wid[3], wid[2],       // transmit waves 4+3+2
+      255, 0,                       // loop start
+         wid[0], wid[0], wid[0],    // transmit waves 0+0+0
+         255, 0,                    // loop start
+            wid[0], wid[1],         // transmit waves 0+1
+            255, 2, 0x88, 0x13,     // delay 5000us
+         255, 1, 30, 0,             // loop end (repeat 30 times)
+         255, 0,                    // loop start
+            wid[2], wid[3], wid[0], // transmit waves 2+3+0
+            wid[3], wid[1], wid[2], // transmit waves 3+1+2
+         255, 1, 10, 0,             // loop end (repeat 10 times)
+      255, 1, 5, 0,                 // loop end (repeat 5 times)
+      wid[4], wid[4], wid[4],       // transmit waves 4+4+4
+      255, 2, 0x20, 0x4E,           // delay 20000us
+      wid[0], wid[0], wid[0],       // transmit waves 0+0+0
+
+      }, 46);
+
+   while (gpioWaveTxBusy()) time_sleep(0.1);
+
+   for (i=0; i<WAVES; i++) gpioWaveDelete(wid[i]);
+
+   printf("stop piscope, press return\n"); getchar();
+
+   gpioTerminate();
+}
+...
 D*/
 
 
@@ -1622,14 +1811,14 @@ D*/
 
 
 /*F*/
-int gpioSerialReadOpen(unsigned user_gpio, unsigned bbBaud, unsigned bbBits);
+int gpioSerialReadOpen(unsigned user_gpio, unsigned baud, unsigned data_bits);
 /*D
 This function opens a gpio for bit bang reading of serial data.
 
 . .
 user_gpio: 0-31
-   bbBaud: 100-250000
-   bbBits: 1-32
+     baud: 50-250000
+data_bits: 1-32
 . .
 
 Returns 0 if OK, otherwise PI_BAD_USER_GPIO, PI_BAD_WAVE_BAUD,
@@ -1640,6 +1829,26 @@ The serial data is returned in a cyclic buffer and is read using
 
 It is the caller's responsibility to read data from the cyclic buffer
 in a timely fashion.
+D*/
+
+/*F*/
+int gpioSerialReadInvert(unsigned user_gpio, unsigned invert);
+/*D
+This function configures the level logic for bit bang serial reads.
+
+Pass PI_BB_SER_INVERT to invert the serial logic.  Pass PI_BB_SER_NORMAL for
+normal logic.  Default is PI_BB_SER_NORMAL.
+
+. .
+user_gpio: 0-31
+invert: 0-1
+. .
+
+Returns 0 if OK, otherwise PI_BAD_USER_GPIO, PI_GPIO_IN_USE,
+PI_NOT_SERIAL_GPIO, or PI_BAD_SER_INVERT.
+
+The gpio must be opened for bit bang reading of serial data using
+[*gpioSerialReadOpen*] prior to calling this function.
 D*/
 
 
@@ -1659,11 +1868,11 @@ Returns the number of bytes copied if OK, otherwise PI_BAD_USER_GPIO
 or PI_NOT_SERIAL_GPIO.
 
 The bytes returned for each character depend upon the number of
-data bits [*bbBits*] specified in the [*gpioSerialReadOpen*] command.
+data bits [*data_bits*] specified in the [*gpioSerialReadOpen*] command.
 
-For [*bbBits*] 1-8 there will be one byte per character.
-For [*bbBits*] 9-16 there will be two bytes per character.
-For [*bbBits*] 17-32 there will be four bytes per character.
+For [*data_bits*] 1-8 there will be one byte per character. 
+For [*data_bits*] 9-16 there will be two bytes per character. 
+For [*data_bits*] 17-32 there will be four bytes per character.
 D*/
 
 
@@ -1679,7 +1888,6 @@ user_gpio: 0-31, previously opened with [*gpioSerialReadOpen*]
 Returns 0 if OK, otherwise PI_BAD_USER_GPIO, or PI_NOT_SERIAL_GPIO.
 D*/
 
-
 /*F*/
 int i2cOpen(unsigned i2cBus, unsigned i2cAddr, unsigned i2cFlags);
 /*D
@@ -1687,7 +1895,7 @@ This returns a handle for the device at the address on the I2C bus.
 
 . .
   i2cBus: 0-1
- i2cAddr: 0x08-0x77
+ i2cAddr: 0x00-0x7F
 i2cFlags: 0
 . .
 
@@ -1695,6 +1903,22 @@ No flags are currently defined.  This parameter should be set to zero.
 
 Returns a handle (>=0) if OK, otherwise PI_BAD_I2C_BUS, PI_BAD_I2C_ADDR,
 PI_BAD_FLAGS, PI_NO_HANDLE, or PI_I2C_OPEN_FAILED.
+
+For the SMBus commands the low level transactions are shown at the end
+of the function description.  The following abbreviations are used.
+
+. .
+S     (1 bit) : Start bit
+P     (1 bit) : Stop bit
+Rd/Wr (1 bit) : Read/Write bit. Rd equals 1, Wr equals 0.
+A, NA (1 bit) : Accept and not accept bit. 
+Addr  (7 bits): I2C 7 bit address.
+Comm  (8 bits): Command byte, a data byte which often selects a register.
+Data  (8 bits): A data byte.
+Count (8 bits): A data byte containing the length of a block operation.
+
+[..]: Data sent by the device.
+. .
 D*/
 
 
@@ -1710,6 +1934,300 @@ handle: >=0, as returned by a call to [*i2cOpen*]
 Returns 0 if OK, otherwise PI_BAD_HANDLE.
 D*/
 
+
+/*F*/
+int i2cWriteQuick(unsigned handle, unsigned bit);
+/*D
+This sends a single bit (in the Rd/Wr bit) to the device associated
+with handle.
+
+. .
+handle: >=0, as returned by a call to [*i2cOpen*]
+   bit: 0-1, the value to write
+. .
+
+Returns 0 if OK, otherwise PI_BAD_HANDLE, PI_BAD_PARAM, or
+PI_I2C_WRITE_FAILED.
+
+Quick command. SMBus 2.0 5.5.1
+. .
+S Addr Rd/Wr [A] P
+. .
+D*/
+
+
+/*F*/
+int i2cWriteByte(unsigned handle, unsigned bVal);
+/*D
+This sends a single byte to the device associated with handle.
+
+. .
+handle: >=0, as returned by a call to [*i2cOpen*]
+  bVal: 0-0xFF, the value to write
+. .
+
+Returns 0 if OK, otherwise PI_BAD_HANDLE, PI_BAD_PARAM, or
+PI_I2C_WRITE_FAILED.
+
+Send byte. SMBus 2.0 5.5.2
+. .
+S Addr Wr [A] Data [A] P
+. .
+D*/
+
+
+/*F*/
+int i2cReadByte(unsigned handle);
+/*D
+This reads a single byte from the device associated with handle.
+
+. .
+handle: >=0, as returned by a call to [*i2cOpen*]
+. .
+
+Returns the byte read (>=0) if OK, otherwise PI_BAD_HANDLE,
+or PI_I2C_READ_FAILED.
+
+Receive byte. SMBus 2.0 5.5.3
+. .
+S Addr Rd [A] [Data] NA P
+. .
+D*/
+
+
+/*F*/
+int i2cWriteByteData(unsigned handle, unsigned i2cReg, unsigned bVal);
+/*D
+This writes a single byte to the specified register of the device
+associated with handle.
+
+. .
+handle: >=0, as returned by a call to [*i2cOpen*]
+i2cReg: 0-255, the register to write
+  bVal: 0-0xFF, the value to write
+. .
+
+Returns 0 if OK, otherwise PI_BAD_HANDLE, PI_BAD_PARAM, or
+PI_I2C_WRITE_FAILED.
+
+Write byte. SMBus 2.0 5.5.4
+. .
+S Addr Wr [A] Comm [A] Data [A] P
+. .
+D*/
+
+
+/*F*/
+int i2cWriteWordData(unsigned handle, unsigned i2cReg, unsigned wVal);
+/*D
+This writes a single 16 bit word to the specified register of the device
+associated with handle.
+
+. .
+handle: >=0, as returned by a call to [*i2cOpen*]
+i2cReg: 0-255, the register to write
+  wVal: 0-0xFFFF, the value to write
+. .
+
+Returns 0 if OK, otherwise PI_BAD_HANDLE, PI_BAD_PARAM, or
+PI_I2C_WRITE_FAILED.
+
+Write word. SMBus 2.0 5.5.4
+. .
+S Addr Wr [A] Comm [A] DataLow [A] DataHigh [A] P
+. .
+D*/
+
+
+/*F*/
+int i2cReadByteData(unsigned handle, unsigned i2cReg);
+/*D
+This reads a single byte from the specified register of the device
+associated with handle.
+
+. .
+handle: >=0, as returned by a call to [*i2cOpen*]
+i2cReg: 0-255, the register to read
+. .
+
+Returns the byte read (>=0) if OK, otherwise PI_BAD_HANDLE,
+PI_BAD_PARAM, or PI_I2C_READ_FAILED.
+
+Read byte. SMBus 2.0 5.5.5
+. .
+S Addr Wr [A] Comm [A] S Addr Rd [A] [Data] NA P
+. .
+D*/
+
+
+/*F*/
+int i2cReadWordData(unsigned handle, unsigned i2cReg);
+/*D
+This reads a single 16 bit word from the specified register of the device
+associated with handle.
+
+. .
+handle: >=0, as returned by a call to [*i2cOpen*]
+i2cReg: 0-255, the register to read
+. .
+
+Returns the word read (>=0) if OK, otherwise PI_BAD_HANDLE,
+PI_BAD_PARAM, or PI_I2C_READ_FAILED.
+
+Read word. SMBus 2.0 5.5.5
+. .
+S Addr Wr [A] Comm [A] S Addr Rd [A] [DataLow] A [DataHigh] NA P
+. .
+D*/
+
+
+/*F*/
+int i2cProcessCall(unsigned handle, unsigned i2cReg, unsigned wVal);
+/*D
+This writes 16 bits of data to the specified register of the device
+associated with handle and reads 16 bits of data in return.
+
+. .
+handle: >=0, as returned by a call to [*i2cOpen*]
+i2cReg: 0-255, the register to write/read
+  wVal: 0-0xFFFF, the value to write
+. .
+
+Returns the word read (>=0) if OK, otherwise PI_BAD_HANDLE,
+PI_BAD_PARAM, or PI_I2C_READ_FAILED.
+
+Process call. SMBus 2.0 5.5.6
+. .
+S Addr Wr [A] Comm [A] DataLow [A] DataHigh [A]
+   S Addr Rd [A] [DataLow] A [DataHigh] NA P
+. .
+D*/
+
+
+/*F*/
+int i2cWriteBlockData(
+unsigned handle, unsigned i2cReg, char *buf, unsigned count);
+/*D
+This writes up to 32 bytes to the specified register of the device
+associated with handle.
+
+. .
+handle: >=0, as returned by a call to [*i2cOpen*]
+i2cReg: 0-255, the register to write
+   buf: an array with the data to send
+ count: 1-32, the number of bytes to write
+. .
+
+Returns 0 if OK, otherwise PI_BAD_HANDLE, PI_BAD_PARAM, or
+PI_I2C_WRITE_FAILED.
+
+Block write. SMBus 2.0 5.5.7
+. .
+S Addr Wr [A] Comm [A] Count [A] Data [A] Data [A] ... [A] Data [A] P
+. .
+D*/
+
+
+/*F*/
+int i2cReadBlockData(unsigned handle, unsigned i2cReg, char *buf);
+/*D
+This reads a block of up to 32 bytes from the specified register of
+the device associated with handle.
+
+. .
+handle: >=0, as returned by a call to [*i2cOpen*]
+i2cReg: 0-255, the register to read
+   buf: an array to receive the read data
+. .
+
+The amount of returned data is set by the device.
+
+Returns the number of bytes read (>=0) if OK, otherwise PI_BAD_HANDLE,
+PI_BAD_PARAM, or PI_I2C_READ_FAILED.
+
+Block read. SMBus 2.0 5.5.7
+. .
+S Addr Wr [A] Comm [A]
+   S Addr Rd [A] [Count] A [Data] A [Data] A ... A [Data] NA P
+. .
+D*/
+
+
+/*F*/
+int i2cBlockProcessCall(
+unsigned handle, unsigned i2cReg, char *buf, unsigned count);
+/*D
+This writes data bytes to the specified register of the device
+associated with handle and reads a device specified number
+of bytes of data in return.
+
+. .
+handle: >=0, as returned by a call to [*i2cOpen*]
+i2cReg: 0-255, the register to write/read
+   buf: an array with the data to send and to receive the read data
+ count: 1-32, the number of bytes to write
+. .
+
+Returns the number of bytes read (>=0) if OK, otherwise PI_BAD_HANDLE,
+PI_BAD_PARAM, or PI_I2C_READ_FAILED.
+
+The SMBus 2.0 documentation states that a minimum of 1 byte may be
+sent and a minimum of 1 byte may be received.  The total number of
+bytes sent/received must be 32 or less.
+
+Block write-block read. SMBus 2.0 5.5.8
+. .
+S Addr Wr [A] Comm [A] Count [A] Data [A] ...
+   S Addr Rd [A] [Count] A [Data] ... A P
+. .
+D*/
+
+
+/*F*/
+int i2cReadI2CBlockData(
+unsigned handle, unsigned i2cReg, char *buf, unsigned count);
+/*D
+This reads count bytes from the specified register of the device
+associated with handle .  The count may be 1-32.
+
+. .
+handle: >=0, as returned by a call to [*i2cOpen*]
+i2cReg: 0-255, the register to read
+   buf: an array to receive the read data
+ count: 1-32, the number of bytes to read
+. .
+
+Returns the number of bytes read (>0) if OK, otherwise PI_BAD_HANDLE,
+PI_BAD_PARAM, or PI_I2C_READ_FAILED.
+
+. .
+S Addr Wr [A] Comm [A]
+   S Addr Rd [A] [Data] A [Data] A ... A [Data] NA P
+. .
+D*/
+
+
+/*F*/
+int i2cWriteI2CBlockData(
+unsigned handle, unsigned i2cReg, char *buf, unsigned count);
+/*D
+This writes 1 to 32 bytes to the specified register of the device
+associated with handle.
+
+. .
+handle: >=0, as returned by a call to [*i2cOpen*]
+i2cReg: 0-255, the register to write
+   buf: the data to write
+ count: 1-32, the number of bytes to write
+. .
+
+Returns 0 if OK, otherwise PI_BAD_HANDLE, PI_BAD_PARAM, or
+PI_I2C_WRITE_FAILED.
+
+. .
+S Addr Wr [A] Comm [A] Data [A] Data [A] ... [A] Data [A] P
+. .
+D*/
 
 /*F*/
 int i2cReadDevice(unsigned handle, char *buf, unsigned count);
@@ -1742,272 +2260,224 @@ Returns 0 if OK, otherwise PI_BAD_HANDLE, PI_BAD_PARAM, or
 PI_I2C_WRITE_FAILED.
 D*/
 
+/*F*/
+void i2cSwitchCombined(int setting);
+/*D
+This sets the I2C (i2c-bcm2708) module "use combined transactions"
+parameter on or off.
+
+. .
+setting: 0 to set the parameter off, non-zero to set it on
+. .
+
+
+NOTE: when the flag is on a write followed by a read to the same
+slave address will use a repeated start (rather than a stop/start).
+D*/
 
 /*F*/
-int i2cWriteQuick(unsigned handle, unsigned bit);
+int i2cSegments(unsigned handle, pi_i2c_msg_t *segs, unsigned numSegs);
 /*D
-This sends a single bit (in the Rd/Wr bit) to the device associated
-with handle.
+This function executes multiple I2C segments in one transaction by
+calling the I2C_RDWR ioctl.
+
+. .
+ handle: >=0, as returned by a call to [*i2cOpen*]
+   segs: an array of I2C segments
+numSegs: >0, the number of I2C segments
+. .
+
+Returns the number of segments if OK, otherwise PI_BAD_I2C_SEG.
+D*/
+
+/*F*/
+int i2cZip(
+   unsigned handle,
+   char    *inBuf,
+   unsigned inLen,
+   char    *outBuf,
+   unsigned outLen);
+/*D
+This function executes a sequence of I2C operations.  The
+operations to be performed are specified by the contents of inBuf
+which contains the concatenated command codes and associated data.
 
 . .
 handle: >=0, as returned by a call to [*i2cOpen*]
-   bit: 0-1, the value to write
+ inBuf: pointer to the concatenated I2C commands, see below
+ inLen: size of command buffer
+outBuf: pointer to buffer to hold returned data
+outLen: size of output buffer
 . .
 
-Returns 0 if OK, otherwise PI_BAD_HANDLE, PI_BAD_PARAM, or
-PI_I2C_WRITE_FAILED.
+Returns >= 0 if OK (the number of bytes read), otherwise
+PI_BAD_HANDLE, PI_BAD_POINTER, PI_BAD_I2C_CMD, PI_BAD_I2C_RLEN.
+PI_BAD_I2C_WLEN, or PI_BAD_I2C_SEG.
 
-Quick command. smbus 2.0 5.5.1
+The following command codes are supported:
+
+Name    @ Cmd & Data @ Meaning
+End     @ 0          @ No more commands
+Escape  @ 1          @ Next P is two bytes
+On      @ 2          @ Switch combined flag on
+Off     @ 3          @ Switch combined flag off
+Address @ 4 P        @ Set I2C address to P
+Flags   @ 5 lsb msb  @ Set I2C flags to lsb + (msb << 8)
+Read    @ 6 P        @ Read P bytes of data
+Write   @ 7 P ...    @ Write P bytes of data
+
+The address, read, and write commands take a parameter P.
+Normally P is one byte (0-255).  If the command is preceded by
+the Escape command then P is two bytes (0-65535, least significant
+byte first).
+
+The address defaults to that associated with the handle.
+The flags default to 0.  The address and flags maintain their
+previous value until updated.
+
+The returned I2C data is stored in consecutive locations of outBuf.
+
+...
+Set address 0x53, write 0x32, read 6 bytes
+Set address 0x1E, write 0x03, read 6 bytes
+Set address 0x68, write 0x1B, read 8 bytes
+End
+
+0x04 0x53   0x07 0x01 0x32   0x06 0x06
+0x04 0x1E   0x07 0x01 0x03   0x06 0x06
+0x04 0x68   0x07 0x01 0x1B   0x06 0x08
+0x00
+...
 D*/
 
-
 /*F*/
-int i2cWriteByte(unsigned handle, unsigned bVal);
+int bbI2COpen(unsigned SDA, unsigned SCL, unsigned baud);
 /*D
-This sends a single byte to the device associated with handle.
+This function selects a pair of gpios for bit banging I2C at a
+specified baud rate.
+
+Bit banging I2C allows for certain operations which are not possible
+with the standard I2C driver.
+
+o baud rates as low as 50 
+o repeated starts 
+o clock stretching 
+o I2C on any pair of spare gpios
 
 . .
-handle: >=0, as returned by a call to [*i2cOpen*]
-  bVal: 0-0xFF, the value to write
+ SDA: 0-31
+ SCL: 0-31
+baud: 50-500000
 . .
 
-Returns 0 if OK, otherwise PI_BAD_HANDLE, PI_BAD_PARAM, or
-PI_I2C_WRITE_FAILED.
+Returns 0 if OK, otherwise PI_BAD_USER_GPIO, PI_BAD_I2C_BAUD, or
+PI_GPIO_IN_USE.
 
-Send byte. smbus 2.0 5.5.2
+NOTE:
+
+The gpios used for SDA and SCL must have pull-ups to 3V3 connected.  As
+a guide the hardware pull-ups on pins 3 and 5 are 1k8 in value.
 D*/
 
-
 /*F*/
-int i2cReadByte(unsigned handle);
+int bbI2CClose(unsigned SDA);
 /*D
-This reads a single byte from the device associated with handle.
+This function stops bit banging I2C on a pair of gpios previously
+opened with [*bbI2COpen*].
 
 . .
-handle: >=0, as returned by a call to [*i2cOpen*]
+SDA: 0-31, the SDA gpio used in a prior call to [*bbI2COpen*]
 . .
 
-Returns the byte read (>=0) if OK, otherwise PI_BAD_HANDLE,
-or PI_I2C_READ_FAILED.
-
-Receive byte. smbus 2.0 5.5.3
+Returns 0 if OK, otherwise PI_BAD_USER_GPIO, or PI_NOT_I2C_GPIO.
 D*/
 
-
 /*F*/
-int i2cWriteByteData(unsigned handle, unsigned i2cReg, unsigned bVal);
+int bbI2CZip(
+   unsigned SDA,
+   char    *inBuf,
+   unsigned inLen,
+   char    *outBuf,
+   unsigned outLen);
 /*D
-This writes a single byte to the specified register of the device
-associated with handle.
+This function executes a sequence of bit banged I2C operations.  The
+operations to be performed are specified by the contents of inBuf
+which contains the concatenated command codes and associated data.
 
 . .
-handle: >=0, as returned by a call to [*i2cOpen*]
-i2cReg: 0-255, the register to write
-  bVal: 0-0xFF, the value to write
+   SDA: 0-31 (as used in a prior call to [*bbI2COpen*])
+ inBuf: pointer to the concatenated I2C commands, see below
+ inLen: size of command buffer
+outBuf: pointer to buffer to hold returned data
+outLen: size of output buffer
 . .
 
-Returns 0 if OK, otherwise PI_BAD_HANDLE, PI_BAD_PARAM, or
-PI_I2C_WRITE_FAILED.
+Returns >= 0 if OK (the number of bytes read), otherwise
+PI_BAD_USER_GPIO, PI_NOT_I2C_GPIO, PI_BAD_POINTER,
+PI_BAD_I2C_CMD, PI_BAD_I2C_RLEN, PI_BAD_I2C_WLEN,
+PI_I2C_READ_FAILED, or PI_I2C_WRITE_FAILED.
 
-Write byte. smbus 2.0 5.5.4
+The following command codes are supported:
+
+Name    @ Cmd & Data   @ Meaning
+End     @ 0            @ No more commands
+Escape  @ 1            @ Next P is two bytes
+Start   @ 2            @ Start condition
+Stop    @ 3            @ Stop condition
+Address @ 4 P          @ Set I2C address to P
+Flags   @ 5 lsb msb    @ Set I2C flags to lsb + (msb << 8)
+Read    @ 6 P          @ Read P bytes of data
+Write   @ 7 P ...      @ Write P bytes of data
+
+The address, read, and write commands take a parameter P.
+Normally P is one byte (0-255).  If the command is preceded by
+the Escape command then P is two bytes (0-65535, least significant
+byte first).
+
+The address and flags default to 0.  The address and flags maintain
+their previous value until updated.
+
+No flags are currently defined.
+
+The returned I2C data is stored in consecutive locations of outBuf.
+
+...
+Set address 0x53
+start, write 0x32, (re)start, read 6 bytes, stop
+Set address 0x1E
+start, write 0x03, (re)start, read 6 bytes, stop
+Set address 0x68
+start, write 0x1B, (re)start, read 8 bytes, stop
+End
+
+0x04 0x53
+0x02 0x07 0x01 0x32   0x02 0x06 0x06 0x03
+
+0x04 0x1E
+0x02 0x07 0x01 0x03   0x02 0x06 0x06 0x03
+
+0x04 0x68
+0x02 0x07 0x01 0x1B   0x02 0x06 0x08 0x03
+
+0x00
+...
 D*/
 
-
 /*F*/
-int i2cWriteWordData(unsigned handle, unsigned i2cReg, unsigned wVal);
-/*D
-This writes a single 16 bit word to the specified register of the device
-associated with handle.
-
-. .
-handle: >=0, as returned by a call to [*i2cOpen*]
-i2cReg: 0-255, the register to write
-  wVal: 0-0xFFFF, the value to write
-. .
-
-Returns 0 if OK, otherwise PI_BAD_HANDLE, PI_BAD_PARAM, or
-PI_I2C_WRITE_FAILED.
-
-Write word. smbus 2.0 5.5.4
-D*/
-
-
-/*F*/
-int i2cReadByteData(unsigned handle, unsigned i2cReg);
-/*D
-This reads a single byte from the specified register of the device
-associated with handle.
-
-. .
-handle: >=0, as returned by a call to [*i2cOpen*]
-i2cReg: 0-255, the register to read
-. .
-
-Returns the byte read (>=0) if OK, otherwise PI_BAD_HANDLE,
-PI_BAD_PARAM, or PI_I2C_READ_FAILED.
-
-Read byte. smbus 2.0 5.5.5
-D*/
-
-
-/*F*/
-int i2cReadWordData(unsigned handle, unsigned i2cReg);
-/*D
-This reads a single 16 bit word from the specified register of the device
-associated with handle.
-
-. .
-handle: >=0, as returned by a call to [*i2cOpen*]
-i2cReg: 0-255, the register to read
-. .
-
-Returns the word read (>=0) if OK, otherwise PI_BAD_HANDLE,
-PI_BAD_PARAM, or PI_I2C_READ_FAILED.
-
-Read word. smbus 2.0 5.5.5
-D*/
-
-
-/*F*/
-int i2cProcessCall(unsigned handle, unsigned i2cReg, unsigned wVal);
-/*D
-This writes 16 bits of data to the specified register of the device
-associated with handle and and reads 16 bits of data in return.
-
-. .
-handle: >=0, as returned by a call to [*i2cOpen*]
-i2cReg: 0-255, the register to write/read
-  wVal: 0-0xFFFF, the value to write
-. .
-
-Returns the word read (>=0) if OK, otherwise PI_BAD_HANDLE,
-PI_BAD_PARAM, or PI_I2C_READ_FAILED.
-
-Process call. smbus 2.0 5.5.6
-D*/
-
-
-/*F*/
-int i2cWriteBlockData(
-unsigned handle, unsigned i2cReg, char *buf, unsigned count);
-/*D
-This writes up to 32 bytes to the specified register of the device
-associated with handle.
-
-. .
-handle: >=0, as returned by a call to [*i2cOpen*]
-i2cReg: 0-255, the register to write
-   buf: an array with the data to send
- count: 1-32, the number of bytes to write
-. .
-
-Returns 0 if OK, otherwise PI_BAD_HANDLE, PI_BAD_PARAM, or
-PI_I2C_WRITE_FAILED.
-
-Block write. smbus 2.0 5.5.7
-D*/
-
-
-/*F*/
-int i2cReadBlockData(unsigned handle, unsigned i2cReg, char *buf);
-/*D
-This reads a block of up to 32 bytes from the specified register of
-the device associated with handle.
-
-. .
-handle: >=0, as returned by a call to [*i2cOpen*]
-i2cReg: 0-255, the register to read
-   buf: an array to receive the read data
-. .
-
-The amount of returned data is set by the device.
-
-Returns the number of bytes read (>=0) if OK, otherwise PI_BAD_HANDLE,
-PI_BAD_PARAM, or PI_I2C_READ_FAILED.
-
-Block read. smbus 2.0 5.5.7
-D*/
-
-
-/*F*/
-int i2cBlockProcessCall(
-unsigned handle, unsigned i2cReg, char *buf, unsigned count);
-/*D
-This writes data bytes to the specified register of the device
-associated with handle and reads a device specified number
-of bytes of data in return.
-
-. .
-handle: >=0, as returned by a call to [*i2cOpen*]
-i2cReg: 0-255, the register to write/read
-   buf: an array with the data to send and to receive the read data
- count: 1-32, the number of bytes to write
-. .
-
-Returns the number of bytes read (>=0) if OK, otherwise PI_BAD_HANDLE,
-PI_BAD_PARAM, or PI_I2C_READ_FAILED.
-
-The smbus 2.0 documentation states that a minimum of 1 byte may be
-sent and a minimum of 1 byte may be received.  The total number of
-bytes sent/received must be 32 or less.
-
-Block write-block read. smbus 2.0 5.5.8
-D*/
-
-
-/*F*/
-int i2cReadI2CBlockData(
-unsigned handle, unsigned i2cReg, char *buf, unsigned count);
-/*D
-This reads count bytes from the specified register of the device
-associated with handle .  The count may be 1-32.
-
-. .
-handle: >=0, as returned by a call to [*i2cOpen*]
-i2cReg: 0-255, the register to read
-   buf: an array to receive the read data
- count: 1-32, the number of bytes to read
-. .
-
-Returns the number of bytes read (>0) if OK, otherwise PI_BAD_HANDLE,
-PI_BAD_PARAM, or PI_I2C_READ_FAILED.
-D*/
-
-
-/*F*/
-int i2cWriteI2CBlockData(
-unsigned handle, unsigned i2cReg, char *buf, unsigned count);
-/*D
-This writes 1 to 32 bytes to the specified register of the device
-associated with handle.
-
-. .
-handle: >=0, as returned by a call to [*i2cOpen*]
-i2cReg: 0-255, the register to write
-   buf: the data to write
- count: 1-32, the number of bytes to write
-. .
-
-Returns 0 if OK, otherwise PI_BAD_HANDLE, PI_BAD_PARAM, or
-PI_I2C_WRITE_FAILED.
-D*/
-
-
-/*F*/
-int spiOpen(unsigned spiChan, unsigned spiBaud, unsigned spiFlags);
+int spiOpen(unsigned spiChan, unsigned baud, unsigned spiFlags);
 /*D
 This function returns a handle for the SPI device on the channel.
 Data will be transferred at baud bits per second.  The flags may
 be used to modify the default behaviour of 4-wire operation, mode 0,
 active low chip select.
 
-An auxiliary SPI device is available on the B+ and may be
+An auxiliary SPI device is available on the A+/B+/Pi2 and may be
 selected by setting the A bit in the flags.  The auxiliary
 device has 3 chip selects and a selectable word size in bits.
 
 . .
- spiChan: 0-1 (0-2 for B+ auxiliary device)
- spiBaud: 32K-125M (values above 30M are unlikely to work)
+ spiChan: 0-1 (0-2 for A+/B+/Pi2 auxiliary device)
+    baud: 32K-125M (values above 30M are unlikely to work)
 spiFlags: see below
 . .
 
@@ -2023,6 +2493,8 @@ spiFlags consists of the least significant 22 bits.
 
 mm defines the SPI mode.
 
+Warning: modes 1 and 3 do not appear to work on the auxiliary device.
+
 . .
 Mode POL PHA
  0    0   0
@@ -2036,7 +2508,7 @@ px is 0 if CEx is active low (default) and 1 for active high.
 ux is 0 if the CEx gpio is reserved for SPI (default) and 1 otherwise.
 
 A is 0 for the standard SPI device, 1 for the auxiliary SPI.  The
-auxiliary device is only present on the B+.
+auxiliary device is only present on the A+/B+/Pi2.
 
 W is 0 if the device is not 3-wire, 1 if the device is 3-wire.  Standard
 SPI device only.
@@ -2125,19 +2597,23 @@ D*/
 
 
 /*F*/
-int serOpen(char *sertty, unsigned serBaud, unsigned serFlags);
+int serOpen(char *sertty, unsigned baud, unsigned serFlags);
 /*D
 This function opens a serial device at a specified baud rate
 with specified flags.
 
 . .
   sertty: the serial device to open, /dev/tty*
- serBaud: the baud rate to use
+    baud: the baud rate in bits per second, see below
 serFlags: 0
 . .
 
 Returns a handle (>=0) if OK, otherwise PI_NO_HANDLE, or
 PI_SER_OPEN_FAILED.
+
+The baud rate must be one of 50, 75, 110, 134, 150,
+200, 300, 600, 1200, 1800, 2400, 4800, 9500, 19200,
+38400, 57600, 115200, or 230400.
 
 No flags are currently defined.  This parameter should be set to zero.
 D*/
@@ -2678,10 +3154,11 @@ D*/
 int gpioHardwareClock(unsigned gpio, unsigned clkfreq);
 /*D
 Starts a hardware clock on a gpio at the specified frequency.
+Frequencies above 30MHz are unlikely to work.
 
 . .
    gpio: see description
-clkfreq: 0 (off) or 4689-250M
+clkfreq: 0 (off) or 4689-250000000 (250M)
 . .
 
 Returns 0 if OK, otherwise PI_BAD_GPIO, PI_NOT_HCLK_GPIO,
@@ -2694,9 +3171,9 @@ The gpio must be one of the following.
 
 . .
 4   clock 0  All models
-5   clock 1  A+/B+ and compute module only (reserved for system use)
-6   clock 2  A+/B+ and compute module only
-20  clock 0  A+/B+ and compute module only
+5   clock 1  A+/B+/Pi2 and compute module only (reserved for system use)
+6   clock 2  A+/B+/Pi2 and compute module only
+20  clock 0  A+/B+/Pi2 and compute module only
 21  clock 1  All models but Rev.2 B (reserved for system use)
 
 32  clock 0  Compute module only
@@ -2715,9 +3192,10 @@ D*/
 int gpioHardwarePWM(unsigned gpio, unsigned PWMfreq, unsigned PWMduty);
 /*D
 Starts hardware PWM on a gpio at the specified frequency and dutycycle.
+Frequencies above 30MHz are unlikely to work.
 
-NOTE: Any waveform started by [*gpioWaveTxSend*] or [*gpioWaveTxStart*]
-will be cancelled.
+NOTE: Any waveform started by [*gpioWaveTxSend*], or
+[*gpioWaveChain*] will be cancelled.
 
 This function is only valid if the pigpio main clock is PCM.  The
 main clock defaults to PCM but may be overridden by a call to
@@ -2725,25 +3203,24 @@ main clock defaults to PCM but may be overridden by a call to
 
 . .
    gpio: see description
-PWMfreq: 0 (off) or 5-250K
-PWMduty: 0 (off) to 1000 (fully on).
+PWMfreq: 0 (off) or 1-125000000 (125M)
+PWMduty: 0 (off) to 1000000 (1M)(fully on)
 . .
 
 Returns 0 if OK, otherwise PI_BAD_GPIO, PI_NOT_HPWM_GPIO,
 PI_BAD_HPWM_DUTY, PI_BAD_HPWM_FREQ, or PI_HPWM_ILLEGAL.
 
-Both PWM channels share the same clock and the same update frequency.
-The latest frequency setting will be used by both PWM channels. The
-same PWM channel is available on multiple gpios.  The latest
-dutycycle setting will be used by all gpios which share a PWM channel.
+The same PWM channel is available on multiple gpios.  The latest
+frequency and dutycycle setting will be used by all gpios which
+share a PWM channel.
 
 The gpio must be one of the following.
 
 . .
-12  PWM channel 0  A+/B+ and compute module only
-13  PWM channel 1  A+/B+ and compute module only
+12  PWM channel 0  A+/B+/Pi2 and compute module only
+13  PWM channel 1  A+/B+/Pi2 and compute module only
 18  PWM channel 0  All models
-19  PWM channel 1  A+/B+ and compute module only
+19  PWM channel 1  A+/B+/Pi2 and compute module only
 
 40  PWM channel 0  Compute module only
 41  PWM channel 1  Compute module only
@@ -2871,27 +3348,19 @@ Returns the hardware revision.
 If the hardware revision can not be found or is not a valid hexadecimal
 number the function returns 0.
 
-The hardware revision is the last 4 characters on the Revision line of
+The hardware revision is the last few characters on the Revision line of
 /proc/cpuinfo.
 
 The revision number can be used to determine the assignment of gpios
-to pins.
+to pins (see [*gpio*]).
 
 There are at least three types of board.
-
-Type 1 has gpio 0 on P1-3, gpio 1 on P1-5, and gpio 21 on P1-13.
-
-Type 2 has gpio 2 on P1-3, gpio 3 on P1-5, gpio 27 on P1-13, and
-gpios 28-31 on P5.
-
-Type 3 has a 40 pin connector rather than the 26 pin connector of
-the earlier boards.  Gpios 0 to 27 are brought out to the connector.
 
 Type 1 boards have hardware revision numbers of 2 and 3.
 
 Type 2 boards have hardware revision numbers of 4, 5, 6, and 15.
 
-Type 3 boards have hardware revision number 16.
+Type 3 boards have hardware revision numbers of 16 or greater.
 
 for "Revision       : 0002" the function returns 2. 
 for "Revision       : 000f" the function returns 15. 
@@ -2943,7 +3412,7 @@ D*/
 int gpioCfgClock(
    unsigned cfgMicros, unsigned cfgPeripheral, unsigned cfgSource);
 /*D
-Configures pigpio to use a particualar sample rate timed by a specified
+Configures pigpio to use a particular sample rate timed by a specified
 peripheral.
 
 . .
@@ -3054,17 +3523,45 @@ D*/
 
 
 /*F*/
-int gpioCustom1(unsigned arg1, unsigned arg2, char *argx, unsigned count);
+int gpioCfgMemAlloc(unsigned memAllocMode);
+/*D
+Selects the method of DMA memory allocation.
+
+. .
+memAllocMode: 0-2
+. .
+
+There are two methods of DMA memory allocation.  The original method
+uses the /proc/self/pagemap file to allocate bus memory.  The new
+method uses the mailbox property interface to allocate bus memory.
+
+Auto will use the mailbox method unless a larger than default buffer
+size is requested with [*gpioCfgBufferSize*].
+D*/
+
+/*F*/
+int gpioCfgInternals(unsigned cfgWhat, int cfgVal);
+/*D
+Used to tune internal settings.
+
+. .
+cfgWhat: see source code
+ cfgVal: see source code
+. .
+D*/
+
+/*F*/
+int gpioCustom1(unsigned arg1, unsigned arg2, char *argx, unsigned argc);
 /*D
 This function is available for user customisation.
 
 It returns a single integer value.
 
 . .
- arg1: >=0
- arg2: >=0
- argx: extra (byte) arguments
-count: number of extra arguments
+arg1: >=0
+arg2: >=0
+argx: extra (byte) arguments
+argc: number of extra arguments
 . .
 
 Returns >= 0 if OK, less than 0 indicates a user defined error.
@@ -3072,7 +3569,7 @@ D*/
 
 
 /*F*/
-int gpioCustom2(unsigned arg1, char *argx, unsigned count,
+int gpioCustom2(unsigned arg1, char *argx, unsigned argc,
                 char *retBuf, unsigned retMax);
 /*D
 This function is available for user customisation.
@@ -3084,7 +3581,7 @@ The returned value is an integer indicating the number of returned bytes.
 . .
   arg1: >=0
   argx: extra (byte) arguments
- count: number of extra arguments
+  argc: number of extra arguments
 retBuf: buffer for returned bytes
 retMax: maximum number of bytes to return
 . .
@@ -3092,20 +3589,6 @@ retMax: maximum number of bytes to return
 Returns >= 0 if OK, less than 0 indicates a user defined error.
 
 The number of returned bytes must be retMax or less.
-D*/
-
-
-/*F*/
-int gpioCfgInternals(unsigned cfgWhat, int cfgVal);
-/*D
-Used to tune internal settings.
-
-. .
-cfgWhat: see source code
- cfgVal: see source code
-. .
-
-Not intended for general use.
 D*/
 
 
@@ -3329,48 +3812,35 @@ D*/
 
 A pointer to a void object passed to a thread started by gpioStartThread.
 
-bbBaud::
+arg1::
 
-The baud rate used for the transmission and reception of bit banged
-serial data.
+An unsigned argument passed to a user customised function.  Its
+meaning is defined by the customiser.
 
-. .
-PI_BB_MIN_BAUD 50
-PI_BB_RX_MAX_BAUD 250000
-PI_BB_TX_MAX_BAUD 1000000
-. .
+arg2::
 
-bbBits::1-32
+An unsigned argument passed to a user customised function.  Its
+meaning is defined by the customiser.
 
-The number of data bits to be used when adding serial data to a
-waveform.
+argc::
+The count of bytes passed to a user customised function.
 
-. .
-#define PI_MIN_WAVE_DATABITS 1
-#define PI_MAX_WAVE_DATABITS 32
-. .
+*argx::
+A pointer to an array of bytes passed to a user customised function.
+Its meaning and content is defined by the customiser.
 
-bbStop::2-8
-
-The number of (half) stop bits to be used when adding serial data
-to a waveform.
-
-. .
-#define PI_MIN_WAVE_HALFSTOPBITS 2
-#define PI_MAX_WAVE_HALFSTOPBITS 8
-. .
+baud::
+The speed of serial communication (I2C, SPI, serial link, waves) in
+bits per second.
 
 bit::
-
 A value of 0 or 1.
 
 bitPos::
-
 A bit position within a byte or word.  The least significant bit is
 position 0.
 
 bits::
-
 A value used to select gpios.  If bit n of bits is set then gpio n is
 selected.
 
@@ -3401,7 +3871,7 @@ samples per second.
 
 cfgMillis:: 100-10000
 
-The size of the sample buffer in milliseconds.  Gnerally this should be
+The size of the sample buffer in milliseconds.  Generally this should be
 left at the default of 120ms.  If you expect intense bursts of signals it
 might be necessary to increase the buffer size.
 
@@ -3443,6 +3913,16 @@ count::
 The number of bytes to be transferred in an I2C, SPI, or Serial
 command.
 
+data_bits::1-32
+
+The number of data bits to be used when adding serial data to a
+waveform.
+
+. .
+#define PI_MIN_WAVE_DATABITS 1
+#define PI_MAX_WAVE_DATABITS 32
+. .
+
 DMAchannel::0-14
 . .
 PI_MIN_DMA_CHANNEL 0
@@ -3475,6 +3955,32 @@ gpio::
 
 A Broadcom numbered gpio, in the range 0-53.
 
+There  are 54 General Purpose Input Outputs (gpios) named gpio0 through
+gpio53.
+
+They are split into two  banks.   Bank  1  consists  of  gpio0  through
+gpio31.  Bank 2 consists of gpio32 through gpio53.
+
+All the gpios which are safe for the user to read and write are in
+bank 1.  Not all gpios in bank 1 are safe though.  Type 1 boards
+have 17  safe gpios.  Type 2 boards have 21.  Type 3 boards have 26.
+
+See [*gpioHardwareRevision*].
+
+The user gpios are marked with an X in the following table.
+
+. .
+          0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+Type 1    X  X  -  -  X  -  -  X  X  X  X  X  -  -  X  X
+Type 2    -  -  X  X  X  -  -  X  X  X  X  X  -  -  X  X
+Type 3          X  X  X  X  X  X  X  X  X  X  X  X  X  X
+
+         16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
+Type 1    -  X  X  -  -  X  X  X  X  X  -  -  -  -  -  -
+Type 2    -  X  X  -  -  -  X  X  X  X  -  X  X  X  X  X
+Type 3    X  X  X  X  X  X  X  X  X  X  X  X  -  -  -  -
+. .
+
 gpioAlertFunc_t::
 . .
 typedef void (*gpioAlertFunc_t) (int gpio, int level, uint32_t tick);
@@ -3497,7 +4003,8 @@ One of
 [*gpioCfgPermissions*] 
 [*gpioCfgInterfaces*] 
 [*gpioCfgInternals*] 
-[*gpioCfgSocketPort*]
+[*gpioCfgSocketPort*] 
+[*gpioCfgMemAlloc*]
 
 gpioGetSamplesFunc_t::
 . .
@@ -3572,9 +4079,8 @@ A number referencing an object opened by one of
 [*serOpen*] 
 [*spiOpen*]
 
-i2cAddr::0x08-0x77
-
-The address of a device on the I2C bus (0x08 - 0x77)
+i2cAddr::
+The address of a device on the I2C bus.
 
 i2cBus::0-1
 
@@ -3594,12 +4100,19 @@ PI_DISABLE_FIFO_IF 1
 PI_DISABLE_SOCK_IF 2
 . .
 
-int::
+*inBuf::
+A buffer used to pass data to a function.
 
+inLen::
+The number of bytes of data in a buffer.
+
+int::
 A whole number, negative or positive.
 
-level::
+invert::
+A flag used to set normal or inverted bit bang serial data level logic.
 
+level::
 The level of a gpio.  Low or High.
 
 . .
@@ -3624,6 +4137,16 @@ PI_TIMEOUT 2
 lVal::0-4294967295 (Hex 0x0-0xFFFFFFFF, Octal 0-37777777777)
 
 A 32-bit word value.
+
+memAllocMode:: 0-2
+
+The DMA memory allocation mode.
+
+. .
+PI_MEM_ALLOC_AUTO    0
+PI_MEM_ALLOC_PAGEMAP 1
+PI_MEM_ALLOC_MAILBOX 2
+. .
 
 *micros::
 
@@ -3657,38 +4180,50 @@ numBits::
 The number of bits stored in a buffer.
 
 numBytes::
-
 The number of bytes used to store characters in a string.  Depending
 on the number of bits per character there may be 1, 2, or 4 bytes
 per character.
 
 numPar:: 0-10
-
 The number of parameters passed to a script.
 
 numPulses::
-
 The number of pulses to be added to a waveform.
 
-offset::
+numSegs::
+The number of segments in a combined I2C transaction.
 
+offset::
 The associated data starts this number of microseconds from the start of
-tghe waveform.
+the waveform.
+
+*outBuf::
+A buffer used to return data from a function.
+
+outLen::
+The size in bytes of an output buffer.
 
 *param::
-
 An array of script parameters.
 
-port:: 1024-32000
+pi_i2c_msg_t::
+. .
+typedef struct
+{
+   uint16_t addr;  // slave address
+   uint16_t flags;
+   uint16_t len;   // msg length
+   uint8_t  *buf;  // pointer to msg data
+} pi_i2c_msg_t;
+. .
 
+port:: 1024-32000
 The port used to bind to the pigpio socket.  Defaults to 8888.
 
 pos::
-
 The position of an item.
 
 primaryChannel:: 0-14
-
 The DMA channel used to time the sampling of gpios and to time servo and
 PWM pulses.
 
@@ -3725,19 +4260,19 @@ PI_MIN_SERVO_PULSEWIDTH 500
 PI_MAX_SERVO_PULSEWIDTH 2500
 . .
 
-PWMduty::0-1000
+PWMduty::0-1000000 (1M)
 The hardware PWM dutycycle.
 
 . .
-#define PI_HW_PWM_RANGE 5000
+#define PI_HW_PWM_RANGE 1000000
 . .
 
 PWMfreq::5-250K
 The hardware PWM frequency.
 
 . .
-#define PI_HW_PWM_MIN_FREQ 5
-#define PI_HW_PWM_MAX_FREQ 50000
+#define PI_HW_PWM_MIN_FREQ 1
+#define PI_HW_PWM_MAX_FREQ 125000000
 . .
 
 range::25-40000
@@ -3797,9 +4332,21 @@ typedef struct
 } rawWaveInfo_t;
 . .
 
+*retBuf::
+
+A buffer to hold a number of bytes returned to a used customised function,
+
+retMax::
+
+The maximum number of bytes a user customised function should return.
+
 *rxBuf::
 
 A pointer to a buffer to receive data.
+
+SCL::
+
+The user gpio to use for the clock when bit banging I2C.
 
 *script::
 
@@ -3808,6 +4355,10 @@ A pointer to the text of a script.
 script_id::
 
 An id of a stored script as returned by [*gpioStoreScript*].
+
+SDA::
+
+The user gpio to use for data when bit banging I2C.
 
 secondaryChannel:: 0-6
 
@@ -3822,20 +4373,18 @@ seconds::
 
 The number of seconds.
 
-serBaud::
+*segs::
 
-The baud rate to use on the serial link.
-
-It must be one of 50, 75, 110, 134, 150, 200, 300, 600, 1200, 1800, 2400,
-4800, 9600, 19200, 38400, 57600, 115200, 230400.
+An array of segments which make up a combined I2C transaction.
 
 serFlags::
-
 Flags which modify a serial open command.  None are currently defined.
 
 *sertty::
-
 The name of a serial tty device, e.g. /dev/ttyAMA0, /dev/ttyUSB0, /dev/tty1.
+
+setting::
+A value used to set a flag, 0 for false, non-zero for true.
 
 signum::0-63
 . .
@@ -3848,15 +4397,9 @@ size_t::
 A standard type used to indicate the size of an object in bytes.
 
 *spi::
-
 A pointer to a [*rawSPI_t*] structure.
 
-spiBaud::
-
-The speed in bits per second to use for the SPI device.
-
 spiBitFirst::
-
 Gpio reads are made from spiBitFirst to spiBitLast.
 
 spiBitLast::
@@ -3864,31 +4407,33 @@ spiBitLast::
 Gpio reads are made from spiBitFirst to spiBitLast.
 
 spiBits::
-
 The number of bits to transfer in a raw SPI transaction.
 
 spiChan::
-
 A SPI channel, 0-2.
 
 spiFlags::
-
 See [*spiOpen*].
 
 spiSS::
-
 The SPI slave select gpio in a raw SPI transaction.
 
 spiTxBits::
-
 The number of bits to transfer dring a raw SPI transaction
 
-*str::
+stop_bits::2-8
+The number of (half) stop bits to be used when adding serial data
+to a waveform.
 
+. .
+#define PI_MIN_WAVE_HALFSTOPBITS 2
+#define PI_MAX_WAVE_HALFSTOPBITS 8
+. .
+
+*str::
 An array of characters.
 
 timeout::
-
 A gpio watchdog timeout in milliseconds.
 . .
 PI_MIN_WDOG_TIMEOUT 0
@@ -3933,6 +4478,8 @@ user_gpio::
 
 0-31, a Broadcom numbered gpio.
 
+See [*gpio*].
+
 *userdata::
 
 A pointer to arbitrary user data.  This may be used to identify the instance.
@@ -3943,7 +4490,7 @@ Denoting no parameter is required
 
 wave_id::
 
-A number representing a waveform created by [*gpioWaveCreate*].
+A number identifying a waveform created by [*gpioWaveCreate*].
 
 wave_mode::
 
@@ -4059,6 +4606,16 @@ PARAMS*/
 #define PI_CMD_CF1   87
 #define PI_CMD_CF2   88
 
+#define PI_CMD_BI2CC 89
+#define PI_CMD_BI2CO 90
+#define PI_CMD_BI2CZ 91
+
+#define PI_CMD_I2CZ  92
+
+#define PI_CMD_WVCHA 93
+
+#define PI_CMD_SLRI  94
+
 #define PI_CMD_NOIB  99
 
 /*DEF_E*/
@@ -4161,7 +4718,7 @@ after this command is issued.
 #define PI_BAD_WAVE_BAUD    -35 // baud rate not 50-250K(RX)/50-1M(TX)
 #define PI_TOO_MANY_PULSES  -36 // waveform has too many pulses
 #define PI_TOO_MANY_CHARS   -37 // waveform has too many chars
-#define PI_NOT_SERIAL_GPIO  -38 // no serial read in progress on gpio
+#define PI_NOT_SERIAL_GPIO  -38 // no bit bang serial read in progress on gpio
 #define PI_BAD_SERIAL_STRUC -39 // bad (null) serial structure parameter
 #define PI_BAD_SERIAL_BUF   -40 // bad (null) serial buf parameter
 #define PI_NOT_PERMITTED    -41 // gpio operation not permitted
@@ -4214,19 +4771,37 @@ after this command is issued.
 #define PI_UNKNOWN_COMMAND  -88 // unknown command
 #define PI_SPI_XFER_FAILED  -89 // spi xfer/read/write failed
 #define PI_BAD_POINTER      -90 // bad (NULL) pointer
-#define PI_NO_AUX_SPI       -91 // need a B+ for auxiliary SPI
+#define PI_NO_AUX_SPI       -91 // need a A+/B+/Pi2 for auxiliary SPI
 #define PI_NOT_PWM_GPIO     -92 // gpio is not in use for PWM
 #define PI_NOT_SERVO_GPIO   -93 // gpio is not in use for servo pulses
 #define PI_NOT_HCLK_GPIO    -94 // gpio has no hardware clock
 #define PI_NOT_HPWM_GPIO    -95 // gpio has no hardware PWM
-#define PI_BAD_HPWM_FREQ    -96 // hardware PWM frequency not 5-50K
-#define PI_BAD_HPWM_DUTY    -97 // hardware PWM dutycycle not 0-5000
-#define PI_BAD_HCLK_FREQ    -98 // hardware clock frequency not 4689-25M
+#define PI_BAD_HPWM_FREQ    -96 // hardware PWM frequency not 1-125M
+#define PI_BAD_HPWM_DUTY    -97 // hardware PWM dutycycle not 0-1M
+#define PI_BAD_HCLK_FREQ    -98 // hardware clock frequency not 4689-250M
 #define PI_BAD_HCLK_PASS    -99 // need password to use hardware clock 1
 #define PI_HPWM_ILLEGAL    -100 // illegal, PWM in use for main clock
 #define PI_BAD_DATABITS    -101 // serial data bits not 1-32
 #define PI_BAD_STOPBITS    -102 // serial (half) stop bits not 2-8
 #define PI_MSG_TOOBIG      -103 // socket/pipe message too big
+#define PI_BAD_MALLOC_MODE -104 // bad memory allocation mode
+#define PI_TOO_MANY_SEGS   -105 // too many I2C transaction segments
+#define PI_BAD_I2C_SEG     -106 // an I2C transaction segment failed
+#define PI_BAD_SMBUS_CMD   -107 // SMBus command not supported by driver
+#define PI_NOT_I2C_GPIO    -108 // no bit bang I2C in progress on gpio
+#define PI_BAD_I2C_WLEN    -109 // bad I2C write length
+#define PI_BAD_I2C_RLEN    -110 // bad I2C read length
+#define PI_BAD_I2C_CMD     -111 // bad I2C command
+#define PI_BAD_I2C_BAUD    -112 // bad I2C baud rate, not 50-500k
+#define PI_CHAIN_LOOP_CNT  -113 // bad chain loop count
+#define PI_BAD_CHAIN_LOOP  -114 // empty chain loop
+#define PI_CHAIN_COUNTER   -115 // too many chain counters
+#define PI_BAD_CHAIN_CMD   -116 // bad chain command
+#define PI_BAD_CHAIN_DELAY -117 // bad chain delay micros
+#define PI_CHAIN_NESTING   -118 // chain counters nested too deeply
+#define PI_CHAIN_TOO_BIG   -119 // chain is too long
+#define PI_DEPRECATED      -120 // deprecated function removed
+#define PI_BAD_SER_INVERT  -121 // bit bang serial invert not 0 or 1
 
 #define PI_PIGIF_ERR_0    -2000
 #define PI_PIGIF_ERR_99   -2099
@@ -4251,8 +4826,10 @@ after this command is issued.
 #define PI_DEFAULT_UPDATE_MASK_R0        0xFFFFFFFF
 #define PI_DEFAULT_UPDATE_MASK_R1        0x03E7CF93
 #define PI_DEFAULT_UPDATE_MASK_R2        0xFBC7CF9C
-#define PI_DEFAULT_UPDATE_MASK_R3        0x0080400FFFFFFCLL
+#define PI_DEFAULT_UPDATE_MASK_R3        0x0080480FFFFFFCLL
 #define PI_DEFAULT_UPDATE_MASK_COMPUTE   0x00FFFFFFFFFFFFLL
+#define PI_DEFAULT_MEM_ALLOC_MODE        PI_MEM_ALLOC_AUTO
+
 /*DEF_E*/
 
 #endif

@@ -26,7 +26,7 @@ For more information, please refer to <http://unlicense.org/>
 */
 
 /*
-This version is for pigpio version 26+
+This version is for pigpio version 37+
 */
 
 #include <stdio.h>
@@ -44,6 +44,10 @@ cmdInfo_t cmdInfo[]=
 
    {PI_CMD_BC1,   "BC1",   111, 1}, // gpioWrite_Bits_0_31_Clear
    {PI_CMD_BC2,   "BC2",   111, 1}, // gpioWrite_Bits_32_53_Clear
+
+   {PI_CMD_BI2CC, "BI2CC", 112, 0}, // bbI2CClose
+   {PI_CMD_BI2CO, "BI2CO", 131, 0}, // bbI2COpen
+   {PI_CMD_BI2CZ, "BI2CZ", 193, 6}, // bbI2CZip
 
    {PI_CMD_BR1,   "BR1",   101, 3}, // gpioRead_Bits_0_31
    {PI_CMD_BR2,   "BR2",   101, 3}, // gpioRead_Bits_32_53
@@ -85,6 +89,8 @@ cmdInfo_t cmdInfo[]=
    {PI_CMD_I2CWQ, "I2CWQ", 121, 0}, // i2cWriteQuick
    {PI_CMD_I2CWS, "I2CWS", 121, 0}, // i2cWriteByte
    {PI_CMD_I2CWW, "I2CWW", 131, 0}, // i2cWriteWordData
+
+   {PI_CMD_I2CZ,  "I2CZ",  193, 6}, // i2cZip
 
    {PI_CMD_MICS,  "MICS",  112, 0}, // gpioDelay
    {PI_CMD_MILS,  "MILS",  112, 0}, // gpioDelay
@@ -140,6 +146,7 @@ cmdInfo_t cmdInfo[]=
    {PI_CMD_SLR,   "SLR",   121, 6}, // gpioSerialRead
    {PI_CMD_SLRC,  "SLRC",  112, 0}, // gpioSerialReadClose
    {PI_CMD_SLRO,  "SLRO",  131, 0}, // gpioSerialReadOpen
+   {PI_CMD_SLRI,  "SLRI",  121, 0}, // gpioSerialReadInvert
 
    {PI_CMD_SPIC,  "SPIC",  112, 0}, // spiClose
    {PI_CMD_SPIO,  "SPIO",  131, 2}, // spiOpen
@@ -160,6 +167,7 @@ cmdInfo_t cmdInfo[]=
    {PI_CMD_WVAG,  "WVAG",  192, 2}, // gpioWaveAddGeneric
    {PI_CMD_WVAS,  "WVAS",  196, 2}, // gpioWaveAddSerial
    {PI_CMD_WVBSY, "WVBSY", 101, 2}, // gpioWaveTxBusy
+   {PI_CMD_WVCHA, "WVCHA", 197, 0}, // gpioWaveChain
    {PI_CMD_WVCLR, "WVCLR", 101, 0}, // gpioWaveClear
    {PI_CMD_WVCRE, "WVCRE", 101, 2}, // gpioWaveCreate
    {PI_CMD_WVDEL, "WVDEL", 112, 0}, // gpioWaveDelete
@@ -219,116 +227,101 @@ cmdInfo_t cmdInfo[]=
 };
 
 
-char * cmdUsage = "\
-BC1 bits         Clear specified gpios in bank 1\n\
-BC2 bits         Clear specified gpios in bank 2\n\
+char * cmdUsage = "\n\
+BC1 bits         Clear gpios in bank 1\n\
+BC2 bits         Clear gpios in bank 2\n\
+BI2CC sda        Close bit bang I2C\n\
+BI2CO sda scl baud | Open bit bang I2C\n\
+BI2CZ sda ...    I2C bit bang multiple transactions\n\
 BR1              Read bank 1 gpios\n\
 BR2              Read bank 2 gpios\n\
-BS1 bits         Set specified gpios in bank 2\n\
-BS2 bits         Set specified gpios in bank 2\n\
+BS1 bits         Set gpios in bank 2\n\
+BS2 bits         Set gpios in bank 2\n\
 \n\
-CF1 uvs          Custom function 1\n\
-CF2 uvs          Custom function 2\n\
+CF1 ...          Custom function 1\n\
+CF2 ...          Custom function 2\n\
 \n\
-GDC u            Get PWM dutycycle for gpio\n\
-GPW u            Get servo pulsewidth for gpio\n\
+GDC g            Get PWM dutycycle for gpio\n\
+GPW g            Get servo pulsewidth for gpio\n\
 \n\
 H/HELP           Display command help\n\
-\n\
-HC g cf          Set hardware clock frequency\n\
-HP g pf pdc      Set hardware PWM frequency and dutycycle\n\
-\n\
+HC g f           Set hardware clock frequency\n\
+HP g f dc        Set hardware PWM frequency and dutycycle\n\
 HWVER            Get hardware version\n\
 \n\
 I2CC h           Close I2C handle\n\
-I2CO ib id if    Open I2C bus and device with flags\n\
+I2CO bus device flags | Open I2C bus and device with flags\n\
+I2CPC h r word   SMBus Process Call: exchange register with word\n\
+I2CPK h r ...    SMBus Block Process Call: exchange data bytes with register\n\
+I2CRB h r        SMBus Read Byte Data: read byte from register\n\
+I2CRD h n        I2C Read bytes\n\
+I2CRI h r n      SMBus Read I2C Block Data: read bytes from register\n\
+I2CRK h r        SMBus Read Block Data: read data from register\n\
+I2CRS h          SMBus Read Byte: read byte\n\
+I2CRW h r        SMBus Read Word Data: read word from register\n\
+I2CWB h r byte   SMBus Write Byte Data: write byte to register\n\
+I2CWD h ...      I2C Write data\n\
+I2CWI h r ...    SMBus Write I2C Block Data\n\
+I2CWK h r ...    SMBus Write Block Data: write data to register\n\
+I2CWQ h b        SMBus Write Quick: write bit\n\
+I2CWS h b        SMBus Write Byte: write byte\n\
+I2CWW h r word   SMBus Write Word Data: write word to register\n\
+I2CZ  h ...      I2C multiple transactions\n\
 \n\
-I2CPC h r wv     smb Process Call: exchange register with word\n\
-I2CPK h r bvs    smb Block Process Call: exchange data bytes with register\n\
-\n\
-I2CRB h r        smb Read Byte Data: read byte from register\n\
-I2CRD h num      i2c Read bytes\n\
-I2CRI h r num    smb Read I2C Block Data: read bytes from register\n\
-I2CRK h r        smb Read Block Data: read data from register\n\
-I2CRS h          smb Read Byte: read byte\n\
-I2CRW h r        smb Read Word Data: read word from register\n\
-\n\
-I2CWB h r bv     smb Write Byte Data: write byte to register\n\
-I2CWD h bvs      i2c Write data\n\
-I2CWI h r bvs    smb Write I2C Block Data\n\
-I2CWK h r bvs    smb Write Block Data: write data to register\n\
-I2CWQ h bit      smb Write Quick: write bit\n\
-I2CWS h bv       smb Write Byte: write byte\n\
-I2CWW h r wv     smb Write Word Data: write word to register\n\
-\n\
-M/MODES g m      Set gpio mode\n\
+M/MODES g mode   Set gpio mode\n\
 MG/MODEG g       Get gpio mode\n\
-\n\
-MICS v           Delay for microseconds\n\
-MILS v           Delay for milliseconds\n\
+MICS n           Delay for microseconds\n\
+MILS n           Delay for milliseconds\n\
 \n\
 NB h bits        Start notification\n\
 NC h             Close notification\n\
 NO               Request a notification\n\
 NP h             Pause notification\n\
 \n\
-P/PWM u v        Set gpio PWM value\n\
-\n\
-PARSE t          Validate script\n\
-\n\
-PFG u            Get gpio PWM frequency\n\
-PFS u v          Set gpio PWM frequency\n\
-\n\
+P/PWM g v        Set gpio PWM value\n\
+PARSE text       Validate script\n\
+PFG g            Get gpio PWM frequency\n\
+PFS g v          Set gpio PWM frequency\n\
 PIGPV            Get pigpio library version\n\
-\n\
-PRG u            Get gpio PWM range\n\
-\n\
-PROC t           Store script\n\
+PRG g            Get gpio PWM range\n\
+PROC text        Store script\n\
 PROCD sid        Delete script\n\
 PROCP sid        Get script status and parameters\n\
-PROCR sid pars   Run script\n\
+PROCR sid ...    Run script\n\
 PROCS sid        Stop script\n\
-\n\
-PRRG u           Get gpio PWM real range\n\
-PRS u v          Set gpio PWM range\n\
-\n\
-PUD g p          Set gpio pull up/down\n\
+PRRG g           Get gpio PWM real range\n\
+PRS g v          Set gpio PWM range\n\
+PUD g pud        Set gpio pull up/down\n\
 \n\
 R/READ g         Read gpio level\n\
 \n\
-S/SERVO u v      Set gpio servo pulsewidth\n\
-\n\
+S/SERVO g v      Set gpio servo pulsewidth\n\
 SERC h           Close serial handle\n\
 SERDA h          Check for serial data ready to read\n\
-SERO srd srb srf Open serial device at baud with flags\n\
-\n\
-SERR h num       Read bytes from serial handle\n\
+SERO text baud flags | Open serial device at baud with flags\n\
+SERR h n         Read bytes from serial handle\n\
 SERRB h          Read byte from serial handle\n\
-SERW h bvs       Write bytes to serial handle\n\
-SERWB h bv       Write byte to serial handle\n\
-\n\
-SLR u num        Read bit bang serial data from gpio\n\
-SLRC u           Close gpio for bit bang serial data\n\
-SLRO u b db      Open gpio for bit bang serial data\n\
-\n\
+SERW h ...       Write bytes to serial handle\n\
+SERWB h byte        Write byte to serial handle\n\
+SLR g v          Read bit bang serial data from gpio\n\
+SLRC g           Close gpio for bit bang serial data\n\
+SLRO g baud bitlen | Open gpio for bit bang serial data\n\
+SLRI g invert    Invert serial logic (1 invert, 0 normal)\n\
 SPIC h           SPI close handle\n\
-SPIO sc sb sf    SPI open channel at baud with flags\n\
-SPIR h num       SPI read bytes from handle\n\
-SPIW h bvs       SPI write bytes to handle\n\
-SPIX h bvs       SPI transfer bytes to handle\n\
+SPIO channel baud flags | SPI open channel at baud with flags\n\
+SPIR h v         SPI read bytes from handle\n\
+SPIW h ...       SPI write bytes to handle\n\
+SPIX h ...       SPI transfer bytes to handle\n\
 \n\
 T/TICK           Get current tick\n\
+TRIG g micros l  Trigger level for micros on gpio\n\
 \n\
-TRIG u pl L      Trigger level for micros on gpio\n\
-\n\
-W/WRITE g L      Write level to gpio\n\
-\n\
-WDOG u v         Set millisecond watchdog on gpio\n\
-\n\
-WVAG trips       Wave add generic pulses\n\
-WVAS u b db hb   Wave add serial data for gpio u at b baud, db databits,\n\
-     o bvs            hb (half)stopbits, offset o micros from wave start\n\
+W/WRITE g l      Write level to gpio\n\
+WDOG g millis    Set millisecond watchdog on gpio\n\
+WVAG triplets    Wave add generic pulses\n\
+WVAS g baud bitlen stopbits offset ... | Wave add serial data\n\
 WVBSY            Check if wave busy\n\
+WVCHA            Transmit a chain of waves\n\
 WVCLR            Wave clear\n\
 WVCRE            Create wave from added pulses\n\
 WVDEL wid        Delete waves w and higher\n\
@@ -336,52 +329,17 @@ WVGO             Wave transmit (DEPRECATED)\n\
 WVGOR            Wave transmit repeatedly (DEPRECATED)\n\
 WVHLT            Wave stop\n\
 WVNEW            Start a new empty wave\n\
-WVSC ws          Wave get DMA control block stats\n\
-WVSM ws          Wave get micros stats\n\
-WVSP ws          Wave get pulses stats\n\
+WVSC 0,1,2       Wave get DMA control block stats\n\
+WVSM 0,1,2       Wave get micros stats\n\
+WVSP 0,1,2       Wave get pulses stats\n\
 WVTX wid         Transmit wave as one-shot\n\
 WVTXR wid        Transmit wave repeatedly\n\
 \n\
-bits  = a mask where (1<<g) is set for each gpio g of interest\n\
-bv    = byte value (0-255)\n\
-bvs   = one or more byte values (0-255)\n\
-cf    = hardware clock frequency (4689-25M)\n\
-db    = data bits (1-32)\n\
-g     = any gpio (0-53)\n\
-h     = handle (>=0)\n\
-hb    = (half) stop bits (2-8)\n\
-ib    = I2C bus (0-1)\n\
-id    = I2C device (0-127)\n\
-if    = I2C flags (0)\n\
-L     = level (0-1)\n\
-m     = mode (RW540123)\n\
-num   = number of bytes to read\n\
-o     = offset (>=0)\n\
-p     = pud (ODU)\n\
-pars  = 0 to 10 parameters for script\n\
-pdc   = hardware PWM dutycycle (0-5000)\n\
-pf    = hardware PWM frequency (5-50K)\n\
-pl    = pulse length (1-100)\n\
-r     = register\n\
-sid   = script id (>=0)\n\
-sb    = SPI baud\n\
-sc    = SPI channel (0-1)\n\
-sf    = SPI flags (0-3)\n\
-srd   = serial device (/dev/tty*)\n\
-srb   = serial baud rate\n\
-srf   = serial flags (0)\n\
-t     = text\n\
-trips = 1 or more triplets of gpios on, gpios off, delay\n\
-u     = user gpio (0-31)\n\
-uvs   = zero or more values >= 0, any after the first two must <= 255\n\
-v     = value\n\
-w     = wave id (>=0)\n\
-ws    = 0=now, 1=high, 2=max\n\
-wv    = word value (0-65535)\n\
 \n\
 Numbers may be entered as hex (prefix 0x), octal (prefix 0),\n\
-otherwise they are assumed to be decimal\n\
-";
+otherwise they are assumed to be decimal.\n\
+\n\
+man pigs for full details.\n\n";
 
 typedef struct
 {
@@ -428,7 +386,7 @@ static errInfo_t errInfo[]=
    {PI_BAD_WAVE_BAUD    , "baud rate not 50-250K(RX)/50-1M(TX)"},
    {PI_TOO_MANY_PULSES  , "waveform has too many pulses"},
    {PI_TOO_MANY_CHARS   , "waveform has too many chars"},
-   {PI_NOT_SERIAL_GPIO  , "no serial read in progress on gpio"},
+   {PI_NOT_SERIAL_GPIO  , "no bit bang serial read in progress on gpio"},
    {PI_BAD_SERIAL_STRUC , "bad (null) serial structure parameter"},
    {PI_BAD_SERIAL_BUF   , "bad (null) serial buf parameter"}, 
    {PI_NOT_PERMITTED    , "no permission to update gpio"},
@@ -486,14 +444,31 @@ static errInfo_t errInfo[]=
    {PI_NOT_SERVO_GPIO   , "gpio is not in use for servo pulses"},
    {PI_NOT_HCLK_GPIO    , "gpio has no hardware clock"},
    {PI_NOT_HPWM_GPIO    , "gpio has no hardware PWM"},
-   {PI_BAD_HPWM_FREQ    , "hardware PWM frequency not 5-50K"},
-   {PI_BAD_HPWM_DUTY    , "hardware PWM dutycycle not 0-5000"},
-   {PI_BAD_HCLK_FREQ    , "hardware clock frequency not 4689-25M"},
+   {PI_BAD_HPWM_FREQ    , "hardware PWM frequency not 1-125M"},
+   {PI_BAD_HPWM_DUTY    , "hardware PWM dutycycle not 0-1M"},
+   {PI_BAD_HCLK_FREQ    , "hardware clock frequency not 4689-250M"},
    {PI_BAD_HCLK_PASS    , "need password to use hardware clock 1"},
    {PI_HPWM_ILLEGAL     , "illegal, PWM in use for main clock"},
    {PI_BAD_DATABITS     , "serial data bits not 1-32"},
-   {PI_BAD_STOPBITS     , "serial (half) stop bits not 2-8"},
-
+   {PI_MSG_TOOBIG       , "socket/pipe message too big"},
+   {PI_BAD_MALLOC_MODE  , "bad memory allocation mode"},
+   {PI_TOO_MANY_SEGS    , "too many I2C transaction segments"},
+   {PI_BAD_I2C_SEG      , "an I2C transaction segment failed"},
+   {PI_BAD_SMBUS_CMD    , "SMBus command not supported by driver"},
+   {PI_NOT_I2C_GPIO     , "no bit bang I2C in progress on gpio"},
+   {PI_BAD_I2C_WLEN     , "bad I2C write length"},
+   {PI_BAD_I2C_RLEN     , "bad I2C read length"},
+   {PI_BAD_I2C_CMD      , "bad I2C command"},
+   {PI_BAD_I2C_BAUD     , "bad I2C baud rate, not 50-500k"},
+   {PI_CHAIN_LOOP_CNT   , "bad chain loop count"},
+   {PI_BAD_CHAIN_LOOP   , "empty chain loop"},
+   {PI_CHAIN_COUNTER    , "too many chain counters"},
+   {PI_BAD_CHAIN_CMD    , "bad chain command"},
+   {PI_BAD_CHAIN_DELAY  , "bad chain delay micros"},
+   {PI_CHAIN_NESTING    , "chain counters nested too deeply"},
+   {PI_CHAIN_TOO_BIG    , "chain is too long"},
+   {PI_DEPRECATED       , "deprecated function removed"},
+   {PI_BAD_SER_INVERT   , "bit bang serial invert not 0 or 1"},
 
 };
 
@@ -566,6 +541,7 @@ int cmdParse(
    char c;
    uint32_t tp1, tp2, tp3;
    int8_t to1, to2, to3;
+   int eaten;
 
    /* Check that ext is big enough for the largest message. */
    if (ext_len < (4 * CMD_MAX_PARAM)) return CMD_EXT_TOO_SMALL;
@@ -614,7 +590,7 @@ int cmdParse(
 
          break;
 
-      case 112: /* GDC  GPW  I2CC
+      case 112: /* BI2CC GDC  GPW  I2CC
                    I2CRB MG  MICS  MILS  MODEG  NC  NP  PFG  PRG
                    PROCD  PROCP  PROCS  PRRG  R  READ  SLRC  SPIC
                    WVDEL  WVSC  WVSM  WVSP  WVTX  WVTXR
@@ -689,7 +665,7 @@ int cmdParse(
          break;
 
       case 121: /* HC I2CRD  I2CRR  I2CRW  I2CWB I2CWQ  P  PFS  PRS
-                   PWM  S  SERVO  SLR  W  WDOG  WRITE
+                   PWM  S  SERVO  SLR  SLRI  W  WDOG  WRITE
 
                    Two positive parameters.
                 */
@@ -785,7 +761,8 @@ int cmdParse(
 
          break;
 
-      case 131: /* HP I2CO  I2CPC  I2CRI  I2CWB  I2CWW  SLRO  SPIO  TRIG
+      case 131: /* BI2CO HP I2CO  I2CPC  I2CRI  I2CWB  I2CWW  SLRO
+                   SPIO  TRIG
 
                    Three positive parameters.
                 */
@@ -882,7 +859,7 @@ int cmdParse(
 
          break;
 
-      case 193: /* I2CWD  SERW
+      case 193: /* BI2CZ  I2CWD  I2CZ  SERW  SPIW  SPIX
 
                    Two or more parameters, first >=0, rest 0-255.
                 */
@@ -895,12 +872,16 @@ int cmdParse(
 
             while (pars < CMD_MAX_PARAM)
             {
-               ctl->eaten += getNum(buf+ctl->eaten, &tp1, &to1);
-               if ((to1 == CMD_NUMERIC) &&
-                   ((int)tp1>=0) && ((int)tp1<=255))
+               eaten = getNum(buf+ctl->eaten, &tp1, &to1);
+               if (to1 == CMD_NUMERIC)
                {
-                  pars++;
-                  *p8++ = tp1;
+                  if (((int)tp1>=0) && ((int)tp1<=255))
+                  {
+                     pars++;
+                     *p8++ = tp1;
+                     ctl->eaten += eaten;
+                  }
+                  else break; /* invalid number, end of command */
                }
                else break;
             }
@@ -929,13 +910,16 @@ int cmdParse(
 
             while (pars < 32)
             {
-               ctl->eaten += getNum(buf+ctl->eaten, &tp1, &to1);
-               if ((to1 == CMD_NUMERIC) &&
-                  ((int)tp1>=0) &&
-                  ((int)tp1<=255))
+               eaten = getNum(buf+ctl->eaten, &tp1, &to1);
+               if (to1 == CMD_NUMERIC)
                {
-                  pars++;
-                  *p8++ = tp1;
+                  if (((int)tp1>=0) && ((int)tp1<=255))
+                  {
+                     pars++;
+                     *p8++ = tp1;
+                     ctl->eaten += eaten;
+                  }
+                  else break; /* invalid number, end of command */
                }
                else break;
             }
@@ -970,15 +954,16 @@ int cmdParse(
 
                      while (pars < CMD_MAX_PARAM)
                      {
-                        ctl->eaten += getNum(buf+ctl->eaten, &tp1, &to1);
+                        eaten = getNum(buf+ctl->eaten, &tp1, &to1);
                         if (to1 == CMD_NUMERIC)
                         {
                            if (((int)tp1>=0) && ((int)tp1<=255))
                            {
                               pars++;
                               *p8++ = tp1;
+                              ctl->eaten += eaten;
                            }
-                           else valid = 0;
+                           else break;
                         }
                         else break;
                      }
@@ -1026,12 +1011,16 @@ int cmdParse(
             p8 = ext + 12;
             while (pars < CMD_MAX_PARAM)
             {
-               ctl->eaten += getNum(buf+ctl->eaten, &tp1, &to1);
-               if ((to1 == CMD_NUMERIC) &&
-                   ((int)tp1>=0) && ((int)tp1<=255))
+               eaten = getNum(buf+ctl->eaten, &tp1, &to1);
+               if (to1 == CMD_NUMERIC)
                {
-                  *p8++ = tp1;
-                  pars++;
+                  if (((int)tp1>=0) && ((int)tp1<=255))
+                  {
+                     *p8++ = tp1;
+                     pars++;
+                     ctl->eaten += eaten;
+                  }
+                  else break; /* invalid number, end of command */
                }
                else break;
             }
@@ -1042,6 +1031,36 @@ int cmdParse(
          }
 
          break;
+
+      case 197: /* WVCHA
+
+                   One or more parameters, all 0-255.
+                */
+         pars = 0;
+         p8 = ext;
+
+         while (pars < CMD_MAX_PARAM)
+         {
+            eaten = getNum(buf+ctl->eaten, &tp1, &to1);
+            if (to1 == CMD_NUMERIC)
+            {
+               if (((int)tp1>=0) && ((int)tp1<=255))
+               {
+                  pars++;
+                  *p8++ = tp1;
+                  ctl->eaten += eaten;
+               }
+               else break; /* invalid number, end of command */
+            }
+            else break;
+         }
+
+         p[3] = pars;
+
+         if (pars) valid = 1;
+
+         break;
+
 
    }
 

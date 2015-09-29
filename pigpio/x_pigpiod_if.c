@@ -339,7 +339,7 @@ To the lascivious pleasing of a lute.\n\
       {0, 1<<GPIO, 100000},
    };
 
-   int e, oc, c;
+   int e, oc, c, wid;
 
    char text[2048];
 
@@ -355,11 +355,12 @@ To the lascivious pleasing of a lute.\n\
    e = wave_add_generic(4, wf);
    CHECK(5, 2, e, 4, 0, "pulse, wave add generic");
 
-   e = wave_tx_repeat();
+   wid = wave_create();
+   e = wave_send_repeat(wid);
    CHECK(5, 3, e, 9, 0, "wave tx repeat");
 
    oc = t5_count;
-   time_sleep(5);
+   time_sleep(5.05);
    c = t5_count - oc;
    CHECK(5, 4, c, 50, 1, "callback");
 
@@ -373,7 +374,8 @@ To the lascivious pleasing of a lute.\n\
    e = wave_add_serial(GPIO, BAUD, 8, 2, 5000000, strlen(TEXT), TEXT);
    CHECK(5, 7, e, 3405, 0, "wave clear, wave add serial");
 
-   e = wave_tx_start();
+   wid = wave_create();
+   e = wave_send_once(wid);
    CHECK(5, 8, e, 6811, 0, "wave tx start");
 
    oc = t5_count;

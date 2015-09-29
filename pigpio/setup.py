@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='pigpio',
-      version='1.15',
+      version='1.21',
       author='joan',
       author_email='joan@abyz.co.uk',
       maintainer='joan',
@@ -14,4 +14,4 @@ setup(name='pigpio',
       download_url='http://abyz.co.uk/rpi/pigpio/pigpio.zip',
       license='unlicense.org',
       py_modules=['pigpio']
-)
+     )
