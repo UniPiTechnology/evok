@@ -56,10 +56,10 @@ function SyncDevice(msg) {
             main_el.className = "ui-li-aside";
             var option_on = document.createElement("option");
             option_on.value = 1;
-            option_on.innerText = "On";
+            option_on.textContent = "On";
             var option_off = document.createElement("option");
             option_off.value = 0;
-            option_off.innerText = "Off";
+            option_off.textContent = "Off";
             main_el.add(option_off);
             main_el.add(option_on);
         }
@@ -72,7 +72,7 @@ function SyncDevice(msg) {
         }
         else if (dev_type == "temp") {
             main_el = document.createElement("h1");
-            main_el.innerText = value + unit;
+            main_el.textContent = value + unit;
             main_el.className = "ui-li-aside";
         }
         else {
@@ -81,7 +81,7 @@ function SyncDevice(msg) {
             if (value == 1) {
                 state = "On;"
             }
-            main_el.innerText = state + unit;
+            main_el.textContent = state + unit;
             main_el.className = "ui-li-aside";
         }
 
@@ -91,7 +91,7 @@ function SyncDevice(msg) {
         label = document.createElement("label");
         label.id = ns + "_label";
         label.setAttribute("for", main_el.id);
-        label.innerText = name;
+        label.textContent = name;
 
         //create structure
         div.appendChild(label);
@@ -139,7 +139,7 @@ function SyncDevice(msg) {
         var main_el = document.getElementById(ns + "_value");
         var label = document.getElementById(ns + "_label");
         //and update values
-        label.innerText = name;
+        label.textContent = name;
         //outputs
         if (dev_type == 'relay') {
             //TODO: remove re-binding when/if more events for flispwitch are available to prevent looping
