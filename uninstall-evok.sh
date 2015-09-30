@@ -33,30 +33,30 @@ ask() {
 }
 
 uninstall_pigpio() {
-	sudo rm -f /usr/local/include/pigpio.h
-	sudo rm -f /usr/local/include/pigpiod_if.h
-	sudo rm -f /usr/local/lib/libpigpio.a
-	sudo rm -f /usr/local/lib/libpigpiod_if.a
-	sudo rm -f /usr/local/bin/pig2vcd
-	sudo rm -f /usr/local/bin/pigpiod
-	sudo rm -f /usr/local/bin/pigs
-	sudo rm -f /usr/local/man/man1/pig*.1
-	sudo rm -f /usr/local/man/man3/pig*.3
+	rm -f /usr/local/include/pigpio.h
+	rm -f /usr/local/include/pigpiod_if.h
+	rm -f /usr/local/lib/libpigpio.a
+	rm -f /usr/local/lib/libpigpiod_if.a
+	rm -f /usr/local/bin/pig2vcd
+	rm -f /usr/local/bin/pigpiod
+	rm -f /usr/local/bin/pigs
+	rm -f /usr/local/man/man1/pig*.1
+	rm -f /usr/local/man/man3/pig*.3
 }
 
 uninstall() {
-    sudo service evok stop
-    sudo service pigpiod stop
-    sudo pip uninstall -y tornado toro jsonrpclib
-    sudo apt-get remove -y python-ow
+    service evok stop
+    service pigpiod stop
+    pip uninstall -y tornado toro jsonrpclib
+    apt-get remove -y python-ow
     uninstall_pigpio
-    sudo rm -rf /usr/local/lib/python2.7/dist-packages/tornadorpc_evok
-    sudo rm -rf /opt/evok
-    sudo rm -f /etc/evok.conf
+    rm -rf /usr/local/lib/python2.7/dist-packages/tornadorpc_evok
+    rm -rf /opt/evok
+    rm -f /etc/evok.conf
     update-rc.d -f pigpio remove
     update-rc.d -f evok remove
-    sudo rm -f /etc/init.d/evok
-    sudo rm -f /etc/init.d/pigpiod
+    rm -f /etc/init.d/evok
+    rm -f /etc/init.d/pigpiod
     echo "Evok uninstalled sucessfully"
     echo "Do not forget to remove its www folder /var/www/evok"
 }
