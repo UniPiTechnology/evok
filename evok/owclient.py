@@ -159,7 +159,7 @@ class DS2408(MySensor):
         self.value = pios_values
 
     def full(self):
-        return {'dev': 'temp', 'circuit': self.circuit, 'address': self.address, 'value': None, 'typ': self.type}
+        return {'dev': '1wdevice', 'circuit': self.circuit, 'address': self.address, 'value': None, 'typ': self.type}
 
     def simple(self):
         return self.full()
