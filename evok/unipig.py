@@ -669,7 +669,7 @@ class AnalogOutputGPIO():
 #################################################################
 
 class Input():
-    def __init__(self, gpiobus, circuit, pin, debounce=None):
+    def __init__(self, gpiobus, circuit, pin, debounce=None, counter_mode='disabled'):
         self.bus = gpiobus
         self.circuit = circuit
         self.pin = pin
@@ -678,6 +678,12 @@ class Input():
         self.value = None
         self.pending = None
         self.tick = 0
+        if counter_mode in ["rising", "falling", "disabled"]:
+            self.value = 0
+            self.counter_mode = counter_mode
+        else:
+            self.counter_mode = 'disabled'
+            print 'DI%s: counter_mode must be one of: rising, falling or disabled. Counting is disabled!' % self.circuit
         gpiobus.set_pull_up_down(pin, pigpio.PUD_UP)
         gpiobus.register_input(self)
 
@@ -687,10 +693,12 @@ class Input():
 
     def full(self):
         return {'dev': 'input', 'circuit': self.circuit, 'value': self.value,
-                'time': self.tick, 'debounce': self.debounce}
+                'time': self.tick, 'debounce': self.debounce,
+                'counter_mode': self.counter_mode == 'rising' or self.counter_mode == 'falling'}
 
     def simple(self):
-        return {'dev': 'input', 'circuit': self.circuit, 'value': self.value}
+        return {'dev': 'input', 'circuit': self.circuit, 'value': self.value,
+                'counter_mode': self.counter_mode == 'rising' or self.counter_mode == 'falling'}
 
 
     def _cb_set_value(self, value, tick, seq):
@@ -703,8 +711,7 @@ class Input():
             devents.status(self)
             #print("Input-%d = %d  %d" %(self.circuit,self.value, self.pulse_us))
 
-        value = int(
-            not bool(value))  # normalize value and invert it - 0 = led on unipi board is off, 1 = led is shinning
+        value = int(not bool(value))  # normalize value and invert it - 0 = led on unipi board is off, 1 = led is shinning
         if self._debounce:
             if self.pending:
                 self.bus.mainloop.remove_timeout(self.pending)
@@ -716,10 +723,16 @@ class Input():
                 #self.pending = IOLoop.instance().add_timeout(datetime.timedelta(seconds=self._debounce),debcallback)
             return
 
-        self.value = value
-        #print("Input-%d = %d  %d" %(self.circuit,self.value, tick - self.tick))
         self.tick = tick
-        devents.status(self)
+        if self.counter_mode == 'rising' and value == 1:
+            self.value += 1
+            devents.status(self)
+        elif self.counter_mode == 'falling' and value == 0:
+            self.value += 1
+            devents.status(self)
+        elif self.counter_mode == 'disabled':
+            self.value = value
+            devents.status(self)
 
     #@gen.coroutine
     def set(self, debounce=None):

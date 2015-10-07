@@ -149,7 +149,8 @@ def create_devices(Config):
                 bus = Devices.by_int(GPIOBUS, gpiobus)
                 pin = Config.getint(section, "pin")
                 debounce = getintdef(Config, section, "debounce", 0)
-                inp = unipig.Input(bus, circuit, pin, debounce=debounce)
+                counter_mode = getstringdef(Config, section, "counter_mode", "disabled")
+                inp = unipig.Input(bus, circuit, pin, debounce=debounce, counter_mode=counter_mode)
                 Devices.register_device(INPUT, inp)
             elif devclass in ('EPROM', 'EE'):
                 i2cbus = Config.get(section, "i2cbus")

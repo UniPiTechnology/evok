@@ -156,9 +156,11 @@ function SyncDevice(msg) {
         }
         //inputs
         else if (dev_type == 'input') {
-            var state = "Off";
-            if (value == 1) {
-                state = "On";
+            if (msg.counter_mode) {
+                state = value;
+            }
+            else {
+                state = (value == 1) ? "On" : "Off";
             }
             main_el.innerHTML = state;
         }
