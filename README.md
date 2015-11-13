@@ -13,8 +13,9 @@ It also uses some other python libraries that are not installed on Raspbian by d
 * modified version of [tornardorpc] available in this repo tornadorpc_evok
 * [jsonrpclib]
 
-
 # Installation
+
+**Important:** Raspbian Jessie is not supported. Make sure to run **Rasbian Wheezy**!
 
 Download the latest revision from our repository using git client
 
