@@ -140,6 +140,15 @@ A simple example of controlling the UniPi via RPC
 
 There is also a [websocket client library for Perl] to get more control.
 
+##List of available devices:
+* `relay` - relay
+* `input` or `di` - digital input 
+* `ai` - analog input
+* `ao` - analog output
+* `ee` - onboard eeprom
+* `sensor` - 1wire sensor
+* the rest can be found in devies.py 
+
 ##List of available methods:
 
 * Digital Inputs
