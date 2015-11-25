@@ -1,5 +1,5 @@
 """
-This is a simple tool to allow modifing the coeficient for analog-digital conversion
+This is a simple tool to allow modifying the coefficient for analog-digital conversion
 used in the evok's AnalogInput class. Use if your conversion does not match.
 
 It converts the provided float to hex float and writes it to the specified memory.
