@@ -1,6 +1,6 @@
 Requires following libraries :
 
------------- ADITIONAL MODULES ---------------
+------------ ADDITIONAL MODULES ---------------
 import ow
 import pigpio
 import tornado

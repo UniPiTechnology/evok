@@ -1,6 +1,6 @@
 # Evok - the UniPi API
 
-Evok is a main API and WEB interface for the [UniPi] (Raspberry Pi universal addon) board a sucessfull [IngieGogo] project. It provides REST, JSON, and WebSocket interface to relays, digital and analog inputs, analog output.
+Evok is a main API and WEB interface for the [UniPi] (Raspberry Pi universal addon) board a successful [IndieGogo] project. It provides REST, JSON, and WebSocket interface to relays, digital and analog inputs, analog output.
 
 It is still in very early development state so more testing is appreciated.
 
@@ -32,7 +32,7 @@ And run the installation script and follow the given instructions
     chmod +x install-evok.sh uninstall-evok.sh
     sudo ./install-evok.sh
 
-To uninstall it, run the installation script which is also located in `/opt/evok/` fodler after installation
+To uninstall it, run the installation script which is also located in `/opt/evok/` folder after installation
 
     sudo ./uninstall-evok.sh
 
@@ -53,7 +53,7 @@ It will show you something like this
 
 todo: gif
 
-The web face is using websocket to receive all event from the UniPi and controlls the UniPi via REST api.
+The web face is using websocket to receive all events from the UniPi and controls the UniPi via REST api.
 
 ## REST API:
 ### HTTP GET
@@ -147,7 +147,7 @@ There is also a [websocket client library for Perl] to get more control.
 * `ao` - analog output
 * `ee` - onboard eeprom
 * `sensor` - 1wire sensor
-* the rest can be found in devies.py 
+* the rest can be found in devices.py 
 
 ##List of available methods:
 
@@ -167,7 +167,7 @@ There is also a [websocket client library for Perl] to get more control.
 * 1-Wire bus
     * `owbus_scan(circuit)` - force to scan 1Wire network for new devices
 * 1-Wire sensors
-    * `sensor_get(circuit)` - returns all infomation in array [value, is_lost, timestamp_of_value, scan_interval] of sensor by given circuit or 1Wire address
+    * `sensor_get(circuit)` - returns all information in array [value, is_lost, timestamp_of_value, scan_interval] of sensor by given circuit or 1Wire address
     * `sensor_get_value(circuit)` - returns value of a circuit by given circuit or 1Wire address
 
 More methods can be found in the src file evok.py or owclient.py.
@@ -191,7 +191,7 @@ Apache License, Version 2.0
 ----
 Raspberry Pi is a trademark of the Raspberry Pi Foundation
 
-[IngieGogo]:https://www.indiegogo.com/projects/unipi-the-universal-raspberry-pi-add-on-board
+[IndieGogo]:https://www.indiegogo.com/projects/unipi-the-universal-raspberry-pi-add-on-board
 [UniPi]:http://www.unipi.technology
 [PIGPIO]:http://abyz.co.uk/rpi/pigpio/
 [tornado]:https://pypi.python.org/pypi/tornado/
