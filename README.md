@@ -15,8 +15,6 @@ It also uses some other python libraries that are not installed on Raspbian by d
 
 # Installation
 
-**Important:** Raspbian Jessie is not supported. Make sure to run **Rasbian Wheezy**!
-
 Download the latest revision from our repository using git client
 
     git clone https://github.com/UniPiTechnology/evok
