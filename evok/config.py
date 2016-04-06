@@ -6,6 +6,8 @@ from apigpio import I2cBus, GpioBus
 from devices import *
 import owclient
 
+import modbusclient
+
 globals = {
     'version': "1.0",
 }
@@ -180,6 +182,34 @@ def create_devices(Config):
                                         continuous=False, interval=interval, correction=correction, rom=eeprom,
                                         corr_addr=corr_addr)
                 Devices.register_device(AI, ai)
+
+
+            elif devclass == 'MODBUS':
+                port = Config.get(section, "port")
+                baudrate = Config.getint(section, "baudrate")
+                bytesize = Config.getint(section, "bytesize")
+                timeout = Config.getfloat(section, "timeout")
+
+                modbus = modbusclient.ModBusDriver(circuit, port=port, baudrate=baudrate, bytesize=bytesize, timeout=timeout)
+                Devices.register_device(MODBUS, modbus)
+
+            elif devclass == 'MODBUSDEVICE':
+                # permanent thermometer
+                modbus_id = Config.get(section, "modbus")
+                modbus = Devices.by_int(MODBUS, modbus_id)
+                type = Config.get(section, "type")
+                address = Config.getint(section, "address")
+
+                modbus_device = modbus.create_devices(circuit, address, type)
+                Devices.register_device(MODBUS_DEVICE, modbus_device)
+
+            elif devclass == 'MODBUSRELAY':
+                modbus_device_id = Config.get(section, "device")
+                modbus_device = Devices.by_int(MODBUS_DEVICE, modbus_device_id)
+                pin = Config.getint(section, "pin")
+                relay = unipig.ModBusRelay(circuit, modbus_device, pin)
+                Devices.register_device(RELAY, relay)
+
 
         except Exception, E:
             print("Error in config section %s - %s" % (section, str(E)))
