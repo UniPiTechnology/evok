@@ -41,6 +41,19 @@ When done, simply start the daemon by executing `sudo service evok start`
 
 The installation script also enables the I2C subsystem (if not enabled before) but the uninstallation script does not disable it back.
 
+# Debugging
+
+When reporting a bug or posting questions to our [our forum] please run evok by hand. To be able to do that, first stop the service by calling
+
+    service evok stop
+
+and then run it manually as root user by calling
+    
+    /opt/evok/evok.py
+
+and see/paste the output of the script.
+
+
 # API examples
 
 There are many options of controlling the UniPi, the easiest is using a web browser (make sure to copy the www folder to your desired location and edit evok.conf file) and them simply visit
@@ -198,3 +211,4 @@ Raspberry Pi is a trademark of the Raspberry Pi Foundation
 [jsonrpclib]:https://github.com/joshmarshall/jsonrpclib
 [websocket client library for Perl]:https://metacpan.org/pod/AnyEvent::WebSocket::Client
 [websocket Python library]:https://pypi.python.org/pypi/websocket-client/
+[our forum]:http://forum.unipi.technology/
