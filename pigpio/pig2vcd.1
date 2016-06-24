@@ -2,7 +2,7 @@
 ." Process this file with
 ." groff -man -Tascii pig2vcd.1
 ."
-.TH pig2vcd 1 2012-2014 Linux "pigpio archive"
+.TH pig2vcd 1 2012-2015 Linux "pigpio archive"
 .SH NAME
 pig2vd - A utility to convert pigpio notifications to VCD.
 
@@ -53,29 +53,22 @@ typedef struct
 .br
 
 .br
-seqno starts at 0 each time the handle is opened and then increments
-by one for each report.
+seqno: starts at 0 each time the handle is opened and then increments by one for each report.
 
 .br
 
 .br
-flags, if bit 5 is set then bits 0-4 of the flags indicate a gpio which
-has had a watchdog timeout.
+flags: two flags are defined, PI_NTFY_FLAGS_WDOG and PI_NTFY_FLAGS_ALIVE. If bit 5 is set (PI_NTFY_FLAGS_WDOG) then bits 0-4 of the flags indicate a gpio which has had a watchdog timeout; if bit 6 is set (PI_NTFY_FLAGS_ALIVE) this indicates a keep alive signal on the pipe/socket and is sent once a minute in the absence of other notification activity.
 
 .br
 
 .br
-tick is the number of microseconds since system boot.
+tick: the number of microseconds since system boot. It wraps around after 1h12m.
 
 .br
 
 .br
-level indicates the level of each gpio.
-
-.br
-
-.br
-pig2vcd takes these notifications and outputs a text format VCD.
+level: indicates the level of each gpio. If bit 1<<x is set then gpio x is high. pig2vcd takes these notifications and outputs a text format VCD.
 
 .br
 
@@ -243,7 +236,7 @@ The state lines contain the new state followed by the gpio identifier.
 
 .SH SEE ALSO
 
-pigpiod(1), pigs(1), pigpio(3), pigpiod_if(3)
+pigpiod(1), pigs(1), pigpio(3), pigpiod_if(3), pigpiod_if2(3)
 .SH AUTHOR
 
 joan@abyz.co.uk

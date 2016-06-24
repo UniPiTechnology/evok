@@ -1,7 +1,7 @@
 """
 pigpio is a Python module for the Raspberry which talks to
 the pigpio daemon to allow control of the general purpose
-input outputs (gpios).
+input outputs (GPIO).
 
 [http://abyz.co.uk/rpi/pigpio/python.html]
 
@@ -11,23 +11,23 @@ o the pigpio Python module can run on Windows, Macs, or Linux
 
 o controls one or more Pi's
 
-o independent PWM on any of gpios 0-31 simultaneously
+o independent PWM on any of GPIO 0-31 simultaneously
 
-o independent servo pulses on any of gpios 0-31 simultaneously
+o independent servo pulses on any of GPIO 0-31 simultaneously
 
-o callbacks when any of gpios 0-31 change state
+o callbacks when any of GPIO 0-31 change state
 
 o creating and transmitting precisely timed waveforms
 
-o reading/writing gpios and setting their modes
+o reading/writing GPIO and setting their modes
 
 o wrappers for I2C, SPI, and serial links
 
 o creating and running scripts on the pigpio daemon
 
-*gpios*
+*GPIO*
 
-ALL gpios are identified by their Broadcom number.
+ALL GPIO are identified by their Broadcom number.
 
 *Notes*
 
@@ -42,7 +42,7 @@ A number of settings are determined when the pigpio daemon is started.
 
 o the sample rate (1, 2, 4, 5, 8, or 10 us, default 5 us).
 
-o the set of gpios which may be updated (generally written to).  The
+o the set of GPIO which may be updated (generally written to).  The
   default set is those available on the Pi board revision.
 
 o the available PWM frequencies (see [*set_PWM_frequency*]).
@@ -69,7 +69,7 @@ pigpio.exceptions = True
 *Usage*
 
 This module uses the services of the C pigpio library.  pigpio
-must be running on the Pi(s) whose gpios are to be manipulated.
+must be running on the Pi(s) whose GPIO are to be manipulated.
 
 The normal way to start pigpio is as a daemon (during system
 start).
@@ -78,16 +78,16 @@ sudo pigpiod
 
 Your Python program must import pigpio and create one or more
 instances of the pigpio.pi class.  This class gives access to
-a specified Pi's gpios.
+a specified Pi's GPIO.
 
 ...
-pi1 = pigpio.pi()       # pi1 accesses the local Pi's gpios
-pi2 = pigpio.pi('tom')  # pi2 accesses tom's gpios
-pi3 = pigpio.pi('dick') # pi3 accesses dick's gpios
+pi1 = pigpio.pi()       # pi1 accesses the local Pi's GPIO
+pi2 = pigpio.pi('tom')  # pi2 accesses tom's GPIO
+pi3 = pigpio.pi('dick') # pi3 accesses dick's GPIO
 
-pi1.write(4, 0) # set local Pi's gpio 4 low
-pi2.write(4, 1) # set tom's gpio 4 to high
-pi3.read(4)     # get level of dick's gpio 4
+pi1.write(4, 0) # set local Pi's GPIO 4 low
+pi2.write(4, 1) # set tom's GPIO 4 to high
+pi3.read(4)     # get level of dick's GPIO 4
 ...
 
 The later example code snippets assume that pi is an instance of
@@ -102,59 +102,62 @@ stop                      Stop a Pi connection
 
 Beginner
 
-set_mode                  Set a gpio mode
-get_mode                  Get a gpio mode
-set_pull_up_down          Set/clear gpio pull up/down resistor
+set_mode                  Set a GPIO mode
+get_mode                  Get a GPIO mode
+set_pull_up_down          Set/clear GPIO pull up/down resistor
 
-read                      Read a gpio
-write                     Write a gpio
+read                      Read a GPIO
+write                     Write a GPIO
 
-set_PWM_dutycycle         Start/stop PWM pulses on a gpio
-get_PWM_dutycycle         Get PWM dutycycle set on a gpio
+set_PWM_dutycycle         Start/stop PWM pulses on a GPIO
+get_PWM_dutycycle         Get PWM dutycycle set on a GPIO
 
-set_servo_pulsewidth      Start/Stop servo pulses on a gpio
-get_servo_pulsewidth      Get servo pulsewidth set on a gpio
+set_servo_pulsewidth      Start/Stop servo pulses on a GPIO
+get_servo_pulsewidth      Get servo pulsewidth set on a GPIO
 
-callback                  Create gpio level change callback
-wait_for_edge             Wait for gpio level change
+callback                  Create GPIO level change callback
+wait_for_edge             Wait for GPIO level change
 
 Intermediate
 
-gpio_trigger              Send a trigger pulse to a gpio
+gpio_trigger              Send a trigger pulse to a GPIO
 
-set_watchdog              Set a watchdog on a gpio
+set_watchdog              Set a watchdog on a GPIO
 
-set_PWM_range             Configure PWM range of a gpio
-get_PWM_range             Get configured PWM range of a gpio
+set_PWM_range             Configure PWM range of a GPIO
+get_PWM_range             Get configured PWM range of a GPIO
 
-set_PWM_frequency         Set PWM frequency of a gpio
-get_PWM_frequency         Get PWM frequency of a gpio
+set_PWM_frequency         Set PWM frequency of a GPIO
+get_PWM_frequency         Get PWM frequency of a GPIO
 
-read_bank_1               Read all bank 1 gpios
-read_bank_2               Read all bank 2 gpios
+read_bank_1               Read all bank 1 GPIO
+read_bank_2               Read all bank 2 GPIO
 
-clear_bank_1              Clear selected gpios in bank 1
-clear_bank_2              Clear selected gpios in bank 2
+clear_bank_1              Clear selected GPIO in bank 1
+clear_bank_2              Clear selected GPIO in bank 2
 
-set_bank_1                Set selected gpios in bank 1
-set_bank_2                Set selected gpios in bank 2
+set_bank_1                Set selected GPIO in bank 1
+set_bank_2                Set selected GPIO in bank 2
 
 Advanced
 
-get_PWM_real_range        Get underlying PWM range for a gpio
+get_PWM_real_range        Get underlying PWM range for a GPIO
 
 notify_open               Request a notification handle
-notify_begin              Start notifications for selected gpios
+notify_begin              Start notifications for selected GPIO
 notify_pause              Pause notifications
 notify_close              Close a notification
 
-bb_serial_read_open       Open a gpio for bit bang serial reads
-bb_serial_read            Read bit bang serial data from  a gpio
-bb_serial_read_close      Close a gpio for bit bang serial reads
+bb_serial_read_open       Open a GPIO for bit bang serial reads
+bb_serial_read            Read bit bang serial data from  a GPIO
+bb_serial_read_close      Close a GPIO for bit bang serial reads
 bb_serial_invert          Invert serial logic (1 invert, 0 normal)
 
-hardware_clock            Start hardware clock on supported gpios
-hardware_PWM              Start hardware PWM on supported gpios
+hardware_clock            Start hardware clock on supported GPIO
+hardware_PWM              Start hardware PWM on supported GPIO
+
+set_glitch_filter         Set a glitch filter on a GPIO
+set_noise_filter          Set a noise filter on a GPIO
 
 Scripts
 
@@ -173,13 +176,15 @@ wave_add_generic          Adds a series of pulses to the waveform
 wave_add_serial           Adds serial data to the waveform
 
 wave_create               Creates a waveform from added data
-wave_delete               Deletes one or more waveforms
+wave_delete               Deletes a waveform
 
 wave_send_once            Transmits a waveform once
 wave_send_repeat          Transmits a waveform repeatedly
+wave_send_using_mode      Transmits a waveform in the chosen mode
 
 wave_chain                Transmits a chain of waveforms
 
+wave_tx_at                Returns the current transmitting waveform
 wave_tx_busy              Checks to see if a waveform has ended
 wave_tx_stop              Aborts the current waveform
 
@@ -215,8 +220,8 @@ i2c_write_device          Writes the raw I2C device
 
 i2c_zip                   Performs multiple I2C transactions
 
-bb_i2c_open               Opens gpios for bit banging I2C
-bb_i2c_close              Closes gpios for bit banging I2C
+bb_i2c_open               Opens GPIO for bit banging I2C
+bb_i2c_close              Closes GPIO for bit banging I2C
 bb_i2c_zip                Performs multiple bit banged I2C transactions
 
 SPI
@@ -256,6 +261,7 @@ get_pigpio_version        Get the pigpio version
 pigpio.error_text         Gets error text from error number
 pigpio.tickDiff           Returns difference between two ticks
 """
+
 import sys
 import socket
 import struct
@@ -264,11 +270,11 @@ import threading
 import os
 import atexit
 
-VERSION = "1.21"
+VERSION = "1.31"
 
 exceptions = True
 
-# gpio levels
+# GPIO levels
 
 OFF   = 0
 LOW   = 0
@@ -280,13 +286,13 @@ SET  = 1
 
 TIMEOUT = 2
 
-# gpio edges
+# GPIO edges
 
 RISING_EDGE  = 0
 FALLING_EDGE = 1
 EITHER_EDGE  = 2
 
-# gpio modes
+# GPIO modes
 
 INPUT  = 0
 OUTPUT = 1
@@ -297,7 +303,7 @@ ALT3   = 7
 ALT4   = 3
 ALT5   = 2
 
-# gpio Pull Up Down
+# GPIO Pull Up Down
 
 PUD_OFF  = 0
 PUD_DOWN = 1
@@ -316,6 +322,16 @@ PI_SCRIPT_FAILED =4
 NTFY_FLAGS_ALIVE = (1 << 6)
 NTFY_FLAGS_WDOG  = (1 << 5)
 NTFY_FLAGS_GPIO  = 31
+
+# wave modes
+
+WAVE_MODE_ONE_SHOT     =0
+WAVE_MODE_REPEAT       =1
+WAVE_MODE_ONE_SHOT_SYNC=2
+WAVE_MODE_REPEAT_SYNC  =3
+
+WAVE_NOT_FOUND = 9998 # Transmitted wave not found.
+NO_TX_WAVE     = 9999 # No wave being transmitted.
 
 # pigpio command numbers
 
@@ -433,7 +449,16 @@ _PI_CMD_I2CZ =92
 
 _PI_CMD_WVCHA=93
 
-_PI_CMD_SLRI= 94
+_PI_CMD_SLRI =94
+
+_PI_CMD_CGI  =95
+_PI_CMD_CSI  =96
+
+_PI_CMD_FG   =97
+_PI_CMD_FN   =98
+
+_PI_CMD_WVTXM=100
+_PI_CMD_WVTAT=101
 
 # pigpio error numbers
 
@@ -499,7 +524,7 @@ PI_NO_MEMORY        =-58
 PI_SOCK_READ_FAILED =-59
 PI_SOCK_WRIT_FAILED =-60
 PI_TOO_MANY_PARAM   =-61
-PI_NOT_HALTED       =-62
+PI_SCRIPT_NOT_READY =-62
 PI_BAD_TAG          =-63
 PI_BAD_MICS_DELAY   =-64
 PI_BAD_MILS_DELAY   =-65
@@ -559,13 +584,18 @@ PI_CHAIN_NESTING    =-118
 PI_CHAIN_TOO_BIG    =-119
 PI_DEPRECATED       =-120
 PI_BAD_SER_INVERT   =-121
+_PI_BAD_EDGE        =-122
+_PI_BAD_ISR_INIT    =-123
+PI_BAD_FOREVER      =-124
+PI_BAD_FILTER       =-125
+
 
 # pigpio error text
 
 _errors=[
    [_PI_INIT_FAILED      , "pigpio initialisation failed"],
-   [PI_BAD_USER_GPIO     , "gpio not 0-31"],
-   [PI_BAD_GPIO          , "gpio not 0-53"],
+   [PI_BAD_USER_GPIO     , "GPIO not 0-31"],
+   [PI_BAD_GPIO          , "GPIO not 0-53"],
    [PI_BAD_MODE          , "mode not 0-7"],
    [PI_BAD_LEVEL         , "level not 0-1"],
    [PI_BAD_PUD           , "pud not 0-2"],
@@ -592,7 +622,7 @@ _errors=[
    [_PI_BAD_CHANNEL      , "DMA channel not 0-14"],
    [_PI_BAD_SOCKET_PORT  , "socket port not 1024-30000"],
    [_PI_BAD_FIFO_COMMAND , "unknown fifo command"],
-   [_PI_BAD_SECO_CHANNEL , "DMA secondary channel not 0-6"],
+   [_PI_BAD_SECO_CHANNEL , "DMA secondary channel not 0-14"],
    [_PI_NOT_INITIALISED  , "function called before gpioInitialise"],
    [_PI_INITIALISED      , "function called after gpioInitialise"],
    [_PI_BAD_WAVE_MODE    , "waveform mode not 0-1"],
@@ -600,9 +630,9 @@ _errors=[
    [PI_BAD_WAVE_BAUD     , "baud rate not 50-250000(RX)/1000000(TX)"],
    [PI_TOO_MANY_PULSES   , "waveform has too many pulses"],
    [PI_TOO_MANY_CHARS    , "waveform has too many chars"],
-   [PI_NOT_SERIAL_GPIO   , "no bit bang serial read in progress on gpio"],
-   [PI_NOT_PERMITTED     , "no permission to update gpio"],
-   [PI_SOME_PERMITTED    , "no permission to update one or more gpios"],
+   [PI_NOT_SERIAL_GPIO   , "no bit bang serial read in progress on GPIO"],
+   [PI_NOT_PERMITTED     , "no permission to update GPIO"],
+   [PI_SOME_PERMITTED    , "no permission to update one or more GPIO"],
    [PI_BAD_WVSC_COMMND   , "bad WVSC subcommand"],
    [PI_BAD_WVSM_COMMND   , "bad WVSM subcommand"],
    [PI_BAD_WVSP_COMMND   , "bad WVSP subcommand"],
@@ -610,7 +640,7 @@ _errors=[
    [PI_BAD_SCRIPT        , "invalid script"],
    [PI_BAD_SCRIPT_ID     , "unknown script id"],
    [PI_BAD_SER_OFFSET    , "add serial data offset > 30 minute"],
-   [PI_GPIO_IN_USE       , "gpio already in use"],
+   [PI_GPIO_IN_USE       , "GPIO already in use"],
    [PI_BAD_SERIAL_COUNT  , "must read at least a byte at a time"],
    [PI_BAD_PARAM_NUM     , "script parameter id not 0-9"],
    [PI_DUP_TAG           , "script has duplicate tag"],
@@ -622,7 +652,7 @@ _errors=[
    [PI_SOCK_READ_FAILED  , "socket read failed"],
    [PI_SOCK_WRIT_FAILED  , "socket write failed"],
    [PI_TOO_MANY_PARAM    , "too many script parameters (> 10)"],
-   [PI_NOT_HALTED        , "script already running or failed"],
+   [PI_SCRIPT_NOT_READY  , "script initialising"],
    [PI_BAD_TAG           , "script has unresolved tag"],
    [PI_BAD_MICS_DELAY    , "bad MICS delay (too large)"],
    [PI_BAD_MILS_DELAY    , "bad MILS delay (too large)"],
@@ -651,11 +681,11 @@ _errors=[
    [PI_UNKNOWN_COMMAND   , "unknown command"],
    [PI_SPI_XFER_FAILED   , "SPI xfer/read/write failed"],
    [_PI_BAD_POINTER      , "bad (NULL) pointer"],
-   [PI_NO_AUX_SPI        , "need a A+/B+/Pi2 for auxiliary SPI"],
-   [PI_NOT_PWM_GPIO      , "gpio is not in use for PWM"],
-   [PI_NOT_SERVO_GPIO    , "gpio is not in use for servo pulses"],
-   [PI_NOT_HCLK_GPIO     , "gpio has no hardware clock"],
-   [PI_NOT_HPWM_GPIO     , "gpio has no hardware PWM"],
+   [PI_NO_AUX_SPI        , "no auxiliary SPI on Pi A or B"],
+   [PI_NOT_PWM_GPIO      , "GPIO is not in use for PWM"],
+   [PI_NOT_SERVO_GPIO    , "GPIO is not in use for servo pulses"],
+   [PI_NOT_HCLK_GPIO     , "GPIO has no hardware clock"],
+   [PI_NOT_HPWM_GPIO     , "GPIO has no hardware PWM"],
    [PI_BAD_HPWM_FREQ     , "hardware PWM frequency not 1-125M"],
    [PI_BAD_HPWM_DUTY     , "hardware PWM dutycycle not 0-1M"],
    [PI_BAD_HCLK_FREQ     , "hardware clock frequency not 4689-250M"],
@@ -668,7 +698,7 @@ _errors=[
    [_PI_TOO_MANY_SEGS    , "too many I2C transaction segments"],
    [_PI_BAD_I2C_SEG      , "an I2C transaction segment failed"],
    [PI_BAD_SMBUS_CMD     , "SMBus command not supported"],
-   [PI_NOT_I2C_GPIO      , "no bit bang I2C in progress on gpio"],
+   [PI_NOT_I2C_GPIO      , "no bit bang I2C in progress on GPIO"],
    [PI_BAD_I2C_WLEN      , "bad I2C write length"],
    [PI_BAD_I2C_RLEN      , "bad I2C read length"],
    [PI_BAD_I2C_CMD       , "bad I2C command"],
@@ -682,6 +712,10 @@ _errors=[
    [PI_CHAIN_TOO_BIG     , "chain is too long"],
    [PI_DEPRECATED        , "deprecated function removed"],
    [PI_BAD_SER_INVERT    , "bit bang serial invert not 0 or 1"],
+   [_PI_BAD_EDGE         , "bad ISR edge value, not 0-2"],
+   [_PI_BAD_ISR_INIT     , "bad ISR initialisation"],
+   [PI_BAD_FOREVER       , "loop forever must be last chain command"],
+   [PI_BAD_FILTER        , "bad filter parameter"],
 
 ]
 
@@ -709,8 +743,8 @@ class pulse:
       """
       Initialises a pulse.
 
-       gpio_on:= the gpios to switch on at the start of the pulse.
-      gpio_off:= the gpios to switch off at the start of the pulse.
+       gpio_on:= the GPIO to switch on at the start of the pulse.
+      gpio_off:= the GPIO to switch off at the start of the pulse.
          delay:= the delay in microseconds before the next pulse.
 
       """
@@ -846,9 +880,9 @@ class _callback_ADT:
       """
       Initialises a callback ADT.
 
-      gpio:= Broadcom gpio number.
+      gpio:= Broadcom GPIO number.
       edge:= EITHER_EDGE, RISING_EDGE, or FALLING_EDGE.
-      func:= a user function taking three arguments (gpio, level, tick).
+      func:= a user function taking three arguments (GPIO, level, tick).
       """
       self.gpio = gpio
       self.edge = edge
@@ -867,6 +901,7 @@ class _callback_thread(threading.Thread):
       self.monitor = 0
       self.callbacks = []
       self.sl.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      self.sl.s.settimeout(None)
       self.sl.s.connect((host, port))
       self.handle = _pigpio_command(self.sl, _PI_CMD_NOIB, 0, 0)
       self.go = True
@@ -899,7 +934,7 @@ class _callback_thread(threading.Thread):
    def run(self):
       """Runs the notification thread."""
 
-      lastLevel = 0
+      lastLevel = _pigpio_command(self.control,  _PI_CMD_BR1, 0, 0)
 
       MSG_SIZ = 12
 
@@ -933,7 +968,7 @@ class _callback_thread(threading.Thread):
       self.sl.s.close()
 
 class _callback:
-   """A class to provide gpio level change callbacks."""
+   """A class to provide GPIO level change callbacks."""
 
    def __init__(self, notify, user_gpio, edge=RISING_EDGE, func=None):
       """
@@ -941,6 +976,7 @@ class _callback:
       """
       self._notify = notify
       self.count=0
+      self._reset = False
       if func is None:
          func=self._tally
       self.callb = _callback_ADT(user_gpio, edge, func)
@@ -952,6 +988,9 @@ class _callback:
 
    def _tally(self, user_gpio, level, tick):
       """Increment the callback called count."""
+      if self._reset:
+         self._reset = False
+         self.count = 0
       self.count += 1
 
    def tally(self):
@@ -964,8 +1003,15 @@ class _callback:
       """
       return self.count
 
+   def reset_tally(self):
+      """
+      Resets the tally count to zero.
+      """
+      self._reset = True
+      self.count = 0
+
 class _wait_for_edge:
-   """Encapsulates waiting for gpio edges."""
+   """Encapsulates waiting for GPIO edges."""
 
    def __init__(self, notify, gpio, edge, timeout):
       """Initialises a wait_for_edge."""
@@ -993,22 +1039,22 @@ class pi():
 
    def set_mode(self, gpio, mode):
       """
-      Sets the gpio mode.
+      Sets the GPIO mode.
 
       gpio:= 0-53.
       mode:= INPUT, OUTPUT, ALT0, ALT1, ALT2, ALT3, ALT4, ALT5.
 
       ...
-      pi.set_mode( 4, pigpio.INPUT)  # gpio  4 as input
-      pi.set_mode(17, pigpio.OUTPUT) # gpio 17 as output
-      pi.set_mode(24, pigpio.ALT2)   # gpio 24 as ALT2
+      pi.set_mode( 4, pigpio.INPUT)  # GPIO  4 as input
+      pi.set_mode(17, pigpio.OUTPUT) # GPIO 17 as output
+      pi.set_mode(24, pigpio.ALT2)   # GPIO 24 as ALT2
       ...
       """
       return _u2i(_pigpio_command(self.sl, _PI_CMD_MODES, gpio, mode))
 
    def get_mode(self, gpio):
       """
-      Returns the gpio mode.
+      Returns the GPIO mode.
 
       gpio:= 0-53.
 
@@ -1034,7 +1080,7 @@ class pi():
 
    def set_pull_up_down(self, gpio, pud):
       """
-      Sets or clears the internal gpio pull-up/down resistor.
+      Sets or clears the internal GPIO pull-up/down resistor.
 
       gpio:= 0-53.
        pud:= PUD_UP, PUD_DOWN, PUD_OFF.
@@ -1049,7 +1095,7 @@ class pi():
 
    def read(self, gpio):
       """
-      Returns the gpio level.
+      Returns the GPIO level.
 
       gpio:= 0-53.
 
@@ -1069,12 +1115,12 @@ class pi():
 
    def write(self, gpio, level):
       """
-      Sets the gpio level.
+      Sets the GPIO level.
 
-       gpio:= 0-53.
+       GPIO:= 0-53.
       level:= 0, 1.
 
-      If PWM or servo pulses are active on the gpio they are
+      If PWM or servo pulses are active on the GPIO they are
       switched off.
 
       ...
@@ -1093,7 +1139,7 @@ class pi():
 
    def set_PWM_dutycycle(self, user_gpio, dutycycle):
       """
-      Starts (non-zero dutycycle) or stops (0) PWM pulses on the gpio.
+      Starts (non-zero dutycycle) or stops (0) PWM pulses on the GPIO.
 
       user_gpio:= 0-31.
       dutycycle:= 0-range (range defaults to 255).
@@ -1113,7 +1159,7 @@ class pi():
 
    def get_PWM_dutycycle(self, user_gpio):
       """
-      Returns the PWM dutycycle being used on the gpio.
+      Returns the PWM dutycycle being used on the GPIO.
 
       user_gpio:= 0-31.
 
@@ -1121,12 +1167,12 @@ class pi():
 
 
       For normal PWM the dutycycle will be out of the defined range
-      for the gpio (see [*get_PWM_range*]).
+      for the GPIO (see [*get_PWM_range*]).
 
-      If a hardware clock is active on the gpio the reported
+      If a hardware clock is active on the GPIO the reported
       dutycycle will be 500000 (500k) out of 1000000 (1M).
 
-      If hardware PWM is active on the gpio the reported dutycycle
+      If hardware PWM is active on the GPIO the reported dutycycle
       will be out of a 1000000 (1M).
 
       ...
@@ -1143,7 +1189,7 @@ class pi():
 
    def set_PWM_range(self, user_gpio, range_):
       """
-      Sets the range of PWM values to be used on the gpio.
+      Sets the range of PWM values to be used on the GPIO.
 
       user_gpio:= 0-31.
          range_:= 25-40000.
@@ -1158,11 +1204,11 @@ class pi():
 
    def get_PWM_range(self, user_gpio):
       """
-      Returns the range of PWM values being used on the gpio.
+      Returns the range of PWM values being used on the GPIO.
 
       user_gpio:= 0-31.
 
-      If a hardware clock or hardware PWM is active on the gpio
+      If a hardware clock or hardware PWM is active on the GPIO
       the reported range will be 1000000 (1M).
 
       ...
@@ -1176,14 +1222,14 @@ class pi():
    def get_PWM_real_range(self, user_gpio):
       """
       Returns the real (underlying) range of PWM values being
-      used on the gpio.
+      used on the GPIO.
 
       user_gpio:= 0-31.
 
-      If a hardware clock is active on the gpio the reported
+      If a hardware clock is active on the GPIO the reported
       real range will be 1000000 (1M).
 
-      If hardware PWM is active on the gpio the reported real range
+      If hardware PWM is active on the GPIO the reported real range
       will be approximately 250M divided by the set PWM frequency.
 
       ...
@@ -1196,12 +1242,48 @@ class pi():
 
    def set_PWM_frequency(self, user_gpio, frequency):
       """
-      Sets the frequency (in Hz) of the PWM to be used on the gpio.
+      Sets the frequency (in Hz) of the PWM to be used on the GPIO.
 
       user_gpio:= 0-31.
       frequency:= >=0 Hz
 
-      Returns the frequency actually set.
+      Returns the numerically closest frequency if OK, otherwise
+      PI_BAD_USER_GPIO or PI_NOT_PERMITTED.
+
+      If PWM is currently active on the GPIO it will be switched
+      off and then back on at the new frequency.
+
+      Each GPIO can be independently set to one of 18 different
+      PWM frequencies.
+
+      The selectable frequencies depend upon the sample rate which
+      may be 1, 2, 4, 5, 8, or 10 microseconds (default 5).  The
+      sample rate is set when the pigpio daemon is started.
+
+      The frequencies for each sample rate are:
+
+      . .
+                             Hertz
+
+             1: 40000 20000 10000 8000 5000 4000 2500 2000 1600
+                 1250  1000   800  500  400  250  200  100   50
+
+             2: 20000 10000  5000 4000 2500 2000 1250 1000  800
+                  625   500   400  250  200  125  100   50   25
+
+             4: 10000  5000  2500 2000 1250 1000  625  500  400
+                  313   250   200  125  100   63   50   25   13
+      sample
+       rate
+       (us)  5:  8000  4000  2000 1600 1000  800  500  400  320
+                  250   200   160  100   80   50   40   20   10
+
+             8:  5000  2500  1250 1000  625  500  313  250  200
+                  156   125   100   63   50   31   25   13    6
+
+            10:  4000  2000  1000  800  500  400  250  200  160
+                  125   100    80   50   40   25   20   10    5
+      . .
 
       ...
       pi.set_PWM_frequency(4,0)
@@ -1218,19 +1300,19 @@ class pi():
 
    def get_PWM_frequency(self, user_gpio):
       """
-      Returns the frequency of PWM being used on the gpio.
+      Returns the frequency of PWM being used on the GPIO.
 
       user_gpio:= 0-31.
 
-      Returns the frequency (in Hz) used for the gpio.
+      Returns the frequency (in Hz) used for the GPIO.
 
-      For normal PWM the frequency will be that defined for the gpio
+      For normal PWM the frequency will be that defined for the GPIO
       by [*set_PWM_frequency*].
 
-      If a hardware clock is active on the gpio the reported frequency
+      If a hardware clock is active on the GPIO the reported frequency
       will be that set by [*hardware_clock*].
 
-      If hardware PWM is active on the gpio the reported frequency
+      If hardware PWM is active on the GPIO the reported frequency
       will be that set by [*hardware_PWM*].
 
       ...
@@ -1247,7 +1329,7 @@ class pi():
 
    def set_servo_pulsewidth(self, user_gpio, pulsewidth):
       """
-      Starts (500-2500) or stops (0) servo pulses on the gpio.
+      Starts (500-2500) or stops (0) servo pulses on the GPIO.
 
        user_gpio:= 0-31.
       pulsewidth:= 0 (off),
@@ -1275,7 +1357,7 @@ class pi():
 
    def get_servo_pulsewidth(self, user_gpio):
       """
-      Returns the servo pulsewidth being used on the gpio.
+      Returns the servo pulsewidth being used on the GPIO.
 
       user_gpio:= 0-31.
 
@@ -1297,7 +1379,7 @@ class pi():
       """
       Returns a notification handle (>=0).
 
-      A notification is a method for being notified of gpio state
+      A notification is a method for being notified of GPIO state
       changes via a pipe.
 
       Pipes are only accessible from the local machine so this
@@ -1325,7 +1407,7 @@ class pi():
 
       flags: two flags are defined, PI_NTFY_FLAGS_WDOG and
       PI_NTFY_FLAGS_ALIVE.  If bit 5 is set (PI_NTFY_FLAGS_WDOG)
-      then bits 0-4 of the flags indicate a gpio which has had a
+      then bits 0-4 of the flags indicate a GPIO which has had a
       watchdog timeout; if bit 6 is set (PI_NTFY_FLAGS_ALIVE) this
       indicates a keep alive signal on the pipe/socket and is sent
       once a minute in the absence of other notification activity.
@@ -1333,8 +1415,8 @@ class pi():
       tick: the number of microseconds since system boot.  It wraps
       around after 1h12m.
 
-      level: indicates the level of each gpio.  If bit 1<<x is set
-      then gpio x is high.
+      level: indicates the level of each GPIO.  If bit 1<<x is set
+      then GPIO x is high.
 
       ...
       h = pi.notify_open()
@@ -1349,12 +1431,12 @@ class pi():
       Starts notifications on a handle.
 
       handle:= >=0 (as returned by a prior call to [*notify_open*])
-        bits:= a 32 bit mask indicating the gpios to be notified.
+        bits:= a 32 bit mask indicating the GPIO to be notified.
 
-      The notification sends state changes for each gpio whose
+      The notification sends state changes for each GPIO whose
       corresponding bit in bits is set.
 
-      The following code starts notifications for gpios 1, 4,
+      The following code starts notifications for GPIO 1, 4,
       6, 7, and 10 (1234 = 0x04D2 = 0b0000010011010010).
 
       ...
@@ -1406,27 +1488,27 @@ class pi():
 
    def set_watchdog(self, user_gpio, wdog_timeout):
       """
-      Sets a watchdog timeout for a gpio.
+      Sets a watchdog timeout for a GPIO.
 
          user_gpio:= 0-31.
       wdog_timeout:= 0-60000.
 
       The watchdog is nominally in milliseconds.
 
-      Only one watchdog may be registered per gpio.
+      Only one watchdog may be registered per GPIO.
 
       The watchdog may be cancelled by setting timeout to 0.
 
-      If no level change has been detected for the gpio for timeout
-      milliseconds any notification for the gpio has a report written
+      If no level change has been detected for the GPIO for timeout
+      milliseconds any notification for the GPIO has a report written
       to the fifo with the flags set to indicate a watchdog timeout.
 
       The callback class interprets the flags and will
-      call registered callbacks for the gpio with level TIMEOUT.
+      call registered callbacks for the GPIO with level TIMEOUT.
 
       ...
-      pi.set_watchdog(23, 1000) # 1000 ms watchdog on gpio 23
-      pi.set_watchdog(23, 0)    # cancel watchdog on gpio 23
+      pi.set_watchdog(23, 1000) # 1000 ms watchdog on GPIO 23
+      pi.set_watchdog(23, 0)    # cancel watchdog on GPIO 23
       ...
       """
       return _u2i(_pigpio_command(
@@ -1434,10 +1516,10 @@ class pi():
 
    def read_bank_1(self):
       """
-      Returns the levels of the bank 1 gpios (gpios 0-31).
+      Returns the levels of the bank 1 GPIO (GPIO 0-31).
 
       The returned 32 bit integer has a bit set if the corresponding
-      gpio is high.  Gpio n has bit value (1<<n).
+      GPIO is high.  GPIO n has bit value (1<<n).
 
       ...
       print(bin(pi.read_bank_1()))
@@ -1448,10 +1530,10 @@ class pi():
 
    def read_bank_2(self):
       """
-      Returns the levels of the bank 2 gpios (gpios 32-53).
+      Returns the levels of the bank 2 GPIO (GPIO 32-53).
 
       The returned 32 bit integer has a bit set if the corresponding
-      gpio is high.  Gpio n has bit value (1<<(n-32)).
+      GPIO is high.  GPIO n has bit value (1<<(n-32)).
 
       ...
       print(bin(pi.read_bank_2()))
@@ -1462,13 +1544,13 @@ class pi():
 
    def clear_bank_1(self, bits):
       """
-      Clears gpios 0-31 if the corresponding bit in bits is set.
+      Clears GPIO 0-31 if the corresponding bit in bits is set.
 
-      bits:= a 32 bit mask with 1 set if the corresponding gpio is
+      bits:= a 32 bit mask with 1 set if the corresponding GPIO is
              to be cleared.
 
       A returned status of PI_SOME_PERMITTED indicates that the user
-      is not allowed to write to one or more of the gpios.
+      is not allowed to write to one or more of the GPIO.
 
       ...
       pi.clear_bank_1(int("111110010000",2))
@@ -1478,13 +1560,13 @@ class pi():
 
    def clear_bank_2(self, bits):
       """
-      Clears gpios 32-53 if the corresponding bit (0-21) in bits is set.
+      Clears GPIO 32-53 if the corresponding bit (0-21) in bits is set.
 
-      bits:= a 32 bit mask with 1 set if the corresponding gpio is
+      bits:= a 32 bit mask with 1 set if the corresponding GPIO is
              to be cleared.
 
       A returned status of PI_SOME_PERMITTED indicates that the user
-      is not allowed to write to one or more of the gpios.
+      is not allowed to write to one or more of the GPIO.
 
       ...
       pi.clear_bank_2(0x1010)
@@ -1494,13 +1576,13 @@ class pi():
 
    def set_bank_1(self, bits):
       """
-      Sets gpios 0-31 if the corresponding bit in bits is set.
+      Sets GPIO 0-31 if the corresponding bit in bits is set.
 
-      bits:= a 32 bit mask with 1 set if the corresponding gpio is
+      bits:= a 32 bit mask with 1 set if the corresponding GPIO is
              to be set.
 
       A returned status of PI_SOME_PERMITTED indicates that the user
-      is not allowed to write to one or more of the gpios.
+      is not allowed to write to one or more of the GPIO.
 
       ...
       pi.set_bank_1(int("111110010000",2))
@@ -1510,13 +1592,13 @@ class pi():
 
    def set_bank_2(self, bits):
       """
-      Sets gpios 32-53 if the corresponding bit (0-21) in bits is set.
+      Sets GPIO 32-53 if the corresponding bit (0-21) in bits is set.
 
-      bits:= a 32 bit mask with 1 set if the corresponding gpio is
+      bits:= a 32 bit mask with 1 set if the corresponding GPIO is
              to be set.
 
       A returned status of PI_SOME_PERMITTED indicates that the user
-      is not allowed to write to one or more of the gpios.
+      is not allowed to write to one or more of the GPIO.
 
       ...
       pi.set_bank_2(0x303)
@@ -1526,7 +1608,7 @@ class pi():
 
    def hardware_clock(self, gpio, clkfreq):
       """
-      Starts a hardware clock on a gpio at the specified frequency.
+      Starts a hardware clock on a GPIO at the specified frequency.
       Frequencies above 30MHz are unlikely to work.
 
          gpio:= see description
@@ -1536,18 +1618,17 @@ class pi():
       Returns 0 if OK, otherwise PI_NOT_PERMITTED, PI_BAD_GPIO,
       PI_NOT_HCLK_GPIO, PI_BAD_HCLK_FREQ,or PI_BAD_HCLK_PASS.
 
-      The same clock is available on multiple gpios.  The latest
-      frequency setting will be used by all gpios which share a clock.
+      The same clock is available on multiple GPIO.  The latest
+      frequency setting will be used by all GPIO which share a clock.
 
-      The gpio must be one of the following.
+      The GPIO must be one of the following.
 
       . .
       4   clock 0  All models
-      5   clock 1  A+/B+/Pi2 and compute module only
-                   (reserved for system use)
-      6   clock 2  A+/B+/Pi2 and compute module only
-      20  clock 0  A+/B+/Pi2 and compute module only
-      21  clock 1  All models but Rev.2 B (reserved for system use)
+      5   clock 1  All models but A and B (reserved for system use)
+      6   clock 2  All models but A and B
+      20  clock 0  All models but A and B
+      21  clock 1  All models but A and Rev.2 B (reserved for system use)
 
       32  clock 0  Compute module only
       34  clock 0  Compute module only
@@ -1558,19 +1639,19 @@ class pi():
 
       Access to clock 1 is protected by a password as its use will
       likely crash the Pi.  The password is given by or'ing 0x5A000000
-      with the gpio number.
+      with the GPIO number.
 
       ...
-      pi.hardware_clock(4, 5000) # 5 KHz clock on gpio 4
+      pi.hardware_clock(4, 5000) # 5 KHz clock on GPIO 4
 
-      pi.hardware_clock(4, 40000000) # 40 MHz clock on gpio 4
+      pi.hardware_clock(4, 40000000) # 40 MHz clock on GPIO 4
       ...
       """
       return _u2i(_pigpio_command(self.sl, _PI_CMD_HC, gpio, clkfreq))
 
    def hardware_PWM(self, gpio, PWMfreq, PWMduty):
       """
-      Starts hardware PWM on a gpio at the specified frequency
+      Starts hardware PWM on a GPIO at the specified frequency
       and dutycycle. Frequencies above 30MHz are unlikely to work.
 
       NOTE: Any waveform started by [*wave_send_once*],
@@ -1587,17 +1668,17 @@ class pi():
       Returns 0 if OK, otherwise PI_NOT_PERMITTED, PI_BAD_GPIO,
       PI_NOT_HPWM_GPIO, PI_BAD_HPWM_DUTY, PI_BAD_HPWM_FREQ.
 
-      The same PWM channel is available on multiple gpios.
+      The same PWM channel is available on multiple GPIO.
       The latest frequency and dutycycle setting will be used
-      by all gpios which share a PWM channel.
+      by all GPIO which share a PWM channel.
 
-      The gpio must be one of the following.
+      The GPIO must be one of the following.
 
       . .
-      12  PWM channel 0  A+/B+/Pi2 and compute module only
-      13  PWM channel 1  A+/B+/Pi2 and compute module only
+      12  PWM channel 0  All models but A and B
+      13  PWM channel 1  All models but A and B
       18  PWM channel 0  All models
-      19  PWM channel 1  A+/B+/Pi2 and compute module only
+      19  PWM channel 1  All models but A and B
 
       40  PWM channel 0  Compute module only
       41  PWM channel 1  Compute module only
@@ -1605,6 +1686,16 @@ class pi():
       52  PWM channel 0  Compute module only
       53  PWM channel 1  Compute module only
       . .
+
+      The actual number of steps beween off and fully on is the
+      integral part of 250 million divided by PWMfreq.
+
+      The actual frequency set is 250 million / steps.
+
+      There will only be a million steps for a PWMfreq of 250.
+      Lower frequencies will have more steps and higher
+      frequencies will have fewer steps.  PWMduty is
+      automatically scaled to take this into account.
 
       ...
       pi.hardware_PWM(18, 800, 250000) # 800Hz 25% dutycycle
@@ -1648,7 +1739,7 @@ class pi():
       Revision line of /proc/cpuinfo.
 
       The revision number can be used to determine the assignment
-      of gpios to pins (see [*gpio*]).
+      of GPIO to pins (see [*gpio*]).
 
       There are at least three types of board.
 
@@ -1715,7 +1806,7 @@ class pi():
       waveform (if any).
 
       Merging allows the waveform to be built in parts, that is the
-      settings for gpio#1 can be added, and then gpio#2 etc.
+      settings for GPIO#1 can be added, and then GPIO#2 etc.
 
       If the added waveform is intended to start after or within
       the existing waveform then the first pulse should consist
@@ -1788,7 +1879,7 @@ class pi():
       waveform (if any).  The serial data starts [*offset*]
       microseconds from the start of the waveform.
 
-      user_gpio:= gpio to transmit data.  You must set the gpio mode
+      user_gpio:= GPIO to transmit data.  You must set the GPIO mode
                   to output.
            baud:= 50-1000000 bits per second.
            data:= the bytes to write.
@@ -1869,8 +1960,8 @@ class pi():
 
       A pulse specifies
 
-      1) the gpios to be switched on at the start of the pulse. 
-      2) the gpios to be switched off at the start of the pulse. 
+      1) the GPIO to be switched on at the start of the pulse. 
+      2) the GPIO to be switched off at the start of the pulse. 
       3) the delay in microseconds before the next pulse.
 
       Any or all the fields can be zero.  It doesn't make any sense
@@ -1954,6 +2045,57 @@ class pi():
       """
       return _u2i(_pigpio_command(self.sl, _PI_CMD_WVTXR, wave_id, 0))
 
+   def wave_send_using_mode(self, wave_id, mode):
+      """
+      Transmits the waveform with id wave_id using mode mode.
+
+      wave_id:= >=0 (as returned by a prior call to [*wave_create*]).
+         mode:= WAVE_MODE_ONE_SHOT, WAVE_MODE_REPEAT,
+                WAVE_MODE_ONE_SHOT_SYNC, or WAVE_MODE_REPEAT_SYNC.
+
+      WAVE_MODE_ONE_SHOT: same as [*wave_send_once*].
+
+      WAVE_MODE_REPEAT same as [*wave_send_repeat*].
+
+      WAVE_MODE_ONE_SHOT_SYNC same as [*wave_send_once*] but tries
+      to sync with the previous waveform.
+
+      WAVE_MODE_REPEAT_SYNC same as [*wave_send_repeat*] but tries
+      to sync with the previous waveform.
+
+      WARNING: bad things may happen if you delete the previous
+      waveform before it has been synced to the new waveform.
+
+      NOTE: Any hardware PWM started by [*hardware_PWM*] will
+      be cancelled.
+
+      wave_id:= >=0 (as returned by a prior call to [*wave_create*]).
+
+      Returns the number of DMA control blocks used in the waveform.
+
+      ...
+      cbs = pi.wave_send_using_mode(wid, WAVE_MODE_REPEAT_SYNC)
+      ...
+      """
+      return _u2i(_pigpio_command(self.sl, _PI_CMD_WVTXM, wave_id, mode))
+
+   def wave_tx_at(self):
+      """
+      Returns the id of the waveform currently being
+      transmitted.
+
+      Returns the waveform id or one of the following special
+      values:
+
+      WAVE_NOT_FOUND (9998) - transmitted wave not found. 
+      NO_TX_WAVE (9999) - no wave being transmitted.
+
+      ...
+      wid = pi.wave_tx_at()
+      ...
+      """
+      return _u2i(_pigpio_command(self.sl, _PI_CMD_WVTAT, 0, 0))
+
    def wave_tx_busy(self):
       """
       Returns 1 if a waveform is currently being transmitted,
@@ -2014,10 +2156,13 @@ class pi():
 
       The following command codes are supported:
 
-      Name        @ Cmd & Data @ Meaning
-      Loop Start  @ 255 0      @ Identify start of a wave block
-      Loop Repeat @ 255 1 x y  @ loop x + y*256 times
-      Delay       @ 255 2 x y  @ delay x + y*256 microseconds
+      Name         @ Cmd & Data @ Meaning
+      Loop Start   @ 255 0      @ Identify start of a wave block
+      Loop Repeat  @ 255 1 x y  @ loop x + y*256 times
+      Delay        @ 255 2 x y  @ delay x + y*256 microseconds
+      Loop Forever @ 255 3      @ loop forever
+
+      If present Loop Forever must be the last entry in the chain.
 
       The code is currently dimensioned to support a chain with
       roughly 600 entries and 20 loop counters.
@@ -2147,14 +2292,18 @@ class pi():
       """
       Returns a handle (>=0) for the device at the I2C bus address.
 
-          i2c_bus:= 0-1.
-      i2c_address:= 0x00-0x7F.
+          i2c_bus:= >=0.
+      i2c_address:= 0-0x7F.
         i2c_flags:= 0, no flags are currently defined.
 
       Normally you would only use the [*i2c_**] functions if
       you are or will be connecting to the Pi over a network.  If
       you will always run on the local Pi use the standard SMBus
       module instead.
+
+      Physically buses 0 and 1 are available on the Pi.  Higher
+      numbered buses will be available if a kernel supported bus
+      multiplexor is being used.
 
       For the SMBus commands the low level transactions are shown
       at the end of the function description.  The following
@@ -2166,9 +2315,9 @@ class pi():
       Rd/Wr (1 bit) : Read/Write bit. Rd equals 1, Wr equals 0.
       A, NA (1 bit) : Accept and not accept bit. 
       Addr  (7 bits): I2C 7 bit address.
-      Comm  (8 bits): Command byte, which often selects a register.
+      reg   (8 bits): Command byte, which often selects a register.
       Data  (8 bits): A data byte.
-      Count (8 bits): A byte containing the length of a block operation.
+      Count (8 bits): A byte defining the length of a block operation.
 
       [..]: Data sent by the device.
       . .
@@ -2207,7 +2356,7 @@ class pi():
 
       SMBus 2.0 5.5.1 - Quick command.
       . .
-      S Addr Rd/Wr [A] P
+      S Addr bit [A] P
       . .
 
       ...
@@ -2226,7 +2375,7 @@ class pi():
 
       SMBus 2.0 5.5.2 - Send byte.
       . .
-      S Addr Wr [A] Data [A] P
+      S Addr Wr [A] byte_val [A] P
       . .
 
       ...
@@ -2265,7 +2414,7 @@ class pi():
 
       SMBus 2.0 5.5.4 - Write byte.
       . .
-      S Addr Wr [A] Comm [A] Data [A] P
+      S Addr Wr [A] reg [A] byte_val [A] P
       . .
 
       ...
@@ -2296,7 +2445,7 @@ class pi():
 
       SMBus 2.0 5.5.4 - Write word.
       . .
-      S Addr Wr [A] Comm [A] DataLow [A] DataHigh [A] P
+      S Addr Wr [A] reg [A] word_val_Low [A] word_val_High [A] P
       . .
 
       ...
@@ -2326,7 +2475,7 @@ class pi():
 
       SMBus 2.0 5.5.5 - Read byte.
       . .
-      S Addr Wr [A] Comm [A] S Addr Rd [A] [Data] NA P
+      S Addr Wr [A] reg [A] S Addr Rd [A] [Data] NA P
       . .
 
       ...
@@ -2349,7 +2498,7 @@ class pi():
 
       SMBus 2.0 5.5.5 - Read word.
       . .
-      S Addr Wr [A] Comm [A] S Addr Rd [A] [DataLow] A [DataHigh] NA P
+      S Addr Wr [A] reg [A] S Addr Rd [A] [DataLow] A [DataHigh] NA P
       . .
 
       ...
@@ -2373,7 +2522,7 @@ class pi():
 
       SMBus 2.0 5.5.6 - Process call.
       . .
-      S Addr Wr [A] Comm [A] DataLow [A] DataHigh [A]
+      S Addr Wr [A] reg [A] word_val_Low [A] word_val_High [A]
          S Addr Rd [A] [DataLow] A [DataHigh] NA P
       . .
 
@@ -2402,8 +2551,8 @@ class pi():
 
       SMBus 2.0 5.5.7 - Block write.
       . .
-      S Addr Wr [A] Comm [A] Count [A] Data [A] Data [A] ... [A]
-         Data [A] P
+      S Addr Wr [A] reg [A] len(data) [A] data0 [A] data1 [A] ... [A]
+         datan [A] P
       . .
 
       ...
@@ -2437,7 +2586,7 @@ class pi():
 
       SMBus 2.0 5.5.7 - Block read.
       . .
-      S Addr Wr [A] Comm [A]
+      S Addr Wr [A] reg [A]
          S Addr Rd [A] [Count] A [Data] A [Data] A ... A [Data] NA P
       . .
 
@@ -2481,7 +2630,7 @@ class pi():
 
       SMBus 2.0 5.5.8 - Block write-block read.
       . .
-      S Addr Wr [A] Comm [A] Count [A] Data [A] ...
+      S Addr Wr [A] reg [A] len(data) [A] data0 [A] ... datan [A]
          S Addr Rd [A] [Count] A [Data] ... A P
       . .
 
@@ -2526,8 +2675,7 @@ class pi():
         data:= the bytes to write.
 
       . .
-      S Addr Wr [A] Comm [A]
-         S Addr Rd [A] [Data] A [Data] A ... A [Data] NA P
+      S Addr Wr [A] reg [A] data0 [A] data1 [A] ... [A] datan [NA] P
       . .
 
       ...
@@ -2561,7 +2709,8 @@ class pi():
        count:= >0, the number of bytes to read.
 
       . .
-      S Addr Wr [A] Comm [A] Data [A] Data [A] ... [A] Data [A] P
+      S Addr Wr [A] reg [A]
+         S Addr Rd [A] [Data] A [Data] A ... A [Data] NA P
       . .
 
       The returned value is a tuple of the number of bytes read and a
@@ -2602,6 +2751,10 @@ class pi():
       handle:= >=0 (as returned by a prior call to [*i2c_open*]).
        count:= >0, the number of bytes to read.
 
+      . .
+      S Addr Rd [A] [Data] A [Data] A ... A [Data] NA P
+      . .
+
       The returned value is a tuple of the number of bytes read and a
       bytearray containing the bytes.  If there was an error the
       number of bytes read will be less than zero (and will contain
@@ -2627,6 +2780,10 @@ class pi():
 
       handle:= >=0 (as returned by a prior call to [*i2c_open*]).
         data:= the bytes to write.
+
+      . .
+      S Addr Wr [A] data0 [A] data1 [A] ... [A] datan [A] P
+      . .
 
       ...
       pi.i2c_write_device(h, b"\\x12\\x34\\xA8")
@@ -2722,7 +2879,7 @@ class pi():
 
    def bb_i2c_open(self, SDA, SCL, baud=100000):
       """
-      This function selects a pair of gpios for bit banging I2C at a
+      This function selects a pair of GPIO for bit banging I2C at a
       specified baud rate.
 
       Bit banging I2C allows for certain operations which are not possible
@@ -2731,7 +2888,7 @@ class pi():
       o baud rates as low as 50 
       o repeated starts 
       o clock stretching 
-      o I2C on any pair of spare gpios
+      o I2C on any pair of spare GPIO
 
        SDA:= 0-31
        SCL:= 0-31
@@ -2742,11 +2899,11 @@ class pi():
 
       NOTE:
 
-      The gpios used for SDA and SCL must have pull-ups to 3V3 connected.
+      The GPIO used for SDA and SCL must have pull-ups to 3V3 connected.
       As a guide the hardware pull-ups on pins 3 and 5 are 1k8 in value.
 
       ...
-      h = pi.bb_i2c_open(4, 5, 50000) # bit bang on gpio 4/5 at 50kbps
+      h = pi.bb_i2c_open(4, 5, 50000) # bit bang on GPIO 4/5 at 50kbps
       ...
       """
       # I p1 SDA
@@ -2761,10 +2918,10 @@ class pi():
 
    def bb_i2c_close(self, SDA):
       """
-      This function stops bit banging I2C on a pair of gpios
+      This function stops bit banging I2C on a pair of GPIO
       previously opened with [*bb_i2c_open*].
 
-      SDA:= 0-31, the SDA gpio used in a prior call to [*bb_i2c_open*]
+      SDA:= 0-31, the SDA GPIO used in a prior call to [*bb_i2c_open*]
 
       Returns 0 if OK, otherwise PI_BAD_USER_GPIO, or PI_NOT_I2C_GPIO.
 
@@ -2863,12 +3020,12 @@ class pi():
       modify the default behaviour of 4-wire operation, mode 0,
       active low chip select.
 
-      An auxiliary SPI device is available on the A+/B+/Pi2 and may be
-      selected by setting the A bit in the flags.  The auxiliary
-      device has 3 chip selects and a selectable word size in bits.
+      An auxiliary SPI device is available on all models but the
+      A and B and may be selected by setting the A bit in the
+      flags. The auxiliary device has 3 chip selects and a
+      selectable word size in bits.
 
-
-      spi_channel:= 0-1 (0-2 for A+/B+/Pi2 auxiliary device).
+      spi_channel:= 0-1 (0-2 for the auxiliary SPI device).
              baud:= 32K-125M (values above 30M are unlikely to work).
         spi_flags:= see below.
 
@@ -2899,11 +3056,10 @@ class pi():
 
       px is 0 if CEx is active low (default) and 1 for active high.
 
-      ux is 0 if the CEx gpio is reserved for SPI (default)
+      ux is 0 if the CEx GPIO is reserved for SPI (default)
       and 1 otherwise.
 
       A is 0 for the standard SPI device, 1 for the auxiliary SPI.
-      The auxiliary device is only present on the A+/B+/Pi2.
 
       W is 0 if the device is not 3-wire, 1 if the device is 3-wire.
       Standard SPI device only.
@@ -2922,6 +3078,16 @@ class pi():
 
       bbbbbb defines the word size in bits (0-32).  The default (0)
       sets 8 bits per word.  Auxiliary SPI device only.
+
+      The [*spi_read*], [*spi_write*], and [*spi_xfer*] functions
+      transfer data packed into 1, 2, or 4 bytes according to
+      the word size in bits.
+
+      For bits 1-8 there will be one byte per character. 
+      For bits 9-16 there will be two bytes per character. 
+      For bits 17-32 there will be four bytes per character.
+
+      E.g. 32 12-bit words will be transferred in 64 bytes.
 
       The other bits in flags should be set to zero.
 
@@ -3061,7 +3227,7 @@ class pi():
       module instead.
 
       The baud rate must be one of 50, 75, 110, 134, 150,
-      200, 300, 600, 1200, 1800, 2400, 4800, 9500, 19200,
+      200, 300, 600, 1200, 1800, 2400, 4800, 9600, 19200,
       38400, 57600, 115200, or 230400.
 
       ...
@@ -3190,7 +3356,7 @@ class pi():
 
    def gpio_trigger(self, user_gpio, pulse_len=10, level=1):
       """
-      Send a trigger pulse to a gpio.  The gpio is set to
+      Send a trigger pulse to a GPIO.  The GPIO is set to
       level for pulse_len microseconds and then reset to not level.
 
       user_gpio:= 0-31
@@ -3212,9 +3378,69 @@ class pi():
       return _u2i(_pigpio_command_ext(
          self.sl, _PI_CMD_TRIG, user_gpio, pulse_len, 4, extents))
 
+   def set_glitch_filter(self, user_gpio, steady):
+      """
+      Sets a glitch filter on a GPIO.
+
+      Level changes on the GPIO are not reported unless the level
+      has been stable for at least [*steady*] microseconds.  The
+      level is then reported.  Level changes of less than [*steady*]
+      microseconds are ignored.
+
+      user_gpio:= 0-31
+         steady:= 0-300000
+
+      Returns 0 if OK, otherwise PI_BAD_USER_GPIO, or PI_BAD_FILTER.
+
+      Note, each (stable) edge will be timestamped [*steady*]
+      microseconds after it was first detected.
+
+      ...
+      pi.set_glitch_filter(23, 100)
+      ...
+      """
+      return _u2i(_pigpio_command(self.sl, _PI_CMD_FG, user_gpio, steady))
+
+   def set_noise_filter(self, user_gpio, steady, active):
+      """
+      Sets a noise filter on a GPIO.
+
+      Level changes on the GPIO are ignored until a level which has
+      been stable for [*steady*] microseconds is detected.  Level
+      changes on the GPIO are then reported for [*active*]
+      microseconds after which the process repeats.
+
+      user_gpio:= 0-31
+         steady:= 0-300000
+         active:= 0-1000000
+
+      Returns 0 if OK, otherwise PI_BAD_USER_GPIO, or PI_BAD_FILTER.
+
+      Note, level changes before and after the active period may
+      be reported.  Your software must be designed to cope with
+      such reports.
+
+      ...
+      pi.set_noise_filter(23, 1000, 5000)
+      ...
+      """
+      # pigpio message format
+
+      # I p1 user_gpio
+      # I p2 steady
+      # I p3 4
+      ## extension ##
+      # I active
+      extents = [struct.pack("I", active)]
+      return _u2i(_pigpio_command_ext(
+         self.sl, _PI_CMD_FN, user_gpio, steady, 4, extents))
+
    def store_script(self, script):
       """
       Store a script for later execution.
+
+      See [[http://abyz.co.uk/rpi/pigpio/pigs.html#Scripts]] for
+      details.
 
       script:= the script text as a series of bytes.
 
@@ -3333,9 +3559,9 @@ class pi():
 
    def bb_serial_read_open(self, user_gpio, baud, bb_bits=8):
       """
-      Opens a gpio for bit bang reading of serial data.
+      Opens a GPIO for bit bang reading of serial data.
 
-      user_gpio:= 0-31, the gpio to use.
+      user_gpio:= 0-31, the GPIO to use.
            baud:= 50-250000, the baud rate.
         bb_bits:= 1-32, the number of bits per word, default 8.
 
@@ -3397,7 +3623,7 @@ class pi():
    
    def bb_serial_read_close(self, user_gpio):
       """
-      Closes a gpio for bit bang reading of serial data.
+      Closes a GPIO for bit bang reading of serial data.
 
       user_gpio:= 0-31 (opened in a prior call to [*bb_serial_read_open*])
 
@@ -3412,7 +3638,7 @@ class pi():
       Invert serial logic.
 
       user_gpio:= 0-31 (opened in a prior call to [*bb_serial_read_open*])
-      invert:= 0-1 (1 invert, 0 normal)
+          invert:= 0-1 (1 invert, 0 normal)
 
       ...
       status = pi.bb_serial_invert(17, 1)
@@ -3498,22 +3724,23 @@ class pi():
    def callback(self, user_gpio, edge=RISING_EDGE, func=None):
       """
       Calls a user supplied function (a callback) whenever the
-      specified gpio edge is detected.
+      specified GPIO edge is detected.
 
       user_gpio:= 0-31.
            edge:= EITHER_EDGE, RISING_EDGE (default), or FALLING_EDGE.
            func:= user supplied callback function.
 
-      The user supplied callback receives three parameters, the gpio,
+      The user supplied callback receives three parameters, the GPIO,
       the level, and the tick.
 
       If a user callback is not specified a default tally callback is
       provided which simply counts edges.  The count may be retrieved
-      by calling the tally function.
+      by calling the tally function.  The count may be reset to zero
+      by calling the reset_tally function.
 
       The callback may be cancelled by calling the cancel function.
 
-      A gpio may have multiple callbacks (although I can't think of
+      A GPIO may have multiple callbacks (although I can't think of
       a reason to do so).
 
       ...
@@ -3528,6 +3755,8 @@ class pi():
 
       print(cb3.tally())
 
+      cb3.reset_tally()
+
       cb1.cancel() # To cancel callback cb1.
       ...
       """
@@ -3535,16 +3764,20 @@ class pi():
 
    def wait_for_edge(self, user_gpio, edge=RISING_EDGE, wait_timeout=60.0):
       """
-      Wait for an edge event on a gpio.
+      Wait for an edge event on a GPIO.
 
          user_gpio:= 0-31.
               edge:= EITHER_EDGE, RISING_EDGE (default), or
                      FALLING_EDGE.
-      wait_timeout:= 0.0- (default 60.0).
+      wait_timeout:= >=0.0 (default 60.0).
 
-      The function returns as soon as the edge is detected
-      or after the number of seconds specified by timeout has
-      expired.
+      The function returns when the edge is detected or after
+      the number of seconds specified by timeout has expired.
+
+      Do not use this function for precise timing purposes,
+      the edge is only checked 20 times a second. Whenever
+      you need to know the accurate time of GPIO events use
+      a [*callback*] function.
 
       The function returns True if the edge is detected,
       otherwise False.
@@ -3568,7 +3801,7 @@ class pi():
                 host = os.getenv("PIGPIO_ADDR", ''),
                 port = os.getenv("PIGPIO_PORT", 8888)):
       """
-      Grants access to a Pi's gpios.
+      Grants access to a Pi's GPIO.
 
       host:= the host name of the Pi on which the pigpio daemon is
              running.  The default is localhost unless overridden by
@@ -3582,10 +3815,18 @@ class pi():
       This connects to the pigpio daemon and reserves resources
       to be used for sending commands and receiving notifications.
 
+      An instance attribute [*connected*] may be used to check the
+      success of the connection.  If the connection is established
+      successfully [*connected*] will be True, otherwise False.
+
       ...
       pi = pigio.pi()              # use defaults
       pi = pigpio.pi('mypi')       # specify host, default port
       pi = pigpio.pi('mypi', 7777) # specify host and port
+
+      pi = pigpio.pi()             # exit script if no connection
+      if not pi.connected:
+         exit()
       ...
       """
       self.connected = True
@@ -3593,32 +3834,34 @@ class pi():
       self.sl = _socklock()
       self._notify  = None
 
+      port = int(port)
+
       self._host = host
-      self._port = int(port)
+      self._port = port
 
       self.sl.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      self.sl.s.settimeout(None)
 
       # Disable the Nagle algorithm.
       self.sl.s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
       try:
-         self.sl.s.connect((self._host, self._port))
-         self._notify = _callback_thread(self.sl, self._host, self._port)
+         self.sl.s.connect((host, port))
+         self._notify = _callback_thread(self.sl, host, port)
 
       except socket.error:
          self.connected = False
          if self.sl.s is not None:
             self.sl.s = None
-         if self._host == '':
+         if host == '':
             h = "localhost"
          else:
-            h = self._host
+            h = host
 
-         errStr = "Can't connect to pigpio on {}({})".format(
-            str(h), str(self._port))
+         s = "Can't connect to pigpio at {}({})".format(str(h), str(port))
 
          print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
-         print(errStr)
+         print(s)
          print("")
          print("Did you start the pigpio daemon? E.g. sudo pigpiod")
          print("")
@@ -3640,6 +3883,8 @@ class pi():
       ...
       """
 
+      self.connected = False
+
       if self._notify is not None:
          self._notify.stop()
          self._notify = None
@@ -3650,6 +3895,12 @@ class pi():
 
 def xref():
    """
+   active: 0-1000000
+   The number of microseconds level changes are reported for once
+   a noise filter has been triggered (by [*steady*] microseconds of
+   a stable level).
+
+
    arg1:
    An unsigned argument passed to a user customised function.  Its
    meaning is defined by the customiser.
@@ -3678,11 +3929,11 @@ def xref():
    A value of 0 or 1.
 
    bits: 32 bit number
-   A mask used to select gpios to be operated on.  If bit n is set
-   then gpio n is selected.  A convenient way of setting bit n is to
+   A mask used to select GPIO to be operated on.  If bit n is set
+   then GPIO n is selected.  A convenient way of setting bit n is to
    bit or in the value (1<<n).
 
-   To select gpios 1, 7, 23
+   To select GPIO 1, 7, 23
 
    bits = (1<<1) | (1<<7) | (1<<23)
 
@@ -3692,13 +3943,16 @@ def xref():
    clkfreq: 4689-250M
    The hardware clock frequency.
 
+   connected:
+   True if a connection was established, False otherwise.
+
    count:
    The number of bytes of data to be transferred.
 
    data:
    Data to be transmitted, a series of bytes.
 
-   delay: 1-
+   delay: >=1
    The length of a pulse in microseconds.
 
    dutycycle: 0-range_
@@ -3758,7 +4012,7 @@ def xref():
    PI_SOCK_READ_FAILED = -59
    PI_SOCK_WRIT_FAILED = -60
    PI_TOO_MANY_PARAM = -61
-   PI_NOT_HALTED = -62
+   PI_SCRIPT_NOT_READY = -62
    PI_BAD_TAG = -63
    PI_BAD_MICS_DELAY = -64
    PI_BAD_MILS_DELAY = -65
@@ -3814,32 +4068,34 @@ def xref():
    PI_CHAIN_NESTING = -118
    PI_CHAIN_TOO_BIG = -119
    PI_DEPRECATED = -120
-   PI_BAD_SER_INVERT   = -121
+   PI_BAD_SER_INVERT = -121
+   PI_BAD_FOREVER = -124
+   PI_BAD_FILTER = -125
    . .
 
    frequency: 0-40000
-   Defines the frequency to be used for PWM on a gpio.
+   Defines the frequency to be used for PWM on a GPIO.
    The closest permitted frequency will be used.
 
    func:
    A user supplied callback function.
 
    gpio: 0-53
-   A Broadcom numbered gpio.  All the user gpios are in the range 0-31.
+   A Broadcom numbered GPIO.  All the user GPIO are in the range 0-31.
 
-   There  are 54 General Purpose Input Outputs (gpios) named gpio0
-   through gpio53.
+   There  are 54 General Purpose Input Outputs (GPIO) named GPIO0
+   through GPIO53.
 
-   They are split into two  banks.   Bank  1  consists  of  gpio0
-   through gpio31.  Bank 2 consists of gpio32 through gpio53.
+   They are split into two  banks.   Bank  1  consists  of  GPIO0
+   through GPIO31.  Bank 2 consists of GPIO32 through GPIO53.
 
-   All the gpios which are safe for the user to read and write are in
-   bank 1.  Not all gpios in bank 1 are safe though.  Type 1 boards
-   have 17  safe gpios.  Type 2 boards have 21.  Type 3 boards have 26.
+   All the GPIO which are safe for the user to read and write are in
+   bank 1.  Not all GPIO in bank 1 are safe though.  Type 1 boards
+   have 17  safe GPIO.  Type 2 boards have 21.  Type 3 boards have 26.
 
    See [*get_hardware_revision*].
 
-   The user gpios are marked with an X in the following table.
+   The user GPIO are marked with an X in the following table.
 
    . .
              0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
@@ -3854,18 +4110,18 @@ def xref():
    . .
 
    gpio_off:
-   A mask used to select gpios to be operated on.  See [*bits*].
+   A mask used to select GPIO to be operated on.  See [*bits*].
 
-   This mask selects the gpios to be switched off at the start
+   This mask selects the GPIO to be switched off at the start
    of a pulse.
 
    gpio_on:
-   A mask used to select gpios to be operated on.  See [*bits*].
+   A mask used to select GPIO to be operated on.  See [*bits*].
 
-   This mask selects the gpios to be switched on at the start
+   This mask selects the GPIO to be switched on at the start
    of a pulse.
 
-   handle: 0-
+   handle: >=0
    A number referencing an object opened by one of [*i2c_open*],
    [*notify_open*], [*serial_open*], [*spi_open*].
 
@@ -3875,13 +4131,13 @@ def xref():
    i2c_*:
    One of the i2c_ functions.
 
-   i2c_address:
+   i2c_address: 0-0x7F
    The address of a device on the I2C bus.
 
-   i2c_bus: 0-1
+   i2c_bus: >=0
    An I2C bus number.
 
-   i2c_flags: 32 bit
+   i2c_flags: 0
    No I2C flags are currently defined.
 
    invert: 0-1
@@ -3897,7 +4153,10 @@ def xref():
    SET = 1 
    TIMEOUT = 2 # only returned for a watchdog timeout
 
-   mode: 0-7
+   mode:
+
+   1.The operational mode of a GPIO, normally INPUT or OUTPUT.
+
    ALT0 = 4 
    ALT1 = 5 
    ALT2 = 6 
@@ -3907,7 +4166,14 @@ def xref():
    INPUT = 0 
    OUTPUT = 1
 
-   offset: 0-
+   2. The mode of waveform transmission.
+
+   WAVE_MODE_ONE_SHOT = 0 
+   WAVE_MODE_REPEAT = 1 
+   WAVE_MODE_ONE_SHOT_SYNC = 2 
+   WAVE_MODE_REPEAT_SYNC = 3
+
+   offset: >=0
    The offset wave data starts from the beginning of the waveform
    being currently defined.
 
@@ -3953,16 +4219,16 @@ def xref():
    should return, default 8192.
 
    SCL:
-   The user gpio to use for the clock when bit banging I2C.
+   The user GPIO to use for the clock when bit banging I2C.
 
    script:
    The text of a script to store on the pigpio daemon.
 
-   script_id: 0-
+   script_id: >=0
    A number referencing a script created by [*store_script*].
 
    SDA:
-   The user gpio to use for data when bit banging I2C.
+   The user GPIO to use for data when bit banging I2C.
 
    ser_flags: 32 bit
    No serial flags are currently defined.
@@ -3979,6 +4245,13 @@ def xref():
    spi_flags: 32 bit
    See [*spi_open*].
 
+   steady: 0-300000
+
+   The number of microseconds level changes must be stable for
+   before reporting the level changed ([*set_glitch_filter*])
+   or triggering the active part of a noise filter
+   ([*set_noise_filter*]).
+
    t1:
    A tick (earlier).
 
@@ -3992,30 +4265,30 @@ def xref():
    An unsigned 32 bit number.
 
    user_gpio: 0-31
-   A Broadcom numbered gpio.
+   A Broadcom numbered GPIO.
 
-   All the user gpios are in the range 0-31.
+   All the user GPIO are in the range 0-31.
 
-   Not all the gpios within this range are usable, some are reserved
+   Not all the GPIO within this range are usable, some are reserved
    for system use.
 
    See [*gpio*].
 
    wait_timeout: 0.0 -
-   The number of seconds to wait in wait_for_edge before timing out.
+   The number of seconds to wait in [*wait_for_edge*] before timing out.
 
    wave_add_*:
    One of [*wave_add_new*] , [*wave_add_generic*], [*wave_add_serial*].
 
-   wave_id: 0-
+   wave_id: >=0
    A number referencing a wave created by [*wave_create*].
 
    wave_send_*:
    One of [*wave_send_once*], [*wave_send_repeat*].
 
    wdog_timeout: 0-60000
-   Defines a gpio watchdog timeout in milliseconds.  If no level
-   change is detected on the gpio for timeout millisecond a watchdog
+   Defines a GPIO watchdog timeout in milliseconds.  If no level
+   change is detected on the GPIO for timeout millisecond a watchdog
    timeout report is issued (with level TIMEOUT).
 
    word_val: 0-65535
