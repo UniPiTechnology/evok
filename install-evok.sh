@@ -104,17 +104,18 @@ echo "Installing evok..."
 enable_ic2
 
 apt-get update
-apt-get install -y python-ow python-pip make
+apt-get install -y python-ow python-pip make python-dev
 pip install tornado toro jsonrpclib
 
 if [ "$(pidof pigpiod)" ]
 then
+    service pigpiod stop
     kill $(pidof pigpiod)
 fi
 
 #install pigpio
 cd pigpio
-make
+make -j4
 make install
 cd ..
 
@@ -138,20 +139,26 @@ else
     cp etc/evok.conf /etc/
 fi
 
-cp etc/init.d/evok /etc/init.d/
-cp etc/init.d/pigpiod /etc/init.d/
-chmod +x /etc/init.d/evok
-chmod +x /etc/init.d/pigpiod
 chmod +x /opt/evok/evok.py
 
-update-rc.d pigpiod defaults
-update-rc.d evok defaults
+manager=$(cat /proc/1/comm)
+if [ "$manager" == "systemd" ]; then
+    cp etc/systemd/system/pigpio.service /etc/systemd/system/
+    cp etc/systemd/system/evok.service /etc/systemd/system/
+    systemctl daemon-reload
+    systemctl enable pigpiod
+    systemctl enable evok
+else
+    cp etc/init.d/evok /etc/init.d/
+    cp etc/init.d/pigpiod /etc/init.d/
+    chmod +x /etc/init.d/evok
+    chmod +x /etc/init.d/pigpiod
+    update-rc.d pigpiod defaults
+    update-rc.d evok defaults
+fi
 
 #backup uninstallation script
 cp uninstall-evok.sh /opt/evok/
-
-service pigpiod start
-#service evok start
 
 echo "Evok installed sucessfully."
 echo "Info:"
@@ -164,5 +171,7 @@ if ask "Is it OK to reboot now?"; then
     reboot
 else
     echo 'Remember to reboot your Raspberry Pi in order to start using Evok'
+    service pigpiod start
+    service evok start
 fi
 echo ' '
