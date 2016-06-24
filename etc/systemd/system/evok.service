@@ -1,0 +1,22 @@
+[Unit]
+Description=Evok Modbus/Websocket/Rpc Server
+Requires=pigpio.service
+#Before=sharkrt.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python /opt/evok/evok.py
+TimeoutStopSec=3
+SyslogLevel=debug
+SyslogIdentifier=evok
+
+WorkingDirectory=/opt/evok
+
+#User=evok
+#Group=evok
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+Alias=evok.service
