@@ -832,3 +832,71 @@ class DS2408_relay(DS2408_pio):
         self.pending_id = IOLoop.instance().add_timeout(
             datetime.timedelta(seconds=float(timeout)), timercallback)
         raise gen.Return(1 if self.value & value else 0)
+
+
+class ModBusRelay(object):
+    pending_id = 0
+
+    def __init__(self, circuit, device, pin):
+        self.circuit = circuit
+        self.device = device
+        self.pin = pin
+        #device.register_relay(self)
+
+    def full(self):
+        return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value, 'pending': self.pending_id != 0}
+
+    def simple(self):
+        return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value}
+
+    @property
+    def value(self):
+        return 1 if self.device.get_relay_state(self.pin) else 0
+
+    def get_state(self):
+        """ Returns ( status, is_pending )
+              current on/off status is taken from last mcp value without reading it from hardware
+              is_pending is Boolean
+        """
+        return (self.value, self.pending_id != 0)
+
+    @gen.coroutine
+    def set_state(self, value):
+        """ Sets new on/off status. Disable pending timeouts
+        """
+        value = bool(value)
+        if self.pending_id:
+            IOLoop.instance().remove_timeout(self.pending_id)
+            self.pending_id = None
+        yield self.device.set_relay_state(self.pin, value)
+        result = 1 if self.device.get_relay_state(self.pin) else 0
+        devents.status(self)
+        raise gen.Return(result)
+
+    @gen.coroutine
+    def set(self, value=None, timeout=None):
+        """ Sets new on/off status. Disable pending timeouts
+        """
+        if value is None:
+            raise Exception('Value must be specified')
+        value = bool(int(value))
+        if not (timeout is None):
+            timeout = float(timeout)
+
+        #yield self.device.set_relay_state(self.pin, value)
+        self.device.set_relay_state(self.pin, value)
+        devents.status(self)
+
+        if timeout is None:
+            raise gen.Return(1 if self.device.get_relay_state(self.pin) else 0)
+
+        def timercallback():
+            self.pending_id = None
+            self.device.set_relay_state(self.pin, value)
+
+        self.pending_id = IOLoop.instance().add_timeout(
+            datetime.timedelta(seconds=float(timeout)), timercallback)
+        raise gen.Return(1 if self.device.get_relay_state(self.pin) else 0)
+
+
+
