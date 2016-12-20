@@ -1,11 +1,11 @@
 [Unit]
 Description=Evok Modbus/Websocket/Rpc Server
 Requires=pigpio.service
-#Before=sharkrt.service
+Requires=neurontcp.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python /opt/evok/evok.py
+ExecStart=/usr/bin/python /opt/evok/evok.py --path1=/etc/evok.conf --path2=/etc/evok-neuron.conf
 TimeoutStopSec=3
 SyslogLevel=debug
 SyslogIdentifier=evok

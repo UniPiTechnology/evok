@@ -15,14 +15,12 @@ It also uses some other python libraries that are not installed on Raspbian by d
 
 # Installation
 
-Download the latest revision from our repository using git client
+Download the latest release from our repository wget (or alternatively using git):
 
-    git clone https://github.com/UniPiTechnology/evok
+    wget https://github.com/UniPiTechnology/evok/archive/v1.0.0.tar.gz
+    tar -zxvf v1.0.0.tar.gz && mv evok-* evok  
 
-or using wget:
-
-    wget https://api.github.com/repos/UniPiTechnology/evok/zipball/master
-    unzip master && mv UniPiTechnology-evok* evok  
+Please not that the folder that you downloaded the package is not used later and you can delete it. Config files are placed in /etc/
 
 And run the installation script and follow the given instructions
 
@@ -52,6 +50,10 @@ and then run it manually as root user by calling
     /opt/evok/evok.py
 
 and see/paste the output of the script.
+
+# Testing latest git versions
+
+The installation script should take care of everything, but be aware of limited and/or broken functionality. Please report any bugs to the github.
 
 
 # API examples

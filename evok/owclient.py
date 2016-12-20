@@ -4,11 +4,16 @@ import multiprocessing
 import os
 import time
 import ow
-import devents
 #import math
 #import datetime
 import signal
 import apigpio
+#import string
+
+from tornado.ioloop import IOLoop
+
+import devents
+import devices
 
 MAX_LOSTINTERVAL = 300  # 5minut
 
@@ -123,7 +128,8 @@ class DS18B20(MySensor):  # thermometer
 #         if not (type(self.value) is tuple):
 #             self.value = (None, None, None)
 #         return {'dev': 'ds2438', 'circuit': self.circuit, 'vdd': self.value[0], 'vad': self.value[1],
-#                 'temp': self.value[2], 'lost': self.lost, 'time': self.time, 'interval': self.interval, 'typ': self.type}
+#                 'temp': self.value[2], 'lost': self.lost, 'time': self.time, 'interval': self.interval,
+#                   'typ': self.type}
 #
 #     def simple(self):
 #         if not (type(self.value) is tuple):
@@ -168,7 +174,11 @@ class DS2408(MySensor):
         self.__bus.taskWr.send((OWCMD_SET_PIO, self.circuit, value))
 
     def set_pio(self, pio, value):
-        setattr(self.sens, 'PIO_'+repr(pio), str(value))
+        if self.type == 'DS2408':
+            setattr(self.sens, 'PIO_'+repr(pio), str(value))
+        elif self.type == 'DS2406':
+            pio_alpha = dict(zip(range(0, 26), string.ascii_uppercase))
+            setattr(self.sens, 'PIO_'+pio_alpha[pio], str(value))
 
     def register_pio(self, pio):
         if not pio in self.pios:
@@ -196,12 +206,13 @@ class DS2408(MySensor):
                         if pio.pin < pios_cnt:
                             pio.set_value(value[pio.pin])
 
+
 def MySensorFabric(address, typ, bus, interval=None, dynamic=True, circuit=None, is_static=False):
     if (typ == 'DS18B20') or (typ == 'DS18S20'):
         return DS18B20(address, typ, bus, interval=interval, circuit=circuit)
     # elif (typ == 'DS2438'):
     #     return DS2438(address, typ, bus, interval=interval, circuit=circuit)
-    elif (typ == 'DS2408'):
+    elif (typ == 'DS2408') or (typ == 'DS2406'):
         return DS2408(address, typ, bus, interval=interval, circuit=circuit, is_static=is_static)
     else:
         print "Unsupported 1wire device %s (%s) detected" % (typ, address)
@@ -237,6 +248,15 @@ class OwBusDriver(multiprocessing.Process):
             temp_list = [sens.address for sens in self.mysensors if sens.type == dev]
             list[dev] = temp_list
         return list
+
+
+    def switch_to_async(self, mainLoop):
+        self.daemon = True
+        self.start()
+        self.register_in_caller = lambda d: devices.Devices.register_device(devices.SENSOR, d)
+        set_non_blocking(self.resultRd)
+        mainLoop.add_handler(self.resultRd, self.check_resultq, IOLoop.READ)
+
 
     def set(self, scan_interval=None, do_scan=False, interval=None):
         chg = False
@@ -323,7 +343,6 @@ class OwBusDriver(multiprocessing.Process):
             if mysensor:
                 pin, value = value
                 mysensor.set_pio(pin, int(value))
-
 
     def run(self):
         """ Main loop 

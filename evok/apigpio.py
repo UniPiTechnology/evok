@@ -21,9 +21,9 @@ def set_blocking(fd):
 
 
 class _PigBus(object, pigpio.pi):
-    '''
+    """
         Common class for I2cBus and GpioBus
-    '''
+    """
 
     def __init__(self,
                  circuit,
@@ -45,9 +45,9 @@ class _PigBus(object, pigpio.pi):
     #     pigpio.pi.stop(self)
 
     def switch_to_async(self, mainloop):
-        '''
+        """
         Switch from synchronous to async operations
-        '''
+        """
         self.iostream = IOStream(self.sl.s)
         self.iostream._add_io_state(self.iostream.io_loop.WRITE)  # not sure if necessary
 

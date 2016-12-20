@@ -5,13 +5,15 @@ import ConfigParser
 import tornado.httpserver
 import tornado.ioloop
 import tornado.web
-# import tornado.websocket
 from tornado import gen
 from tornado.options import define, options
 from tornado import web
 from tornado import websocket
 from tornado import escape
 from tornado.concurrent import is_future
+
+from tornado.process import Subprocess  # not sure about it
+import subprocess  # not sure about it
 
 try:
     from urllib.parse import urlparse  # py2
@@ -23,12 +25,10 @@ import signal
 # import types
 
 import base64
-# from tornado.httpclient import AsyncHTTPClient
 
-from tornadorpc_evok.json import JSONRPCHandler
-import tornadorpc_evok as tornadorpc
-# from tornadorpc import private, start_server, coroutine
-# from tornadorpc.xml import XMLRPCHandler
+#from tornadorpc_evok.json import JSONRPCHandler
+#import tornadorpc_evok as tornadorpc
+import rpc_handler
 
 import time
 import random
@@ -36,15 +36,13 @@ import datetime
 import multiprocessing
 import json
 
-# from apigpio import I2cBus, GpioBus
-import unipig
-import owclient
 import config
 
 from devices import *
-from extcontrols import *
-import extcontrols
 
+Config = config.EvokConfig() #ConfigParser.RawConfigParser()
+cors = False
+corsdomains = '*'
 
 class UserCookieHelper():
     _passwords = []
@@ -55,43 +53,18 @@ class UserCookieHelper():
 
 
 def enable_cors(handler):
-    if options.cors:
+    if cors:
         handler.set_header("Access-Control-Allow-Headers", "*")
         handler.set_header("Access-Control-Allow-Headers", "Content-Type, Depth, User-Agent, X-File-Size,"
                                                            "X-Requested-With, X-Requested-By, If-Modified-Since, X-File-Name, Cache-Control")
-        handler.set_header("Access-Control-Allow-Origin", options.corsdomains)
+        handler.set_header("Access-Control-Allow-Origin", corsdomains)
         handler.set_header("Access-Control-Allow-Credentials", "true")
         handler.set_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
 
 
-class userBasicHelper():
-    _passwords = []
-
-    def _request_auth(self):
-        self.set_header('WWW-Authenticate', 'Basic realm=tmr')
-        self.set_status(401)
-        self.finish()
-        return False
-
-    def get_current_user(self):
-        if len(self._passwords) == 0: return True
-        auth_header = self.request.headers.get('Authorization')
-        if auth_header is None:
-            return self._request_auth()
-        if not auth_header.startswith('Basic '):
-            return self._request_auth()
-        auth_decoded = base64.decodestring(auth_header[6:])
-        username, password = auth_decoded.split(':', 2)
-
-        print (username, password)
-        print self._passwords
-        if (username == 'rpc' and password in self._passwords):
-            return True
-        else:
-            self._request_auth()
-
 
 class IndexHandler(UserCookieHelper, tornado.web.RequestHandler):
+
     def initialize(self, staticfiles):
         self.index = '%s/index.html' % staticfiles
         enable_cors(self)
@@ -105,6 +78,7 @@ class IndexHandler(UserCookieHelper, tornado.web.RequestHandler):
 registered_ws = {}
 
 class WsHandler(websocket.WebSocketHandler):
+
     def check_origin(self, origin):
         # fix issue when Node-RED removes the 'prefix://'
         origin_origin = origin
@@ -123,13 +97,17 @@ class WsHandler(websocket.WebSocketHandler):
         print "New WebSocket client connected"
         if not registered_ws.has_key("all"):
             registered_ws["all"] = set()
+
+        if len(registered_ws["all"]) == 0:
+            for neuron in Devices.by_int(NEURON):
+                neuron.start_scanning()
         registered_ws["all"].add(self)
-        pass
 
     def on_event(self, device):
         #print "Sending to: %s,%s" % (str(self), device)
         try:
-            self.write_message(device.full())
+            #print device.full()
+            self.write_message(json.dumps(device.full()))
         except Exception as e:
             print "Exc: %s" % str(e)
             pass
@@ -167,41 +145,55 @@ class WsHandler(websocket.WebSocketHandler):
             pass
 
     def on_close(self):
-        #print "Closing %s" % (str(self))
         if registered_ws.has_key("all") and (self in registered_ws["all"]):
             registered_ws["all"].remove(self)
+            if len(registered_ws["all"]) == 0:
+                for neuron in Devices.by_int(NEURON):
+                    neuron.stop_scanning()
             #elif registered_ws.has_key("nfc") and (registered_ws["nfc"] == self):
             #    registered_ws["nfc"] = None
+
+
+class LogoutHandler(tornado.web.RequestHandler):    # ToDo CHECK
+    def get(self):
+        self.clear_cookie("user")
+        self.redirect(self.get_argument("next", "/"))
 
 
 class LoginHandler(tornado.web.RequestHandler):
     def initialize(self):
         enable_cors(self)
 
-    def get(self):
-        try:
-            errormessage = self.get_argument("error")
-        except:
-            errormessage = ""
-        self.write('<html><body><div>%s</div><form action="" method="post">'
-                   'Password: <input type="text" name="name">'
-                   '<input type="submit" value="Sign in">'
-                   '</form></body></html>' % errormessage)
-
-    def check_permission(self, password, username):
-        if username == "admin" and password in self._passwords:
-            return True
-        return False
-
-    #testing
-    def post(self):
-        username = self.get_argument("name")
-        if self.check_permission(username, username):
+    def post(self):   # ToDo CHECK
+        #username = self.get_argument("username", "")
+        username = 'admin'
+        password = self.get_argument("password", "")
+        auth = self.check_permission(password, username)
+        if auth:
             self.set_secure_cookie("user", escape.json_encode(username))
             self.redirect(self.get_argument("next", u"/"))
         else:
-            error_msg = u"?error=" + escape.url_escape("Login incorrect")
-            self.redirect(u"/login/" + error_msg)
+            error_msg = u"?error=" + tornado.escape.url_escape("Login incorrect")
+            self.redirect(u"/auth/login/" + error_msg)
+
+    def get(self):    # ToDo CHECK
+        self.redirect(self.get_argument("next", u"/"))
+        # self.render("index.html", next=self.get_argument("next","/"))
+        # try:
+        #     errormessage = self.get_argument("error")
+        # except:
+        #     errormessage = ""
+        # #TODO: vymyslet jak udelat login popup
+        # #self.render("login.html", errormessage = errormessage)
+        # self.write('<html><body><div>%s</div><form action="" method="post">'
+        #            'Password: <input type="text" name="name">'
+        #            '<input type="submit" value="Sign in">'
+        #            '</form></body></html>' % errormessage)
+
+    def check_permission(self, password, username=''):
+        if username == "admin" and password in self._passwords:
+            return True
+        return False
 
 
 class RestHandler(UserCookieHelper, tornado.web.RequestHandler):
@@ -222,6 +214,7 @@ class RestHandler(UserCookieHelper, tornado.web.RequestHandler):
         else:
             result = device.full()
         self.write(json.dumps(result))
+        self.finish()
 
 
     # usage: POST /rest/DEVICE/CIRCUIT
@@ -241,7 +234,82 @@ class RestHandler(UserCookieHelper, tornado.web.RequestHandler):
             self.write(json.dumps({'success': True, 'result': result}))
         except Exception, E:
             self.write(json.dumps({'success': False, 'errors': {'__all__': str(E)}}))
+        self.finish()
 
+
+class RemoteCMDHandler(UserCookieHelper, tornado.web.RequestHandler): # ToDo CHECK
+    def initialize(self):
+        enable_cors(self)
+
+    @tornado.gen.coroutine
+    @tornado.web.authenticated
+    def post(self):
+        service = self.get_argument('service', '')
+        status = self.get_argument('status', '')
+        if service in ('ssh', 'sshd'):
+            if status in ('start', 'stop', 'enable', 'disable'):
+                result, error = yield call_shell_subprocess('service %s %s' % (service, status))
+        if service == 'pw':
+            print 'echo -e "%s\n%s" | passwd root' % (status, status)
+            yield call_shell_subprocess('echo -e "%s\\n%s" | passwd root' % (status, status))
+        self.finish()
+
+class ConfigHandler(UserCookieHelper, tornado.web.RequestHandler): # ToDo CHECK
+    def initialize(self):
+        enable_cors(self)
+
+    @tornado.web.authenticated
+    def get(self):
+        self.write(Config.configtojson())
+        self.finish()
+
+    @tornado.gen.coroutine
+    @tornado.web.authenticated
+    def post(self):
+        conf = ConfigParser.ConfigParser()
+        #make sure it it saved in the received order
+        from collections import OrderedDict
+        data = json.loads(self.request.body, object_pairs_hook=OrderedDict)
+        for key in data:
+            conf.add_section(key)
+            for param in data[key]:
+                val = data[key][param]
+                conf.set(key, param, val)
+        cfgfile = open(config.config_path, 'w')
+        conf.write(cfgfile)
+        cfgfile.close()
+        #and call restart
+        #TODO: fix systemctl in debian 9?
+        yield call_shell_subprocess('service evok restart')
+        self.finish()
+
+
+@gen.coroutine
+def call_shell_subprocess(cmd, stdin_data=None, stdin_async=False):
+    """
+    Wrapper around subprocess call using Tornado's Subprocess class.
+    """
+    stdin = Subprocess.STREAM if stdin_async else subprocess.PIPE
+
+    sub_process = tornado.process.Subprocess(
+        cmd, stdin=stdin, stdout=Subprocess.STREAM, stderr=Subprocess.STREAM, shell=True
+    )
+
+    if stdin_data:
+        if stdin_async:
+            yield Subprocess.Task(sub_process.stdin.write, stdin_data)
+        else:
+            sub_process.stdin.write(stdin_data)
+
+    if stdin_async or stdin_data:
+        sub_process.stdin.close()
+
+    result, error = yield [
+        gen.Task(sub_process.stdout.read_until_close),
+        gen.Task(sub_process.stderr.read_until_close)
+    ]
+
+    raise gen.Return((result, error))
 
 class LoadAllHandler(UserCookieHelper, tornado.web.RequestHandler):
     def initialize(self):
@@ -258,267 +326,165 @@ class LoadAllHandler(UserCookieHelper, tornado.web.RequestHandler):
         self.write(json.dumps(result))
 
 
-class Handler(userBasicHelper, JSONRPCHandler):
-    @tornado.web.authenticated
-    def post(self):
-        JSONRPCHandler.post(self)
+# callback generators for devents
+def gener_status_cb(mainloop, modbus_context):
 
-    ###### Input ######
-    def input_get(self, circuit):
-        inp = Devices.by_int(INPUT, str(circuit))
-        return inp.get()
-
-    def input_get_value(self, circuit):
-        inp = Devices.by_int(INPUT, str(circuit))
-        return inp.get_value()
-
-    def input_set(self, circuit, debounce):
-        inp = Devices.by_int(INPUT, str(circuit))
-        return inp.set(debounce=debounce)
-
-
-    ###### Relay ######
-    def relay_get(self, circuit):
-        relay = Devices.by_int(RELAY, str(circuit))
-        return relay.get_state()
-
-    @tornadorpc.coroutine
-    def relay_set(self, circuit, value):
-        relay = Devices.by_int(RELAY, str(circuit))
-        result = yield relay.set_state(value)
-        raise gen.Return(result)
-
-    @tornadorpc.coroutine
-    def relay_set_for_time(self, circuit, value, timeout):
-        relay = Devices.by_int(RELAY, str(circuit))
-        if timeout <= 0:
-            raise Exception('Invalid timeout %s' % str(timeout))
-        result = yield relay.set(value, timeout)
-        raise gen.Return(result)
-
-    ###### Analog Input ######
-    def ai_get(self, circuit):
-        ai = Devices.by_int(AI, str(circuit))
-        return ai.get()
-
-    def ai_set_bits(self, circuit, bits):
-        ai = Devices.by_int(AI, str(circuit))
-        return ai.set(bits=bits)
-
-    def ai_set_interval(self, circuit, interval):
-        ai = Devices.by_int(AI, str(circuit))
-        return ai.set(interval=interval)
-
-    def ai_set_gain(self, circuit, gain):
-        ai = Devices.by_int(AI, str(circuit))
-        return ai.set(gain=gain)
-
-    def ai_set(self, circuit, bits, gain, interval):
-        ai = Devices.by_int(AI, str(circuit))
-        return ai.set(bits=bits, gain=gain, interval=interval)
-
-    #def ai_measure(self, circuit):
-
-    ###### Analog Output (0-10V) ######
-    @tornadorpc.coroutine
-    def ao_set_value(self, circuit, value):
-        ao = Devices.by_int(AO, str(circuit))
-        result = yield ao.set_value(value)
-        raise gen.Return(result)
-
-    @tornadorpc.coroutine
-    def ao_set(self, circuit, value, frequency):
-        ao = Devices.by_int(AO, str(circuit))
-        result = yield ao.set(value, frequency)
-        raise gen.Return(result)
-
-    ###### OwBus (1wire bus) ######
-    def owbus_get(self, circuit):
-        ow = Devices.by_int(OWBUS, str(circuit))
-        return ow.scan_interval
-
-    def owbus_set(self, circuit, scan_interval):
-        ow = Devices.by_int(OWBUS, str(circuit))
-        return ow.set(scan_interval=scan_interval)
-
-    def owbus_scan(self, circuit):
-        ow = Devices.by_int(OWBUS, str(circuit))
-        return ow.set(do_scan=True)
-
-    def owbus_list(self, circuit):
-        ow = Devices.by_int(OWBUS, str(circuit))
-        return ow.list()
-
-    ###### Sensors (1wire thermo,humidity) ######
-    def sensor_set(self, circuit, interval):
-        sens = Devices.by_int(SENSOR, str(circuit))
-        return sens.set(interval=interval)
-
-    def sensor_get(self, circuit):
-        sens = Devices.by_int(SENSOR, str(circuit))
-        return sens.get()
-
-    def sensor_get_value(self, circuit):
-        sens = Devices.by_int(SENSOR, str(circuit))
-        return sens.get_value()
-
-    @tornadorpc.coroutine
-    def pca_set(self, circuit, channel, on, off):
-        pca = Devices.by_int(PCA9685, str(circuit))
-        result = yield pca.set(channel, on, off)
-        raise gen.Return(result)
-
-    @tornadorpc.coroutine
-    def pca_set_pwm(self, circuit, channel, val):
-        pca = Devices.by_int(PCA9685, str(circuit))
-        result = yield pca.set_pwm(channel, val)
-        raise gen.Return(result)
-
-    ###### EEprom ######
-    @tornadorpc.coroutine
-    def ee_read_byte(self, circuit, index):
-        ee = Devices.by_int(EE, str(circuit))
-        result = yield ee.read_byte(index)
-        raise gen.Return(result)
-
-    @tornadorpc.coroutine
-    def ee_write_byte(self, circuit, index, value):
-        ee = Devices.by_int(EE, str(circuit))
-        result = yield ee.write_byte(index, value)
-
-
-def gener_status_cb(mainloop):
-    def status_cb(device, *kwargs):
-        if add_computes(device):
-            mainloop.add_callback(compute)
+    def status_cb_modbus(device, *kwargs):
+        modbus_context.status_callback(device)
         if registered_ws.has_key("all"):
             map(lambda x: x.on_event(device), registered_ws['all'])
         pass
 
+    def status_cb(device, *kwargs):
+        #if add_computes(device):
+        #    mainloop.add_callback(compute)
+        if registered_ws.has_key("all"):
+            map(lambda x: x.on_event(device), registered_ws['all'])
+        pass
+
+    if modbus_context:
+        return status_cb_modbus
     return status_cb
 
 
-def gener_config_cb(mainloop):
-    # from unipig import Input, Relay
+def gener_config_cb(mainloop, modbus_context):
+
+    def config_cb_modbus(device, *kwargs):
+        modbus_context.config_callback(device)
+
     def config_cb(device, *kwargs):
-        # if device.circuit == '1' and isinstance(device, owclient.DS18B20): #hack kvuli nedoresenemu computemap pro device
-        # ComputeMap[device] = (TEMP_FAN, )
-        #
-        # if isinstance(device, Input): #hack kvuli nedoresenemu computemap pro device
-        # ComputeMap[device] = (ENGINE_LEFT, BUTTON_RIGHT, )
-        #
-        # if isinstance(device, Relay): #hack kvuli nedoresenemu computemap pro device
-        #     ComputeMap[device] = (ENGINE_LEFT_NOT, )
-        #
+        pass
         # if registered_ws.has_key("all"):
         #     map(lambda x: x.on_event(device), registered_ws['all'])
-        pass
-        if add_computes(device):
-            mainloop.add_callback(compute)
+        #if add_computes(device):
+        #    mainloop.add_callback(compute)
             # print device
             # d = device.full()
             # print "%s%s " % (d['dev'], d['circuit'])
 
+    if modbus_context:
+        return config_cb_modbus
     return config_cb
 
 
 ################################ MAIN ################################
 
 def main():
-    # wait a second before sending first task
-    #time.sleep(1)
 
+    define("path1", default='', help="Use this config file, if device is Unipi 1.x", type=str)
+    define("path2", default='', help="Use this config file, if device is Unipi Neuron", type=str)
+    define("port", default=8088, help="Http server listening ports", type=int)
+    define("modbus_port", default=-1, help="Modbus/TCP listening port, 0 disables modbus", type=int)
     tornado.options.parse_command_line()
 
-    Config = ConfigParser.RawConfigParser(defaults={'webname': 'unipi', 'staticfiles': '/var/www/evok', 'bus': 1})
+    config.read_eprom_config()
+
     Config.add_section('MAIN')
     path = '/etc/evok.conf'
+    # set config file name based on eprom version and command line option --path1 --path2
+    if config.globals['version1']:
+        path1 = options.as_dict()['path1']
+        if (path1 != '') and (os.path.isfile(path1)):
+            path = path1
+    elif config.globals['version2']:
+        path2 = options.as_dict()['path2']
+        if (path2 != '') and (os.path.isfile(path2)):
+            path = path2
+
     if not os.path.isfile(path):
         path = os.path.dirname(os.path.realpath(__file__)) + '/evok.conf'
+    print "Using config file %s" % path
     Config.read(path)
-    webname = Config.get("MAIN", "webname")
-    staticfiles = Config.get("MAIN", "staticfiles")
-    cookie_secret = Config.get("MAIN", "secret")
-    try:
-        pw = Config.get("MAIN", "password")
-        userCookieHelper._passwords.append(pw)
-    except:
-        pass
-    try:
-        pw = Config.get("MAIN", "rpcpassword")
-        print pw
-        userBasicHelper._passwords.append(pw)
-        print pw
-    except:
-        pass
 
-    cors = config.getbooldef(Config, "MAIN", "enable_cors", False)
-    define("cors", default=cors, help="enable CORS support", type=bool)
+    webname = Config.getstringdef("MAIN", "webname", "unipi")
+    staticfiles = Config.getstringdef("MAIN", "staticfiles", "/var/www/evok")
+    cookie_secret = Config.getstringdef("MAIN", "secret", 
+                                                "ut5kB3hhf6VmZCujXGQ5ZHb1EAfiXHcy")
+    pw = Config.getstringdef("MAIN", "password", "")
+    if pw: userCookieHelper._passwords.append(pw)
+    pw = Config.getstringdef("MAIN", "rpcpassword", "")
+    if pw: rpc_handler.userBasicHelper._passwords.append(pw)
 
-    corsdomains = config.getstringdef(Config, "MAIN", "cors_domains", "*")
-    define("corsdomains", default=corsdomains, help="CORS domains separated by whitespace", type=bool)
+    cors = Config.getbooldef("MAIN", "enable_cors", False)
+    corsdomains = Config.getstringdef("MAIN", "cors_domains", "*")
+    #define("cors", default=cors, help="enable CORS support", type=bool)
+    #define("corsdomains", default=corsdomains, help="CORS domains separated by whitespace", type=bool)
 
-    port = config.getintdef(Config, "MAIN", "port", 80)
-    define("port", default=port, help="Listening port settings", type=bool)
+    port = Config.getintdef("MAIN", "port", 80)
+    if options.as_dict()['port'] != -1:  
+        port = options.as_dict()['port'] # use command-line option instead of config option
+
+    modbus_address = Config.getstringdef("MAIN", "modbus_address", '')
+    modbus_port = Config.getintdef("MAIN", "modbus_port", 0)
+    if options.as_dict()['modbus_port'] != -1:  
+        modbus_port = options.as_dict()['modbus_port'] # use command-line option instead of config option
 
     app = tornado.web.Application(
         handlers=[
             #(r"/", web.RedirectHandler, {"url": "http://%s/" % webname }),
             (r"/", IndexHandler, dict(staticfiles=staticfiles)),
             (r"/index.html", IndexHandler, dict(staticfiles=staticfiles)),
-            (r"/login/", LoginHandler),
+            (r"/auth/login/", LoginHandler),
+            (r"/auth/logout/", LogoutHandler),
             (r"/stylesheets/(.*)", web.StaticFileHandler, {"path": "%s/stylesheets" % staticfiles}),
             (r"/images/(.*)", web.StaticFileHandler, {"path": "%s/images" % staticfiles}),
             (r"/js/(.*)", web.StaticFileHandler, {"path": "%s/js" % staticfiles}),
-            (r"/rpc", Handler),
+            (r"/templates/(.*)", web.StaticFileHandler, {"path": "%s/templates" % staticfiles}),
+            (r"/rpc", rpc_handler.Handler),
+            (r"/config", ConfigHandler),
+            (r"/config/cmd", RemoteCMDHandler),
             (r"/rest/all/?", LoadAllHandler),
             (r"/rest/([^/]+)/([^/]+)/?(.+)?", RestHandler),
             (r"/ws", WsHandler),
             #(r"/.*", web.RedirectHandler, {"url": "http://%s/" % webname }),
         ],
-        login_url='/login/',
+        login_url='/auth/login/',
         cookie_secret=cookie_secret
     )
 
     #app.add_handlers(r'%s.*' % webname , [(r"/", IndexHandler, dict(staticfiles=staticfiles))])
 
+    
     #### prepare http server #####
     httpServer = tornado.httpserver.HTTPServer(app)
-    httpServer.listen(options.port)
-    print "Listening on port:", options.port
+    httpServer.listen(port)
+    print "HTTP server listening on port:", port
+
+    if modbus_port > 0: # used for UniPi 1.x
+        from modbus_tornado import ModbusServer, ModbusApplication
+        import modbus_unipi
+        #modbus_context = modbus_unipi.UnipiContext()  # full version
+        modbus_context = modbus_unipi.UnipiContextGpio()  # limited version
+
+        modbus_server = ModbusServer(ModbusApplication(store=modbus_context, identity=modbus_unipi.identity))
+        modbus_server.listen(modbus_port, address=modbus_address)
+        print "Modbus/TCP server istening on port: %d" % modbus_port
+    else:
+        modbus_context = None
 
     mainLoop = tornado.ioloop.IOLoop.instance()
 
-    # prepare Hw Devices
-    devents.register_config_cb(gener_config_cb(mainLoop))
-    devents.register_status_cb(gener_status_cb(mainLoop))
+    #### prepare hardware according to config #####
+    # prepare callbacks for config events
+    devents.register_config_cb(gener_config_cb(mainLoop, modbus_context))
+    devents.register_status_cb(gener_status_cb(mainLoop, modbus_context))
+    # create hw devices
     config.create_devices(Config)
 
-    # create back loop
-    # todo: find a more sophisticated solution
-    #extcontrols.mainloop = mainLoop
-
-    #""" Setting the '_server' attribute if not set - simple link to mainloop"""
+    '''
+    """ Setting the '_server' attribute if not set - simple link to mainloop"""
     for (srv, urlspecs) in app.handlers:
         for urlspec in urlspecs:
             try:
                 setattr(urlspec.handler_class, '_server', mainLoop)
             except AttributeError:
                 urlspec.handler_class._server = mainLoop
+    '''
+    # switch buses to async mode, start processes, plan some actions
+    for bustype in (I2CBUS, GPIOBUS, ADCHIP, OWBUS, NEURON):
+        for device in Devices.by_int(bustype):
+            device.switch_to_async(mainLoop) 
 
-    # switch buses to async mode, start processes, plan some actions - specific for different devtypes
-    for bus in Devices.by_int(I2CBUS):
-        bus.switch_to_async(mainLoop)
-    for bus in Devices.by_int(GPIOBUS):
-        bus.switch_to_async(mainLoop)
-    for adc in Devices.by_int(ADCHIP):
-        mainLoop.add_callback(lambda: adc.measure_loop(mainLoop))
-    for owbus in Devices.by_int(OWBUS):
-        owbus.daemon = True
-        owbus.start()
-        owbus.register_in_caller = lambda d: Devices.register_device(SENSOR, d)
-        owclient.set_non_blocking(owbus.resultRd)
-        mainLoop.add_handler(owbus.resultRd, owbus.check_resultq, tornado.ioloop.IOLoop.READ)
 
     def sig_handler(sig, frame):
         if sig in (signal.SIGTERM, signal.SIGINT):
@@ -531,7 +497,8 @@ def main():
         for bus in Devices.by_int(GPIOBUS):
             bus.switch_to_sync()
         print "Shutting down"
-        httpServer.stop()
+        try: httpServer.stop()
+        except: pass
         #todo: and shut immediately?
         tornado.ioloop.IOLoop.instance().stop()
 

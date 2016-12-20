@@ -60,7 +60,7 @@ class Eprom(object):
             raise gen.Return(pigpio._u2i(result))
 
 
-# ################################################################
+#################################################################
 #
 # Relays on MCP 23008
 #
@@ -96,12 +96,44 @@ class UnipiMcp(object):
             self.relays.append(relay)
 
     @gen.coroutine
-    def set_masked_value(self, mask, value):
+    def __set_masked_value(self, mask, value):
+        # old pattern
         if value:
             byte_val = (self.value | mask) & 0xff
         else:
             byte_val = (self.value & ~mask) & 0xff
 
+        with (yield self.i2cbus.iolock.acquire()):
+            #write byte
+            extents = [struct.pack("I", byte_val)]
+            result = yield self.i2cbus.apigpio_command_ext(
+                pigpio._PI_CMD_I2CWB,
+                self.i2c, MCP23008_GPIO, 4, extents)
+            pigpio._u2i(result)  # check errors
+
+            #read byte
+            result = yield self.i2cbus.apigpio_command(
+                pigpio._PI_CMD_I2CRB,
+                self.i2c, MCP23008_OLAT)
+            mask = self.value
+            self.value = pigpio._u2i(result)
+            mask = mask ^ self.value
+            for r in filter(lambda r: r._mask & mask, self.relays):
+                devents.status(r)
+
+    @gen.coroutine
+    def set_masked_value(self, mask, value):
+
+        if value:
+            return self.set_bitmap(mask, 0xff)
+        else:
+            return self.set_bitmap(mask, 0x0)
+
+
+    @gen.coroutine
+    def set_bitmap(self, mask, bitmap):
+
+        byte_val = (self.value & ~mask) | (bitmap & mask)
         with (yield self.i2cbus.iolock.acquire()):
             #write byte
             extents = [struct.pack("I", byte_val)]
@@ -226,6 +258,9 @@ class UnipiMCP342x(object):
 
     def full(self):
         return {'dev': 'adchip', 'circuit': self.circuit}
+
+    def switch_to_async(self, mainLoop):
+        mainLoop.add_callback(self.measure_loop, mainLoop)
 
     def calc_mode(self, channel, bits, gain, continuous):
         mode = 0
@@ -676,6 +711,7 @@ class Input():
         self.mask = 1 << pin
         self._debounce = 0 if not debounce else debounce / 1000.0  # milisecs
         self.value = None
+        self.__value = None
         self.pending = None
         self.tick = 0
         if counter_mode in ["rising", "falling", "disabled"]:
@@ -691,8 +727,13 @@ class Input():
     def debounce(self):
         return int(self._debounce * 1000)
 
+    @property
+    def bitvalue(self):
+        return self.__value
+
     def full(self):
         return {'dev': 'input', 'circuit': self.circuit, 'value': self.value,
+                'bitvalue' : self.__value, 
                 'time': self.tick, 'debounce': self.debounce,
                 'counter_mode': self.counter_mode == 'rising' or self.counter_mode == 'falling'}
 
@@ -705,9 +746,15 @@ class Input():
 
         def debcallback():
             self.pending = None
-            self.value = value
             self.pulse_us = tick - self.tick
+            self.__value = value
             self.tick = tick
+            if (self.counter_mode == 'rising') and (value == 1):
+                self.value += 1
+            elif (self.counter_mode == 'falling') and (value == 0):
+                self.value += 1
+            elif self.counter_mode == 'disabled':
+                self.value = value
             devents.status(self)
             #print("Input-%d = %d  %d" %(self.circuit,self.value, self.pulse_us))
 
@@ -715,33 +762,34 @@ class Input():
         if self._debounce:
             if self.pending:
                 self.bus.mainloop.remove_timeout(self.pending)
-                #IOLoop.instance().remove_timeout(self.pending)
                 self.pending = None
 
-            if value != self.value:
+            if value != self.__value:
                 self.pending = self.bus.mainloop.add_timeout(datetime.timedelta(seconds=self._debounce), debcallback)
-                #self.pending = IOLoop.instance().add_timeout(datetime.timedelta(seconds=self._debounce),debcallback)
             return
 
+        self.__value = value
         self.tick = tick
         if self.counter_mode == 'rising' and value == 1:
             self.value += 1
-            devents.status(self)
         elif self.counter_mode == 'falling' and value == 0:
             self.value += 1
-            devents.status(self)
         elif self.counter_mode == 'disabled':
             self.value = value
-            devents.status(self)
+        devents.status(self)
 
     #@gen.coroutine
-    def set(self, debounce=None):
+    def set(self, debounce=None, counter=None):
         if not (debounce is None):
             if not debounce:
                 self._debounce = 0
             else:
                 self._debounce = float(debounce) / 1000.0  #milisecs
             devents.config(self)
+        if not (counter is None):
+            if self.counter_mode != 'disabled':
+                self.value = counter
+                devents.status(self)
 
     def get(self):
         """ Returns ( value, debounce )

@@ -12,29 +12,31 @@ function SyncDevice(msg) {
     //todo: add name as parameter
     var name = "";
     var circuit = msg.circuit;
-    var dev_type = msg.dev;
+    var device = msg.dev;
+    var typ = msg.typ;
     var value = msg.value;
     var unit = "";
-    var ns = "unipi_" + dev_type + "_" + circuit;
+    var ns = "unipi_" + device + "_" + circuit;
 
-    if (dev_type == 'ai') {
+    if (device == 'ai') {
         name = "Analog input " + circuit;
         value = msg.value.toFixed(3);
         unit = "V";
     }
-    else if (dev_type == 'ao') {
+    else if (device == 'ao') {
         name = "Analog output " + circuit;
         unit = "V";
         value = msg.value.toFixed(1);
     }
-    else if (dev_type == 'relay') {
+    else if (device == 'relay') {
         name = "Relay " + circuit;
     }
-    else if (dev_type == 'input') {
+    else if (device == 'input') {
         name = "Input " + circuit;
+        counter = msg.counter;
     }
-    else if (dev_type == 'temp') {
-        name = "Sensor " + msg.typ + " - " + circuit;
+    else if (device == 'temp' || device == '1wdevice') {
+        name = "Sensor " + typ + " - " + circuit;
         if (msg.value == null) {
             value = "null";
         }
@@ -51,7 +53,7 @@ function SyncDevice(msg) {
         div = document.createElement("div");
         div.className = "ui-field-contain";
 
-        if (dev_type == 'relay') {
+        if (device == 'relay') {
             main_el = document.createElement("select");
             main_el.className = "ui-li-aside";
             var option_on = document.createElement("option");
@@ -63,25 +65,44 @@ function SyncDevice(msg) {
             main_el.add(option_off);
             main_el.add(option_on);
         }
-        else if (dev_type == "ao") {
+        else if (device == "ao") {
             main_el = document.createElement("input");
             main_el.className = "out";
             main_el.min = 0;
             main_el.max = 10;
             main_el.step = 0.1;
         }
-        else if (dev_type == "temp") {
+        else if (device == "temp" || device == "1wdevice") {
             main_el = document.createElement("h1");
             main_el.textContent = value + unit;
             main_el.className = "ui-li-aside";
         }
-        else {
+        else if (device == "input") {
+            cnt_el = document.createElement("h1");
+            cnt_el.textContent = counter;
+            cnt_el.className = "ui-li-aside";
+            cnt_el.style = "right: 7em";
+            cnt_el.id = ns + "_counter";
+
+            cfg_el = document.createElement("a");
+            cfg_el.className = "ui-icon-gear ui-btn-icon-notext ui-corner-all";
+            cfg_el.href = "#popupBasic"; 
+            cfg_el.setAttribute("data-rel","popup"); 
+            cfg_el.setAttribute("data-position-to","window");
+            cfg_el.setAttribute("data-transition","pop"); 
+            cfg_el.id = ns + "_cfg";
+
             main_el = document.createElement("h1");
             var state = "Off";
             if (value == 1) {
                 state = "On;"
             }
             main_el.textContent = state + unit;
+            main_el.className = "ui-li-aside";
+        }
+        else {
+            main_el = document.createElement("h1");
+            main_el.textContent = value + unit;
             main_el.className = "ui-li-aside";
         }
 
@@ -95,41 +116,42 @@ function SyncDevice(msg) {
 
         //create structure
         div.appendChild(label);
+        if (device == "input") { div.appendChild(cfg_el); div.appendChild(cnt_el);}
         div.appendChild(main_el);
         li.appendChild(div);
 
         //and append it to the html
-        if (dev_type == 'ai') {
+        if (device == 'ai') {
             var divider = document.getElementById("unipi_temp_divider");
             var list = document.getElementById("inputs_list");
             list.insertBefore(li, divider);
             $('#inputs_list').listview('refresh');
         }
-        else if (dev_type == 'ao') {
+        else if (device == 'ao') {
             $('#outputs_list').append(li);
             $('#' + main_el.id).slider();
             $('#outputs_list').listview('refresh');
             $('#' + main_el.id).bind("slidestop", function (event, ui) {
-                do_action('ao/' + circuit, 'value=' + $(this).val());
+                makePostRequest('ao/' + circuit, 'value=' + $(this).val());
             });
         }
-        else if (dev_type == 'relay') {
+        else if (device == 'relay') {
             var divider = document.getElementById("unipi_ao_divider");
             var list = document.getElementById("outputs_list");
             list.insertBefore(li, divider);
             $('#' + main_el.id).flipswitch();
             $('#outputs_list').listview('refresh');
             $('#' + main_el.id).bind("change", function (event, ui) {
-                do_action('relay/' + circuit, 'value=' + $(this).val());
+                makePostRequest('relay/' + circuit, 'value=' + $(this).val());
             });
         }
-        else if (dev_type == 'input') {
+        else if (device == 'input') {
             var divider = document.getElementById("unipi_ai_divider");
             var list = document.getElementById("inputs_list");
             list.insertBefore(li, divider);
             $('#inputs_list').listview('refresh');
         }
-        else if (dev_type == 'temp') {
+        else if (device == 'temp' || device == '1wdevice') {
             $('#inputs_list').append(li);
             $('#inputs_list').listview('refresh');
         }
@@ -141,28 +163,26 @@ function SyncDevice(msg) {
         //and update values
         label.textContent = name;
         //outputs
-        if (dev_type == 'relay') {
+        if (device == 'relay') {
             //TODO: remove re-binding when/if more events for flispwitch are available to prevent looping
             //unbind to prevent looping
             $('#' + main_el.id).unbind("change");
             $("#" + ns + "_value").val(value).flipswitch("refresh");
             //and bind again
             $('#' + main_el.id).bind("change", function (event, ui) {
-                do_action('relay/' + circuit, 'value=' + $(this).val());
+                makePostRequest('relay/' + circuit, 'value=' + $(this).val());
             });
         }
-        else if (dev_type == 'ao') {
+        else if (device == 'ao') {
             $("#" + ns + "_value").val(value).slider("refresh");
         }
         //inputs
-        else if (dev_type == 'input') {
-            if (msg.counter_mode) {
-                state = value;
-            }
-            else {
-                state = (value == 1) ? "On" : "Off";
-            }
-            main_el.innerHTML = state;
+        else if (device == 'input') {
+            //if (msg.counter_mode != "disabled") {
+                var counter_el = document.getElementById(ns + "_counter");
+                counter_el.innerHTML = counter;
+            //}
+            main_el.innerHTML = (value == 1) ? "On" : "Off";
         }
         else {
             main_el.innerHTML = value + unit;
@@ -172,7 +192,7 @@ function SyncDevice(msg) {
 
 function update_values() {
     $.ajax({
-        url: 'rest/all/',
+        url: 'rest/all',
         dataType: 'json',
         success: function (data) {
             data = sortResults(data);
@@ -221,7 +241,14 @@ function WebSocketRegister() {
         ws.onmessage = function (evt) {
             var received_msg = evt.data;
             var msg = JSON.parse(evt.data);
-            SyncDevice(msg);
+            if (msg.constructor === Array) {
+                data = sortResults(msg);
+                $.each(data, function (name, msg) {
+                    SyncDevice(msg);
+                });
+            } else {
+                SyncDevice(msg);
+            }
         };
 
         ws.onclose = function () {
@@ -236,7 +263,7 @@ function WebSocketRegister() {
     }
 }
 
-function do_action(action, params) {
+function makePostRequest(action, params) {
     $.ajax({
         url: '/rest/' + action,
         //dataType:'json',

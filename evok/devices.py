@@ -70,6 +70,10 @@ MCP = 9
 GPIOBUS = 10
 PCA9685 = 11
 DS2408 = 12
+UNIPI2 = 13
+UART = 14
+NEURON = 15
+BOARD = 16
 
 ## corresponding device types names !! ORDER IS IMPORTANT
 devtype_names = (
@@ -86,6 +90,10 @@ devtype_names = (
     'gpiobus',
     'pca9685',
     'ds2408',
+    'unipi2',
+    'uart',
+    'neuron',
+    'board',
 )
 
 devtype_altnames = {
