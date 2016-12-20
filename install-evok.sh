@@ -176,7 +176,6 @@ install_unipi_1() {
 }
 
 install_unipi_neuron() {
-
     #load UniPi2 EEPROM
     if ! grep -q 'unipi2_eprom' /etc/modules ;then
         echo "unipi2_eprom" >> /etc/modules
@@ -240,7 +239,6 @@ install_unipi_neuron() {
         reboot
     else
         echo 'Remember to reboot your Raspberry Pi in order to start using Evok'
-        service evok start
     fi
     echo ' '
 }
@@ -258,7 +256,7 @@ cp -r etc/opt /etc/
 
 apt-get update
 apt-get install -y python-ow python-pip make python-dev
-pip install tornado toro jsonrpclib
+pip install tornado toro jsonrpclib pymodbus
 
 #detect version of UniPi
 echo 'Please choose version of UniPi you are using:'
