@@ -55,6 +55,10 @@ and see/paste the output of the script.
 
 The installation script should take care of everything, but be aware of limited and/or broken functionality. Please report any bugs to the github.
 
+    wget https://github.com/UniPiTechnology/evok/archive/master.zip
+    unzip master.zip
+    cd evok-master
+    bash install-evok.sh
 
 # API examples
 
