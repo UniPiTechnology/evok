@@ -137,6 +137,9 @@ class WsHandler(websocket.WebSocketHandler):
                 if is_future(result):
                     result = yield result
                 print result
+                #adding support to get state of relays using full msg in cmd 
+                if cmd == "full":
+                    self.write_message(result)
             except Exception, E:
                 print E
         except:
