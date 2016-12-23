@@ -121,7 +121,7 @@ class WsHandler(websocket.WebSocketHandler):
        	    except:
        	        cmd = "set"                
 	    if cmd == "all":	#with the command all you get all the results from all IO just like REST/ALL is handy for initialisation    
-	           result = map(lambda dev: dev.full(), Devices.by_int(INPUT))
+	       result = map(lambda dev: dev.full(), Devices.by_int(INPUT))
                result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
                result += map(lambda dev: dev.full(), Devices.by_int(AI))
                result += map(lambda dev: dev.full(), Devices.by_int(AO))
