@@ -116,16 +116,25 @@ class WsHandler(websocket.WebSocketHandler):
     def on_message(self, message):
         try:
             message = json.loads(message)
+            try:
+       	        cmd = message["cmd"]		
+       	    except:
+       	        cmd = "set"                
+	    if cmd == "all":	#with the command all you get all the results from all IO just like REST/ALL is handy for initialisation    
+	           result = map(lambda dev: dev.full(), Devices.by_int(INPUT))
+               result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
+               result += map(lambda dev: dev.full(), Devices.by_int(AI))
+               result += map(lambda dev: dev.full(), Devices.by_int(AO))
+               result += map(lambda dev: dev.full(), Devices.by_int(SENSOR))
+	           #print result
+               self.write_message(json.dumps(result))
+	    else:                                
             dev = message["dev"]
             circuit = message["circuit"]
             try:
                 value = message["value"]
             except:
-                value = None
-            try:
-                cmd = message["cmd"]
-            except:
-                cmd = "set"
+                value = None            
             try:
                 device = Devices.by_name(dev, circuit)
                 # result = device.set(value)
