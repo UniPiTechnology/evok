@@ -2,6 +2,8 @@
 
 Evok is a main API and WEB interface for the [UniPi] (Raspberry Pi universal addon) board a successful [IndieGogo] project. It provides REST, JSON, and WebSocket interface to relays, digital and analog inputs, analog output.
 
+_**Support for Neuron is available only in the latest commits (for now), not in the release version. Please see [intructions below]!**_
+ 
 It is still in very early development state so more testing is appreciated.
 
 Access to GPIOs is done using the fantastic [PIGPIO] library. Make sure to install it first before use.
@@ -218,3 +220,4 @@ Raspberry Pi is a trademark of the Raspberry Pi Foundation
 [websocket client library for Perl]:https://metacpan.org/pod/AnyEvent::WebSocket::Client
 [websocket Python library]:https://pypi.python.org/pypi/websocket-client/
 [our forum]:http://forum.unipi.technology/
+[intructions below]:https://github.com/UniPiTechnology/evok#testing-latest-git-versions
