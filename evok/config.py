@@ -31,8 +31,8 @@ def read_eprom_config():
     try:
         with open('/sys/class/i2c-dev/i2c-1/device/1-0050/eeprom','r') as f:
             bytes=f.read(256)
-            if bytes[240:242] == '\xfa\x55':
-                if ord(bytes[242]) == 1 and ord(bytes[243]) == 1:
+            if bytes[224:226] == '\xfa\x55':
+                if ord(bytes[226]) == 1 and ord(bytes[227]) == 1:
                     globals['version'] = "1.1"
                 else:
                     globals['version'] = "1.0"
@@ -90,7 +90,7 @@ class EvokConfig(ConfigParser.RawConfigParser):
         true_booleans = ['yes', 'true', '1']
         false_booleans = ['no', 'false', '0']
         try:
-            val = Config.get(section, key).lower()
+            val = self.get(section, key).lower()
             if val in true_booleans:
                 return True
             if val in false_booleans:
@@ -291,11 +291,12 @@ def create_devices(Config):
 
             elif devclass == 'UART':
                 # UART on UNIPI2
+                '''
                 unipi2 = Config.get(section, "unipi2")
                 unipi2 = Devices.by_int(UNIPI2, unipi2)
                 uart = ArmUart(circuit,unipi2)
                 Devices.register_device(UART, uart)
-
+                '''
         except Exception, E:
             print("Error in config section %s - %s" % (section, str(E)))
             #raise
