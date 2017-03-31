@@ -5,6 +5,7 @@ import tornado.ioloop
 
 from tornadorpc_evok.json import JSONRPCHandler
 import tornadorpc_evok as tornadorpc
+from tornado import gen
 
 import time
 import datetime
