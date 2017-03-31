@@ -116,29 +116,41 @@ class WsHandler(websocket.WebSocketHandler):
     def on_message(self, message):
         try:
             message = json.loads(message)
-            dev = message["dev"]
-            circuit = message["circuit"]
-            try:
-                value = message["value"]
-            except:
-                value = None
             try:
                 cmd = message["cmd"]
             except:
-                cmd = "set"
-            try:
-                device = Devices.by_name(dev, circuit)
-                # result = device.set(value)
-                func = getattr(device, cmd)
-                if value is not None:
-                    result = func(value)
-                else:
-                    result = func()
-                if is_future(result):
-                    result = yield result
-                print result
-            except Exception, E:
-                print E
+                cmd = None
+            #get FULL state of each IO
+            if cmd == "all":
+                result = {}
+                devices = [INPUT, RELAY, AI, AO, SENSOR]
+                for dev in devices:
+                    result += map(lambda dev: dev.full(), Devices.by_int(dev))
+                self.write_message(json.dumps(result))
+            #set device state
+            elif cmd is not None:
+                dev = message["dev"]
+                circuit = message["circuit"]
+                try:
+                    value = message["value"]
+                except:
+                    value = None
+                try:
+                    device = Devices.by_name(dev, circuit)
+                    # result = device.set(value)
+                    func = getattr(device, cmd)
+                    if value is not None:
+                        result = func(value)
+                    else:
+                        result = func()
+                    if is_future(result):
+                        result = yield result
+                    #send response only to the client requesting full info
+                    if cmd == "full":
+                        self.write_message(result)
+                    print result
+                except Exception, E:
+                    print E
         except:
             print "Skipping WS message: " + message
             # skip it since we do not understand this message....
