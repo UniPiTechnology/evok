@@ -145,7 +145,6 @@ class WsHandler(websocket.WebSocketHandler):
                     #send response only to the client requesting full info
                     if cmd == "full":
                         self.write_message(result)
-                    print result
                 except Exception, E:
                     print E
         except:
