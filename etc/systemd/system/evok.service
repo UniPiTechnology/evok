@@ -19,4 +19,4 @@ Restart=always
 
 [Install]
 WantedBy=multi-user.target
-Alias=evok.service
+#Alias=evok.service
