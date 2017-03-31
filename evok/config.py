@@ -259,7 +259,8 @@ def create_devices(Config):
                 modbus_server =  Config.getstringdef(section, "modbus_server", "127.0.0.1")
                 modbus_port   =  Config.getintdef(section, "modbus_port", 502)
                 scanfreq = Config.getfloatdef(section, "scan_frequency", 1)
-                neuron = Neuron(circuit, modbus_server, modbus_port, scanfreq)
+                scan_enabled = Config.getbooldef(section, "scan_enabled", True)
+                neuron = Neuron(circuit, modbus_server, modbus_port, scanfreq, scan_enabled)
                 Devices.register_device(NEURON, neuron)
             elif devclass == 'UNIPI2':
                 '''from spiarm import ArmSpiAsync, ArmUart

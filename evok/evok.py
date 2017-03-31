@@ -98,9 +98,6 @@ class WsHandler(websocket.WebSocketHandler):
         if not registered_ws.has_key("all"):
             registered_ws["all"] = set()
 
-        if len(registered_ws["all"]) == 0:
-            for neuron in Devices.by_int(NEURON):
-                neuron.start_scanning()
         registered_ws["all"].add(self)
 
     def on_event(self, device):
@@ -497,6 +494,9 @@ def main():
         for device in Devices.by_int(bustype):
             device.switch_to_async(mainLoop) 
 
+    for neuron in Devices.by_int(NEURON):
+        if neuron.scan_enabled:
+            neuron.start_scanning()
 
     def sig_handler(sig, frame):
         if sig in (signal.SIGTERM, signal.SIGINT):

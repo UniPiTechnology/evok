@@ -53,7 +53,7 @@ basereg1000 = (
 
 class Neuron(object):
 
-    def __init__(self, circuit, modbus_server, modbus_port, scan_freq):
+    def __init__(self, circuit, modbus_server, modbus_port, scan_freq, scan_enabled):
         self.circuit = circuit
         self.modbus_server = modbus_server
         self.modbus_port   = modbus_port
@@ -63,6 +63,7 @@ class Neuron(object):
             self.scan_interval = 0
         else:
             self.scan_interval = 1.0/scan_freq
+        self.scan_enabled = scan_enabled
         self.boards = list()
 
     def switch_to_async(self, loop):
@@ -103,7 +104,8 @@ class Neuron(object):
 
 
     def stop_scanning(self):
-        self.do_scanning = False
+        if not self.scan_enabled:
+            self.do_scanning = False
 
 
     @gen.coroutine
