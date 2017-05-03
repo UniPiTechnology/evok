@@ -22,9 +22,9 @@ Download the latest release from our repository wget (or alternatively using git
     wget https://github.com/UniPiTechnology/evok/archive/v1.0.0.tar.gz
     tar -zxvf v1.0.0.tar.gz && mv evok-* evok  
 
-Please not that the folder that you downloaded the package is not used later and you can delete it. Config files are placed in /etc/
+Please note that the folder that you downloaded the package is not used later and you can delete it. Config files are placed in /etc/
 
-And run the installation script and follow the given instructions
+Run the installation script and follow the given instructions
 
     cd evok
     chmod +x install-evok.sh uninstall-evok.sh
@@ -35,17 +35,17 @@ To uninstall it, run the installation script which is also located in `/opt/evok
     sudo ./uninstall-evok.sh
 
 
-If you need to change the folder or the listening port, do it in /etc/evok.conf file.
+If you need to change the configuration, do it in /etc/evok.conf file.
 
-When done, simply start the daemon by executing `sudo service evok start`
+When installed reboot is required in order to get everything working correctly.
 
 The installation script also enables the I2C subsystem (if not enabled before) but the uninstallation script does not disable it back.
 
 # Debugging
 
-When reporting a bug or posting questions to our [our forum] please run evok by hand. To be able to do that, first stop the service by calling
+When reporting a bug or posting questions to our [our forum] please run set proper logging level in /etc/evok.conf, restart it and check the log file (/var/log/evok.log) for more info. For deeper log info run evok by hand. To do that stop the service first by calling
 
-    service evok stop
+    systemctl stop evok
 
 and then run it manually as root user by calling
     
@@ -72,7 +72,7 @@ It will show you something like this
 
 todo: gif
 
-The web face is using websocket to receive all events from the UniPi and controls the UniPi via REST api.
+The web interface is using websocket to receive all events from the UniPi and controls the UniPi via REST api.
 
 ## REST API:
 ### HTTP GET
