@@ -127,13 +127,90 @@ install_unipi_1() {
     if [ -f /etc/evok.conf ]; then
         echo "/etc/evok.conf file already exists"
         if ask "Do you want to overwrite your /etc/evok.conf file?"; then
-            cp etc/evok.conf /etc/
+            cp etc/evok-unipi1.1.conf /etc/evok.conf
         else
             echo "Your current config file was not overwritten."
             echo "Please see a diff between the new and your current config file."
         fi
     else
-        cp etc/evok.conf /etc/
+        cp etc/evok-unipi1.1.conf /etc/evok.conf
+    fi
+
+    chmod +x /opt/evok/evok.py
+
+    manager=$(cat /proc/1/comm)
+    if [ "$manager" == "systemd" ]; then
+        sed -i '/Requires=neurontcp.service/s/^/#/g' etc/systemd/system/evok.service
+        cp etc/systemd/system/pigpio.service /etc/systemd/system/
+        cp etc/systemd/system/evok.service /etc/systemd/system/
+        systemctl daemon-reload
+        systemctl enable pigpiod
+        systemctl enable evok
+    else
+        cp etc/init.d/evok /etc/init.d/
+        cp etc/init.d/pigpiod /etc/init.d/
+        chmod +x /etc/init.d/evok
+        chmod +x /etc/init.d/pigpiod
+        update-rc.d pigpiod defaults
+        update-rc.d evok defaults
+    fi
+
+    #backup uninstallation script
+    cp uninstall-evok.sh /opt/evok/
+
+    echo "Evok installed sucessfully."
+    echo "Info:"
+    echo "     1. Edit /etc/evok.conf file according to your choice."
+    echo "        If you are running Apache or other daemon at port 80, you must set either evok or apache port different than the other."
+    echo "     2. Run 'service evok start/restart/stop' to control the daemon."
+    echo "     (3. To uninstall evok run /opt/evok/uninstall-evok.sh)"
+
+    if ask "Is it OK to reboot now?"; then
+        reboot
+    else
+        echo 'Remember to reboot your Raspberry Pi in order to start using Evok'
+        service pigpiod start
+        service evok start
+    fi
+    echo ' '
+}
+
+install_unipi_lite_1() {
+    #load UniPi 1.x EEPROM
+    if ! grep -q 'unipi_eprom' /etc/modules ;then
+        echo "unipi_eprom" >> /etc/modules
+    fi
+
+    if [ "$(pidof pigpiod)" ]
+    then
+        service pigpiod stop
+        kill $(pidof pigpiod)
+    fi
+
+    #install pigpio
+    cd pigpio
+    make -j4
+    make install
+    cd ..
+
+    #copy tornadorpc
+    cp -r tornadorpc_evok /usr/local/lib/python2.7/dist-packages/
+
+    #copy evok
+    cp -r evok/ /opt/
+    mkdir -p /var/www/evok && cp -r www/* /var/www/
+
+    #copy default config file and init scipts
+    if [ -f /etc/evok.conf ]; then
+        echo "/etc/evok.conf file already exists"
+        if ask "Do you want to overwrite your /etc/evok.conf file?"; then
+            cp etc/evok-lite.conf /etc/evok.conf
+        else
+            echo "Your current config file was not overwritten."
+            echo "Please see a diff between the new and your current config file."
+        fi
+    else
+        cp etc/evok-lite.conf /etc/evok.conf
     fi
 
     chmod +x /opt/evok/evok.py
@@ -203,13 +280,13 @@ install_unipi_neuron() {
     if [ -f /etc/evok-neuron.conf ]; then
         echo "/etc/evok-neuron.conf file already exists"
         if ask "Do you want to overwrite your /etc/evok-neuron.conf file?"; then
-            cp etc/evok-neuron.conf /etc/
+            cp etc/evok-neuron.conf /etc/evok.conf
         else
             echo "Your current config file was not overwritten."
             echo "Please see a diff between the new and your current config file."
         fi
     else
-        cp etc/evok-neuron.conf /etc/
+        cp etc/evok-neuron.conf /etc/evok.conf
     fi
 
     chmod +x /opt/evok/evok.py
@@ -259,21 +336,28 @@ apt-get install -y python-ow python-pip make python-dev
 pip install tornado toro jsonrpclib pymodbus
 
 #detect version of UniPi
+#TODO: read from EPROM data
 echo 'Please choose version of UniPi you are using:'
 PS3="Your model:"
 options=(
     "UniPi 1.x"
+    "UniPi Lite 1.x"
     "UniPi Neuron series"
 )
 select option in "${options[@]}"; do
     case "$REPLY" in
         1)
-            echo "Installing evok for UniPi 1.x"
+            echo "Installing Evok for UniPi 1.x"
             install_unipi_1
             break
             ;;
         2)
-            echo "Installing evok for UniPi Neuron series including Neuron TCP Modbus Server"
+            echo "Installing Evok for UniPi Lite 1.x"
+            install_unipi_lite_1
+            break
+            ;;
+        3)
+            echo "Installing Evok for UniPi Neuron series including Neuron TCP Modbus Server"
             install_unipi_neuron
             break
             ;;
