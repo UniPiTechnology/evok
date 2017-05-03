@@ -7,13 +7,14 @@ import ow
 #import math
 #import datetime
 import signal
-import apigpio
+#import apigpio
 #import string
 
 from tornado.ioloop import IOLoop
 
 import devents
 import devices
+from log import *
 
 MAX_LOSTINTERVAL = 300  # 5minut
 
@@ -120,7 +121,7 @@ class DS18B20(MySensor):  # thermometer
         if not (new_val == 85.0 and abs(new_val - self.value) > 2):
             self.value = round(float(sens.temperature) * 2, 1) / 2  # 4 bits for frac part of number
         else:
-            print "PoR detected! 85C"
+            logger.debug("PoR detected! 85C")
 
 # class DS2438(MySensor):  # vdd + vad + thermometer
 #
@@ -215,7 +216,7 @@ def MySensorFabric(address, typ, bus, interval=None, dynamic=True, circuit=None,
     elif (typ == 'DS2408') or (typ == 'DS2406'):
         return DS2408(address, typ, bus, interval=interval, circuit=circuit, is_static=is_static)
     else:
-        print "Unsupported 1wire device %s (%s) detected" % (typ, address)
+        logger.debug("Unsupported 1wire device %s (%s) detected", typ, address)
         return None
 
 
@@ -287,7 +288,7 @@ class OwBusDriver(multiprocessing.Process):
             self.register_in_caller(obj)
             obj.__bus = self
             #Devices.register_device(5,obj)
-            print "New sensor " + str(obj.type) + " - " +str(obj.circuit)
+            logger.debug("New sensor %s - %s", str(obj.type),str(obj.circuit))
         elif type(obj) is tuple:
             # obj[0] - circuit/address of sensor
             # obj[1] - Boolean(True) -> Lost
@@ -358,7 +359,7 @@ class OwBusDriver(multiprocessing.Process):
         #   except Exception, E:
         #     print str(E)
         ow.init(self.bus)
-        print "Entering 1wire loop"
+        logger.debug("Entering 1wire loop")
         self.do_scan()
         while len(self.mysensors) == 0:
             if self.taskQ.poll(20):

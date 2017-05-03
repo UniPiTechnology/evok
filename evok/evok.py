@@ -15,29 +15,17 @@ from tornado.concurrent import is_future
 from tornado.process import Subprocess  # not sure about it
 import subprocess  # not sure about it
 
+from log import *
+
 try:
     from urllib.parse import urlparse  # py2
 except ImportError:
     from urlparse import urlparse  # py3
 
 import signal
-
-# import types
-
-import base64
-
-#from tornadorpc_evok.json import JSONRPCHandler
-#import tornadorpc_evok as tornadorpc
 import rpc_handler
-
-import time
-import random
-import datetime
-import multiprocessing
 import json
-
 import config
-
 from devices import *
 
 Config = config.EvokConfig() #ConfigParser.RawConfigParser()
@@ -94,7 +82,7 @@ class WsHandler(websocket.WebSocketHandler):
         return origin == host or origin_origin == host
 
     def open(self):
-        print "New WebSocket client connected"
+        logger.debug("New WebSocket client connected")
         if not registered_ws.has_key("all"):
             registered_ws["all"] = set()
 
@@ -106,7 +94,7 @@ class WsHandler(websocket.WebSocketHandler):
             #print device.full()
             self.write_message(json.dumps(device.full()))
         except Exception as e:
-            print "Exc: %s" % str(e)
+            logger.error("Exc: %s", str(e))
             pass
 
     @tornado.gen.coroutine
@@ -136,8 +124,12 @@ class WsHandler(websocket.WebSocketHandler):
                     device = Devices.by_name(dev, circuit)
                     # result = device.set(value)
                     func = getattr(device, cmd)
+                    #print type(value), value
                     if value is not None:
-                        result = func(value)
+                        if type(value) == dict:
+                            result = func(**value)
+                        else:
+                            result = func(value)
                     else:
                         result = func()
                     if is_future(result):
@@ -145,10 +137,13 @@ class WsHandler(websocket.WebSocketHandler):
                     #send response only to the client requesting full info
                     if cmd == "full":
                         self.write_message(result)
+                #nebo except Exception as e:
                 except Exception, E:
-                    print E
+                    logger.error("Exc: %s", str(E))
+                    #self.write_message({"error_msg":"Couldn't process this request"})
+
         except:
-            print "Skipping WS message: " + message
+            logger.debug("Skipping WS message: %s", message)
             # skip it since we do not understand this message....
             pass
 
@@ -258,7 +253,7 @@ class RemoteCMDHandler(UserCookieHelper, tornado.web.RequestHandler): # ToDo CHE
             if status in ('start', 'stop', 'enable', 'disable'):
                 result, error = yield call_shell_subprocess('service %s %s' % (service, status))
         if service == 'pw':
-            print 'echo -e "%s\n%s" | passwd root' % (status, status)
+            #print 'echo -e "%s\n%s" | passwd root' % (status, status)
             yield call_shell_subprocess('echo -e "%s\\n%s" | passwd root' % (status, status))
         self.finish()
 
@@ -379,9 +374,9 @@ def gener_config_cb(mainloop, modbus_context):
 
 def main():
 
-    define("path1", default='', help="Use this config file, if device is Unipi 1.x", type=str)
-    define("path2", default='', help="Use this config file, if device is Unipi Neuron", type=str)
-    define("port", default=8088, help="Http server listening ports", type=int)
+    # define("path1", default='', help="Use this config file, if device is Unipi 1.x", type=str)
+    # define("path2", default='', help="Use this config file, if device is Unipi Neuron", type=str)
+    define("port", default=-1, help="Http server listening ports", type=int)
     define("modbus_port", default=-1, help="Modbus/TCP listening port, 0 disables modbus", type=int)
     tornado.options.parse_command_line()
 
@@ -390,23 +385,34 @@ def main():
     Config.add_section('MAIN')
     path = '/etc/evok.conf'
     # set config file name based on eprom version and command line option --path1 --path2
-    if config.globals['version1']:
-        path1 = options.as_dict()['path1']
-        if (path1 != '') and (os.path.isfile(path1)):
-            path = path1
-    elif config.globals['version2']:
-        path2 = options.as_dict()['path2']
-        if (path2 != '') and (os.path.isfile(path2)):
-            path = path2
+    # if config.globals['version1']:
+    #     path1 = options.as_dict()['path1']
+    #     if (path1 != '') and (os.path.isfile(path1)):
+    #         path = path1
+    # elif config.globals['version2']:
+    #     path2 = options.as_dict()['path2']
+    #     if (path2 != '') and (os.path.isfile(path2)):
+    #         path = path2
 
     if not os.path.isfile(path):
         path = os.path.dirname(os.path.realpath(__file__)) + '/evok.conf'
-    print "Using config file %s" % path
+
     Config.read(path)
+    log_file = Config.getstringdef("MAIN", "log_file", "/var/log/evok.log")
+    log_level = Config.getstringdef("MAIN", "log_level", "ERROR").upper()
+
+    #rotating file handler
+    filelog_handler = logging.handlers.TimedRotatingFileHandler(filename=log_file, when='D', backupCount=7)
+    log_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    filelog_handler.setFormatter(log_formatter)
+    filelog_handler.setLevel(log_level)
+    logger.addHandler(filelog_handler)
+
+    logger.info("Starting ssing config file %s", path)
 
     webname = Config.getstringdef("MAIN", "webname", "unipi")
     staticfiles = Config.getstringdef("MAIN", "staticfiles", "/var/www/evok")
-    cookie_secret = Config.getstringdef("MAIN", "secret", 
+    cookie_secret = Config.getstringdef("MAIN", "secret",
                                                 "ut5kB3hhf6VmZCujXGQ5ZHb1EAfiXHcy")
     pw = Config.getstringdef("MAIN", "password", "")
     if pw: userCookieHelper._passwords.append(pw)
@@ -419,12 +425,12 @@ def main():
     #define("corsdomains", default=corsdomains, help="CORS domains separated by whitespace", type=bool)
 
     port = Config.getintdef("MAIN", "port", 80)
-    if options.as_dict()['port'] != -1:  
+    if options.as_dict()['port'] != -1:
         port = options.as_dict()['port'] # use command-line option instead of config option
 
     modbus_address = Config.getstringdef("MAIN", "modbus_address", '')
     modbus_port = Config.getintdef("MAIN", "modbus_port", 0)
-    if options.as_dict()['modbus_port'] != -1:  
+    if options.as_dict()['modbus_port'] != -1:
         modbus_port = options.as_dict()['modbus_port'] # use command-line option instead of config option
 
     app = tornado.web.Application(
@@ -452,11 +458,11 @@ def main():
 
     #app.add_handlers(r'%s.*' % webname , [(r"/", IndexHandler, dict(staticfiles=staticfiles))])
 
-    
+
     #### prepare http server #####
     httpServer = tornado.httpserver.HTTPServer(app)
     httpServer.listen(port)
-    print "HTTP server listening on port:", port
+    logger.info("HTTP server listening on port: %d", port)
 
     if modbus_port > 0: # used for UniPi 1.x
         from modbus_tornado import ModbusServer, ModbusApplication
@@ -466,7 +472,7 @@ def main():
 
         modbus_server = ModbusServer(ModbusApplication(store=modbus_context, identity=modbus_unipi.identity))
         modbus_server.listen(modbus_port, address=modbus_address)
-        print "Modbus/TCP server istening on port: %d" % modbus_port
+        logger.info("Modbus/TCP server istening on port: %d", modbus_port)
     else:
         modbus_context = None
 
@@ -491,7 +497,7 @@ def main():
     # switch buses to async mode, start processes, plan some actions
     for bustype in (I2CBUS, GPIOBUS, ADCHIP, OWBUS, NEURON):
         for device in Devices.by_int(bustype):
-            device.switch_to_async(mainLoop) 
+            device.switch_to_async(mainLoop)
 
     for neuron in Devices.by_int(NEURON):
         if neuron.scan_enabled:
@@ -507,7 +513,7 @@ def main():
             bus.switch_to_sync()
         for bus in Devices.by_int(GPIOBUS):
             bus.switch_to_sync()
-        print "Shutting down"
+        logger.info("Shutting down")
         try: httpServer.stop()
         except: pass
         #todo: and shut immediately?

@@ -7,7 +7,7 @@ def _status(device, **kwarg):
 
 
 def _config(device, **kwarg):
-    print device.full()
+    # print device.full()
     pass
 
 # function variables holding current callbacks

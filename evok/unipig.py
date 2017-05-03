@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-
 import struct
 import time
 import datetime
@@ -13,8 +12,9 @@ import pigpio
 import devents
 from devices import *
 import config
+from log import *
 
-
+#Todo: remove, obsolette
 class Eprom(object):
     def __init__(self, i2cbus, circuit, address=0x50, size=256):
         # running with blocking
@@ -38,7 +38,7 @@ class Eprom(object):
             config.globals['version'] = "1.1"
         else:
             config.globals['version'] = "1.0"
-        print "UniPi version:" + config.globals['version']
+        # print "UniPi version:" + config.globals['version']
 
     @gen.coroutine
     def write_byte(self, index, value):
@@ -306,7 +306,7 @@ class UnipiMCP342x(object):
 
     @gen.coroutine
     def measure_loop(self, mainloop):
-        print("Entering measure loop")
+        # print("Entering measure loop")
         #mainloop = IOLoop.instance()
         try:
             next = None
@@ -346,7 +346,7 @@ class UnipiMCP342x(object):
                     yield gen.Task(mainloop.call_later, 1)
 
         except Exception, E:
-            print("%s" % str(E))
+            logger.debug("%s", str(E))
 
 
     @gen.coroutine
@@ -369,10 +369,10 @@ class UnipiMCP342x(object):
 
         status = data[readlen - 1]
         if status & 0x80:
-            print("Converting in progress")
+            # print("Converting in progress")
             return  # converting in progress
         if (self.lastmeasure._mode & 0x7f) != (status & 0x7f):
-            print("Status unexpected")
+            # print("Status unexpected")
             return  # something is bad
 
         value = 0
@@ -506,7 +506,7 @@ class UnipiPCA9685(object):
             off = int(self.i2cbus.i2c_read_byte_data(self.i2c, self.__LED0_OFF_H + self.__LED_MULTIPLIER * channel) << 8)
             off += int(self.i2cbus.i2c_read_byte_data(self.i2c, self.__LED0_OFF_L + self.__LED_MULTIPLIER * channel))
             self.channels.append((on, off))
-            print "Channel: " + str(channel) + " - " + str(self.channels[channel])
+            # print "Channel: " + str(channel) + " - " + str(self.channels[channel])
 
         #set open-drain structure
         i2cbus.i2c_write_byte_data(self.i2c, self.__MODE2, self.__OUTDRV)
@@ -530,7 +530,7 @@ class UnipiPCA9685(object):
         # freq = freq if freq >= 40 else 40
         prescale = int(floor((self.__CLOCK_FREQ / 4096 / freq) - 1 + 0.5))
         prescale = prescale if prescale >= 3 else 3 #hw forces min value of prescale value to 3
-        print "Setting PWM frequency on PCA9685 %d to %d with prescale %d" % (self.circuit, freq, prescale)
+        # print "Setting PWM frequency on PCA9685 %d to %d with prescale %d" % (self.circuit, freq, prescale)
         old_mode = self.i2cbus.i2c_read_byte_data(self.i2c, self.__MODE1) #backup old mode
         new_mode = (old_mode & 0x7F) | self.__SLEEP #sleep mode
         self.i2cbus.i2c_write_byte_data(self.i2c, self.__MODE1, new_mode) #set SLEEP bit on register MODE1
@@ -665,7 +665,7 @@ class AnalogOutputGPIO():
             value = 10.0
         elif value < 0:
             value = 0.0
-        if config.globals['version'] == "1.0":
+        if config.globals['version'] == "UniPi 1.0":
             return int(round((10 - value) * 100))
         else:
             return int(round(value * 100))
@@ -682,7 +682,7 @@ class AnalogOutputGPIO():
     def set(self, value=None, frequency=None):
         result = None
         if not (frequency is None) and (frequency != self.frequency):
-            print int(frequency)
+            # print int(frequency)
             result = pigpio._u2i((yield self.bus.apigpio_command(pigpio._PI_CMD_PFS, self.pin, int(frequency))))
             self.frequency = frequency
             if not (value is None):
@@ -719,7 +719,7 @@ class Input():
             self.counter_mode = counter_mode
         else:
             self.counter_mode = 'disabled'
-            print 'DI%s: counter_mode must be one of: rising, falling or disabled. Counting is disabled!' % self.circuit
+            logger.debug('DI%s: counter_mode must be one of: rising, falling or disabled. Counting is disabled!', self.circuit)
         gpiobus.set_pull_up_down(pin, pigpio.PUD_UP)
         gpiobus.register_input(self)
 

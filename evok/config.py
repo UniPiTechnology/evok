@@ -3,7 +3,7 @@ import multiprocessing
 import re
 import struct
 import ConfigParser
-
+from log import *
 from devices import *
 
 try:
@@ -27,22 +27,30 @@ globals = {
 
 
 def read_eprom_config():
-
     try:
         with open('/sys/class/i2c-dev/i2c-1/device/1-0050/eeprom','r') as f:
             bytes=f.read(256)
             if bytes[224:226] == '\xfa\x55':
                 if ord(bytes[226]) == 1 and ord(bytes[227]) == 1:
-                    globals['version'] = "1.1"
+                    globals['version'] = "UniPi 1.1"
+                elif ord(bytes[226]) == 11 and ord(bytes[227]) == 1:
+                    globals['version'] = "UniPi Lite 1.1"
                 else:
-                    globals['version'] = "1.0"
+                    globals['version'] = "UniPi 1.0"
                 globals['version1'] = globals['version']
                 #AIs coeff
-                globals['devices'] = { 'ai': {
-                                          '1': struct.unpack('!f', bytes[240:244])[0],
-                                          '2': struct.unpack('!f', bytes[244:248])[0],
-                                     }}
-                print "eprom:: UniPi version:" + globals['version']
+                if globals['version'] in ("UniPi 1.1", "UniPi 1.0"):
+                    globals['devices'] = { 'ai': {
+                                              '1': struct.unpack('!f', bytes[240:244])[0],
+                                              '2': struct.unpack('!f', bytes[244:248])[0],
+                                         }}
+                else:
+                    globals['devices'] = { 'ai': {
+                                              '1': 0,
+                                              '2': 0,
+                                         }}
+                globals['serial'] = struct.unpack('i', bytes[228:232])[0]
+                logger.debug("eprom: UniPi version %s, serial: %d", globals['version'], globals['serial'])
     except Exception, E:
         pass
 
@@ -53,7 +61,7 @@ def read_eprom_config():
                 globals['version2'] = "%d.%d" % (ord(bytes[99]), ord(bytes[98]))
                 globals['model'] = "%s" % (bytes[106:110],)
                 globals['serial'] = struct.unpack('i', bytes[100:104])[0]
-                print "eprom:: UniPi Neuron %s version: %s serial: 0x%x" % (globals["model"],globals['version2'],globals["serial"])
+                logger.debug("eprom: UniPi Neuron %s version: %s serial: 0x%x", globals["model"],globals['version2'],globals["serial"])
     except Exception, E:
         pass
 
@@ -299,6 +307,6 @@ def create_devices(Config):
                 Devices.register_device(UART, uart)
                 '''
         except Exception, E:
-            print("Error in config section %s - %s" % (section, str(E)))
+            logger.debug("Error in config section %s - %s", section, str(E))
             #raise
 

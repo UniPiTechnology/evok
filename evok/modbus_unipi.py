@@ -9,9 +9,7 @@ from pymodbus.device import ModbusDeviceIdentification
 #---------------------------------------------------------------------------#
 # Logging
 #---------------------------------------------------------------------------#
-import logging
-_logger = logging.getLogger(__name__)
-
+from log import *
 
 #---------------------------------------------------------------------------#
 # Data type transformations
@@ -343,8 +341,8 @@ class UnipiContext(ModbusServerContext):
             self.status_callback(device)
         except (EForeigner, KeyError):
             pass
-        except Exception, e:
-            print str(e)
+        except Exception, E:
+            logger.debug(str(E))
             pass
 
     def status_callback(self, device):

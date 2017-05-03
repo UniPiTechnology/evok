@@ -21,9 +21,7 @@ from tornado.tcpclient import TCPClient
 #---------------------------------------------------------------------------#
 # Logging
 #---------------------------------------------------------------------------#
-import logging
-_logger = logging.getLogger(__name__)
-
+from log import *
 
 
 class ModbusClientProtocol():
@@ -128,8 +126,8 @@ def StartClient(client, host='127.0.0.1', port=502, callback=None):
         except StreamClosedError:
             pass
         except Exception, E:
-            print str(E)
-            stream.close() 
+            logger.debug(str(E))
+            stream.close()
         finally:
             client.setTransport(None)
 

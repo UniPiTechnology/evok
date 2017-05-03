@@ -107,3 +107,25 @@ Devices = DeviceList(devtype_altnames)
 for n in devtype_names:
     Devices[n] = {}
 
+#define units
+NONE = 0
+CELSIUS = 1
+VOLT = 2
+AMPERE = 3
+OHM = 4
+
+unit_names = (
+    '',
+    'C',
+    'V',
+    'mA',
+    'Ohm',
+)
+
+unit_altnames = {
+    '': '',
+    'C': 'Celsius',
+    'V': 'Volt',
+    'mA': 'miliampere',
+    'Ohm': 'ohm'
+}

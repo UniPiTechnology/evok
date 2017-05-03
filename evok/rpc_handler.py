@@ -35,8 +35,8 @@ class userBasicHelper():
         auth_decoded = base64.decodestring(auth_header[6:])
         username, password = auth_decoded.split(':', 2)
 
-        print (username, password)
-        print self._passwords
+        # print (username, password)
+        # print self._passwords
         if (username == 'rpc' and password in self._passwords):
             return True
         else:
