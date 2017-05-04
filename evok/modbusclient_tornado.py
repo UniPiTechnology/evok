@@ -72,7 +72,8 @@ class ModbusClientProtocol():
             if future:
                 future.set_result(reply)
                 #handler.callback(reply)
-            else: _logger.debug("Unrequested message: " + str(reply))
+            else:
+                logger.debug("Unrequested message: %s", str(reply))
 
 
     @gen.coroutine
