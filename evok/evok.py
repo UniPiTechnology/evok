@@ -408,7 +408,7 @@ def main():
     filelog_handler.setLevel(log_level)
     logger.addHandler(filelog_handler)
 
-    logger.info("Starting ssing config file %s", path)
+    logger.info("Starting using config file %s", path)
 
     webname = Config.getstringdef("MAIN", "webname", "unipi")
     staticfiles = Config.getstringdef("MAIN", "staticfiles", "/var/www/evok")
