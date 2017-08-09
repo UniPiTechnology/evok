@@ -20,7 +20,7 @@ It also uses some other python libraries that are not installed on Raspbian by d
 Download the latest release from our repository wget (or alternatively using git):
 
     wget https://github.com/UniPiTechnology/evok/archive/v.1.0.1.tar.gz
-    tar -zxvf v1.0.0.tar.gz && mv evok-* evok  
+    tar -zxvf v.1.0.1.tar.gz && mv evok-* evok  
 
 Please note that the folder that you downloaded the package is not used later and you can delete it. Config files are placed in /etc/
 
