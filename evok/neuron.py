@@ -396,8 +396,8 @@ class AnalogOutput():
         if circuit == '1_01':
             self.is_voltage = lambda: not bool(arm.configs[regcal - 1] & 0b1)
         self.reg_shift = 2 if self.is_voltage() else 0
-        self.factor = 3 * arm.volt_ref / 4095 * (1 + uint16_to_int(arm.configs[regcal + self.reg_shift]) / 10000.0)
-        self.factorx = 3 * arm.volt_refx / 4095 * (1 + uint16_to_int(arm.configs[regcal + self.reg_shift]) / 10000.0)
+        self.factor = arm.volt_ref / 4095 * (1 + uint16_to_int(arm.configs[regcal + self.reg_shift]) / 10000.0)
+        self.factorx = arm.volt_refx / 4095 * (1 + uint16_to_int(arm.configs[regcal + self.reg_shift]) / 10000.0)
         if self.is_voltage():
             self.factor *= 3
             self.factorx *= 3
