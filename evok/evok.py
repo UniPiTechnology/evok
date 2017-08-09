@@ -497,7 +497,7 @@ def main():
     # create back loop
     # todo: find a more sophisticated solution
     #extcontrols.mainloop = mainLoop
-
+    '''
     #""" Setting the '_server' attribute if not set - simple link to mainloop"""
     for (srv, urlspecs) in app.handlers:
         for urlspec in urlspecs:
@@ -505,6 +505,7 @@ def main():
                 setattr(urlspec.handler_class, '_server', mainLoop)
             except AttributeError:
                 urlspec.handler_class._server = mainLoop
+    '''
 
     # switch buses to async mode, start processes, plan some actions - specific for different devtypes
     for bus in Devices.by_int(I2CBUS):
