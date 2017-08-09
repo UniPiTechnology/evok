@@ -2,6 +2,8 @@
 
 Evok is a main API and WEB interface for the [UniPi] (Raspberry Pi universal addon) board a successful [IndieGogo] project. It provides REST, JSON, and WebSocket interface to relays, digital and analog inputs, analog output.
 
+_**Support for Neuron is available only in the latest commits (for now), not in the release version. Please see [intructions below]!**_
+ 
 It is still in very early development state so more testing is appreciated.
 
 Access to GPIOs is done using the fantastic [PIGPIO] library. Make sure to install it first before use.
@@ -15,16 +17,14 @@ It also uses some other python libraries that are not installed on Raspbian by d
 
 # Installation
 
-Download the latest revision from our repository using git client
+Download the latest release from our repository wget (or alternatively using git):
 
-    git clone https://github.com/UniPiTechnology/evok
+    wget https://github.com/UniPiTechnology/evok/archive/v.1.0.1.tar.gz
+    tar -zxvf v1.0.0.tar.gz && mv evok-* evok  
 
-or using wget:
+Please note that the folder that you downloaded the package is not used later and you can delete it. Config files are placed in /etc/
 
-    wget https://api.github.com/repos/UniPiTechnology/evok/zipball/master
-    unzip master && mv UniPiTechnology-evok* evok  
-
-And run the installation script and follow the given instructions
+Run the installation script and follow the given instructions
 
     cd evok
     chmod +x install-evok.sh uninstall-evok.sh
@@ -35,17 +35,17 @@ To uninstall it, run the installation script which is also located in `/opt/evok
     sudo ./uninstall-evok.sh
 
 
-If you need to change the folder or the listening port, do it in /etc/evok.conf file.
+If you need to change the configuration, do it in /etc/evok.conf file.
 
-When done, simply start the daemon by executing `sudo service evok start`
+When installed reboot is required in order to get everything working correctly.
 
 The installation script also enables the I2C subsystem (if not enabled before) but the uninstallation script does not disable it back.
 
 # Debugging
 
-When reporting a bug or posting questions to our [our forum] please run evok by hand. To be able to do that, first stop the service by calling
+When reporting a bug or posting questions to our [our forum] please run set proper logging level in /etc/evok.conf, restart it and check the log file (/var/log/evok.log) for more info. For deeper log info run evok by hand. To do that stop the service first by calling
 
-    service evok stop
+    systemctl stop evok
 
 and then run it manually as root user by calling
     
@@ -53,6 +53,14 @@ and then run it manually as root user by calling
 
 and see/paste the output of the script.
 
+# Testing latest git versions
+
+The installation script should take care of everything, but be aware of limited and/or broken functionality. Please report any bugs to the github.
+
+    wget https://github.com/UniPiTechnology/evok/archive/master.zip
+    unzip master.zip
+    cd evok-master
+    bash install-evok.sh
 
 # API examples
 
@@ -64,7 +72,7 @@ It will show you something like this
 
 todo: gif
 
-The web face is using websocket to receive all events from the UniPi and controls the UniPi via REST api.
+The web interface is using websocket to receive all events from the UniPi and controls the UniPi via REST api.
 
 ## REST API:
 ### HTTP GET
@@ -212,3 +220,4 @@ Raspberry Pi is a trademark of the Raspberry Pi Foundation
 [websocket client library for Perl]:https://metacpan.org/pod/AnyEvent::WebSocket::Client
 [websocket Python library]:https://pypi.python.org/pypi/websocket-client/
 [our forum]:http://forum.unipi.technology/
+[intructions below]:https://github.com/UniPiTechnology/evok#testing-latest-git-versions
