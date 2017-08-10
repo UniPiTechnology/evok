@@ -74,7 +74,6 @@
 <div data-role="page" id="page-overview">
     <div data-role="header"  class="cmax8" data-id="pageHeader" data-position="fixed">
         <h2>UniPi control panel</h2>
-        <a href="#popupMenu" data-rel="popup" class="ui-btn-right ui-btn ui-icon-gear ui-btn-icon-left">Settings</a>
     </div>
     <div data-role="main" class="ui-content cmax8">
       <div data-role="tabs" >
@@ -87,8 +86,6 @@
         <div id="inputs">
                 <ul data-role="listview" id="inputs_list"  data-count-theme="b" data-inset="true" data-split-icon="gear">
                     <li data-role="list-divider" data-theme="a" id="unipi_input_divider">Digital</li>
-                    <li><a href='#'>Input 1_0 <span class="ui-li-count" style="margin-right:6em"> 102 </span><span class="ui-li-count"> On </span></a>
-                        <a href="#popupBasic" data-theme="a" data-rel="popup" data-position-to="window" data-transition="pop">Configure input</a></li>
                     <li data-role="list-divider" data-theme="a" id="unipi_ai_divider">Analog</li>
                     <li data-role="list-divider" data-theme="a" id="unipi_temp_divider">1Wire Sensors/Devices</li>
                 </ul>
@@ -98,11 +95,7 @@
         <div id="outputs" class="ui-content" data-inset="true">
                 <ul data-role="listview" id="outputs_list" data-count-theme="b" data-inset="true" data-split-icon="gear">
                     <li data-role="list-divider" data-theme="a" id="unipi_relay_divider">Digital</li>
-                    <li class="ui-field-contain"><a href="#" class="ui-field-contain" style="padding:1em"><label sxtyle="display:inline" for="flip2">Relay 1_0</label><input type="checkbox" data-role="flipswitch" name="flip2" id="flip2"></a>
-                      <a href="#popupBasic" data-theme="a" data-rel="popup" data-position-to="window" data-transition="pop">Configure input</a></li>
                     <li data-role="list-divider" data-theme="a" id="unipi_ao_divider">Analog</li>
-                    <li class="ui-field-contain"><a href="#" class="ui-field-contain" style="padding:1em"><label  for="slider2">Analog output 1-00</label><input type="range" name="slider2" id="slider2" value="0" min="0" max="100" data-highlight="true"></a>
-                      <a href="#popupBasic" data-theme="a" data-rel="popup" data-position-to="window" data-transition="pop">Configure input</a></li>
                 </ul>
         </div>
         <!-- /outputs -->
@@ -112,41 +105,10 @@
     </div>
         <div style="padding:10px 20px;"></div>
  
-<div data-role="popup" id="popupBasic" data-theme="a" class="ui-corner-all"
-     style="padding-left:1em; padding-right:1em; max-width:300px">
-    <form>
-            <h3>Input configuration</h3>
-<label for="slider-10">Debounce [ms]:</label>
-<input type="range" name="slider-10" id="slider-10" min="0" max="100" step=".1" value="5">
-<fieldset data-role="controlgroup" data-mini="false" data-type="vertical">
-<legend>Direct switch:</legend>
-<input type="radio" name="radio-choice-1" id="radio-choice-1" value="choice-1" checked="checked">
-<label for="radio-choice-1">Disabled</label>
-<input type="radio" name="radio-choice-1" id="radio-choice-2" value="choice-2">
-<label for="radio-choice-2">Positive</label>
-<input type="radio" name="radio-choice-1" id="radio-choice-3" value="choice-3">
-<label for="radio-choice-3">Negative</label>
-<input type="radio" name="radio-choice-1" id="radio-choice-4" value="choice-4">
-<label for="radio-choice-4">Toggle</label>
-</fieldset>
-<button type="submit" class="ui-btn ui-corner-all ui-shadow ui-btn-b ui-btn-icon-left ui-icon-check">Commit</button>
-    </form>
-</div>
-
     <div data-role="footer" data-position="fixed" data-tap-toggle="false" class="jqm-footer">
         <h1>UniPi.technology</h1>
     </div>
     <!-- /footer -->
-
-<!-- Settings menu -->
-<div data-role="popup" id="popupMenu" data-theme="b">
-<ul data-role="listview" data-inset="true" style="min-width:210px;">
-<li><a href="#page-settings">Evok config</a></li>
-<li><a href="#page-system">System settings</a></li>
-<li><a href="#page-login">Login</a></li>
-<li><a href="#">Logout</a></li>
-</ul>
-</div>
 
 </div>
 

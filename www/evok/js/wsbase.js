@@ -116,7 +116,7 @@ function SyncDevice(msg) {
 
         //create structure
         div.appendChild(label);
-        if (device == "input") { div.appendChild(cfg_el); div.appendChild(cnt_el);}
+        // if (device == "input") { div.appendChild(cfg_el); div.appendChild(cnt_el);}
         div.appendChild(main_el);
         li.appendChild(div);
 
