@@ -12,31 +12,31 @@ function SyncDevice(msg) {
     //todo: add name as parameter
     var name = "";
     var circuit = msg.circuit;
+    var circuit_display_name = circuit.replace(/\_/g, ' ');
     var device = msg.dev;
     var typ = msg.typ;
     var value = msg.value;
     var unit = "";
     var ns = "unipi_" + device + "_" + circuit;
-
     if (device == 'ai') {
-        name = "Analog input " + circuit;
+        name = "Analog Input " + circuit_display_name;
         value = msg.value.toFixed(3);
         unit = "V";
     }
     else if (device == 'ao') {
-        name = "Analog output " + circuit;
+        name = "Analog output " + circuit_display_name;
         unit = "V";
         value = msg.value.toFixed(1);
     }
     else if (device == 'relay') {
-        name = "Relay " + circuit;
+        name = "Relay " + circuit_display_name;
     }
     else if (device == 'input') {
-        name = "Input " + circuit;
+        name = "Input " + circuit_display_name;
         counter = msg.counter;
     }
     else if (device == 'temp' || device == '1wdevice') {
-        name = "Sensor " + typ + " - " + circuit;
+        name = "Sensor " + typ + " - " + circuit_display_name;
         if (msg.value == null) {
             value = "null";
         }
@@ -192,15 +192,18 @@ function SyncDevice(msg) {
 
 function update_values() {
     $.ajax({
-        url: 'rest/all',
+    	crossDomain: true,
+    	url: 'http://' + $(location).attr('hostname') + ':8080/rest/all',
         dataType: 'json',
         success: function (data) {
+        	alert('WHEE2');
             data = sortResults(data);
             $.each(data, function (name, msg) {
                 SyncDevice(msg);
             });
         },
         error: function (data) {
+        	alert('BOO2');
         }
     });
 }
@@ -217,8 +220,7 @@ function WebSocketRegister() {
             return
         }
         var loc = window.location;
-        uri = ((loc.protocol === "https:") ? "wss://" : "ws://") + loc.hostname +
-            (((loc.port != 80) && (loc.port != 443)) ? ":" + loc.port : "");
+        uri = ((loc.protocol === "https:") ? "wss://" : "ws://") + loc.hostname + ':8080';
 
         ws = new WebSocket(uri + "/ws");
         //var wnd = null;
@@ -230,7 +232,7 @@ function WebSocketRegister() {
 
         window.onbeforeunload = function () {
             ws.onclose = function () {
-            }; // disable onclose handler first
+            }; 
             ws.close()
         };
 
@@ -252,27 +254,44 @@ function WebSocketRegister() {
         };
 
         ws.onclose = function () {
-            //alert("Connection is closed...");
+            alert("Connection is closed...");
             setTimeout(WebSocketRegister, 1000);
             ws = null;
         };
     }
     else {
-        //alert("WebSocket NOT supported by your Browser!");
+        alert("WebSocket NOT supported by your Browser!");
         use_polling = true;
     }
 }
 
 function makePostRequest(action, params) {
     $.ajax({
-        url: '/rest/' + action,
+    	crossDomain: true,
+    	url: 'http://' + $(location).attr('hostname') + ':8080/rest/' + action,
         //dataType:'json',
         type: 'POST',
         data: params || null,
         //crossDomain: false,
         success: function (data) {
+        	
+        	alert('WHEE');
         },
         error: function (data) {
+        	alert('BOOO');
+        }
+    });
+    $.ajax({
+    	crossDomain: true,
+    	url: 'http://' + $(location).attr('hostname') + ':8080/json',
+    	dataType: "application/json",
+        type: 'POST',
+        data: JSON.stringify({"commands":[]}),
+        success: function (data) {
+        	alert('WHEE');
+        },
+        error: function (data) {
+        	alert('BOOO');
         }
     });
 }

@@ -75,6 +75,8 @@ UART = 14
 NEURON = 15
 BOARD = 16
 
+
+
 ## corresponding device types names !! ORDER IS IMPORTANT
 devtype_names = (
     'relay',

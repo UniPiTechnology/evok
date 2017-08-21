@@ -8,7 +8,7 @@ import ow
 #import datetime
 import signal
 #import apigpio
-#import string
+import string
 
 from tornado.ioloop import IOLoop
 

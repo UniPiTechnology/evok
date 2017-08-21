@@ -283,7 +283,9 @@ def create_devices(Config):
                         _r = unipi2.Relay("%s%02d" % (circuit,i+1),arm,i, 1, 0x1<<i)
                         Devices.register_device(RELAY, _r)
                     for i in range(arm.nDI):
-                        _inp = unipi2.Input("%s%02d" % (circuit,i+1),arm, 0, 0x1<<i, 
+                        _inp = unipi2.Input("%s%02d" % (circuit,i+1),arm, 0, 0x1<<i, ]#
+                        
+                        
                                             regdebounce=1006+i, 
                                             regcounter=arm.counter_reg+(2*i))
                         Devices.register_device(INPUT, _inp)
