@@ -110,7 +110,7 @@ class WsHandler(websocket.WebSocketHandler):
 				cmd = None
 			#get FULL state of each IO
 			if cmd == "all":
-				result = {}
+				result = []
 				devices = [INPUT, RELAY, AI, AO, SENSOR]
 				for dev in devices:
 					result += map(lambda dev: dev.full(), Devices.by_int(dev))
@@ -945,8 +945,8 @@ def main():
 
 	webname = Config.getstringdef("MAIN", "webname", "unipi")
 	staticfiles = Config.getstringdef("MAIN", "staticfiles", "/var/www/evok")
-	cookie_secret = Config.getstringdef("MAIN", "secret",
-												"ut5kB3hhf6VmZCujXGQ5ZHb1EAfiXHcy")
+	cookie_secret = Config.getstringdef("MAIN", "secret", "ut5kB3hhf6VmZCujXGQ5ZHb1EAfiXHcy")
+	hw_dict = config.HWDict('./etc/hw_definitions/')
 	pw = Config.getstringdef("MAIN", "password", "")
 	if pw: userCookieHelper._passwords.append(pw)
 	pw = Config.getstringdef("MAIN", "rpcpassword", "")

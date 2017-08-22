@@ -1,5 +1,5 @@
 ---
-type: L20x
+type: L20
 board_features:
 1wire_features:
 i2c_features:

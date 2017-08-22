@@ -9,6 +9,8 @@ import datetime
 # import atexit
 from math import isnan, floor
 
+from yaml import load, dump
+
 from tornado import gen
 from tornado.ioloop import IOLoop
 
@@ -243,7 +245,7 @@ class Board(object):
 
 class Relay(object):
     pending_id = 0
-
+    
     def __init__(self, circuit, arm, coil, reg, mask):
         self.circuit = circuit
         self.arm = arm
@@ -405,7 +407,6 @@ class AnalogOutput():
         else:
             self.factor *= 10
             self.factorx *= 10
-
 
     @property
     def value(self):

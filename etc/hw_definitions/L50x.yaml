@@ -1,5 +1,5 @@
 ---
-type: L50x
+type: L50
 board_features:
 1wire_features:
 i2c_features:

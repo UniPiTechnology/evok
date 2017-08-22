@@ -1,5 +1,5 @@
 ---
-type: M40x
+type: M40
 board_features:
 1wire_features:
 i2c_features:
