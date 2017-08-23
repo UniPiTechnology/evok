@@ -15,6 +15,8 @@ from tornado.process import Subprocess  # not sure about it
 import subprocess  # not sure about it
 
 from log import *
+from tornado_json.api_doc_gen import get_api_docs
+#from test.badsyntax_future3 import result
 
 try:
 	from urllib.parse import urlparse  # py2
@@ -28,7 +30,7 @@ import config
 from devices import *
 
 from tornado_json.requesthandlers import APIHandler
-from tornado_json import schema
+from tornado_json import schema, api_doc_gen
 
 Config = config.EvokConfig() #ConfigParser.RawConfigParser()
 cors = False
@@ -326,7 +328,7 @@ def call_shell_subprocess(cmd, stdin_data=None, stdin_async=False):
 
 	raise gen.Return((result, error))
 
-class LoadAllHandler(UserCookieHelper, tornado.web.RequestHandler):
+class LoadAllHandler(UserCookieHelper, APIHandler):
 	def initialize(self):
 		enable_cors(self)
 		self.set_header("Access-Control-Allow-Origin", "*")
@@ -335,14 +337,94 @@ class LoadAllHandler(UserCookieHelper, tornado.web.RequestHandler):
 
 	#@tornado.gen.coroutine
 	#@tornado.web.authenticated
+	@schema.validate(output_schema = {
+									"$schema": "http://json-schema.org/draft-04/schema#",
+									"title": "Neuron_Instruction",
+									"type": "array",
+									"items": {
+											"anyOf": [
+												{
+													"type": "object",
+													"properties": {
+														"dev": {
+															"type": "string",
+															"enum": ["input"]
+														},
+														"circuit": {"type": "string"},
+														"value": {"type": "number"},
+														"counter": {"type": "number"},
+														"counter_mode": {
+															"type": "string",
+															"enum": ["disabled"]
+														},
+														"debounce": {"type": "number"}
+													},
+													"required": ["dev", "circuit", "value", "counter", "counter_mode", "debounce"]
+												},
+												{
+													"type": "object",
+													"properties": {
+														"dev": {
+															"type": "string",
+															"enum": ["relay"]
+														},
+														"circuit": {"type": "string"},
+														"value": {"type": "number"},
+														"pending": {"type": "boolean"}
+													},
+													"required": ["dev", "circuit", "value", "pending"]
+												},
+												{
+													"type": "object",
+													"properties": {
+														"dev": {
+															"type": "string",
+															"enum": ["ai"]
+														},
+														"circuit": {"type": "string"},
+														"unit": {"type": "string"},
+														"value": {"type": "number"}
+													},
+													"required": ["dev", "circuit", "unit", "value"]
+												},
+												{
+													"type": "object",
+													"properties": {
+														"dev": {
+															"type": "string",
+															"enum": ["ao"]
+														},
+														"circuit": {"type": "string"},
+														"unit": {"type": "string"},
+														"value": {"type": "number"}
+													},
+													"required": ["dev", "circuit", "unit", "value"]
+												}
+											]
+										},
+									},
+					 output_example = [{"circuit": "1_01", "debounce": 50, "counter": 0, "value": 0, "dev": "input", "counter_mode": "disabled"},
+									   {"circuit": "1_02", "debounce": 50, "counter": 0, "value": 0, "dev": "input", "counter_mode": "disabled"},
+									   {"circuit": "1_03", "debounce": 50, "counter": 0, "value": 0, "dev": "input", "counter_mode": "disabled"},
+									   {"circuit": "1_04", "debounce": 50, "counter": 0, "value": 0, "dev": "input", "counter_mode": "disabled"},
+									   {"value": 0, "pending": False, "circuit": "1_01", "dev": "relay"},
+									   {"value": 0, "pending": False, "circuit": "1_02", "dev": "relay"},
+									   {"value": 0, "pending": False, "circuit": "1_03", "dev": "relay"},
+									   {"value": 0, "pending": False, "circuit": "1_04", "dev": "relay"},
+									   {"value": 0.004243475302661791, "unit": "V", "circuit": "1_01", "dev": "ai"},
+									   {"value": 0.006859985867523581, "unit": "V", "circuit": "1_02", "dev": "ai"},
+									   {"value": -0.0001, "unit": "V", "circuit": "1_01", "dev": "ao"}])
 	def get(self):
+		"""aaa"""
+		print Devices.by_int(INPUT)
 		result = map(lambda dev: dev.full(), Devices.by_int(INPUT))
 		result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
 		result += map(lambda dev: dev.full(), Devices.by_int(AI))
 		result += map(lambda dev: dev.full(), Devices.by_int(AO))
 		result += map(lambda dev: dev.full(), Devices.by_int(SENSOR))
-		self.write(json.dumps(result))
-
+		#self.write(json.dumps(result))
+		return result
+	
 	def options(self):
 		# no body
 		self.set_status(204)
@@ -388,9 +470,9 @@ class JSONHandler(APIHandler):
 												"command_name": {
 													"type": "string",
 													"enum": ["probe"]
-												},
-												"required": ["command_name"]
-											}
+												}
+											},
+											"required": ["command_name"]
 										},
 										{
 											"type": "object",
@@ -408,9 +490,9 @@ class JSONHandler(APIHandler):
 												},
 												"value": {
 													"type": "number",
-												},
-												"required": ["command_name", "field", "value"]
-											}										
+												}
+											},
+											"required": ["command_name", "field", "value"]										
 										},
 										{
 											"type": "object",
@@ -424,9 +506,9 @@ class JSONHandler(APIHandler):
 													"items": {
 														"type": "number"
 													}
-												},
-												"required": ["command_name", "command_data"]
-											}										
+												}
+											},
+											"required": ["command_name", "command_data"]										
 										}
 									]
 								},
@@ -469,7 +551,7 @@ class JSONHandler(APIHandler):
 						
 			},
 			input_example={
-				"commands": []			
+							
 			},
 			output_schema={
 				"$schema": "http://json-schema.org/draft-04/schema#",
@@ -856,7 +938,7 @@ class JSONHandler(APIHandler):
 				
 			},
 			output_example={
-				"commands": []
+				
 			},
 		)
 		def post(self):
@@ -965,9 +1047,8 @@ def main():
 	modbus_port = Config.getintdef("MAIN", "modbus_port", 0)
 	if options.as_dict()['modbus_port'] != -1:
 		modbus_port = options.as_dict()['modbus_port'] # use command-line option instead of config option
-	
-	app = tornado.web.Application(
-		handlers=[
+
+	app_routes = [
 			#(r"/", web.RedirectHandler, {"url": "http://%s/" % webname }),
 			(r"/auth/login/", LoginHandler),
 			(r"/auth/logout/", LogoutHandler),
@@ -976,12 +1057,24 @@ def main():
 			(r"/config/cmd", RemoteCMDHandler),
 			(r"/json", JSONHandler),
 			(r"/rest/all/?", LoadAllHandler),
-			(r"/rest/([^/]+)/([^/]+)/?(.+)?", RestHandler),
+			(r"/rest/([^/]+)/([^/]+)/?([^/]+)?/?", RestHandler),
 			(r"/ws", WsHandler),
-		],
+			]
+	
+	
+	app = tornado.web.Application(
+		handlers=app_routes,
 		login_url='/auth/login/',
 		cookie_secret=cookie_secret
 	)
+	docs = get_api_docs(app_routes)
+	print docs
+	try:
+		with open('./API_docs.md', "w") as api_out:
+			api_out.writelines(docs)
+	except Exception, e:
+		pass
+
 
 	#app.add_handlers(r'%s.*' % webname , [(r"/", IndexHandler, dict(staticfiles=staticfiles))])
 

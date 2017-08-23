@@ -169,6 +169,7 @@ class Relay(object):
 
     def full(self):
         return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value, 'pending': self.pending_id != 0}
+       
 
     def simple(self):
         return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value}

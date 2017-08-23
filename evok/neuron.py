@@ -93,6 +93,7 @@ class Neuron(object):
                     raise ENoBoard("bad request")
                 board = Board(i, self, versions.registers)
                 data = yield self.client.read_input_registers(0, count=board.ndataregs, unit=i)
+                
                 configs = yield self.client.read_input_registers(1000, count=board.nconfigregs, unit=i)
                 board.create_subdevices(data.registers, configs.registers)
                 self.boards.append(board)
@@ -182,6 +183,11 @@ class Board(object):
             if not (x is None): x = getattr(self, x)
             cur += func(x)
 
+
+#
+
+#	def load_hw_definition(self, def):
+		
 
     def create_subdevices(self, data, configs):
         self.data = data
@@ -463,7 +469,7 @@ class AnalogInput():
         self.is_voltage = lambda: True
         if circuit == '1_01':
             self.is_voltage = lambda: not bool(arm.configs[regcal - 1] & 0b1)
-        #print self.is_voltage
+        #print self.is_voltage 
         #print circuit, self.vfactor, self.vfactorx, self.voffset
         #self.afactorx = 10 * arm.volt_refx / 4095 *(1 + uint16_to_int(arm.configs[regcal+2])/10000.0)
         #self.aoffset = (uint16_to_int(arm.configs[regcal+3])/10000.0)
