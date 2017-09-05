@@ -59,6 +59,8 @@ The installation script should take care of everything, but be aware of limited 
 
 _**Evok currently supports only Raspbian JESSIE! Raspbian STRETCH is not yet supported due to incompatible drivers**_
 
+You can download Raspbian Jessie from http://downloads.raspberrypi.org/raspbian/images/raspbian-2017-07-05/
+
     wget https://github.com/UniPiTechnology/evok/archive/master.zip
     unzip master.zip
     cd evok-master
