@@ -333,7 +333,7 @@ cp -r etc/opt /etc/
 
 apt-get update
 apt-get install -y python-ow python-pip make python-dev
-pip install tornado toro jsonrpclib pymodbus
+pip install tornado toro jsonrpclib pymodbus pyyaml tornado_json tornado-webservices
 
 #detect version of UniPi
 #TODO: read from EPROM data
