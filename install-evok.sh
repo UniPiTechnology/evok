@@ -332,8 +332,11 @@ cp -r etc/modprobe.d /etc/
 cp -r etc/opt /etc/
 
 apt-get update
-apt-get install -y python-ow python-pip make python-dev
+apt-get install -y python-ow python-pip make python-dev nginx
 pip install tornado toro jsonrpclib pymodbus pyyaml tornado_json tornado-webservices
+
+cp -r etc/hw_definitions /etc/
+cp -r etc/nginx/sites-enabled /etc/
 
 #detect version of UniPi
 #TODO: read from EPROM data
