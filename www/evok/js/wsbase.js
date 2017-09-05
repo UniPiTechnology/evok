@@ -196,7 +196,6 @@ function update_values() {
     	url: 'http://' + $(location).attr('hostname') + ':8080/rest/all',
         dataType: 'json',
         success: function (data) {
-        	alert('WHEE2');
             //data = sortResults(data);
             $.each(data, function (name, msg) {
                 SyncDevice(msg);

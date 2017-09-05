@@ -99,7 +99,6 @@ modbus_features:
       min_v       : 0
       max_v       : 10
       val_reg     : 102
-      cal_reg     : 1024
       mode_reg    : 1019
     - type        : AI
       count       : 4
@@ -108,8 +107,7 @@ modbus_features:
       max_v       : 10
       min_c       : 0
       max_c       : 0.020      
-      val_reg     : 106
-      cal_reg     : 1024  
+      val_reg     : 106  
     - type        : WD
       major_group : 2
       count       : 1
@@ -148,7 +146,6 @@ modbus_features:
       min_v       : 0
       max_v       : 10
       val_reg     : 202
-      cal_reg     : 1024
       mode_reg    : 1219
     - type        : AI
       count       : 4
@@ -156,8 +153,7 @@ modbus_features:
       min_v       : 0
       max_v       : 10
       min_c       : 0
-      max_c       : 0.020  
-      cal_reg     : 1024        
+      max_c       : 0.020        
       val_reg     : 206
     - type        : WD
       major_group : 3
