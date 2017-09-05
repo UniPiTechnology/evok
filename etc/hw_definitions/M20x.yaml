@@ -4,7 +4,8 @@ board_features:
 1wire_features:
 i2c_features:
 modbus_features:
-    - type        : AO
+    - f_index     : 0
+      type        : AO
       count       : 1
       major_group : 1
       modes       :
@@ -18,16 +19,21 @@ modbus_features:
       min_r       : 0
       max_r       : 2000
       val_reg     : 2
+      res_val_reg : 4
+      cal_reg     : 1024
       mode_reg    : 1019
-    - type        : AI
+    - f_index     : 1
+      type        : AI
       count       : 1
       major_group : 1
       min_v       : 0
       max_v       : 10
       min_c       : 0
       max_c       : 0.020      
-      val_reg     : 4
-    - type        : DO
+      val_reg     : 3
+      cal_reg     : 1024  
+    - f_index     : 2
+      type        : DO
       count       : 4
       major_group : 1
       modes       :
@@ -37,7 +43,8 @@ modbus_features:
       pwm_reg     : 16
       pwm_ps_reg  : 1017
       pwm_c_reg   : 1018
-    - type        : DI
+    - f_index     : 3
+      type        : DI
       count       : 4
       major_group : 1
       modes       :
@@ -52,18 +59,25 @@ modbus_features:
       deboun_reg  : 1010
       polar_reg   : 1015
       toggle_reg  : 1016
-    - type        : RS485
+    - f_index     : 4
+      type        : UART
       major_group : 1
       count       : 1
-    - type        : LED
+      conf_reg    : 1031
+    - f_index     : 5
+      type        : LED
       major_group : 1
       count       : 4
+      val_coil    : 8
       val_reg     : 20
-    - type        : WD
+    - f_index     : 6
+      count       : 1
+      type        : WD
       major_group : 1
       val_reg     : 6
       timeout_reg : 1008
-    - type        : DI
+    - f_index     : 7
+      type        : DI
       count       : 16
       major_group : 2
       modes       :
@@ -78,14 +92,18 @@ modbus_features:
       deboun_reg  : 1110
       polar_reg   : 1127
       toggle_reg  : 1128
-    - type        : RO
+    - f_index     : 8
+      type        : RO
       major_group : 2
       count       : 14
       val_reg     : 101
       modes       :
         - Simple
         - DirectSwitch
-    - type        : WD
+    - f_index     : 9
+      count       : 1
+      type        : WD
+      count       : 1
       major_group : 2
       val_reg     : 102
       timeout_reg : 1108

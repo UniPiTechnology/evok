@@ -4,16 +4,17 @@ import multiprocessing
 import re
 import struct
 import ConfigParser
+import neuron
 from log import *
 from devices import *
 import yaml
 from _ctypes import sizeof
 
 try:
-  import unipig
-  from apigpio import I2cBus, GpioBus
+	import unipig
+	from apigpio import I2cBus, GpioBus
 except:
-  pass
+	pass
 
 
 globals = {
@@ -74,24 +75,46 @@ def read_eprom_config():
 class HWDict():
 	
 	def __init__(self, d_path):
-		self.definitions = [{}]
+		self.definitions = []
 		for filen in os.listdir(d_path):
 			if filen.endswith(".yaml"):
 				try:
 					with open(d_path + filen, 'r') as yfile:	
 						self.definitions += [yaml.load(yfile)]
-						logger.info("YAML Definition loaded: %s, type: %s, definition count %d", filen, self.definitions[len(self.definitions)-1]['type'],  len(self.definitions) - 1)
+						logger.info("YAML Definition loaded: %s, type: %s, definition count %d", filen, len(self.definitions[len(self.definitions)-1]),  len(self.definitions) - 1)
 				except Exception, E:
 					pass	
-		
+
+	
 class HWDefinition():
 	
 	def __init__(self):
 		False
 	
+class OWBusDevice():
+	def __init__(self, bus_driver, dev_id):
+		self.dev_id = dev_id
+		self.bus_driver = bus_driver
+		self.circuit = bus_driver.circuit
+		
+class OWSensorDevice():
+	def __init__(self, sensor_dev, dev_id):
+		self.dev_id = dev_id
+		self.sensor_dev = sensor_dev 
+		self.circuit = sensor_dev.circuit
+		
+class I2CBusDevice():
+	def __init__(self, bus_driver, dev_id):
+		self.dev_id = dev_id
+		self.bus_driver = bus_driver
+		self.circuit = bus_driver.circuit
 	
+class GPIOBusDevice():
+	def __init__(self, bus_driver, dev_id):
+		self.dev_id = dev_id
+		self.bus_driver = bus_driver
+		self.circuit = bus_driver.circuit
 	
-
 class EvokConfig(ConfigParser.RawConfigParser):
 
 	def __init__(self):
@@ -147,7 +170,8 @@ def hexint(value):
 	return int(value)
 
 
-def create_devices(Config):
+def create_devices(Config, hw_dict):
+	Config.hw_dict = hw_dict
 	for section in Config.sections():
 		# split section name ITEM123 or ITEM_123 or ITEM-123 into device=ITEM and circuit=123
 		res = re.search('^([^_-]+)[_-]+(.+)$', section)
@@ -168,63 +192,67 @@ def create_devices(Config):
 				#### prepare 1wire process ##### (using thread affects timing!)
 				resultPipe = multiprocessing.Pipe()
 				taskPipe = multiprocessing.Pipe()
-				owbus = owclient.OwBusDriver(circuit, taskPipe, resultPipe, bus=bus,
+				bus_driver = owclient.OwBusDriver(circuit, taskPipe, resultPipe, bus=bus,
 											 interval=interval, scan_interval=scan_interval)
+				owbus = OWBusDevice(bus_driver, dev_id=0)
 				Devices.register_device(OWBUS, owbus)
 			elif devclass == 'SENSOR' or devclass == '1WDEVICE':
 				#permanent thermometer
 				bus = Config.get(section, "bus")
-				owbus = Devices.by_int(OWBUS, bus)
+				owbus = (Devices.by_int(OWBUS, bus)).bus_driver
 				typ = Config.get(section, "type")
 				address = Config.get(section, "address")
 				interval = Config.getintdef(section, "interval", 15)
-				sensor = owclient.MySensorFabric(address, typ, owbus, interval=interval, circuit=circuit,
+				sensor_dev = owclient.MySensorFabric(address, typ, owbus, interval=interval, circuit=circuit,
 												 is_static=True)
+				sensor = OWSensorDevice(sensor_dev, dev_id=0)
 				Devices.register_device(SENSOR, sensor)
 			elif devclass == '1WRELAY':
 				# Relays on DS2404
 				sensor = Config.get(section, "sensor")
-				sensor = Devices.by_int(SENSOR, sensor)
+				sensor = (Devices.by_int(SENSOR, sensor)).sensor_dev
 				pin = Config.getint(section, "pin")
-				r = unipig.DS2408_relay(circuit, sensor, pin)
+				r = unipig.DS2408_relay(circuit, sensor, pin, dev_id=0)
 				Devices.register_device(RELAY, r)
 			elif devclass == '1WINPUT':
 				# Inputs on DS2404
 				sensor = Config.get(section, "sensor")
-				sensor = Devices.by_int(SENSOR, sensor)
+				sensor = (Devices.by_int(SENSOR, sensor)).sensor_dev
 				pin = Config.getint(section, "pin")
-				i = unipig.DS2408_input(circuit, sensor, pin)
+				i = unipig.DS2408_input(circuit, sensor, pin, dev_id=0)
 				Devices.register_device(INPUT, i)
 			elif devclass == 'I2CBUS':
 				# I2C bus on /dev/i2c-1 via pigpio daemon
 				busid = Config.getint(section, "busid")
-				i2cbus = I2cBus(circuit=circuit, host='localhost', busid=busid)
+				bus_driver = I2cBus(circuit=circuit, host='localhost', busid=busid)
+				i2cbus = I2CBusDevice(bus_driver, 0)
 				Devices.register_device(I2CBUS, i2cbus)
 			elif devclass == 'MCP':
 				# MCP on I2c
 				i2cbus = Config.get(section, "i2cbus")
 				address = hexint(Config.get(section, "address"))
-				bus = Devices.by_int(I2CBUS, i2cbus)
-				mcp = unipig.UnipiMcp(bus, circuit, address=address)
+				bus = (Devices.by_int(I2CBUS, i2cbus)).bus_driver
+				mcp = unipig.UnipiMcp(bus, circuit, address=address, dev_id=0)
 				Devices.register_device(MCP, mcp)
 			elif devclass == 'RELAY':
 				# Relays on MCP
 				mcp = Config.get(section, "mcp")
 				mcp = Devices.by_int(MCP, mcp)
 				pin = Config.getint(section, "pin")
-				r = unipig.Relay(circuit, mcp, pin)
+				r = unipig.Relay(circuit, mcp, pin, dev_id=0)
 				Devices.register_device(RELAY, r)
 			elif devclass == 'GPIOBUS':
 				# access to GPIO via pigpio daemon
-				bus = GpioBus(circuit=circuit, host='localhost')
-				Devices.register_device(GPIOBUS, bus)
+				bus_driver = GpioBus(circuit=circuit, host='localhost')
+				gpio_bus = GPIOBusDevice(bus_driver, 0)
+				Devices.register_device(GPIOBUS, gpio_bus)
 			elif devclass == 'PCA9685':
 				#PCA9685 on I2C
 				i2cbus = Config.get(section, "i2cbus")
 				address = hexint(Config.get(section, "address"))
 				frequency = Config.getintdef(section, "frequency", 400)
-				bus = Devices.by_int(I2CBUS, i2cbus)
-				pca = unipig.UnipiPCA9685(bus, int(circuit), address=address, frequency=frequency)
+				bus = (Devices.by_int(I2CBUS, i2cbus)).bus_driver
+				pca = unipig.UnipiPCA9685(bus, int(circuit), address=address, frequency=frequency, dev_id=0)
 				Devices.register_device(PCA9685, pca)
 			elif devclass in ('AO', 'ANALOGOUTPUT'):
 				try:
@@ -233,36 +261,36 @@ def create_devices(Config):
 					channel = Config.getint(section, "channel")
 					#value = Config.getfloatdef(section, "value", 0)
 					driver = Devices.by_int(PCA9685, pca)
-					ao = unipig.AnalogOutputPCA(circuit, driver, channel)
+					ao = unipig.AnalogOutputPCA(circuit, driver, channel, dev_id=0)
 				except:
 					# analog output (PWM) on GPIO via pigpio daemon
 					gpiobus = Config.get(section, "gpiobus")
-					bus = Devices.by_int(GPIOBUS, gpiobus)
+					bus = (Devices.by_int(GPIOBUS, gpiobus)).bus_driver
 					frequency = Config.getintdef(section, "frequency", 100)
 					value = Config.getfloatdef(section, "value", 0)
-					ao = unipig.AnalogOutputGPIO(bus, circuit, frequency=frequency, value=value)
+					ao = unipig.AnalogOutputGPIO(bus, circuit, frequency=frequency, value=value, dev_id=0)
 				Devices.register_device(AO, ao)
 			elif devclass in ('DI', 'INPUT'):
 				# digital inputs on GPIO via pigpio daemon
 				gpiobus = Config.get(section, "gpiobus")
-				bus = Devices.by_int(GPIOBUS, gpiobus)
+				bus = (Devices.by_int(GPIOBUS, gpiobus)).bus_driver
 				pin = Config.getint(section, "pin")
 				debounce = Config.getintdef(section, "debounce", 0)
 				counter_mode = Config.getstringdef(section, "counter_mode", "disabled")
-				inp = unipig.Input(bus, circuit, pin, debounce=debounce, counter_mode=counter_mode)
+				inp = unipig.Input(bus, circuit, pin, debounce=debounce, counter_mode=counter_mode, dev_id=0)
 				Devices.register_device(INPUT, inp)
 			elif devclass in ('EPROM', 'EE'):
 				i2cbus = Config.get(section, "i2cbus")
 				address = hexint(Config.get(section, "address"))
 				size = Config.getintdef(section, "size", 256)
-				bus = Devices.by_int(I2CBUS, i2cbus)
-				ee = unipig.Eprom(bus, circuit, size=size, address=address)
+				bus = (Devices.by_int(I2CBUS, i2cbus)).bus_driver
+				ee = unipig.Eprom(bus, circuit, size=size, address=address, dev_id=0)
 				Devices.register_device(EE, ee)
 			elif devclass in ('AICHIP',):
 				i2cbus = Config.get(section, "i2cbus")
 				address = hexint(Config.get(section, "address"))
-				bus = Devices.by_int(I2CBUS, i2cbus)
-				mcai = unipig.UnipiMCP342x(bus, circuit, address=address)
+				bus = (Devices.by_int(I2CBUS, i2cbus)).bus_driver
+				mcai = unipig.UnipiMCP342x(bus, circuit, address=address, dev_id=0)
 				Devices.register_device(ADCHIP, mcai)
 			elif devclass in ('AI', 'ANALOGINPUT'):
 				chip = Config.get(section, "chip")
@@ -282,57 +310,26 @@ def create_devices(Config):
 					corr_addr = hexint(Config.get(section, "corr_addr"))
 					ai = unipig.AnalogInput(circuit, mcai, channel, bits=bits, gain=gain,
 											continuous=False, interval=interval, correction=correction, rom=eeprom,
-											corr_addr=corr_addr)
+											corr_addr=corr_addr, dev_id=0)
 				except:
 					ai = unipig.AnalogInput(circuit, mcai, channel, bits=bits, gain=gain,
-											continuous=False, interval=interval, correction=correction)
+											continuous=False, interval=interval, correction=correction, dev_id=0)
 				Devices.register_device(AI, ai)
-			elif devclass == 'NEURON':
+			elif devclass == 'NEURON' or devclass == 'HWDEF':
 				from neuron import Neuron
 				modbus_server =  Config.getstringdef(section, "modbus_server", "127.0.0.1")
 				modbus_port   =  Config.getintdef(section, "modbus_port", 502)
 				scanfreq = Config.getfloatdef(section, "scan_frequency", 1)
 				scan_enabled = Config.getbooldef(section, "scan_enabled", True)
-				neuron = Neuron(circuit, modbus_server, modbus_port, scanfreq, scan_enabled)
+				#print hw_dict.definitions
+				neuron = Neuron(circuit, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict, dev_id=0)
 				Devices.register_device(NEURON, neuron)
-			elif devclass == 'UNIPI2':
-				'''from spiarm import ArmSpiAsync, ArmUart
-				# UNIPI2 on SPI bus
-				busdevice = Config.get(section, "busdevice")
-				gpioint  = Config.getint(section, "gpioint")
-				arm = ArmSpiAsync(circuit, busdevice, gpioint)
-				Devices.register_device(UNIPI2, arm)
-				if True:
-					import unipi2
-					for i in range(arm.nDO):
-						_r = unipi2.Relay("%s%02d" % (circuit,i+1),arm,i, 1, 0x1<<i)
-						Devices.register_device(RELAY, _r)
-					for i in range(arm.nDI):
-						_inp = unipi2.Input("%s%02d" % (circuit,i+1),arm, 0, 0x1<<i, ]#
-						
-						
-											regdebounce=1006+i, 
-											regcounter=arm.counter_reg+(2*i))
-						Devices.register_device(INPUT, _inp)
-					for i in range(arm.nAO):
-						_ao = unipi2.AnalogOutput("%s%02d" % (circuit,i+1),arm, 2+i)
-						Devices.register_device(AO, _ao)
-					for i in range(arm.nAI):
-						correction = 1.0 if i==0 else 1.0/3
-						_ai = unipi2.AnalogInput("%s%02d" % (circuit,i+1),arm, 3+i,
-												 correction = correction)
-						Devices.register_device(AI, _ai)
-					arm.scanning = True
-				'''
-
-			elif devclass == 'UART':
-				# UART on UNIPI2
-				'''
-				unipi2 = Config.get(section, "unipi2")
-				unipi2 = Devices.by_int(UNIPI2, unipi2)
-				uart = ArmUart(circuit,unipi2)
-				Devices.register_device(UART, uart)
-				'''
+			elif devclass == 'NEURON_EXTENSION':
+				from neuron import Neuron
+				#print hw_dict.definitions
+				#neuron = Neuron(circuit, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict, dev_id=0)
+				#Devices.register_device(NEURON, neuron)
+				
 		except Exception, E:
-			logger.debug("Error in config section %s - %s", section, str(E))
+			logger.exception("Error in config section %s - %s", section, str(E))
 			#raise

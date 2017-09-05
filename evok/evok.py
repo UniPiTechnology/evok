@@ -10,12 +10,17 @@ from tornado.options import define, options
 from tornado import websocket
 from tornado import escape
 from tornado.concurrent import is_future
+from tornado.gen import Return
 
 from tornado.process import Subprocess  # not sure about it
 import subprocess  # not sure about it
 
 from log import *
 from tornado_json.api_doc_gen import get_api_docs
+from tornadows import soaphandler
+from tornadows import webservices
+from tornadows import xmltypes
+from tornadows.soaphandler import webservice
 #from test.badsyntax_future3 import result
 
 try:
@@ -32,9 +37,18 @@ from devices import *
 from tornado_json.requesthandlers import APIHandler
 from tornado_json import schema, api_doc_gen
 
+# Read config during initialisation
 Config = config.EvokConfig() #ConfigParser.RawConfigParser()
+Config.add_section('MAIN')
+config_path = '/etc/evok.conf'
+if not os.path.isfile(config_path):
+	config_path = os.path.dirname(os.path.realpath(__file__)) + '/evok.conf'
+Config.read(config_path)
+
 cors = False
 corsdomains = '*'
+use_output_schema = Config.getbooldef('MAIN','output_schema',False)
+use_legacy_api = Config.getbooldef('MAIN','legacy_api',True)
 
 class UserCookieHelper():
 	_passwords = []
@@ -87,7 +101,7 @@ class WsHandler(websocket.WebSocketHandler):
 		return True
 		
 	def open(self):
-		logger.debug("New WebSocket client connected")
+		logger.debug("New WebSocket modbusclient_rs485 connected")
 		if not registered_ws.has_key("all"):
 			registered_ws["all"] = set()
 
@@ -96,7 +110,7 @@ class WsHandler(websocket.WebSocketHandler):
 	def on_event(self, device):
 		#print "Sending to: %s,%s" % (str(self), device)
 		try:
-			print device.full()
+			#print device.full()
 			self.write_message(json.dumps(device.full()))
 		except Exception as e:
 			logger.error("Exc: %s", str(e))
@@ -139,7 +153,7 @@ class WsHandler(websocket.WebSocketHandler):
 						result = func()
 					if is_future(result):
 						result = yield result
-					#send response only to the client requesting full info
+					#send response only to the modbusclient_rs485 requesting full info
 					if cmd == "full":
 						self.write_message(result)
 				#nebo except Exception as e:
@@ -204,7 +218,9 @@ class LoginHandler(tornado.web.RequestHandler):
 		return False
 
 
-class RestHandler(UserCookieHelper, tornado.web.RequestHandler):
+
+
+class LegacyRestHandler(UserCookieHelper, tornado.web.RequestHandler):
 	def initialize(self):
 		enable_cors(self)
 		self.set_header("Access-Control-Allow-Origin", "*")
@@ -247,6 +263,989 @@ class RestHandler(UserCookieHelper, tornado.web.RequestHandler):
 			self.write(json.dumps({'success': False, 'errors': {'__all__': str(E)}}))
 		self.finish()
 	
+	
+	def options(self):
+		# no body
+		self.set_status(204)
+		self.finish()
+
+class RestLEDHandler(UserCookieHelper, APIHandler):
+	get_out_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"dev": {
+				"type": "string",
+				"enum": ["led"]
+			},
+			"circuit": {"type": "string"},
+			"value": {"type": "number"}
+		}
+	}
+	
+	get_out_example = {"circuit": "1_01", "value": 1, "dev": "led"}
+	
+	post_inp_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"value": { "type": "string"}
+		},
+	}
+	
+	post_inp_example = {"value": '1'}
+	
+	post_out_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"result": { "type": "number"},
+			"error": { "type": "array"},
+			"success": { "type": "boolean"}
+		},
+		"required": ["success"]
+	}
+	
+	post_out_example = {"result": 1, "success": True}
+		
+	def initialize(self):
+		self.set_header("Access-Control-Allow-Origin", "*")
+		self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+		self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+		enable_cors(self)
+
+
+	# usage: GET /rest/DEVICE/CIRCUIT
+	#		or
+	#		GET /rest/DEVICE/CIRCUIT/PROPERTY
+
+
+	if not use_output_schema:
+		@tornado.web.authenticated
+		@schema.validate()
+		def get(self, circuit, prop):
+			device = Devices.by_name("led", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result
+	else:
+		@tornado.web.authenticated
+		@schema.validate(output_schema=get_out_schema, output_example=get_out_example)
+		def get(self, circuit, prop):
+			device = Devices.by_name("led", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result
+
+
+	# usage: POST /rest/DEVICE/CIRCUIT
+	#		  post-data: prop1=value1&prop2=value2...
+
+	#@tornado.web.authenticated
+
+	if not use_output_schema:
+		@schema.validate(input_schema=post_inp_schema, input_example=post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				device = Devices.by_name("led", circuit)
+				js_dict = json.loads(self.request.body)
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				raise Return({'success': True, 'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'success': False, 'errors': str(E)})
+	else:
+		@schema.validate(output_schema=post_out_schema, output_example=post_out_example, input_schema=post_inp_schema, input_example=post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				device = Devices.by_name("led", circuit)
+				js_dict = json.loads(self.request.body)
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				raise Return({'success': True, 'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'success': False, 'errors': str(E)})		
+	
+	def options(self):
+		self.set_status(204)
+		self.finish()
+
+class RestWatchdogHandler(UserCookieHelper, APIHandler):
+	get_out_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"dev": {
+				"type": "string",
+				"enum": ["led"]
+			},
+			"circuit": {"type": "string"},
+			"value": {"type": "number"}
+		}
+	}
+	
+	get_out_example = {"circuit": "1_01", "value": 1, "dev": "led"}
+	
+	post_inp_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"value": { "type": "string"}
+		},
+	}
+	
+	post_inp_example = {"value": '1'}
+	
+	post_out_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"result": { "type": "number"},
+			"error": { "type": "array"},
+			"success": { "type": "boolean"}
+		},
+		"required": ["success"]
+	}
+	
+	post_out_example = {"result": 1, "success": True}
+		
+	def initialize(self):
+		self.set_header("Access-Control-Allow-Origin", "*")
+		self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+		self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+		enable_cors(self)
+
+
+	# usage: GET /rest/DEVICE/CIRCUIT
+	#		or
+	#		GET /rest/DEVICE/CIRCUIT/PROPERTY
+
+
+	if not use_output_schema:
+		@tornado.web.authenticated
+		@schema.validate()
+		def get(self, circuit, prop):
+			device = Devices.by_name("led", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result
+	else:
+		@tornado.web.authenticated
+		@schema.validate(output_schema=get_out_schema, output_example=get_out_example)
+		def get(self, circuit, prop):
+			device = Devices.by_name("led", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result
+
+
+	# usage: POST /rest/DEVICE/CIRCUIT
+	#		  post-data: prop1=value1&prop2=value2...
+
+	#@tornado.web.authenticated
+
+	if not use_output_schema:
+		@schema.validate(input_schema=post_inp_schema, input_example=post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				device = Devices.by_name("led", circuit)
+				js_dict = json.loads(self.request.body)
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				raise Return({'success': True, 'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'success': False, 'errors': str(E)})
+	else:
+		@schema.validate(output_schema=post_out_schema, output_example=post_out_example, input_schema=post_inp_schema, input_example=post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				device = Devices.by_name("led", circuit)
+				js_dict = json.loads(self.request.body)
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				raise Return({'success': True, 'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'success': False, 'errors': str(E)})		
+	
+	def options(self):
+		self.set_status(204)
+		self.finish()
+
+class RestRegisterHandler(UserCookieHelper, APIHandler):
+	get_out_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"dev": {
+				"type": "string",
+				"enum": ["register"]
+			},
+			"circuit": {"type": "string"},
+			"value": {"type": "number"}
+		}
+	}
+	
+	get_out_example = {"circuit": "1_01", "value": 1, "dev": "register"}
+	
+	post_inp_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"value": { "type": "string"}
+		},
+	}
+	
+	post_inp_example = {"value": '1'}
+	
+	post_out_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"result": { "type": "number"},
+			"error": { "type": "array"},
+			"success": { "type": "boolean"}
+		},
+		"required": ["success"]
+	}
+	
+	post_out_example = {"result": 1, "success": True}
+		
+	def initialize(self):
+		self.set_header("Access-Control-Allow-Origin", "*")
+		self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+		self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+		enable_cors(self)
+
+
+	# usage: GET /rest/DEVICE/CIRCUIT
+	#		or
+	#		GET /rest/DEVICE/CIRCUIT/PROPERTY
+
+
+	if not use_output_schema:
+		@tornado.web.authenticated
+		@schema.validate()
+		def get(self, circuit, prop):
+			device = Devices.by_name("register", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result
+	else:
+		@tornado.web.authenticated
+		@schema.validate(output_schema=get_out_schema, output_example=get_out_example)
+		def get(self, circuit, prop):
+			device = Devices.by_name("register", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result
+
+
+	# usage: POST /rest/DEVICE/CIRCUIT
+	#		  post-data: prop1=value1&prop2=value2...
+
+	#@tornado.web.authenticated
+
+	if not use_output_schema:
+		@schema.validate(input_schema=post_inp_schema, input_example=post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				device = Devices.by_name("register", circuit)
+				js_dict = json.loads(self.request.body)
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				raise Return({'success': True, 'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'success': False, 'errors': str(E)})
+	else:
+		@schema.validate(output_schema=post_out_schema, output_example=post_out_example, input_schema=post_inp_schema, input_example=post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				device = Devices.by_name("register", circuit)
+				js_dict = json.loads(self.request.body)
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				raise Return({'success': True, 'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'success': False, 'errors': str(E)})		
+	
+	def options(self):
+		self.set_status(204)
+		self.finish()
+
+
+class RestDIHandler(UserCookieHelper, APIHandler):
+	get_out_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"dev": {
+				"type": "string",
+				"enum": ["input"]
+			},
+			"circuit": {"type": "string"},
+			"value": {"type": "number"},
+			"counter": {"type": "number"},
+			"counter_mode": {
+				"type": "string",
+				"enum": ["disabled"]
+			},
+			"debounce": {"type": "number"}
+		}
+	}
+	
+	get_out_example = {"circuit": "1_01", "debounce": 50, "counter": 0, "value": 0, "dev": "input", "counter_mode": "disabled"}
+	
+	post_inp_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"value": { "type": "string"},
+			"counter_mode": {
+				"type": "string",
+				"enum": ["disabled"]
+			},
+			"debounce": {"type": "number"}
+		},
+	}
+	
+	post_inp_example = {"value": 1}
+	
+	post_out_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"result": { "type": "number"},
+			"error": { "type": "array"},
+			"success": { "type": "boolean"}
+		},
+		"required": ["success"]
+	}
+	
+	post_out_example = {"result": 1, "success": True}
+		
+	def initialize(self):
+		self.set_header("Access-Control-Allow-Origin", "*")
+		self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+		self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+		enable_cors(self)
+
+
+	# usage: GET /rest/DEVICE/CIRCUIT
+	#		or
+	#		GET /rest/DEVICE/CIRCUIT/PROPERTY
+
+
+	if not use_output_schema:
+		@tornado.web.authenticated
+		@schema.validate()
+		def get(self, circuit, prop):
+			device = Devices.by_name("input", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result
+	else:
+		@tornado.web.authenticated
+		@schema.validate(output_schema=get_out_schema, output_example=get_out_example)
+		def get(self, circuit, prop):
+			device = Devices.by_name("input", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result
+
+
+	# usage: POST /rest/DEVICE/CIRCUIT
+	#		  post-data: prop1=value1&prop2=value2...
+
+	#@tornado.web.authenticated
+
+	if not use_output_schema:
+		@schema.validate(input_schema=post_inp_schema, input_example=post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				device = Devices.by_name("input", circuit)
+				js_dict = json.loads(self.request.body)
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				raise Return({'success': True, 'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'success': False, 'errors': str(E)})
+	else:
+		@schema.validate(output_schema=post_out_schema, output_example=post_out_example, input_schema=post_inp_schema, input_example=post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				device = Devices.by_name("input", circuit)
+				js_dict = json.loads(self.request.body)
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				raise Return({'success': True, 'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'success': False, 'errors': str(E)})		
+	
+	def options(self):
+		self.set_status(204)
+		self.finish()
+
+class RestDOHandler(UserCookieHelper, APIHandler):
+	get_out_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"dev": {
+				"type": "string",
+				"enum": ["output"]
+			},
+			"circuit": {"type": "string"},
+			"glob_dev_id": {"type": "number"},
+			"value": {"type": "number"},
+			"counter": {"type": "number"},
+			"counter_mode": {
+				"type": "string",
+				"enum": ["disabled"]
+			},
+			"debounce": {"type": "number"}
+		}
+	}
+	
+	get_out_example = {"circuit": "1_01", "debounce": 50, "counter": 0, "value": 0, "dev": "output", "counter_mode": "disabled"}
+	
+	post_inp_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"value": { "type": "string"},
+			"counter_mode": {
+				"type": "string",
+				"enum": ["disabled"]
+			},
+			"debounce": {"type": "number"}
+		},
+	}
+	
+	post_inp_example = {"value": 1}
+	
+	post_out_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"result": { "type": "number"},
+			"error": { "type": "array"},
+			"success": { "type": "boolean"}
+		},
+		"required": ["success"]
+	}
+	
+	post_out_example = {"result": 1, "success": True}
+	
+	def initialize(self):
+		enable_cors(self)
+		self.set_header("Access-Control-Allow-Origin", "*")
+		self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+		self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
+	# usage: GET /rest/DEVICE/CIRCUIT
+	#		or
+	#		GET /rest/DEVICE/CIRCUIT/PROPERTY
+
+	if not use_output_schema:
+		@tornado.web.authenticated
+		@schema.validate(output_schema=get_out_schema, output_example=get_out_example)
+		def get(self, circuit, prop):
+			device = Devices.by_name("output", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result
+	else:
+		@tornado.web.authenticated
+		@schema.validate()
+		def get(self, circuit, prop):
+			device = Devices.by_name("output", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result
+
+	# usage: POST /rest/DEVICE/CIRCUIT
+	#		  post-data: prop1=value1&prop2=value2...
+
+	#@tornado.web.authenticated
+	if not use_output_schema:
+		@schema.validate(input_schema=post_inp_schema, input_example=post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				device = Devices.by_name("output", circuit)
+				js_dict = json.loads(self.request.body)
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				raise Return({'success': True, 'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'success': False, 'errors': str(E)})
+	else:
+		@schema.validate(output_schema=post_out_schema, output_example=post_out_example, input_schema=post_inp_schema, input_example=post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				device = Devices.by_name("output", circuit)
+				js_dict = json.loads(self.request.body)
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				raise Return({'success': True, 'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'success': False, 'errors': str(E)})	
+	
+	def options(self):
+		# no body
+		self.set_status(204)
+		self.finish()
+		
+class RestAIHandler(UserCookieHelper, APIHandler):
+	get_out_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"dev": {
+				"type": "string",
+				"enum": ["ai"]
+			},
+			"circuit": {"type": "string"},
+			"unit": {"type": "string"},
+			"glob_dev_id": {"type": "number"},
+			"mode": {"type": "string"},
+			"value": {"type": "number"}
+		},
+	}
+	
+	get_out_example = {"value": 0.004243475302661791, "unit": "V", "circuit": "1_01", "dev": "ai"}
+	
+	post_inp_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"value": { "type": "string"},
+			"mode": {"type": "string"}
+		},
+	}
+	
+	post_inp_example = {"value": 1}
+	
+	post_out_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			#"result": { "type": "number"},
+			"error": { "type": "array"},
+			"success": { "type": "boolean"}
+		},
+		"required": ["success"]
+	}
+	
+	post_out_example = {"result": 1, "success": True}
+	
+	
+	def initialize(self):
+		enable_cors(self)
+		self.set_header("Access-Control-Allow-Origin", "*")
+		self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+		self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
+	# usage: GET /rest/DEVICE/CIRCUIT
+	#		or
+	#		GET /rest/DEVICE/CIRCUIT/PROPERTY
+
+	if not use_output_schema:	
+		@tornado.web.authenticated
+		@schema.validate()
+		def get(self, circuit, prop):
+			device = Devices.by_name("ai", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result
+	else:
+		@tornado.web.authenticated
+		@schema.validate(output_schema=get_out_schema, output_example=get_out_example)
+		def get(self, circuit, prop):
+			device = Devices.by_name("ai", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result		
+
+
+	# usage: POST /rest/DEVICE/CIRCUIT
+	#		  post-data: prop1=value1&prop2=value2...
+
+	#@tornado.web.authenticated
+	if not use_output_schema:
+		@schema.validate(input_schema=post_inp_schema, input_example=post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				device = Devices.by_name("ai", circuit)
+				js_dict = json.loads(self.request.body)
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				raise Return({'success': True, 'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'success': False, 'errors': str(E)})
+	else:
+		@schema.validate(output_schema=post_out_schema, output_example=post_out_example, input_schema=post_inp_schema, input_example=post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				device = Devices.by_name("ai", circuit)
+				js_dict = json.loads(self.request.body)
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				raise Return({'success': True, 'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'success': False, 'errors': str(E)})
+	
+	
+	def options(self):
+		self.set_status(204)
+		self.finish()
+		
+class RestAOHandler(UserCookieHelper, APIHandler):
+	get_out_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"dev": {
+				"type": "string",
+				"enum": ["ao"]
+			},
+			"glob_dev_id": {"type": "number"},
+			"circuit": {"type": "string"},
+			"unit": {"type": "string"},
+			"value": {"type": "number"}
+		}
+	}
+	
+	get_out_example = {"value": -0.0001, "unit": "V", "circuit": "1_01", "dev": "ao"}
+
+	post_inp_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"value": { "type": "string"},
+			"mode": {"type": "string"}
+		},
+	}
+	
+	post_inp_example = {"value": 1}
+	
+	post_out_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"result": { "type": "number"},
+			"error": { "type": "array"},
+			"success": { "type": "boolean"}
+		},
+		"required": ["success"]
+	}
+	
+	post_out_example = {"result": 1, "success": True}
+
+	
+	def initialize(self):
+		enable_cors(self)
+		self.set_header("Access-Control-Allow-Origin", "*")
+		self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+		self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
+	# usage: GET /rest/DEVICE/CIRCUIT
+	#		or
+	#		GET /rest/DEVICE/CIRCUIT/PROPERTY
+	
+	if not use_output_schema:
+		@tornado.web.authenticated
+		@schema.validate()
+		def get(self, circuit, prop):
+			device = Devices.by_name("ao", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result
+	else:
+		@tornado.web.authenticated
+		@schema.validate(output_schema=get_out_schema, output_example=get_out_example)
+		def get(self, circuit, prop):
+			device = Devices.by_name("ao", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result		
+
+
+
+	# usage: POST /rest/DEVICE/CIRCUIT
+	#		  post-data: prop1=value1&prop2=value2...
+
+	#@tornado.web.authenticated
+
+	if not use_output_schema:
+		@schema.validate(input_schema=post_inp_schema, input_example=post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				#print "%s-%s-%s" %(dev,circuit,prop)
+				device = Devices.by_name("ao", circuit)
+				#print self.request.body_arguments
+				js_dict = json.loads(self.request.body)
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				#print result
+				raise Return({'success': True, 'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'success': False, 'errors': str(E)})
+	else:
+		@schema.validate(output_schema=post_out_schema, output_example=post_out_example, input_schema=post_inp_schema, input_example=post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				#print "%s-%s-%s" %(dev,circuit,prop)
+				device = Devices.by_name("ao", circuit)
+				#print self.request.body_arguments
+				js_dict = json.loads(self.request.body)
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				#print result
+				raise Return({'success': True, 'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'success': False, 'errors': str(E)})
+		
+	
+	def options(self):
+		# no body
+		self.set_status(204)
+		self.finish()
+		
+
+class RestROHandler(UserCookieHelper, APIHandler):
+	get_out_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"dev": {
+				"type": "string",
+				"enum": ["relay"]
+			},
+			"glob_dev_id": {"type": "number"},
+			"circuit": {"type": "string"},
+			"value": {"type": "number"},
+			"pending": {"type": "boolean"}
+		}
+	}
+	
+	get_out_example = {"value": 0, "pending": False, "circuit": "1_01", "dev": "relay"}
+	
+	post_inp_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"value": { "type": "string"},
+			"mode": {"type": "string"}
+		},
+	}
+	
+	post_inp_example = {"value": 1}
+	
+	post_out_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"result": { "type": "number"},
+			"error": { "type": "array"},
+			"success": { "type": "boolean"}
+		},
+		"required": ["success"]
+	}
+	
+	post_out_example = {"result": 1, "success": True}
+	
+	def initialize(self):
+		enable_cors(self)
+		self.set_header("Access-Control-Allow-Origin", "*")
+		self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+		self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
+	# usage: GET /rest/DEVICE/CIRCUIT
+	#		or
+	#		GET /rest/DEVICE/CIRCUIT/PROPERTY
+
+	
+	if not use_output_schema:
+		@tornado.web.authenticated
+		@schema.validate()
+		def get(self, circuit, prop):
+			device = Devices.by_name("relay", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result
+
+	else:
+		@tornado.web.authenticated
+		@schema.validate(output_schema=get_out_schema, output_example=get_out_example)
+		def get(self, circuit, prop):
+			device = Devices.by_name("relay", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result
+
+	# usage: POST /rest/DEVICE/CIRCUIT
+	#		  post-data: prop1=value1&prop2=value2...
+	#@tornado.web.authenticated
+	if not use_output_schema:
+		@schema.validate(input_schema=post_inp_schema, input_example=post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				device = Devices.by_name("relay", circuit)
+				js_dict = json.loads(self.request.body)
+				#print js_dict
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				raise Return({'success': True, 'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'success': False, 'errors': str(E)})
+	else:
+		@schema.validate(output_schema=post_out_schema, output_example=post_out_example, input_schema=post_inp_schema, input_example=post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				device = Devices.by_name("relay", circuit)
+				js_dict = json.loads(self.request.body)
+				#print js_dict
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				raise Return({'success': True, 'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'success': False, 'errors': str(E)})	
 	
 	def options(self):
 		# no body
@@ -329,101 +1328,200 @@ def call_shell_subprocess(cmd, stdin_data=None, stdin_async=False):
 	raise gen.Return((result, error))
 
 class LoadAllHandler(UserCookieHelper, APIHandler):
+	out_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "array",
+		"items": {
+				"anyOf": [
+					{
+						"type": "object",
+						"properties": {
+							"dev": {
+								"type": "string",
+								"enum": ["input"]
+							},
+							"glob_dev_id": {"type": "number"},
+							"circuit": {"type": "string"},
+							"value": {"type": "number"},
+							"counter": {"type": "number"},
+							"counter_mode": {
+								"type": "string",
+								"enum": ["disabled"]
+							},
+							"debounce": {"type": "number"}
+						},
+						"required": ["dev", "circuit", "value", "counter", "counter_mode", "debounce"]
+					},
+					{
+						"type": "object",
+						"properties": {
+							"dev": {
+								"type": "string",
+								"enum": ["relay"]
+							},
+							"glob_dev_id": {"type": "number"},
+							"circuit": {"type": "string"},
+							"value": {"type": "number"},
+							"pending": {"type": "boolean"}
+						},
+						"required": ["dev", "circuit", "value", "pending"]
+					},
+					{
+						"type": "object",
+						"properties": {
+							"dev": {
+								"type": "string",
+								"enum": ["ai"]
+							},
+							"glob_dev_id": {"type": "number"},
+							"circuit": {"type": "string"},
+							"unit": {"type": "string"},
+							"value": {"type": "number"}
+						},
+						"required": ["dev", "circuit", "unit", "value"]
+					},
+					{
+						"type": "object",
+						"properties": {
+							"dev": {
+								"type": "string",
+								"enum": ["ao"]
+							},
+							"glob_dev_id": {"type": "number"},
+							"circuit": {"type": "string"},
+							"unit": {"type": "string"},
+							"value": {"type": "number"}
+						},
+						"required": ["dev", "circuit", "unit", "value"]
+					},
+					{
+						"type": "object",
+						"properties": {
+							"dev": {
+								"type": "string",
+								"enum": ["led"]
+							},
+							"glob_dev_id": {"type": "number"},
+							"circuit": {"type": "string"},
+							"value": {"type": "number"}
+						},
+						"required": ["dev", "circuit", "value"]
+					},
+					{
+						"type": "object",
+						"properties": {
+							"dev": {
+								"type": "string",
+								"enum": ["wd"]
+							},
+							"glob_dev_id": {"type": "number"},
+							"circuit": {"type": "string"},
+							"value": {"type": "number"},
+							"timeout": {"type": "number"}
+						},
+						"required": ["dev", "circuit", "value", "timeout"]
+					},
+					{
+						"type": "object",
+						"properties": {
+							"dev": {
+								"type": "string",
+								"enum": ["neuron"]
+							},
+							"glob_dev_id": {"type": "number"},
+							"circuit": {"type": "string"},
+							"model": {"type": "string"},
+							"sn": {"type": "string"},
+							"ver2": {"type": "string"}
+						},
+						"required": ["dev", "circuit"]
+					},
+					{
+						"type": "object",
+						"properties": {
+							"dev": {
+								"type": "string",
+								"enum": ["register"]
+							},
+							"glob_dev_id": {"type": "number"},
+							"circuit": {"type": "string"},
+							"value": {"type": "number"}
+						},
+						"required": ["dev", "circuit", "value"]
+					}
+				]
+			},
+	}
+		
+	out_example = [{"circuit": "1_01", "debounce": 50, "counter": 0, "value": 0, "dev": "input", "counter_mode": "disabled"},
+				   {"circuit": "1_02", "debounce": 50, "counter": 0, "value": 0, "dev": "input", "counter_mode": "disabled"},
+				   {"circuit": "1_03", "debounce": 50, "counter": 0, "value": 0, "dev": "input", "counter_mode": "disabled"},
+				   {"circuit": "1_04", "debounce": 50, "counter": 0, "value": 0, "dev": "input", "counter_mode": "disabled"},
+				   {"value": 0, "pending": False, "circuit": "1_01", "dev": "relay"},
+				   {"value": 0, "pending": False, "circuit": "1_02", "dev": "relay"},
+				   {"value": 0, "pending": False, "circuit": "1_03", "dev": "relay"},
+				   {"value": 0, "pending": False, "circuit": "1_04", "dev": "relay"},
+				   {"value": 0.004243475302661791, "unit": "V", "circuit": "1_01", "dev": "ai"},
+				   {"value": 0.006859985867523581, "unit": "V", "circuit": "1_02", "dev": "ai"},
+				   {"value": -0.0001, "unit": "V", "circuit": "1_01", "dev": "ao"}]
+	
 	def initialize(self):
 		enable_cors(self)
 		self.set_header("Access-Control-Allow-Origin", "*")
 		self.set_header("Access-Control-Allow-Headers", "x-requested-with")
 		self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
 
+
 	#@tornado.gen.coroutine
 	#@tornado.web.authenticated
-	@schema.validate(output_schema = {
-									"$schema": "http://json-schema.org/draft-04/schema#",
-									"title": "Neuron_Instruction",
-									"type": "array",
-									"items": {
-											"anyOf": [
-												{
-													"type": "object",
-													"properties": {
-														"dev": {
-															"type": "string",
-															"enum": ["input"]
-														},
-														"circuit": {"type": "string"},
-														"value": {"type": "number"},
-														"counter": {"type": "number"},
-														"counter_mode": {
-															"type": "string",
-															"enum": ["disabled"]
-														},
-														"debounce": {"type": "number"}
-													},
-													"required": ["dev", "circuit", "value", "counter", "counter_mode", "debounce"]
-												},
-												{
-													"type": "object",
-													"properties": {
-														"dev": {
-															"type": "string",
-															"enum": ["relay"]
-														},
-														"circuit": {"type": "string"},
-														"value": {"type": "number"},
-														"pending": {"type": "boolean"}
-													},
-													"required": ["dev", "circuit", "value", "pending"]
-												},
-												{
-													"type": "object",
-													"properties": {
-														"dev": {
-															"type": "string",
-															"enum": ["ai"]
-														},
-														"circuit": {"type": "string"},
-														"unit": {"type": "string"},
-														"value": {"type": "number"}
-													},
-													"required": ["dev", "circuit", "unit", "value"]
-												},
-												{
-													"type": "object",
-													"properties": {
-														"dev": {
-															"type": "string",
-															"enum": ["ao"]
-														},
-														"circuit": {"type": "string"},
-														"unit": {"type": "string"},
-														"value": {"type": "number"}
-													},
-													"required": ["dev", "circuit", "unit", "value"]
-												}
-											]
-										},
-									},
-					 output_example = [{"circuit": "1_01", "debounce": 50, "counter": 0, "value": 0, "dev": "input", "counter_mode": "disabled"},
-									   {"circuit": "1_02", "debounce": 50, "counter": 0, "value": 0, "dev": "input", "counter_mode": "disabled"},
-									   {"circuit": "1_03", "debounce": 50, "counter": 0, "value": 0, "dev": "input", "counter_mode": "disabled"},
-									   {"circuit": "1_04", "debounce": 50, "counter": 0, "value": 0, "dev": "input", "counter_mode": "disabled"},
-									   {"value": 0, "pending": False, "circuit": "1_01", "dev": "relay"},
-									   {"value": 0, "pending": False, "circuit": "1_02", "dev": "relay"},
-									   {"value": 0, "pending": False, "circuit": "1_03", "dev": "relay"},
-									   {"value": 0, "pending": False, "circuit": "1_04", "dev": "relay"},
-									   {"value": 0.004243475302661791, "unit": "V", "circuit": "1_01", "dev": "ai"},
-									   {"value": 0.006859985867523581, "unit": "V", "circuit": "1_02", "dev": "ai"},
-									   {"value": -0.0001, "unit": "V", "circuit": "1_01", "dev": "ao"}])
-	def get(self):
-		"""aaa"""
-		print Devices.by_int(INPUT)
-		result = map(lambda dev: dev.full(), Devices.by_int(INPUT))
-		result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
-		result += map(lambda dev: dev.full(), Devices.by_int(AI))
-		result += map(lambda dev: dev.full(), Devices.by_int(AO))
-		result += map(lambda dev: dev.full(), Devices.by_int(SENSOR))
-		#self.write(json.dumps(result))
-		return result
+	if use_legacy_api:
+		def get(self):
+			"""This function returns a heterogeneous list of all devices exposed via the REST API"""
+			#print Devices.by_int(INPUT)
+			result = map(lambda dev: dev.full(), Devices.by_int(INPUT))
+			result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
+			result += map(lambda dev: dev.full(), Devices.by_int(AI))
+			result += map(lambda dev: dev.full(), Devices.by_int(AO))
+			result += map(lambda dev: dev.full(), Devices.by_int(SENSOR))
+			result += map(lambda dev: dev.full(), Devices.by_int(LED))
+			result += map(lambda dev: dev.full(), Devices.by_int(WATCHDOG))
+			result += map(lambda dev: dev.full(), Devices.by_int(NEURON))
+			result += map(lambda dev: dev.full(), Devices.by_int(UART))
+			result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
+			self.write(json.dumps(result))
+	elif not use_output_schema:
+		@schema.validate()
+		def get(self):
+			"""This function returns a heterogeneous list of all devices exposed via the REST API"""
+			#print Devices.by_int(INPUT)
+			result = map(lambda dev: dev.full(), Devices.by_int(INPUT))
+			result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
+			result += map(lambda dev: dev.full(), Devices.by_int(AI))
+			result += map(lambda dev: dev.full(), Devices.by_int(AO))
+			result += map(lambda dev: dev.full(), Devices.by_int(SENSOR))
+			result += map(lambda dev: dev.full(), Devices.by_int(LED))
+			result += map(lambda dev: dev.full(), Devices.by_int(WATCHDOG))
+			result += map(lambda dev: dev.full(), Devices.by_int(NEURON))
+			result += map(lambda dev: dev.full(), Devices.by_int(UART))
+			result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
+			return result
+	else:
+		@schema.validate(output_schema=out_schema, output_example=out_example)
+		def get(self):
+			"""This function returns a heterogeneous list of all devices exposed via the REST API"""
+			#print Devices.by_int(INPUT)
+			result = map(lambda dev: dev.full(), Devices.by_int(INPUT))
+			result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
+			result += map(lambda dev: dev.full(), Devices.by_int(AI))
+			result += map(lambda dev: dev.full(), Devices.by_int(AO))
+			result += map(lambda dev: dev.full(), Devices.by_int(SENSOR))
+			result += map(lambda dev: dev.full(), Devices.by_int(LED))
+			result += map(lambda dev: dev.full(), Devices.by_int(WATCHDOG))
+			result += map(lambda dev: dev.full(), Devices.by_int(NEURON))
+			result += map(lambda dev: dev.full(), Devices.by_int(UART))
+			result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
+			return result
 	
 	def options(self):
 		# no body
@@ -431,21 +1529,7 @@ class LoadAllHandler(UserCookieHelper, APIHandler):
 		self.finish()
 		
 class JSONHandler(APIHandler):
-		def initialize(self):
-			#enable_cors(self)
-			self.set_header("Content-Type", "application/json")
-			self.set_header("Access-Control-Allow-Origin", "*")
-			self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-			self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-			
-		
-		def options(self):
-			# no body
-			self.set_status(204)
-			self.finish()
-		
-		@schema.validate(
-			input_schema={
+		inp_schema = {
 				"$schema": "http://json-schema.org/draft-04/schema#",
 				"title": "Neuron_Instruction",
 				"type": "object",
@@ -455,12 +1539,9 @@ class JSONHandler(APIHandler):
 						"items": {
 							"type": "object",
 							"properties": {
-								"id": {
+								"dev_id": {
 									"type": "number"
 								}, 
-								"dev_type": {
-									"type": "number"
-								},
 								"command": {
 									"type": "object",
 									"oneOf": [
@@ -514,7 +1595,7 @@ class JSONHandler(APIHandler):
 								},
 													
 							},
-							"required": ["id", "dev_type", "command"]
+							"required": ["dev_id", "command"]
 						},
 						"minItems": 1,
 						"uniqueItems": True 
@@ -524,9 +1605,6 @@ class JSONHandler(APIHandler):
 						"items": {
 							"type": "object",
 							"properties": {
-								"dev_type": {
-									"type": "string"
-								},
 								"dev_id": {
 									"type": "number"
 								},
@@ -534,11 +1612,14 @@ class JSONHandler(APIHandler):
 									"type": "string",
 									"enum": ["Name", "Features", "SWVersion", "HWVersion", "Register", "DO", "DI", "AO", "AI", "RO"]
 								},
-								"field_index": {
+								"major_index": {
+									"type": "number"
+								},
+								"minor_index": {
 									"type": "number"
 								}
 							},
-							"required": ["dev_id", "dev_type", "field"]
+							"required": ["dev_id", "field"]
 						},							
 						"minItems": 1,
 						"uniqueItems": True 
@@ -547,13 +1628,10 @@ class JSONHandler(APIHandler):
 						"type": "boolean",
 						"enum": [True]
 					}
-				}
-						
-			},
-			input_example={
-							
-			},
-			output_schema={
+				}		
+		}
+		inp_example = {}
+		out_schema = {
 				"$schema": "http://json-schema.org/draft-04/schema#",
 				"title": "Neuron_Reply",
 				"type": "object",
@@ -563,12 +1641,9 @@ class JSONHandler(APIHandler):
 						"items": {
 							"type": "object",
 							"properties": {
-								"id": {
+								"dev_id": {
 									"type": "number"
 								}, 
-								"dev_type": {
-									"type": "number"
-								},
 								"command": {
 									"type": "object",
 									"oneOf": [
@@ -593,7 +1668,10 @@ class JSONHandler(APIHandler):
 													"type": "string",
 													"enum": ["Register", "DO", "DI", "AO", "AI", "RO"]
 												},
-												"field_index": {
+												"major_index": {
+													"type": "number"
+												},
+												"minor_index": {
 													"type": "number"
 												},
 												"value": {
@@ -627,7 +1705,7 @@ class JSONHandler(APIHandler):
 									"type": "boolean"
 								}					
 							},
-							"required": ["id", "dev_type", "command", "performed"]
+							"required": ["dev_id", "command", "performed"]
 						},
 						"minItems": 1,
 						"uniqueItems": True 
@@ -936,14 +2014,62 @@ class JSONHandler(APIHandler):
 						}
 					}
 				
-			},
-			output_example={
-				
-			},
-		)
-		def post(self):
-			return {"message":"abcd"}
+			}
+		out_example = {}
 		
+				
+		def initialize(self):
+			#enable_cors(self)
+			self.set_header("Content-Type", "application/json")
+			self.set_header("Access-Control-Allow-Origin", "*")
+			self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+			self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+		
+		def options(self):
+			# no body
+			self.set_status(204)
+			self.finish()
+			
+		if use_output_schema:
+			@schema.validate(
+				input_schema=inp_schema,
+				input_example=inp_example,
+				output_schema=out_schema,
+				output_example=out_example,
+			)
+			def post(self):
+				return {"message":"abcd"}
+		else:
+			def post(self):
+				return {"message":"abcd"}
+
+
+class UniPiQueryService(soaphandler.SoapHandler):
+	""" Service that return an list with Hello and World str elements, not uses input parameters """
+	@webservice(_params=None,_returns=xmltypes.Array(xmltypes.String))
+	def setValueByIndex(self):#, feature, major_index, minor_index,  ):
+		return ["Hello","World"]
+	
+	def sendValueByIndex(self, feature, major_index, minor_index):
+		return ["a","a"]
+	
+	def setValueByCircuit(self, device_type):
+		return [""]
+
+class UniPiCommandService(soaphandler.SoapHandler):
+	""" Service that return an list with Hello and World str elements, not uses input parameters """
+	@webservice(_params=None,_returns=xmltypes.Array(xmltypes.String))
+	def sayHello(self):
+		return ["Hello","World"]
+
+
+class UniPiProbeService(soaphandler.SoapHandler):
+	""" Service that return an list with Hello and World str elements, not uses input parameters """
+	@webservice(_params=None,_returns=xmltypes.Array(xmltypes.String))
+	def sayHello(self):
+		return ["Hello","World"]
+
+
 # callback generators for devents
 def gener_status_cb(mainloop, modbus_context):
 
@@ -997,22 +2123,6 @@ def main():
 
 	config.read_eprom_config()
 
-	Config.add_section('MAIN')
-	path = '/etc/evok.conf'
-	# set config file name based on eprom version and command line option --path1 --path2
-	# if config.globals['version1']:
-	#	 path1 = options.as_dict()['path1']
-	#	 if (path1 != '') and (os.path.isfile(path1)):
-	#		 path = path1
-	# elif config.globals['version2']:
-	#	 path2 = options.as_dict()['path2']
-	#	 if (path2 != '') and (os.path.isfile(path2)):
-	#		 path = path2
-
-	if not os.path.isfile(path):
-		path = os.path.dirname(os.path.realpath(__file__)) + '/evok.conf'
-
-	Config.read(path)
 	log_file = Config.getstringdef("MAIN", "log_file", "/var/log/evok.log")
 	log_level = Config.getstringdef("MAIN", "log_level", "ERROR").upper()
 
@@ -1023,12 +2133,14 @@ def main():
 	filelog_handler.setLevel(log_level)
 	logger.addHandler(filelog_handler)
 
-	logger.info("Starting using config file %s", path)
+	logger.info("Starting using config file %s", config_path)
 
 	webname = Config.getstringdef("MAIN", "webname", "unipi")
 	staticfiles = Config.getstringdef("MAIN", "staticfiles", "/var/www/evok")
 	cookie_secret = Config.getstringdef("MAIN", "secret", "ut5kB3hhf6VmZCujXGQ5ZHb1EAfiXHcy")
-	hw_dict = config.HWDict('./etc/hw_definitions/')
+	hw_dict = config.HWDict('/etc/hw_definitions/')
+
+
 	pw = Config.getstringdef("MAIN", "password", "")
 	if pw: userCookieHelper._passwords.append(pw)
 	pw = Config.getstringdef("MAIN", "rpcpassword", "")
@@ -1045,22 +2157,43 @@ def main():
 
 	modbus_address = Config.getstringdef("MAIN", "modbus_address", '')
 	modbus_port = Config.getintdef("MAIN", "modbus_port", 0)
+
 	if options.as_dict()['modbus_port'] != -1:
 		modbus_port = options.as_dict()['modbus_port'] # use command-line option instead of config option
-
-	app_routes = [
-			#(r"/", web.RedirectHandler, {"url": "http://%s/" % webname }),
-			(r"/auth/login/", LoginHandler),
-			(r"/auth/logout/", LogoutHandler),
-			(r"/rpc", rpc_handler.Handler),
-			(r"/config", ConfigHandler),
-			(r"/config/cmd", RemoteCMDHandler),
-			(r"/json", JSONHandler),
-			(r"/rest/all/?", LoadAllHandler),
-			(r"/rest/([^/]+)/([^/]+)/?([^/]+)?/?", RestHandler),
-			(r"/ws", WsHandler),
-			]
 	
+	app_routes = []
+	if use_legacy_api:
+		app_routes = [
+				(r"/auth/login/", LoginHandler),
+				(r"/auth/logout/", LogoutHandler),
+				(r"/rpc", rpc_handler.Handler),
+				(r"/config", ConfigHandler),
+				(r"/config/cmd", RemoteCMDHandler),
+				(r"/json", JSONHandler),
+				(r"/rest/all/?", LoadAllHandler),
+				(r"/rest/([^/]+)/([^/]+)/?([^/]+)?/?", LegacyRestHandler),
+				(r"/ws", WsHandler),
+				]
+	else:
+		app_routes = [
+				(r"/auth/login/", LoginHandler),
+				(r"/auth/logout/", LogoutHandler),
+				(r"/rpc", rpc_handler.Handler),
+				(r"/config", ConfigHandler),
+				(r"/config/cmd", RemoteCMDHandler),
+				(r"/json", JSONHandler),
+				(r"/rest/all/?", LoadAllHandler),
+				(r"/rest/input/?([^/]+)/?([^/]+)?/?", RestDIHandler),
+				(r"/rest/di/?([^/]+)/?([^/]+)?/?", RestDIHandler),
+				(r"/rest/output/?([^/]+)/?([^/]+)?/?", RestDOHandler),
+				(r"/rest/do/?([^/]+)/?([^/]+)?/?", RestDOHandler),
+				(r"/rest/ai/?([^/]+)/?([^/]+)?/?", RestAIHandler),
+				(r"/rest/ao/?([^/]+)/?([^/]+)?/?", RestAOHandler),
+				(r"/rest/relay/?([^/]+)/?([^/]+)?/?", RestROHandler),
+				(r"/rest/led/?([^/]+)/?([^/]+)?/?", RestLEDHandler),
+				(r"/rest/wd/?([^/]+)/?([^/]+)?/?", RestWatchdogHandler),
+				(r"/ws", WsHandler),
+				]
 	
 	app = tornado.web.Application(
 		handlers=app_routes,
@@ -1068,12 +2201,13 @@ def main():
 		cookie_secret=cookie_secret
 	)
 	docs = get_api_docs(app_routes)
-	print docs
+	#print docs
 	try:
 		with open('./API_docs.md', "w") as api_out:
 			api_out.writelines(docs)
 	except Exception, e:
 		pass
+
 
 
 	#app.add_handlers(r'%s.*' % webname , [(r"/", IndexHandler, dict(staticfiles=staticfiles))])
@@ -1096,6 +2230,15 @@ def main():
 	else:
 		modbus_context = None
 
+	soapServices = [
+		('UniPiQueryService', UniPiQueryService),
+		('UniPiCommandService', UniPiCommandService),
+		('UniPiProbeService', UniPiProbeService)		
+				]
+	soapApp = webservices.WebService(soapServices)
+	soapServer = tornado.httpserver.HTTPServer(soapApp)
+	soapServer.listen(8081)
+
 	mainLoop = tornado.ioloop.IOLoop.instance()
 
 	#### prepare hardware according to config #####
@@ -1103,7 +2246,7 @@ def main():
 	devents.register_config_cb(gener_config_cb(mainLoop, modbus_context))
 	devents.register_status_cb(gener_status_cb(mainLoop, modbus_context))
 	# create hw devices
-	config.create_devices(Config)
+	config.create_devices(Config, hw_dict)
 	'''
 	""" Setting the '_server' attribute if not set - simple link to mainloop"""
 	for (srv, urlspecs) in app.handlers:
@@ -1114,10 +2257,14 @@ def main():
 				urlspec.handler_class._server = mainLoop
 	'''
 	# switch buses to async mode, start processes, plan some actions
-	for bustype in (I2CBUS, GPIOBUS, ADCHIP, OWBUS, NEURON):
+	for bustype in (I2CBUS, GPIOBUS, OWBUS):
+		for device in Devices.by_int(bustype):
+			device.bus_driver.switch_to_async(mainLoop)
+
+	for bustype in (ADCHIP, NEURON):
 		for device in Devices.by_int(bustype):
 			device.switch_to_async(mainLoop)
-
+			
 	for neuron in Devices.by_int(NEURON):
 		if neuron.scan_enabled:
 			neuron.start_scanning()
@@ -1129,9 +2276,9 @@ def main():
 	#gracefull shutdown
 	def shutdown():
 		for bus in Devices.by_int(I2CBUS):
-			bus.switch_to_sync()
+			bus.bus_driver.switch_to_sync()
 		for bus in Devices.by_int(GPIOBUS):
-			bus.switch_to_sync()
+			bus.bus_driver.switch_to_sync()
 		logger.info("Shutting down")
 		#try: httpServer.stop()
 		#except: pass

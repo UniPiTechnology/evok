@@ -197,13 +197,12 @@ function update_values() {
         dataType: 'json',
         success: function (data) {
         	alert('WHEE2');
-            data = sortResults(data);
+            //data = sortResults(data);
             $.each(data, function (name, msg) {
                 SyncDevice(msg);
             });
         },
         error: function (data) {
-        	alert('BOO2');
         }
     });
 }
@@ -269,18 +268,16 @@ function makePostRequest(action, params) {
     $.ajax({
     	crossDomain: true,
     	url: 'http://' + $(location).attr('hostname') + ':8080/rest/' + action,
-        //dataType:'json',
+    	//dataType: "application/json",
         type: 'POST',
-        data: params || null,
-        //crossDomain: false,
+        data: params,
+        //data: JSON.stringify(params),
         success: function (data) {
-        	
-        	alert('WHEE');
         },
         error: function (data) {
-        	alert('BOOO');
         }
     });
+    /*
     $.ajax({
     	crossDomain: true,
     	url: 'http://' + $(location).attr('hostname') + ':8080/json',
@@ -288,10 +285,9 @@ function makePostRequest(action, params) {
         type: 'POST',
         data: JSON.stringify({"commands":[]}),
         success: function (data) {
-        	alert('WHEE');
         },
         error: function (data) {
-        	alert('BOOO');
         }
     });
+    */
 }
