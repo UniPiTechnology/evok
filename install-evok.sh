@@ -70,8 +70,8 @@ enable_ic2() {
     if kernelget 3.18.5 ;then
         echo "Using kernel newer than 3.18.5"
         if ! grep -q 'device_tree_param=i2c1=on' /boot/config.txt ;then
-            echo -e "$(cat /boot/config.txt) \n\n#Enable i2c bus 1\ndevice_tree_param=i2c1=on" > /boot/config.txt
-        fi
+            echo -e "$(cat /boot/config.txt) \n\n#Enable i2c bus 1\ndevice_tree_param=i2c1=on\ndtoverlay=i2c-rtc,mcp7941x\ndtoverlay=unipiee\ndtoverlay=neuronee\n" > /boot/config.txt
+		fi
     else #comment out blacklisted i2c on kernel < 3.18.5
         echo "Using kernel older than 3.18.5"
         if ! grep -q '#blacklist i2c-bcm2708' /etc/modprobe.d/raspi-blacklist.conf ;then
@@ -326,6 +326,8 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 echo "Installing evok..."
+cp -r boot/overlays /boot/
+
 enable_ic2
 
 cp -r etc/modprobe.d /etc/
@@ -336,7 +338,7 @@ apt-get install -y python-ow python-pip make python-dev nginx
 pip install tornado toro jsonrpclib pymodbus pyyaml tornado_json tornado-webservices
 
 cp -r etc/hw_definitions /etc/
-cp -r etc/nginx/sites-enabled /etc/
+cp -r etc/nginx/sites-enabled /etc/nginx/
 
 #detect version of UniPi
 #TODO: read from EPROM data
