@@ -16,4 +16,4 @@ Restart=always
 
 [Install]
 WantedBy=multi-user.target
-Alias=pigpio.service
+#Alias=pigpio.service

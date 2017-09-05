@@ -144,7 +144,7 @@ install_unipi_1() {
         cp etc/systemd/system/pigpio.service /etc/systemd/system/
         cp etc/systemd/system/evok.service /etc/systemd/system/
         systemctl daemon-reload
-        systemctl enable pigpiod
+        systemctl enable pigpio
         systemctl enable evok
     else
         cp etc/init.d/evok /etc/init.d/
@@ -221,7 +221,7 @@ install_unipi_lite_1() {
         cp etc/systemd/system/pigpio.service /etc/systemd/system/
         cp etc/systemd/system/evok.service /etc/systemd/system/
         systemctl daemon-reload
-        systemctl enable pigpiod
+        systemctl enable pigpio
         systemctl enable evok
     else
         cp etc/init.d/evok /etc/init.d/

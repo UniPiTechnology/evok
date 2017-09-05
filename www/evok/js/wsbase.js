@@ -116,7 +116,7 @@ function SyncDevice(msg) {
 
         //create structure
         div.appendChild(label);
-        if (device == "input") { div.appendChild(cfg_el); div.appendChild(cnt_el);}
+        // if (device == "input") { div.appendChild(cfg_el); div.appendChild(cnt_el);}
         div.appendChild(main_el);
         li.appendChild(div);
 
@@ -179,8 +179,8 @@ function SyncDevice(msg) {
         //inputs
         else if (device == 'input') {
             //if (msg.counter_mode != "disabled") {
-                var counter_el = document.getElementById(ns + "_counter");
-                counter_el.innerHTML = counter;
+                //var counter_el = document.getElementById(ns + "_counter");
+                //counter_el.innerHTML = counter;
             //}
             main_el.innerHTML = (value == 1) ? "On" : "Off";
         }
