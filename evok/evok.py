@@ -126,7 +126,7 @@ class WsHandler(websocket.WebSocketHandler):
 				cmd = None
 			#get FULL state of each IO
 			if cmd == "all":
-	                result = {}
+				result = {}
 				devices = [INPUT, RELAY, AI, AO, SENSOR]
 				for dev in devices:
 					result += map(lambda dev: dev.full(), Devices.by_int(dev))
