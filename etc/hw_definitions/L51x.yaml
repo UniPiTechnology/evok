@@ -63,6 +63,7 @@ modbus_features:
     - type        : LED
       major_group : 1
       count       : 4
+      val_coil    : 8
       val_reg     : 20
     - type        : WD
       count       : 1
@@ -133,7 +134,7 @@ modbus_features:
       toggle_reg  : 1226
     - type        : RO
       major_group : 3
-      count       : 6
+      count       : 5
       val_reg     : 201
       modes       :
         - Simple
