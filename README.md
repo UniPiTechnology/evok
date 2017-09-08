@@ -4,7 +4,7 @@ Evok is the primary WEB API for the [NEURON] and [UniPi 1.1]. It provides a REST
 
 _**Support for Neuron is available only in the master branch (for now), not in the legacy release version. Please see the [intructions below]!**_
  
-Evok is still very much in active development, so any testing, contributions or feedback is welcome and appreciated.
+Evok is still very much in active development, so any testing, contributions and feedback is welcome and appreciated.
 
 Access to GPIOs is done using the fantastic [PIGPIO] library. Make sure to install it first before use.
 
