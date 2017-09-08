@@ -1,8 +1,5 @@
 ---
 type: L50
-board_features:
-1wire_features:
-i2c_features:
 modbus_features:
     - f_index     : 0
       type        : AO
@@ -159,3 +156,8 @@ modbus_features:
       major_group : 3
       val_reg     : 202
       timeout_reg : 1208
+    - f_index     : 16
+      type        : REGISTER
+      major_group : 1
+      count       : 21
+      val_reg     : 0

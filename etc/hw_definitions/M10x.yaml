@@ -1,8 +1,5 @@
 ---
 type: M10
-board_features:
-1wire_features:
-i2c_features:
 modbus_features:
     - f_index     : 0
       type        : AO
@@ -106,3 +103,8 @@ modbus_features:
       count       : 1
       val_reg     : 102
       timeout_reg : 1108
+    - f_index     : 10
+      type        : REGISTER
+      major_group : 1
+      count       : 21
+      val_reg     : 0

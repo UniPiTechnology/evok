@@ -17,14 +17,18 @@ from tornado.ioloop import IOLoop
 from modbusclient_tornado import ModbusClientProtocol, StartClient
 from pymodbus.pdu import ExceptionResponse
 
+from pymodbus.exceptions import ConnectionException, ModbusIOException
+from pymodbus.register_read_message import ReadHoldingRegistersResponse
+
+import modbusclient_rs485
+
 import devents
 from devices import *
-import config
 #from spiarm import ProxyRegister
 
 from log import *
 
-import config
+import config 
 
 class ENoBoard(Exception):
 	pass
@@ -59,10 +63,11 @@ basereg1000 = (
 
 
 class Neuron(object):
-	def __init__(self, circuit, modbus_server, modbus_port, scan_freq, scan_enabled, hw_dict, dev_id=0):
+	def __init__(self, circuit, Config, modbus_server, modbus_port, scan_freq, scan_enabled, hw_dict, dev_id=0):
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.hw_dict = hw_dict
+		self.Config = Config
 		self.modbus_server = modbus_server
 		self.modbus_port = modbus_port
 		self.do_scanning = False
@@ -90,19 +95,12 @@ class Neuron(object):
 		for i in (1, 2, 3):
 			try:
 				versions = yield self.client.read_input_registers(1000, 10, unit=i)
-				#logger.debug(type(versions))
-				#logger.debug(versions.registers)
 				if isinstance(versions, ExceptionResponse):
 					raise ENoBoard("bad request")
-				#print "bbb %d" % i
-				board = Board(i, self, versions.registers)
+				board = Board(self.Config, i, self, versions.registers)
 				data = yield self.client.read_input_registers(0, count=board.ndataregs, unit=i)
 				configs = yield self.client.read_input_registers(1000, count=board.nconfigregs, unit=i)
-				#print "ccc %d" % i
-				#print data.registers
-				#print configs.registers
 				board.parse_definition(data.registers, configs.registers, self.hw_dict, i)
-				#print "aaa %d" % i
 				self.boards.append(board)
 			except ENoBoard:
 				print "NOBOARD"
@@ -145,12 +143,17 @@ class Neuron(object):
 			self.is_scanning = False
 
 class UartNeuron(object):
-	def __init__(self, circuit, scan_freq, scan_enabled, hw_dict, dev_id=0):
+	def __init__(self, circuit, Config, port, scan_freq, scan_enabled, hw_dict, baud_rate=19200, parity='N', stopbits=1, dev_id=0):
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.hw_dict = hw_dict
+		self.port = port
+		self.Config = Config
 		self.do_scanning = False
 		self.is_scanning = False
+		self.baud_rate = baud_rate
+		self.parity = parity
+		self.stopbits = stopbits
 		if scan_freq == 0:
 			self.scan_interval = 0
 		else:
@@ -160,9 +163,11 @@ class UartNeuron(object):
 
 	def switch_to_async(self, loop):
 		self.loop = loop
-		self.client = ModbusClientProtocol()
+		self.client = modbusclient_rs485.AsyncModbusSerialClient(method='rtu', stopbits=self.stopbits, bytesize=8, parity=self.parity, baudrate=self.baud_rate, timeout=5, port=self.port)
+		self.client.connect()
+		#self.client = AsyncModbusSerialClient(port="/dev/ttyNS0")
 		# start modus/tcp modbusclient_rs485. On connect call self.readboards
-		loop.add_callback(lambda: StartClient(self.client, self.modbus_server, self.modbus_port, self.readboards))
+		#loop.add_callback(lambda: StartClient(self.client, self.modbus_server, self.modbus_port, self.readboards))
 
 	@gen.coroutine
 	def readboards(self):
@@ -173,15 +178,15 @@ class UartNeuron(object):
 		self.boards = list()
 		for i in (1, 2, 3):
 			try:
-				versions = yield self.client.read_input_registers(1000, 10, unit=i)
-				#logger.debug(type(versions))
-				#logger.debug(versions.registers)
+				versions = self.client.read_holding_registers(1000, 10, unit=i)
+				logger.debug(type(versions))
+				logger.debug(versions.registers)
 				if isinstance(versions, ExceptionResponse):
 					raise ENoBoard("bad request")
 				#print "bbb %d" % i
 				board = Board(i, self, versions.registers)
-				data = yield self.client.read_input_registers(0, count=board.ndataregs, unit=i)
-				configs = yield self.client.read_input_registers(1000, count=board.nconfigregs, unit=i)
+				data = self.client.read_holding_registers(0, count=board.ndataregs, unit=i)
+				configs = self.client.read_holding_registers(1000, count=board.nconfigregs, unit=i)
 				#print "ccc %d" % i
 				#print data.registers
 				#print configs.registers
@@ -242,8 +247,9 @@ class Proxy(object):
 
 
 class Board(object):
-	def __init__(self, circuit, neuron, versions, dev_id=0):
+	def __init__(self, Config, circuit, neuron, versions, dev_id=0):
 		self.dev_id = dev_id
+		self.Config = Config
 		self.circuit = circuit
 		self.neuron = neuron
 		self.sw = versions[0]
@@ -376,7 +382,7 @@ class Board(object):
 							while counter < max_count:
 								board_val_reg = m_feature['val_reg'] - (100 * (board_id - 1))
 								if m_feature.has_key('cal_reg'):
-									_ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, regcal=m_feature['cal_reg'] + 1)
+									_ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, regcal=m_feature['cal_reg'] + 1, regmode=m_feature['mode_reg'], reg_res=m_feature['res_val_reg'], modes=m_feature['modes'])
 								else:
 									_ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter)
 								if self.datadeps.has_key(board_val_reg + counter):
@@ -402,9 +408,7 @@ class Board(object):
 								Devices.register_device(AI, _ai)
 								counter+=1
 								#print counter
-						elif m_feature['type'] == 'REGISTER' and m_feature['major_group'] == board_id:
-							#print m_feature['type']
-							#print m_feature['count']
+						elif m_feature['type'] == 'REGISTER' and m_feature['major_group'] == board_id and self.Config.getbooldef("MAIN", "allow_register_access", False):
 							while counter < max_count:
 								board_val_reg = m_feature['val_reg'] - (100 * (board_id - 1))
 								_reg = Register("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg + counter, dev_id=0)
@@ -696,19 +700,19 @@ class Input():
 		self.circuit = circuit
 		self.arm = arm
 		self.bitmask = mask
-		self.regcounter = regcounter
-		self.regdebounce = regdebounce
+		self.counterreg = regcounter
+		self.debouncereg = regdebounce
 		self.regvalue = lambda: arm.data[reg]
 		self.regcountervalue = self.regdebouncevalue = lambda: None
 		if not (regcounter is None): self.regcountervalue = lambda: arm.data[regcounter] + (
 			arm.data[regcounter + 1] << 16)
-		if not (regdebounce is None): self.regdebounce = lambda: arm.configs[regdebounce]
+		if not (regdebounce is None): self.regdebouncevalue = lambda: arm.configs[regdebounce - 1000]
 		self.counter_mode = "disabled"
 
 	@property
 	def debounce(self):
 		try:
-			return self.regdebounce()
+			return self.regdebouncevalue()
 		except:
 			pass
 		return 0
@@ -740,12 +744,13 @@ class Input():
 	@gen.coroutine
 	def set(self, debounce=None, counter=None):
 		if not (debounce is None):
-			if not (self._regdebounce is None):
-				self.arm.write_regs(self.regdebounce.regnum, debounce, unit=self.arm.circuit)
+			if not (self.debouncereg is None):
+				print [self.debouncereg, debounce, self.arm.circuit]
+				self.arm.neuron.client.write_register(self.debouncereg, int(float(debounce)), unit=self.arm.circuit)
 				#devents.config(self)
 		if not (counter is None):
-			if not (self._regcounter is None):
-				self.arm.write_regs(self.regcounter.regnum, (0, 0), unit=self.arm.circuit)
+			if not (self.counterreg is None):
+				self.arm.neuron.client.write_register(self.counterreg, int(float(counter)), unit=self.arm.circuit)
 				#devents.status(self)
 
 	def get(self):
@@ -785,7 +790,7 @@ class Uart():
 	@gen.coroutine
 	def set(self, conf=None):
 		if not (conf is None):
-			self.arm.write_regs(self.valreg, conf, unit=self.arm.circuit)
+			self.arm.neuron.client.write_register(self.valreg, conf, unit=self.arm.circuit)
 
 	def get(self):
 		""" Returns ( value, debounce )
@@ -805,13 +810,17 @@ def uint16_to_int(inp):
 
 
 class AnalogOutput():
-	def __init__(self, circuit, arm, reg, regcal=-1, dev_id=0):
+	def __init__(self, circuit, arm, reg, regcal=-1, regmode=-1, reg_res=-1, dev_id=0, modes=['Voltage']):
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.reg = reg
 		self.regvalue = lambda: arm.data[reg]
 		self.regcal = regcal
+		self.regmode = regmode
+		self.reg_res = reg_res
+		self.modes = modes
 		self.arm = arm
+		
 		if regcal >= 0:
 			self.offset = (uint16_to_int(arm.configs[regcal - 1000 + 1]) / 10000.0)
 		else:
@@ -845,7 +854,7 @@ class AnalogOutput():
 
 	def full(self):
 		return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value,
-				'unit': unit_names[VOLT] if self.is_voltage() else unit_names[AMPERE]}
+				'unit': unit_names[VOLT] if self.is_voltage() else unit_names[AMPERE], 'modes': self.modes}
 
 	def simple(self):
 		return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value}

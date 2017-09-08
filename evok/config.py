@@ -171,6 +171,7 @@ def hexint(value):
 
 
 def create_devices(Config, hw_dict):
+	dev_counter = 0
 	Config.hw_dict = hw_dict
 	for section in Config.sections():
 		# split section name ITEM123 or ITEM_123 or ITEM-123 into device=ITEM and circuit=123
@@ -315,21 +316,33 @@ def create_devices(Config, hw_dict):
 					ai = unipig.AnalogInput(circuit, mcai, channel, bits=bits, gain=gain,
 											continuous=False, interval=interval, correction=correction, dev_id=0)
 				Devices.register_device(AI, ai)
-			elif devclass == 'NEURON' or devclass == 'HWDEF':
+			elif devclass == 'NEURON':
 				from neuron import Neuron
+				dev_counter += 1
 				modbus_server =  Config.getstringdef(section, "modbus_server", "127.0.0.1")
 				modbus_port   =  Config.getintdef(section, "modbus_port", 502)
 				scanfreq = Config.getfloatdef(section, "scan_frequency", 1)
 				scan_enabled = Config.getbooldef(section, "scan_enabled", True)
-				#print hw_dict.definitions
-				neuron = Neuron(circuit, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict, dev_id=0)
+				neuron = Neuron(circuit, Config, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict, dev_id=dev_counter)
 				Devices.register_device(NEURON, neuron)
-			elif devclass == 'NEURON_EXTENSION':
-				from neuron import Neuron
-				#print hw_dict.definitions
-				#neuron = Neuron(circuit, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict, dev_id=0)
-				#Devices.register_device(NEURON, neuron)
-				
+			#elif devclass == 'EXTENSION':
+			#	from neuron import UartNeuron
+			#	dev_counter += 1
+			#	modbus_uart_port = Config.getstringdef(section, "modbus_uart_port", "/dev/ttyNS0")
+			#	scanfreq = Config.getfloatdef(section, "scan_frequency", 1)
+			#	scan_enabled = Config.getbooldef(section, "scan_enabled", True)
+			#	uart_baud_rate = Config.getintdef(section, "baud_rate", 19200)
+			#	uart_parity = Config.getstringdef(section, "parity", 'N')
+			#	uart_stopbits = Config.getintdef(section, "stop_bits", 1)
+			#	neuron = UartNeuron(circuit, Config, modbus_uart_port, scanfreq, scan_enabled, hw_dict, baud_rate=uart_baud_rate, 
+			#					    parity=uart_parity, stopbits=uart_stopbits, dev_id=dev_counter)
+			#	neuron.switch_to_async(None)
+			#	neuron.readboards()
+				#for c in neuron.client.read_holding_registers(1000, count=5, unit=15):
+				#	print int(c)
+			elif devclass == 'HWDEF':
+				dev_counter += 1
+
 		except Exception, E:
 			logger.exception("Error in config section %s - %s", section, str(E))
 			#raise

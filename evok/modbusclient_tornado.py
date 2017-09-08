@@ -26,7 +26,7 @@ from log import *
 
 class ModbusClientProtocol():
     '''
-    This represents the base modbus modbusclient_rs485 protocol.  All the application
+    This represents the base modbus client protocol.  All the application
     layer code is deferred to a higher level wrapper.
     '''
 
@@ -113,7 +113,7 @@ class ModbusClientProtocol():
 
 @gen.coroutine
 def StartClient(client, host='127.0.0.1', port=502, callback=None):
-    ''' Connect to tcp host and, join to modbusclient_rs485.transport, wait for reply data
+    ''' Connect to tcp host and, join to client.transport, wait for reply data
         Reconnect on close
     ''' 
     while True:
@@ -133,7 +133,7 @@ def StartClient(client, host='127.0.0.1', port=502, callback=None):
             client.setTransport(None)
 
 '''
-    modbusclient_rs485 = ModbusClientProtocol()
+    client = ModbusClientProtocol()
     StartClient(modbusclient_rs485)    
 
 '''

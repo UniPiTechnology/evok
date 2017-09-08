@@ -1,10 +1,8 @@
 ---
 type: L51
-board_features:
-1wire_features:
-i2c_features:
 modbus_features:
-    - type        : AO
+    - f_index     : 1
+      type        : AO
       count       : 1
       major_group : 1
       modes       :
@@ -21,7 +19,8 @@ modbus_features:
       res_val_reg : 4
       cal_reg     : 1024
       mode_reg    : 1019
-    - type        : AI
+    - f_index     : 2
+      type        : AI
       count       : 1
       major_group : 1
       min_v       : 0
@@ -30,7 +29,8 @@ modbus_features:
       max_c       : 0.020      
       val_reg     : 3
       cal_reg     : 1024  
-    - type        : DO
+    - f_index     : 3
+      type        : DO
       count       : 4
       major_group : 1
       modes       :
@@ -40,7 +40,8 @@ modbus_features:
       pwm_reg     : 16
       pwm_ps_reg  : 1017
       pwm_c_reg   : 1018
-    - type        : DI
+    - f_index     : 4
+      type        : DI
       count       : 4
       major_group : 1
       modes       :
@@ -55,22 +56,24 @@ modbus_features:
       deboun_reg  : 1010
       polar_reg   : 1015
       toggle_reg  : 1016
-    - f_index     : 4
+    - f_index     : 5
       type        : UART
       major_group : 1
       count       : 1
       conf_reg    : 1031
-    - type        : LED
+    - f_index     : 6
+      type        : LED
       major_group : 1
       count       : 4
-      val_coil    : 8
       val_reg     : 20
-    - type        : WD
+    - f_index     : 7
+      type        : WD
       count       : 1
       major_group : 1
       val_reg     : 6
       timeout_reg : 1008
-    - type        : DI
+    - f_index     : 8
+      type        : DI
       count       : 6
       major_group : 2
       modes       :
@@ -85,14 +88,16 @@ modbus_features:
       deboun_reg  : 1110
       polar_reg   : 1117
       toggle_reg  : 1118
-    - type        : RO
+    - f_index     : 9
+      type        : RO
       major_group : 2
       count       : 5
       val_reg     : 101
       modes       :
         - Simple
         - DirectSwitch
-    - type        : AO
+    - f_index     : 10
+      type        : AO
       count       : 4
       major_group : 2
       modes       :
@@ -101,7 +106,8 @@ modbus_features:
       max_v       : 10
       val_reg     : 102
       mode_reg    : 1019
-    - type        : AI
+    - f_index     : 11
+      type        : AI
       count       : 4
       major_group : 2
       min_v       : 0
@@ -109,15 +115,18 @@ modbus_features:
       min_c       : 0
       max_c       : 0.020      
       val_reg     : 106  
-    - type        : WD
+    - f_index     : 12
+      type        : WD
       major_group : 2
       count       : 1
       val_reg     : 114
       timeout_reg : 1108
-    - type        : RS485
+    - f_index     : 13
+      type        : RS485
       major_group : 2
       count       : 1
-    - type        : DI
+    - f_index     : 14
+      type        : DI
       count       : 6
       major_group : 3
       modes       :
@@ -132,14 +141,16 @@ modbus_features:
       deboun_reg  : 1210
       polar_reg   : 1225
       toggle_reg  : 1226
-    - type        : RO
+    - f_index     : 15
+      type        : RO
       major_group : 3
-      count       : 5
+      count       : 6
       val_reg     : 201
       modes       :
         - Simple
         - DirectSwitch
-    - type        : AO
+    - f_index     : 16
+      type        : AO
       count       : 4
       major_group : 3
       modes       :
@@ -148,7 +159,8 @@ modbus_features:
       max_v       : 10
       val_reg     : 202
       mode_reg    : 1219
-    - type        : AI
+    - f_index     : 17
+      type        : AI
       count       : 4
       major_group : 3
       min_v       : 0
@@ -156,8 +168,14 @@ modbus_features:
       min_c       : 0
       max_c       : 0.020        
       val_reg     : 206
-    - type        : WD
+    - f_index     : 18
+      type        : WD
       major_group : 3
       count       : 1
       val_reg     : 202
       timeout_reg : 1208
+    - f_index     : 19
+      type        : REGISTER
+      major_group : 1
+      count       : 21
+      val_reg     : 0
