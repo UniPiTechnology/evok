@@ -213,7 +213,8 @@ Apache License, Version 2.0
 Raspberry Pi is a trademark of the Raspberry Pi Foundation
 
 [IndieGogo]:https://www.indiegogo.com/projects/unipi-the-universal-raspberry-pi-add-on-board
-[UniPi]:http://www.unipi.technology
+[NEURON]:http://www.unipi.technology
+[UniPi 1.1]:https://www.unipi.technology/products/unipi-1-1-19?categoryId=1&categorySlug=unipi-1-1
 [PIGPIO]:http://abyz.co.uk/rpi/pigpio/
 [tornado]:https://pypi.python.org/pypi/tornado/
 [toro]:https://pypi.python.org/pypi/toro/
