@@ -1,10 +1,10 @@
 # Evok - the UniPi API
 
-Evok is a main API and WEB interface for the [UniPi] (Raspberry Pi universal addon) board a successful [IndieGogo] project. It provides REST, JSON, and WebSocket interface to relays, digital and analog inputs, analog output.
+Evok is the primary WEB API for the [NEURON] and [UniPi 1.1]. It provides a RESTful interface over HTTP, remote-procedure calls and WebSocket interface to relays, digital and analog inputs, digital and analog outputs, board information, leds, and more.
 
-_**Support for Neuron is available only in the latest commits (for now), not in the release version. Please see [intructions below]!**_
+_**Support for Neuron is available only in the master branch (for now), not in the legacy release version. Please see [intructions below]!**_
  
-It is still in very early development state so more testing is appreciated.
+Evok is still very much in active development, so any testing, contributions or feedback is welcome and appreciated.
 
 Access to GPIOs is done using the fantastic [PIGPIO] library. Make sure to install it first before use.
 
@@ -15,47 +15,49 @@ It also uses some other python libraries that are not installed on Raspbian by d
 * modified version of [tornardorpc] available in this repo tornadorpc_evok
 * [jsonrpclib]
 
-# Installation
+# Installation process for UniPi 1.1
 
-Download the latest release from our repository wget (or alternatively using git):
+Download the latest release from our repository via wget (alternatively you can clone the repository using git):
 
     wget https://github.com/UniPiTechnology/evok/archive/v.1.0.2.tar.gz
     tar -zxvf v.1.0.2.tar.gz && mv evok-* evok  
 
-Please note that the folder that you downloaded the package is not used later and you can delete it. Config files are placed in /etc/
+Please note that the folder that you downloaded the package into is not used later and can be safely deleted after the installation. Configuration files are installed directly into /etc/, /opt/ and /boot/
 
-Run the installation script and follow the given instructions
+Run the installation script using the following instructions
 
     cd evok
     chmod +x install-evok.sh uninstall-evok.sh
     sudo ./install-evok.sh
 
-To uninstall it, run the installation script which is also located in `/opt/evok/` folder after installation
+To uninstall it, run the uninstallation script, which is located in the `/opt/evok/` folder after Evok has been installed
 
     sudo ./uninstall-evok.sh
 
 
-If you need to change the configuration, do it in /etc/evok.conf file.
+If you wish to manually changed the configuration of evok, it can be done through the /etc/evok.conf file.
 
-When installed reboot is required in order to get everything working correctly.
+Note that after uninstalling Evok you have to reboot your device to ensure all the files and settings are gone. 
 
-The installation script also enables the I2C subsystem (if not enabled before) but the uninstallation script does not disable it back.
+The installation script also enables the I2C subsystem (if not enabled before), but the uninstallation script does not disable it again.
 
 # Debugging
 
-When reporting a bug or posting questions to our [our forum] please run set proper logging level in /etc/evok.conf, restart it and check the log file (/var/log/evok.log) for more info. For deeper log info run evok by hand. To do that stop the service first by calling
+When reporting a bug or posting questions to [our forum] please set proper logging levels in /etc/evok.conf, restart your device and check the log file (/var/log/evok.log). For more detailed log information you can also run evok by hand. To do that you need to first stop the service by executing the
 
     systemctl stop evok
 
-and then run it manually as root user by calling
+command and then run it manually as root user 
     
-    /opt/evok/evok.py
+    sudo python /opt/evok/evok.py
 
-and see/paste the output of the script.
+and look through/paste the output of the script.
 
-# Testing latest git versions
+# Installing Evok for Neuron (Beta only for now)
 
-The installation script should take care of everything, but be aware of limited and/or broken functionality. Please report any bugs to the github.
+The installation script should take care of everything, but be aware there may be some issues with limited and/or broken functionality. Please report any bugs you find on this github repository.
+
+To install first connect to your Neuron via SSH (username root: password unipi; or whichever you have changed it to from the default) and run the following:
 
     wget https://github.com/UniPiTechnology/evok/archive/master.zip
     unzip master.zip
@@ -64,27 +66,27 @@ The installation script should take care of everything, but be aware of limited 
 
 # API examples
 
-There are many options of controlling the UniPi, the easiest is using a web browser (make sure to copy the www folder to your desired location and edit evok.conf file) and them simply visit
+There are many ways of controlling your UniPi device, the easiest is using a web browser (make sure to copy the www folder to your desired location and edit evok.conf file) and them simply visit
 
-    http://your.pi.ip.address
+    http://your.pi.ip.address:88
 
 It will show you something like this
 
 todo: gif
 
-The web interface is using websocket to receive all events from the UniPi and controls the UniPi via REST api.
+The example web interface is using websocket to receive all events from the UniPi and controls the UniPi device via the REST api.
 
 ## REST API:
 ### HTTP GET
-To get a state of a device HTTP GET request can be send to the evok
+To get a state of your device you can send a HTTP GET request to evok:
 
     GET /rest/DEVICE/CIRCUIT
 
-or
+or:
 
     GET /rest/DEVICE/CIRCUIT/PROPERTY
 
-Where DEVICE can be substituted by any of these: 'relay', 'di' or 'input', 'ai' or 'analoginput, 'ao' or 'analogoutput', 'sensor',  CIRCUIT is the number of circuit (in case of 1Wire sensor, it is its address) corresponding to the number in your configuration file and PROPERTY is mostly 'value'.
+Where DEVICE can be substituted by any of these: 'relay', 'di' or 'input', 'ai' or 'analoginput, 'ao' or 'analogoutput', 'sensor', 'neuron', 'led', 'register' CIRCUIT is the number of circuit (in case of 1Wire sensor, it is its address) corresponding to the number in your configuration file and PROPERTY is mostly 'value'.
 
 ### HTTP POST
 Simple example using wget to get status of devices:
