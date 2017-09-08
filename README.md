@@ -53,7 +53,9 @@ command and then run it manually as root user
 
 and look through/paste the output of the script.
 
-# Installing Evok for Neuron (Beta only for now)
+# Installing Evok for Neuron 
+
+_**(Beta only for now)**_
 
 The installation script should take care of everything, but be aware there may be some issues with limited and/or broken functionality. Please report any bugs you find on this github repository.
 
@@ -223,4 +225,4 @@ Raspberry Pi is a trademark of the Raspberry Pi Foundation
 [websocket client library for Perl]:https://metacpan.org/pod/AnyEvent::WebSocket::Client
 [websocket Python library]:https://pypi.python.org/pypi/websocket-client/
 [our forum]:http://forum.unipi.technology/
-[intructions below]:https://github.com/UniPiTechnology/evok#testing-latest-git-versions
+[intructions below]:(https://github.com/UniPiTechnology/evok#installing-evok-for-neuron)
