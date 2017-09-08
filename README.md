@@ -59,7 +59,7 @@ _**(Beta only for now)**_
 
 The installation script should take care of everything, but be aware there may be some issues with limited and/or broken functionality. Please report any bugs you find on this github repository.
 
-To install first connect to your Neuron via SSH (username root: password unipi; or whichever you have changed it to from the default) and run the following:
+To install first connect to your Neuron via SSH (username root: password unipi by default) and run the following:
 
     wget https://github.com/UniPiTechnology/evok/archive/master.zip
     unzip master.zip
