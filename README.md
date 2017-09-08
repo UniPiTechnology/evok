@@ -6,16 +6,17 @@ _**Support for Neuron is available only in the master branch (for now), not in t
  
 Evok is still very much in active development, so any testing, contributions and feedback is welcome and appreciated.
 
+
+# Installation process for UniPi 1.1
+
 Access to GPIOs is done using the fantastic [PIGPIO] library. Make sure to install it first before use.
 
-It also uses some other python libraries that are not installed on Raspbian by default:
+_**Legacy Evok**_ also requires a few other python libraries that are not installed on Raspbian by default:
 * python-ow
 * [tornado]
 * [toro]
 * modified version of [tornardorpc] available in this repo tornadorpc_evok
 * [jsonrpclib]
-
-# Installation process for UniPi 1.1
 
 Download the latest release from our repository via wget (alternatively you can clone the repository using git):
 
@@ -33,7 +34,6 @@ Run the installation script using the following instructions
 To uninstall it, run the uninstallation script, which is located in the `/opt/evok/` folder after Evok has been installed
 
     sudo ./uninstall-evok.sh
-
 
 If you wish to manually changed the configuration of evok, it can be done through the /etc/evok.conf file.
 
