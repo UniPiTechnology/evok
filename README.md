@@ -1,6 +1,6 @@
-# Evok - the UniPi API
+# EVOK - the UniPi API
 
-Evok is the primary WEB API for the [NEURON] and [UniPi 1.1]. It provides a RESTful interface over HTTP, remote-procedure calls and WebSocket interface to relays, digital and analog inputs, digital and analog outputs, board information, leds, and more.
+EVOK is the primary WEB API for the [NEURON] and [UniPi 1.1]. It provides a RESTful interface over HTTP, remote-procedure calls and WebSocket interface to relays, digital and analog inputs, digital and analog outputs, board information, leds, and more.
 
 _**Support for Neuron is available only in the master branch (for now), not in the legacy release version. Please see the [intructions below]!**_
  
@@ -53,7 +53,7 @@ command and then run it manually as root user
 
 and look through/paste the output of the script.
 
-# Installing Evok for Neuron 
+# Installing EVOK on Neuron 
 
 _**(Beta only for now)**_
 
