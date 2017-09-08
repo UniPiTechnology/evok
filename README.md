@@ -225,4 +225,4 @@ Raspberry Pi is a trademark of the Raspberry Pi Foundation
 [websocket client library for Perl]:https://metacpan.org/pod/AnyEvent::WebSocket::Client
 [websocket Python library]:https://pypi.python.org/pypi/websocket-client/
 [our forum]:http://forum.unipi.technology/
-[intructions below]:(https://github.com/UniPiTechnology/evok#installing-evok-for-neuron)
+[intructions below]:https://github.com/UniPiTechnology/evok#installing-evok-for-neuron
