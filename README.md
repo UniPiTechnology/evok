@@ -105,8 +105,9 @@ To control a device, all requests must be sent by HTTP POST. Here is a small exa
 
 ### Websocket
 Register your client at ws://your.unipi.ip.address/ws to receive status messages. Once it is connected, you can also send various commands to the UniPi
-All messages in websocket are sent in JSON string format, eg. {"dev":"relay", "circuit":"1", "value":"1"} to set Relay 1 On.
-Check the wsbase.js in www/js/ folder to see example of controlling the UniPi using websocket.
+All messages over the websocket protocol are sent in standard JSON string format, e.g. use {"dev":"relay", "circuit":"1", "value":"1"} to set Relay 1 on.
+
+Please look through the wsbase.js file in the www/js/ folder to see more examples for controlling UniPi devices through websockets.
 
 ### Python using JsonRPC
 You can also control the UniPi using Python library [jsonrpclib]. See the list of all available methods below.
@@ -194,14 +195,6 @@ There is also a [websocket client library for Perl] to get more control.
     * `sensor_get_value(circuit)` - returns value of a circuit by given circuit or 1Wire address
 
 More methods can be found in the src file evok.py or owclient.py.
-
-Todo list:
-============
-* authentication
-
-Known issues/bugs
-============
-* todo
 
 Development
 ============
