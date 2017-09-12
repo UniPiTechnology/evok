@@ -2149,11 +2149,9 @@ def main():
 	cors = Config.getbooldef("MAIN", "enable_cors", False)
 	corsdomains = Config.getstringdef("MAIN", "cors_domains", "*")
 	define("cors", default=True, help="enable CORS support", type=bool)
-	#define("corsdomains", default=corsdomains, help="CORS domains separated by whitespace", type=bool)
-	port = 8080
-	#port = Config.getintdef("MAIN", "port", 8080)
-	#if options.as_dict()['port'] != -1:
-	#	port = options.as_dict()['port'] # use command-line option instead of config option
+	port = Config.getintdef("MAIN", "port", 8080)
+	if options.as_dict()['port'] != -1:
+		port = options.as_dict()['port'] # use command-line option instead of config option
 
 	modbus_address = Config.getstringdef("MAIN", "modbus_address", '')
 	modbus_port = Config.getintdef("MAIN", "modbus_port", 0)
