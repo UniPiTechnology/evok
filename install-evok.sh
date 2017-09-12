@@ -264,9 +264,9 @@ install_unipi_neuron() {
     fi
 
     #install neuron tcp server
-    wget https://github.com/UniPiTechnology/neuron_tcp_modbus_overlay/archive/v1.0.0.zip
-    unzip v1.0.0.zip
-    cd neuron_tcp_modbus_overlay-1.0.0
+    wget https://github.com/UniPiTechnology/neuron_tcp_modbus_overlay/archive/v1.0.1.zip
+    unzip v1.0.1.zip
+    cd neuron_tcp_modbus_overlay-1.0.1
     yes n | bash $PWD/install.sh
     cd ..
     #copy tornadorpc
@@ -341,7 +341,6 @@ cp -r etc/hw_definitions /etc/
 cp -r etc/nginx/sites-enabled /etc/nginx/
 
 #detect version of UniPi
-#TODO: read from EPROM data
 echo 'Please choose version of UniPi you are using:'
 PS3="Your model:"
 options=(
