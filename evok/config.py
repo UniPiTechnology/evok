@@ -325,19 +325,23 @@ def create_devices(Config, hw_dict):
 				scan_enabled = Config.getbooldef(section, "scan_enabled", True)
 				neuron = Neuron(circuit, Config, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict, dev_id=dev_counter)
 				Devices.register_device(NEURON, neuron)
-			#elif devclass == 'EXTENSION':
-			#	from neuron import UartNeuron
-			#	dev_counter += 1
-			#	modbus_uart_port = Config.getstringdef(section, "modbus_uart_port", "/dev/ttyNS0")
-			#	scanfreq = Config.getfloatdef(section, "scan_frequency", 1)
-			#	scan_enabled = Config.getbooldef(section, "scan_enabled", True)
-			#	uart_baud_rate = Config.getintdef(section, "baud_rate", 19200)
-			#	uart_parity = Config.getstringdef(section, "parity", 'N')
-			#	uart_stopbits = Config.getintdef(section, "stop_bits", 1)
-			#	neuron = UartNeuron(circuit, Config, modbus_uart_port, scanfreq, scan_enabled, hw_dict, baud_rate=uart_baud_rate, 
-			#					    parity=uart_parity, stopbits=uart_stopbits, dev_id=dev_counter)
-			#	neuron.switch_to_async(None)
-			#	neuron.readboards()
+			elif devclass == 'EXTENSION':
+				from neuron import UartNeuron
+				dev_counter += 1
+				modbus_uart_port = Config.getstringdef(section, "modbus_uart_port", "/dev/ttyNS0")
+				scanfreq = Config.getfloatdef(section, "scan_frequency", 1)
+				scan_enabled = Config.getbooldef(section, "scan_enabled", True)
+				uart_baud_rate = Config.getintdef(section, "baud_rate", 19200)
+				uart_parity = Config.getstringdef(section, "parity", 'N')
+				uart_stopbits = Config.getintdef(section, "stop_bits", 1)
+				uart_address = Config.getintdef(section, "address", 15)
+				device_name = Config.getstringdef(section, "device_name", "unspecified")
+				neuron = UartNeuron(circuit, Config, modbus_uart_port, scanfreq, scan_enabled, hw_dict, baud_rate=uart_baud_rate, 
+								    parity=uart_parity, stopbits=uart_stopbits, device_name=device_name, uart_address=uart_address, dev_id=dev_counter)
+				#neuron.switch_to_async(None)
+				#
+				Devices.register_device(NEURON, neuron)
+				#neuron.readboards()
 				#for c in neuron.client.read_holding_registers(1000, count=5, unit=15):
 				#	print int(c)
 			elif devclass == 'HWDEF':

@@ -20,6 +20,8 @@ from pymodbus.pdu import ExceptionResponse
 from pymodbus.exceptions import ConnectionException, ModbusIOException
 from pymodbus.register_read_message import ReadHoldingRegistersResponse
 
+import pymodbus.client
+
 import modbusclient_rs485
 
 import devents
@@ -29,6 +31,8 @@ from devices import *
 from log import *
 
 import config 
+from time import sleep
+from modbusclient_rs485 import AsyncErrorResponse
 
 class ENoBoard(Exception):
 	pass
@@ -70,6 +74,7 @@ class Neuron(object):
 		self.Config = Config
 		self.modbus_server = modbus_server
 		self.modbus_port = modbus_port
+		self.modbus_address = circuit
 		self.do_scanning = False
 		self.is_scanning = False
 		if scan_freq == 0:
@@ -97,12 +102,16 @@ class Neuron(object):
 				versions = yield self.client.read_input_registers(1000, 10, unit=i)
 				if isinstance(versions, ExceptionResponse):
 					raise ENoBoard("bad request")
+				print versions.registers
+				print type(versions)
 				board = Board(self.Config, i, self, versions.registers)
 				data = yield self.client.read_input_registers(0, count=board.ndataregs, unit=i)
 				if i == 2:
 					configs = yield self.client.read_input_registers(1000, count=20, unit=i)
 				else: 
 					configs = yield self.client.read_input_registers(1000, count=board.nconfigregs, unit=i)
+				print board.ndataregs
+				print board.nconfigregs
 				board.parse_definition(data.registers, configs.registers, self.hw_dict, i)
 				self.boards.append(board)
 			except ENoBoard:
@@ -131,6 +140,7 @@ class Neuron(object):
 	@gen.coroutine
 	def scan_boards(self):
 		if self.client.connected:
+			print "ERGO"
 			try:
 				for board in self.boards:
 					data = yield self.client.read_input_registers(0, count=board.ndataregs, unit=board.circuit)
@@ -146,11 +156,14 @@ class Neuron(object):
 			self.is_scanning = False
 
 class UartNeuron(object):
-	def __init__(self, circuit, Config, port, scan_freq, scan_enabled, hw_dict, baud_rate=19200, parity='N', stopbits=1, dev_id=0):
+	def __init__(self, circuit, Config, port, scan_freq, scan_enabled, hw_dict, baud_rate=19200, parity='N', stopbits=1, uart_address=15, device_name='unspecified', dev_id=0):
+		self.boards = list()
 		self.dev_id = dev_id
-		self.circuit = circuit
+		self.circuit = "RS485_" + str(circuit)
 		self.hw_dict = hw_dict
 		self.port = port
+		self.modbus_address = uart_address
+		self.device_name = device_name
 		self.Config = Config
 		self.do_scanning = False
 		self.is_scanning = False
@@ -162,15 +175,20 @@ class UartNeuron(object):
 		else:
 			self.scan_interval = 1.0 / scan_freq
 		self.scan_enabled = scan_enabled
-		self.boards = list()
 
 	def switch_to_async(self, loop):
 		self.loop = loop
-		self.client = modbusclient_rs485.AsyncModbusSerialClient(method='rtu', stopbits=self.stopbits, bytesize=8, parity=self.parity, baudrate=self.baud_rate, timeout=5, port=self.port)
-		self.client.connect()
+		self.client = modbusclient_rs485.AsyncModbusGeneratorClient(method='rtu', stopbits=self.stopbits, bytesize=8, parity=self.parity, baudrate=self.baud_rate, timeout=5, port=self.port)
+		#self.client.connect()
 		#self.client = AsyncModbusSerialClient(port="/dev/ttyNS0")
 		# start modus/tcp modbusclient_rs485. On connect call self.readboards
-		#loop.add_callback(lambda: StartClient(self.client, self.modbus_server, self.modbus_port, self.readboards))
+		modbusclient_rs485.UartStartClient(self.client, self.readboards)
+		#self.client = pymodbus.client.sync.ModbusSerialClient(method='rtu', stopbits=self.stopbits, bytesize=8, parity=self.parity, baudrate=self.baud_rate, timeout=0.05, port=self.port)
+		#self.client.connect()
+		#while (True):
+		#	reply = self.client.read_input_registers(address=0, count=20, unit=15)
+		#	print reply.registers
+		loop.add_callback(lambda: modbusclient_rs485.UartStartClient(self, self.readboards))
 
 	@gen.coroutine
 	def readboards(self):
@@ -179,29 +197,29 @@ class UartNeuron(object):
 		for board in self.boards:
 			del (board)
 		self.boards = list()
-		for i in (1, 2, 3):
-			try:
-				versions = self.client.read_holding_registers(1000, 10, unit=i)
-				logger.debug(type(versions))
-				logger.debug(versions.registers)
-				if isinstance(versions, ExceptionResponse):
-					raise ENoBoard("bad request")
-				#print "bbb %d" % i
-				board = Board(i, self, versions.registers)
-				data = self.client.read_holding_registers(0, count=board.ndataregs, unit=i)
-				configs = self.client.read_holding_registers(1000, count=board.nconfigregs, unit=i)
-				#print "ccc %d" % i
-				#print data.registers
-				#print configs.registers
-				board.parse_definition(data.registers, configs.registers, self.hw_dict, i)
-				#print "aaa %d" % i
-				self.boards.append(board)
-			except ENoBoard:
-				print "NOBOARD"
-				continue
-			except Exception, E:
-				logger.exception(str(E))
-				pass
+		try:
+			versions = yield self.client.read_input_registers(1000, 10, unit=self.modbus_address)
+			print versions
+			print type(versions)
+			#logger.debug(type(versions))
+			#logger.debug(versions.registers)
+			if isinstance(versions, ExceptionResponse):
+				raise ENoBoard("Wrong request")
+			elif isinstance(versions, AsyncErrorResponse):
+				raise ENoBoard("Wrong UART request")
+			board = UartBoard(self.Config, self.circuit, self.modbus_address, self, versions.registers, self.dev_id)
+			data = yield self.client.read_input_registers(0, count=10, unit=self.modbus_address)
+			#print data.registers
+			configs = yield self.client.read_input_registers(1000, count=10, unit=self.modbus_address)
+			#print "ccc %d" % 1
+			#print configs.registers
+			board.parse_definition(data.registers, configs.registers, self.hw_dict, 1)
+			self.boards.append(board)
+		except ENoBoard:
+			print "No Board"
+		except Exception, E:
+			logger.exception(str(E))
+			pass
 
 	def start_scanning(self):
 		self.do_scanning = True
@@ -216,20 +234,24 @@ class UartNeuron(object):
 			self.do_scanning = False
 
 	def full(self):
-		return {'dev': 'neuron', 'circuit': self.circuit, 'model': config.globals['model'], 'sn': config.globals['serial'], 'ver2': config.globals['version2']}
+		return {'dev': 'neuron', 'circuit': self.circuit}
 		
 	
 	@gen.coroutine
 	def scan_boards(self):
-		if self.client.connected:
-			try:
-				for board in self.boards:
-					data = yield self.client.read_input_registers(0, count=board.ndataregs, unit=board.circuit)
-					if isinstance(data, ExceptionResponse):
-						raise Exception("bad request")
-					board.set_data(0, data.registers)
-			except Exception, E:
-				logger.exception(str(E))
+		print "Number of boards scanned: " + str(len(self.boards)) 
+		try:
+			yield self.client.read_input_registers(address=0, count=10, unit=15)
+			for board in self.boards:
+				print "Number of datadeps: " + str(len(board.datadeps))
+				data = yield self.client.read_input_registers(0, count=len(board.datadeps), unit=board.modbus_address)
+				if isinstance(data, ExceptionResponse):
+					raise Exception("Wrong request")
+				elif isinstance(data, AsyncErrorResponse):
+					raise Exception("Wrong UART request")
+				board.set_data(0, data.registers)
+		except Exception, E:
+			logger.exception(str(E))
 		if self.do_scanning and (self.scan_interval != 0):
 			self.loop.call_later(self.scan_interval, self.scan_boards)
 			self.is_scanning = True
@@ -249,12 +271,13 @@ class Proxy(object):
 		return self.result
 
 
-class Board(object):
-	def __init__(self, Config, circuit, neuron, versions, dev_id=0):
+class UartBoard(object):
+	def __init__(self, Config, circuit, modbus_address, neuron, versions, dev_id=0):
 		self.dev_id = dev_id
 		self.Config = Config
 		self.circuit = circuit
 		self.neuron = neuron
+		self.modbus_address = modbus_address
 		self.sw = versions[0]
 		self.ndi = (versions[1] & 0xff00) >> 8
 		self.ndo = (versions[1] & 0x00ff)
@@ -312,7 +335,7 @@ class Board(object):
 		for defin in hw_dict.definitions:
 			#try:
 				#print defin['type']
-				if defin and defin['type'] in config.globals['model']:
+				if defin and defin['type'] in self.neuron.device_name:
 					#print defin['type']
 					#print len(defin)
 					for m_feature in defin['modbus_features']:
@@ -455,6 +478,197 @@ class Board(object):
 			devents.status(proxy)
 
 
+class Board(object):
+	def __init__(self, Config, circuit, neuron, versions, dev_id=0):
+		self.dev_id = dev_id
+		self.Config = Config
+		self.circuit = circuit
+		self.neuron = neuron
+		self.modbus_address = circuit
+		self.sw = versions[0]
+		self.ndi = (versions[1] & 0xff00) >> 8
+		self.ndo = (versions[1] & 0x00ff)
+		self.nai = (versions[2] & 0xff00) >> 8
+		self.nao = (versions[2] & 0x00f0) >> 4
+		self.nuart = (versions[2] & 0x000f)
+		self.hw = (versions[3] & 0xff00) >> 8
+		self.hwv = (versions[3] & 0x00ff)
+		self.serial = versions[5] + (versions[6] << 16)
+		self.nai1 = self.nai if self.hw != 0 else 1  # full featured AI (with switched V/A)
+		self.nai2 = 0 if self.hw != 0 else 1  # Voltage only AI
+		self.ndataregs = self.get_base_reg(0, 'ALL')
+		self.nconfigregs = self.get_base_reg(1000, 'ALL') - 1000
+		#print self.ndataregs, self.nconfigregs
+
+
+	def get_base_reg(self, base, kind):
+		if base == 0:
+			registers = basereg0
+			cur = 0
+		elif base == 1000:
+			registers = basereg1000
+			cur = 1000
+		else:
+			raise Exception('bad base index')
+		for reg in registers:
+			if kind == reg[0]: return cur
+			x = reg[1]
+			func = reg[2]
+			if not (x is None): x = getattr(self, x)
+			cur += func(x)
+
+
+#
+
+	def parse_definition(self, data, configs, hw_dict, board_id):
+		self.data = data
+		#print "test1 %d" % board_id
+		self.configs = configs
+		self.datadeps = {} #[set() for _ in range(len(data))]
+		if (self.hw == 0):
+			self.volt_refx = (3.3 * configs[9])
+			self.volt_ref = (3.3 * configs[9]) / data[5]
+		else:
+			self.volt_refx = 33000
+			self.volt_ref = 3.3
+		#print "test2 %d" % board_id
+		#base = self.get_base_reg(0, 'DI')
+		#base_deb = self.get_base_reg(1000, 'DEB') - 1000
+		#base_counter = self.get_base_reg(0, 'CNT')
+		#print "test3 %d" % board_id
+		
+		#print hw_dict.definitions
+		#print config.globals['model']
+		for defin in hw_dict.definitions:
+			#try:
+				#print defin['type']
+				if defin and defin['type'] in config.globals['model']:
+					#print defin['type']
+					#print len(defin)
+					for m_feature in defin['modbus_features']:
+						#print m_feature
+						counter = 0
+						max_count = m_feature['count'] 
+						if m_feature['type'] == 'DI' and m_feature['major_group'] == board_id:
+							#print m_feature['type']
+							#print m_feature['count']
+							while counter < max_count:
+								board_val_reg = m_feature['val_reg'] - (100 * (board_id - 1))
+								board_counter_reg = m_feature['counter_reg'] - (100 * (board_id - 1))
+								board_deboun_reg = m_feature['deboun_reg'] - (100 * (board_id - 1))
+								_inp = Input("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg, 0x1 << (counter % 16),
+											 regdebounce=board_deboun_reg + counter, regcounter=board_counter_reg + (2 * counter))
+								#logging.info("Registered DI %02d" % counter + 1)
+								#print m_feature['count']
+								if self.datadeps.has_key(board_val_reg):
+									self.datadeps[board_val_reg]+=[_inp]
+								else:
+									self.datadeps[board_val_reg] = [_inp]
+								if self.datadeps.has_key(board_counter_reg + (2 * counter)):
+									self.datadeps[board_counter_reg + (2 * counter)]+=[_inp]
+								else:
+									self.datadeps[board_counter_reg + (2 * counter)] = [_inp]
+								counter+=1
+								#print counter
+								Devices.register_device(INPUT, _inp)
+						elif (m_feature['type'] == 'RO' or m_feature['type'] == 'DO') and m_feature['major_group'] == board_id:
+							#print m_feature['type']
+							#print m_feature['count']
+							while counter < max_count:
+								board_val_reg = m_feature['val_reg'] - (100 * (board_id - 1))
+								_r = Relay("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg, 0x1 << (counter % 16))
+								if self.datadeps.has_key(board_val_reg):
+									self.datadeps[board_val_reg]+=[_r]
+								else:
+									self.datadeps[board_val_reg] = [_r]
+								Devices.register_device(RELAY, _r)
+								counter+=1
+								#print counter
+						elif m_feature['type'] == 'LED' and m_feature['major_group'] == board_id:
+							#print m_feature['type']
+							#print m_feature['count']
+							while counter < max_count:
+								board_val_reg = m_feature['val_reg'] - (100 * (board_id - 1))
+								_led = ULED("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg, 0x1 << (counter % 16), m_feature['val_coil'] + counter)
+								if self.datadeps.has_key(board_val_reg + counter):
+									self.datadeps[board_val_reg + counter]+=[_led]
+								else:
+									self.datadeps[board_val_reg + counter] = [_led]
+								Devices.register_device(LED, _led)
+								counter+=1
+						elif m_feature['type'] == 'WD' and m_feature['major_group'] == board_id:
+							while counter < max_count:
+								board_val_reg = m_feature['val_reg'] - (100 * (board_id - 1))
+								board_timeout_reg = m_feature['timeout_reg'] - (100 * (board_id - 1)) - 1000
+								_wd = Watchdog("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg + counter, board_timeout_reg + counter, dev_id=0)
+								if self.datadeps.has_key(board_val_reg + counter):
+									self.datadeps[board_val_reg + counter]+=[_wd]
+								else:
+									self.datadeps[board_val_reg + counter] = [_wd]
+								Devices.register_device(WATCHDOG, _wd)
+								counter+=1						
+						elif m_feature['type'] == 'AO' and m_feature['major_group'] == board_id:
+							while counter < max_count:
+								board_val_reg = m_feature['val_reg'] - (100 * (board_id - 1))
+								if m_feature.has_key('cal_reg'):
+									_ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, regcal=m_feature['cal_reg'] + 1, regmode=m_feature['mode_reg'], reg_res=m_feature['res_val_reg'], modes=m_feature['modes'])
+								else:
+									_ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter)
+								if self.datadeps.has_key(board_val_reg + counter):
+									self.datadeps[board_val_reg + counter]+=[_ao]
+								else:
+									self.datadeps[board_val_reg + counter] = [_ao]
+								Devices.register_device(AO, _ao)
+								counter+=1
+								print counter
+						elif m_feature['type'] == 'AI' and m_feature['major_group'] == board_id:
+							while counter < max_count:
+								board_val_reg = m_feature['val_reg'] - (100 * (board_id - 1))
+								if m_feature.has_key('cal_reg'):
+									_ai = AnalogInput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, regcal=m_feature['cal_reg'] + 4)
+								else:
+									_ai = AnalogInput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter * 2)
+								if self.datadeps.has_key(board_val_reg + counter):
+									self.datadeps[board_val_reg + counter]+=[_ai]
+								else:
+									self.datadeps[board_val_reg + counter] = [_ai]
+								Devices.register_device(AI, _ai)
+								counter+=1
+						elif m_feature['type'] == 'REGISTER' and m_feature['major_group'] == board_id and self.Config.getbooldef("MAIN", "allow_register_access", False):
+							while counter < max_count:
+								board_val_reg = m_feature['val_reg'] - (100 * (board_id - 1))
+								_reg = Register("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg + counter, dev_id=0)
+								if board_val_reg < 1000 and self.datadeps.has_key(board_val_reg + counter):
+									self.datadeps[board_val_reg + counter] += [_reg]
+								elif board_val_reg < 1000:
+									self.datadeps[board_val_reg + counter] = [_reg]
+								Devices.register_device(REGISTER, _reg)
+								counter+=1
+						elif m_feature['type'] == 'UART' and m_feature['major_group'] == board_id:
+							while counter < max_count:
+								board_val_reg = m_feature['conf_reg'] - (100 * (board_id - 1))
+								_uart = Uart("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, dev_id=0)
+								Devices.register_device(UART, _uart)
+								counter+=1
+
+	def set_data(self, register, data):
+		# ToDo!
+		changeset = []
+		#print data
+		for i in range(len(data)):
+			try:
+				if data[i] == self.data[i]: continue
+			except:
+				pass
+			if self.datadeps.has_key(i):
+				changeset += self.datadeps[i]  # add devices to set
+
+		self.data = data
+		if len(changeset) > 0:
+			proxy = Proxy(set(changeset))
+			devents.status(proxy)
+
+
 class Relay(object):
 	pending_id = 0
 	
@@ -495,7 +709,7 @@ class Relay(object):
 		if self.pending_id:
 			IOLoop.instance().remove_timeout(self.pending_id)
 			self.pending_id = None
-		yield self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.circuit)
+		yield self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.modbus_address)
 		raise gen.Return(1 if value else 0)
 
 	def set(self, value=None, timeout=None):
@@ -507,14 +721,14 @@ class Relay(object):
 		if not (timeout is None):
 			timeout = float(timeout)
 
-		self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.circuit)
+		self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.modbus_address)
 
 		if timeout is None:
 			return (1 if value else 0)
 
 		def timercallback():
 			self.pending_id = None
-			self.arm.write_bit(self.coil, 0 if value else 1, unit=self.arm.circuit)
+			self.arm.write_bit(self.coil, 0 if value else 1, unit=self.arm.modbus_address)
 
 		self.pending_id = IOLoop.instance().add_timeout(
 			datetime.timedelta(seconds=float(timeout)), timercallback)
@@ -566,7 +780,7 @@ class ULED(object):
 	def set_state(self, value):
 		""" Sets new on/off status. Disable pending timeouts
 		"""
-		yield self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.circuit)
+		yield self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.modbus_address)
 		raise gen.Return(1 if value else 0)
 
 	def set(self, value=None, timeout=None):
@@ -575,7 +789,7 @@ class ULED(object):
 		if value is None:
 			raise Exception('Value must be specified')
 		value = int(value)
-		self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.circuit)
+		self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.modbus_address)
 		return (1 if value else 0)
 		#return (1 if self.mcp.value & self._mask else 0)
 
@@ -624,7 +838,7 @@ class Watchdog(object):
 	def set_state(self, value):
 		""" Sets new on/off status. Disable pending timeouts
 		"""
-		self.arm.neuron.client.write_register(self.valreg, 1 if value else 0, unit=self.arm.circuit)
+		self.arm.neuron.client.write_register(self.valreg, 1 if value else 0, unit=self.arm.modbus_address)
 		raise gen.Return(1 if value else 0)
 
 
@@ -639,9 +853,9 @@ class Watchdog(object):
 			timeout = int(timeout)
 			if timeout > 65535:
 				timeout = 65535
-			self.arm.neuron.client.write_register(self.toreg + 1000, timeout, unit=self.arm.circuit)
+			self.arm.neuron.client.write_register(self.toreg + 1000, timeout, unit=self.arm.modbus_address)
 			self.arm.configs[self.toreg] = timeout
-		self.arm.neuron.client.write_register(self.valreg, 1 if value else 0, unit=self.arm.circuit)
+		self.arm.neuron.client.write_register(self.valreg, 1 if value else 0, unit=self.arm.modbus_address)
 		raise gen.Return(1 if value else 0)
 		#return (1 if self.mcp.value & self._mask else 0)
 
@@ -682,7 +896,7 @@ class Register():
 	def set_state(self, value):
 		""" Sets new on/off status. Disable pending timeouts
 		"""
-		self.arm.neuron.client.write_register(self.valreg, value if value else 0, unit=self.arm.circuit)
+		self.arm.neuron.client.write_register(self.valreg, value if value else 0, unit=self.arm.modbus_address)
 		raise gen.Return(value if value else 0)
 
 
@@ -693,7 +907,7 @@ class Register():
 		if value is None:
 			raise Exception('Value must be specified')
 		value = int(value)
-		self.arm.neuron.client.write_register(self.valreg, value if value else 0, unit=self.arm.circuit)
+		self.arm.neuron.client.write_register(self.valreg, value if value else 0, unit=self.arm.modbus_address)
 		raise gen.Return(value if value else 0)
 	
 
@@ -748,12 +962,12 @@ class Input():
 	def set(self, debounce=None, counter=None):
 		if not (debounce is None):
 			if not (self.debouncereg is None):
-				print [self.debouncereg, debounce, self.arm.circuit]
-				self.arm.neuron.client.write_register(self.debouncereg, int(float(debounce)), unit=self.arm.circuit)
+				print [self.debouncereg, debounce, self.arm.modbus_address]
+				self.arm.neuron.client.write_register(self.debouncereg, int(float(debounce)), self.arm.modbus_address)
 				#devents.config(self)
 		if not (counter is None):
 			if not (self.counterreg is None):
-				self.arm.neuron.client.write_register(self.counterreg, int(float(counter)), unit=self.arm.circuit)
+				self.arm.neuron.client.write_register(self.counterreg, int(float(counter)), self.arm.modbus_address)
 				#devents.status(self)
 
 	def get(self):
@@ -793,7 +1007,7 @@ class Uart():
 	@gen.coroutine
 	def set(self, conf=None):
 		if not (conf is None):
-			self.arm.neuron.client.write_register(self.valreg, conf, unit=self.arm.circuit)
+			self.arm.neuron.client.write_register(self.valreg, conf, unit=self.arm.modbus_address)
 
 	def get(self):
 		""" Returns ( value, debounce )
@@ -873,7 +1087,7 @@ class AnalogOutput():
 		elif valuei > 4095:
 			valuei = 4095
 		#print valuei, value
-		self.arm.neuron.client.write_register(self.reg, valuei, unit=self.arm.circuit)
+		self.arm.neuron.client.write_register(self.reg, valuei, unit=self.arm.modbus_address)
 		if self.circuit == '1_01':
 			raise gen.Return(float(valuei) * self.factor + self.offset)
 		else:
@@ -887,7 +1101,7 @@ class AnalogOutput():
 				val &= ~0b1
 			elif mode == "mA":
 				val |= 0b1
-			self.arm.neuron.client.write_register(1000 + self.regcal - 1, val, unit=self.arm.circuit)
+			self.arm.neuron.client.write_register(1000 + self.regcal - 1, val, unit=self.arm.modbus_address)
 		# print value
 		if value is not None:
 			if self.circuit == '1_01':
@@ -901,7 +1115,7 @@ class AnalogOutput():
 				valuei = 4095
 				
 			#print valuei, value
-			self.arm.neuron.client.write_register(self.reg, valuei, unit=self.arm.circuit)
+			self.arm.neuron.client.write_register(self.reg, valuei, unit=self.arm.modbus_address)
 			if self.circuit == '1_01':
 				raise gen.Return(float(valuei) * self.factor + self.offset)
 			else:
@@ -943,8 +1157,6 @@ class AnalogInput():
 	@property
 	def value(self):
 		try:
-			#print self.circuit, self.regvalue(),self.vfactor,self.voffset
-
 			if self.circuit == '1_01':
 				return (self.regvalue() * self.vfactor) + self.voffset
 			else:
@@ -965,7 +1177,7 @@ class AnalogInput():
 				val &= ~0b1
 			elif mode == "mA":
 				val |= 0b1
-			self.arm.neuron.client.write_register(1000 + self.regcal - 1, val, unit=self.arm.circuit)
+			self.arm.neuron.client.write_register(1000 + self.regcal - 1, val, unit=self.arm.modbus_address)
 
 	def full(self):
 		return {'dev': 'ai', 'circuit': self.circuit, 'value': self.value,
