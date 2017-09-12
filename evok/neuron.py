@@ -99,7 +99,10 @@ class Neuron(object):
 					raise ENoBoard("bad request")
 				board = Board(self.Config, i, self, versions.registers)
 				data = yield self.client.read_input_registers(0, count=board.ndataregs, unit=i)
-				configs = yield self.client.read_input_registers(1000, count=board.nconfigregs, unit=i)
+				if i == 2:
+					configs = yield self.client.read_input_registers(1000, count=20, unit=i)
+				else: 
+					configs = yield self.client.read_input_registers(1000, count=board.nconfigregs, unit=i)
 				board.parse_definition(data.registers, configs.registers, self.hw_dict, i)
 				self.boards.append(board)
 			except ENoBoard:
