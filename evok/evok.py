@@ -110,7 +110,7 @@ class WsHandler(websocket.WebSocketHandler):
 	def on_event(self, device):
 		#print "Sending to: %s,%s" % (str(self), device)
 		try:
-			#print device.full()
+			print device.full()
 			self.write_message(json.dumps(device.full()))
 		except Exception as e:
 			logger.error("Exc: %s", str(e))
@@ -1449,6 +1449,51 @@ class LoadAllHandler(UserCookieHelper, APIHandler):
 							"value": {"type": "number"}
 						},
 						"required": ["dev", "circuit", "value"]
+					},
+					{
+						"type": "object",
+						"properties": {
+							"dev": {
+								"type": "string",
+								"enum": ["temp"]
+							},
+							"glob_dev_id": {"type": "number"},
+							"circuit": {"type": "string"},
+							"address": {"type": "string"},
+							"ow_type": {"type": "string"},
+							"interval": {"type": "number"},
+							"lost": {"type": "boolean"},
+							"time": {"type": "number"}
+						},
+						"required": ["dev", "circuit", "address", "ow_type"]
+					},
+					{
+						"type": "object",
+						"properties": {
+							"dev": {
+								"type": "string",
+								"enum": ["neuron"]
+							},
+							"glob_dev_id": {"type": "number"},
+							"circuit": {"type": "string"},
+							"sn": {"type": "number"},
+							"ver2": {"type": "string"},
+							"model": {"type": "string"}
+						},
+						"required": ["dev", "circuit", "sn"]
+					},
+					{
+						"type": "object",
+						"properties": {
+							"dev": {
+								"type": "string",
+								"enum": ["uart"]
+							},
+							"glob_dev_id": {"type": "number"},
+							"circuit": {"type": "string"},
+							"conf": {"type": "number"}
+						},
+						"required": ["dev", "circuit"]
 					}
 				]
 			},

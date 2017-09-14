@@ -178,4 +178,4 @@ modbus_features:
       type        : REGISTER
       major_group : 1
       count       : 21
-      val_reg     : 0
+      start_reg   : 0

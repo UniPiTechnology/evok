@@ -56,6 +56,8 @@ import socket
 from tornado import gen
 import tornado.ioloop
 from functools import partial
+from tornado.locks import Semaphore
+
 
 import serial
 
@@ -64,6 +66,8 @@ import datetime
 
 import logging
 _logger = logging.getLogger(__name__)
+
+client_dict = {}
 
 class AsyncErrorResponse(ModbusResponse):
 	SerialConnectionError = 1
@@ -280,32 +284,45 @@ def read_gen_cb(result):
 class AsyncModbusGeneratorClient(AsyncModbusSerialClient):
 	def __init__(self, method='ascii', **kwargs):
 		super(AsyncModbusGeneratorClient, self).__init__(method=method, **kwargs)
+		self.sem = Semaphore(1)
 
 	@gen.coroutine
 	def read_input_registers(self, address, count=1, **kwargs):
 		fut_result = Future()
 		request = ReadInputRegistersRequest(address, count, **kwargs)
-		res = self.execute(request)
-		res.addCallback(fut_result.set_result)
-		yield fut_result
+		yield self.sem.acquire()
+		try:
+			res = self.execute(request)
+			res.addCallback(fut_result.set_result)
+			yield fut_result
+		finally:
+			self.sem.release()
 		raise gen.Return(fut_result.result())
 
 	@gen.coroutine
 	def write_coil(self, address, value, **kwargs):
 		fut_result = Future()
 		request = WriteSingleCoilRequest(address, value, **kwargs)
-		res = self.execute(request)
-		res.addCallback(fut_result.set_result)
-		yield fut_result
+		yield self.sem.acquire()
+		try:
+			res = self.execute(request)
+			res.addCallback(fut_result.set_result)
+			yield fut_result
+		finally:
+			self.sem.release()
 		raise gen.Return(fut_result.result())
 
 	@gen.coroutine
 	def write_register(self, address, value, **kwargs):
 		fut_result = Future()
 		request = WriteSingleRegisterRequest(address, value, **kwargs)
-		res = self.execute(request)
-		res.addCallback(fut_result.set_result)
-		yield fut_result
+		yield self.sem.acquire()
+		try:
+			res = self.execute(request)
+			res.addCallback(fut_result.set_result)
+			yield fut_result
+		finally:
+			self.sem.release()
 		raise gen.Return(fut_result.result())
 	
 @gen.coroutine
@@ -313,27 +330,28 @@ def UartStartClient(client, callback=None):
 	''' Connect to tcp host and, join to client.transport, wait for reply data
 		Reconnect on close
 	''' 
-	True
-	#client.client.connect()
-	#while True:
-	#	try:
-			#stream = yield TCPClient().connect(host, port)
-			#client.setTransport(stream)
-			#if callback is not None:
-			#	yield callback()
-			#while (True):
-			#	try:
-			#		client.scan_boards()
-			#	except Exception, E:
-			#		pass
-			#yield future
-		#except StreamClosedError:
-		#	pass
-	#	except Exception, E:
-	#		_logger.exception(str(E))
-		#	stream.close()
-		#finally:
-		#	client.setTransport(None)
+	print "UART CLIENT STARTED" #+ str(callback)
+	while True:
+		if callback:
+			yield callback()
+		while True:
+			try:
+				yield client.scan_boards()
+				yield gen.sleep(0.5)
+				#stream = yield TCPClient().connect(host, port)
+				#client.setTransport(stream)
+				#if callback is not None:
+				#	yield callback()
+				#while (True):
+				#	try:
+				#		client.scan_boards()
+				#	except Exception, E:
+				#		pass
+				#yield future
+			#except StreamClosedError:
+			#	pass
+			except Exception, E:
+				_logger.exception(str(E))
 
 '''
 	client = ModbusClientProtocol()

@@ -2,6 +2,14 @@ $.fn.exists = function () {
     return this.length !== 0;
 }
 
+var legacy_api = false;
+var api_port = 8080
+
+var ws = null;
+var use_polling = false;
+var timer = null;
+
+
 function sortResults(data) {
     return data.sort(function (a, b) {
         return a.circuit - b.circuit;
@@ -191,25 +199,39 @@ function SyncDevice(msg) {
 }
 
 function update_values() {
-    $.ajax({
-    	crossDomain: true,
-    	url: 'http://' + $(location).attr('hostname') + ':8080/rest/all',
-        dataType: 'json',
-        success: function (data) {
-            //data = sortResults(data);
-            $.each(data, function (name, msg) {
-                SyncDevice(msg);
-            });
-        },
-        error: function (data) {
-        }
-    });
+	if (legacy_api) {
+	    $.ajax({
+	    	crossDomain: true,
+	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + '/rest/all',
+	        dataType: 'json',
+	        success: function (data) {
+	            data = sortResults(data);
+	            $.each(data, function (name, msg) {
+	                SyncDevice(msg);
+	            });
+	        },
+	        error: function (data) {
+	        }
+	    });
+    } else {
+	    $.ajax({
+	    	crossDomain: true,
+	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + '/rest/all',
+	        dataType: 'json',
+	        success: function (data) {
+	            data = sortResults(data.data);
+	            $.each(data, function (name, msg) {
+	                SyncDevice(msg);
+	            });
+	        },
+	        error: function (data) {
+	        }
+	    });    	
+    }
 }
 
 
-var ws = null;
-var use_polling = false;
-var timer = null;
+
 
 
 function WebSocketRegister() {
@@ -218,7 +240,7 @@ function WebSocketRegister() {
             return
         }
         var loc = window.location;
-        uri = ((loc.protocol === "https:") ? "wss://" : "ws://") + loc.hostname + ':8080';
+        uri = ((loc.protocol === "https:") ? "wss://" : "ws://") + loc.hostname + ':' + api_port;
 
         ws = new WebSocket(uri + "/ws");
         //var wnd = null;
@@ -264,29 +286,28 @@ function WebSocketRegister() {
 }
 
 function makePostRequest(action, params) {
-    $.ajax({
-    	crossDomain: true,
-    	url: 'http://' + $(location).attr('hostname') + ':8080/rest/' + action,
-    	//dataType: "application/json",
-        type: 'POST',
-        data: params,
-        //data: JSON.stringify(params),
-        success: function (data) {
-        },
-        error: function (data) {
-        }
-    });
-    /*
-    $.ajax({
-    	crossDomain: true,
-    	url: 'http://' + $(location).attr('hostname') + ':8080/json',
-    	dataType: "application/json",
-        type: 'POST',
-        data: JSON.stringify({"commands":[]}),
-        success: function (data) {
-        },
-        error: function (data) {
-        }
-    });
-    */
+	 if (use_legacy_api) {
+		$.ajax({
+	    	crossDomain: true,
+	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + '/rest/' + action,
+	        type: 'POST',
+	        data: params,
+	        success: function (data) {
+	        },
+	        error: function (data) {
+	        }
+	    });
+	} else {
+	    $.ajax({
+	    	crossDomain: true,
+	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + '/json',
+	    	dataType: "application/json",
+	        type: 'POST',
+	        data: JSON.stringify({"commands":[]}),
+	        success: function (data) {
+	        },
+	        error: function (data) {
+	        }
+	    });
+	}
 }
