@@ -67,11 +67,12 @@ basereg1000 = (
 
 
 class Neuron(object):
-	def __init__(self, circuit, Config, modbus_server, modbus_port, scan_freq, scan_enabled, hw_dict, dev_id=0):
+	def __init__(self, circuit, Config, modbus_server, modbus_port, scan_freq, scan_enabled, hw_dict, direct_access=False, dev_id=0):
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.hw_dict = hw_dict
 		self.Config = Config
+		self.direct_access = direct_access
 		self.modbus_server = modbus_server
 		self.modbus_port = modbus_port
 		self.modbus_address = circuit
@@ -94,6 +95,7 @@ class Neuron(object):
 	def readboards(self):
 		""" Try to read version registers on 3 boards and create subdevices """
 		# ToDo - destroy all boards and subdevices before creating
+		print "READING BOARDS SPI"
 		for board in self.boards:
 			del (board)
 		self.boards = list()
@@ -104,7 +106,7 @@ class Neuron(object):
 					raise ENoBoard("bad request")
 				print versions.registers
 				print type(versions)
-				board = Board(self.Config, i, self, versions.registers)
+				board = Board(self.Config, i, self, versions.registers, direct_access=self.direct_access, dev_id=self.dev_id)
 				data = yield self.client.read_input_registers(0, count=board.ndataregs, unit=i)
 				if i == 2:
 					configs = yield self.client.read_input_registers(1000, count=20, unit=i)
@@ -140,12 +142,13 @@ class Neuron(object):
 	@gen.coroutine
 	def scan_boards(self):
 		if self.client.connected:
-			print "ERGO"
+			print "ERGO " + str(len(self.boards))
 			try:
 				for board in self.boards:
-					data = yield self.client.read_input_registers(0, count=board.ndataregs, unit=board.circuit)
+					data = yield self.client.read_input_registers(0, count=board.ndataregs, unit=board.modbus_address)
 					if isinstance(data, ExceptionResponse):
-						raise Exception("bad request")
+						raise Exception("Wrong request")
+					print data.registers
 					board.set_data(0, data.registers)
 			except Exception, E:
 				logger.exception(str(E))
@@ -156,12 +159,13 @@ class Neuron(object):
 			self.is_scanning = False
 
 class UartNeuron(object):
-	def __init__(self, circuit, Config, port, scan_freq, scan_enabled, hw_dict, baud_rate=19200, parity='N', stopbits=1, uart_address=15, device_name='unspecified', dev_id=0):
+	def __init__(self, circuit, Config, port, scan_freq, scan_enabled, hw_dict, baud_rate=19200, parity='N', stopbits=1, uart_address=15, device_name='unspecified', direct_access=False, dev_id=0):
 		self.boards = list()
 		self.dev_id = dev_id
-		self.circuit = "RS485_" + str(circuit)
+		self.circuit = "RS485_" + str(uart_address) + "_" + str(circuit)
 		self.hw_dict = hw_dict
 		self.port = port
+		self.direct_access = direct_access
 		self.modbus_address = uart_address
 		self.device_name = device_name
 		self.Config = Config
@@ -170,6 +174,7 @@ class UartNeuron(object):
 		self.baud_rate = baud_rate
 		self.parity = parity
 		self.stopbits = stopbits
+		self.hw_board_dict = {}
 		if scan_freq == 0:
 			self.scan_interval = 0
 		else:
@@ -178,11 +183,15 @@ class UartNeuron(object):
 
 	def switch_to_async(self, loop):
 		self.loop = loop
-		self.client = modbusclient_rs485.AsyncModbusGeneratorClient(method='rtu', stopbits=self.stopbits, bytesize=8, parity=self.parity, baudrate=self.baud_rate, timeout=5, port=self.port)
+		if self.port in modbusclient_rs485.client_dict:
+			self.client = modbusclient_rs485.client_dict[self.port]
+		else:
+			self.client = modbusclient_rs485.AsyncModbusGeneratorClient(method='rtu', stopbits=self.stopbits, bytesize=8, parity=self.parity, baudrate=self.baud_rate, timeout=1.5, port=self.port)
+			modbusclient_rs485.client_dict[self.port] = self.client
 		#self.client.connect()
 		#self.client = AsyncModbusSerialClient(port="/dev/ttyNS0")
 		# start modus/tcp modbusclient_rs485. On connect call self.readboards
-		modbusclient_rs485.UartStartClient(self.client, self.readboards)
+		#modbusclient_rs485.UartStartClient(self.client, self.readboards)
 		#self.client = pymodbus.client.sync.ModbusSerialClient(method='rtu', stopbits=self.stopbits, bytesize=8, parity=self.parity, baudrate=self.baud_rate, timeout=0.05, port=self.port)
 		#self.client.connect()
 		#while (True):
@@ -196,24 +205,36 @@ class UartNeuron(object):
 		# ToDo - destroy all boards and subdevices before creating
 		for board in self.boards:
 			del (board)
+		print "READING BOARDS UART"
 		self.boards = list()
 		try:
-			versions = yield self.client.read_input_registers(1000, 10, unit=self.modbus_address)
-			print versions
-			print type(versions)
+			for defin in self.hw_dict.definitions:
+				if defin and (defin['type'] == self.device_name):
+					self.hw_board_dict = defin
+					break
+				
+			if "first_board_conf_count" not in self.hw_board_dict:
+				self.hw_board_dict['first_board_conf_count'] = 0
+			if "first_board_data_count" not in self.hw_board_dict:
+				self.hw_board_dict['first_board_data_count'] = 0
+			
+			versions = yield self.client.read_input_registers(1000, self.hw_board_dict['first_board_conf_count'], unit=self.modbus_address)
+			#print versions
+			#print type(versions)
 			#logger.debug(type(versions))
 			#logger.debug(versions.registers)
 			if isinstance(versions, ExceptionResponse):
-				raise ENoBoard("Wrong request")
+				board = UartBoard(self.Config, self.circuit, self.modbus_address, self, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dev_id=self.dev_id)
 			elif isinstance(versions, AsyncErrorResponse):
-				raise ENoBoard("Wrong UART request")
-			board = UartBoard(self.Config, self.circuit, self.modbus_address, self, versions.registers, self.dev_id)
-			data = yield self.client.read_input_registers(0, count=10, unit=self.modbus_address)
+				board = UartBoard(self.Config, self.circuit, self.modbus_address, self, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dev_id=self.dev_id)
+			else:
+				board = UartBoard(self.Config, self.circuit, self.modbus_address, self, versions.registers, dev_id=self.dev_id)
+			data = yield self.client.read_input_registers(0, count=self.hw_board_dict['first_board_data_count'], unit=self.modbus_address)
 			#print data.registers
-			configs = yield self.client.read_input_registers(1000, count=10, unit=self.modbus_address)
+			configs = yield self.client.read_input_registers(1000, count=self.hw_board_dict['first_board_conf_count'], unit=self.modbus_address)
 			#print "ccc %d" % 1
 			#print configs.registers
-			board.parse_definition(data.registers, configs.registers, self.hw_dict, 1)
+			board.parse_definition(data, configs, self.hw_dict, 1)
 			self.boards.append(board)
 		except ENoBoard:
 			print "No Board"
@@ -241,7 +262,7 @@ class UartNeuron(object):
 	def scan_boards(self):
 		print "Number of boards scanned: " + str(len(self.boards)) 
 		try:
-			yield self.client.read_input_registers(address=0, count=10, unit=15)
+			yield self.client.read_input_registers(address=0, count=10, unit=self.modbus_address)
 			for board in self.boards:
 				print "Number of datadeps: " + str(len(board.datadeps))
 				data = yield self.client.read_input_registers(0, count=len(board.datadeps), unit=board.modbus_address)
@@ -253,7 +274,7 @@ class UartNeuron(object):
 		except Exception, E:
 			logger.exception(str(E))
 		if self.do_scanning and (self.scan_interval != 0):
-			self.loop.call_later(self.scan_interval, self.scan_boards)
+			#self.loop.call_later(self.scan_interval, self.scan_boards)
 			self.is_scanning = True
 		else:
 			self.is_scanning = False
@@ -272,10 +293,12 @@ class Proxy(object):
 
 
 class UartBoard(object):
-	def __init__(self, Config, circuit, modbus_address, neuron, versions, dev_id=0):
+	def __init__(self, Config, circuit, modbus_address, neuron, versions, direct_access=False, dev_id=0):
 		self.dev_id = dev_id
 		self.Config = Config
 		self.circuit = circuit
+		self.direct_access = direct_access
+		self.legacy_mode = Config.getbooldef('MAIN','legacy_api',True)
 		self.neuron = neuron
 		self.modbus_address = modbus_address
 		self.sw = versions[0]
@@ -289,8 +312,8 @@ class UartBoard(object):
 		self.serial = versions[5] + (versions[6] << 16)
 		self.nai1 = self.nai if self.hw != 0 else 1  # full featured AI (with switched V/A)
 		self.nai2 = 0 if self.hw != 0 else 1  # Voltage only AI
-		self.ndataregs = self.get_base_reg(0, 'ALL')
-		self.nconfigregs = self.get_base_reg(1000, 'ALL') - 1000
+		#self.ndataregs = self.get_base_reg(0, 'ALL')
+		#self.nconfigregs = self.get_base_reg(1000, 'ALL') - 1000
 		#print self.ndataregs, self.nconfigregs
 
 
@@ -314,16 +337,23 @@ class UartBoard(object):
 #
 
 	def parse_definition(self, data, configs, hw_dict, board_id):
-		self.data = data
-		#print "test1 %d" % board_id
-		self.configs = configs
+		if isinstance(data, ExceptionResponse) or isinstance(data, AsyncErrorResponse):
+			self.data = []
+		else:
+			self.data = data.registers
+		
+		if isinstance(configs, ExceptionResponse) or isinstance(configs, AsyncErrorResponse):
+			self.configs = []
+		else:
+			self.configs = configs.registers
 		self.datadeps = {} #[set() for _ in range(len(data))]
-		if (self.hw == 0):
-			self.volt_refx = (3.3 * configs[9])
-			self.volt_ref = (3.3 * configs[9]) / data[5]
+		if (self.sw != 0 and self.hw == 0):
+				self.volt_refx = (3.3 * configs[9])
+				self.volt_ref = (3.3 * configs[9]) / data[5]
 		else:
 			self.volt_refx = 33000
 			self.volt_ref = 3.3
+
 		#print "test2 %d" % board_id
 		#base = self.get_base_reg(0, 'DI')
 		#base_deb = self.get_base_reg(1000, 'DEB') - 1000
@@ -335,9 +365,11 @@ class UartBoard(object):
 		for defin in hw_dict.definitions:
 			#try:
 				#print defin['type']
-				if defin and defin['type'] in self.neuron.device_name:
+				if defin and (defin['type'] == self.neuron.device_name):
 					#print defin['type']
 					#print len(defin)
+					self.ndataregs = defin['first_board_data_count']
+					self.nconfigregs = defin['first_board_conf_count']
 					for m_feature in defin['modbus_features']:
 						#print m_feature
 						counter = 0
@@ -434,9 +466,9 @@ class UartBoard(object):
 								Devices.register_device(AI, _ai)
 								counter+=1
 								#print counter
-						elif m_feature['type'] == 'REGISTER' and m_feature['major_group'] == board_id and self.Config.getbooldef("MAIN", "allow_register_access", False):
+						elif m_feature['type'] == 'REGISTER' and m_feature['major_group'] == board_id and self.direct_access:
 							while counter < max_count:
-								board_val_reg = m_feature['val_reg'] - (100 * (board_id - 1))
+								board_val_reg = m_feature['start_reg'] - (100 * (board_id - 1))
 								_reg = Register("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg + counter, dev_id=0)
 								if board_val_reg < 1000 and self.datadeps.has_key(board_val_reg + counter):
 									self.datadeps[board_val_reg + counter] += [_reg]
@@ -463,7 +495,7 @@ class UartBoard(object):
 	def set_data(self, register, data):
 		# ToDo!
 		changeset = []
-		#print data
+		print data
 		for i in range(len(data)):
 			try:
 				if data[i] == self.data[i]: continue
@@ -479,10 +511,12 @@ class UartBoard(object):
 
 
 class Board(object):
-	def __init__(self, Config, circuit, neuron, versions, dev_id=0):
+	def __init__(self, Config, circuit, neuron, versions, dev_id=0, direct_access=False):
 		self.dev_id = dev_id
 		self.Config = Config
 		self.circuit = circuit
+		self.direct_access = direct_access
+		self.legacy_mode = Config.getbooldef('MAIN','legacy_api',True)
 		self.neuron = neuron
 		self.modbus_address = circuit
 		self.sw = versions[0]
@@ -550,16 +584,13 @@ class Board(object):
 						counter = 0
 						max_count = m_feature['count'] 
 						if m_feature['type'] == 'DI' and m_feature['major_group'] == board_id:
-							#print m_feature['type']
-							#print m_feature['count']
 							while counter < max_count:
 								board_val_reg = m_feature['val_reg'] - (100 * (board_id - 1))
 								board_counter_reg = m_feature['counter_reg'] - (100 * (board_id - 1))
 								board_deboun_reg = m_feature['deboun_reg'] - (100 * (board_id - 1))
 								_inp = Input("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg, 0x1 << (counter % 16),
-											 regdebounce=board_deboun_reg + counter, regcounter=board_counter_reg + (2 * counter))
-								#logging.info("Registered DI %02d" % counter + 1)
-								#print m_feature['count']
+											 regdebounce=board_deboun_reg + counter, regcounter=board_counter_reg + (2 * counter),
+											 dev_id=self.dev_id, legacy_mode=self.legacy_mode)
 								if self.datadeps.has_key(board_val_reg):
 									self.datadeps[board_val_reg]+=[_inp]
 								else:
@@ -568,28 +599,24 @@ class Board(object):
 									self.datadeps[board_counter_reg + (2 * counter)]+=[_inp]
 								else:
 									self.datadeps[board_counter_reg + (2 * counter)] = [_inp]
-								counter+=1
-								#print counter
 								Devices.register_device(INPUT, _inp)
+								counter+=1
 						elif (m_feature['type'] == 'RO' or m_feature['type'] == 'DO') and m_feature['major_group'] == board_id:
-							#print m_feature['type']
-							#print m_feature['count']
 							while counter < max_count:
 								board_val_reg = m_feature['val_reg'] - (100 * (board_id - 1))
-								_r = Relay("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg, 0x1 << (counter % 16))
+								_r = Relay("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg, 0x1 << (counter % 16),
+										   dev_id=self.dev_id, legacy_mode=self.legacy_mode)
 								if self.datadeps.has_key(board_val_reg):
 									self.datadeps[board_val_reg]+=[_r]
 								else:
 									self.datadeps[board_val_reg] = [_r]
 								Devices.register_device(RELAY, _r)
 								counter+=1
-								#print counter
 						elif m_feature['type'] == 'LED' and m_feature['major_group'] == board_id:
-							#print m_feature['type']
-							#print m_feature['count']
 							while counter < max_count:
 								board_val_reg = m_feature['val_reg'] - (100 * (board_id - 1))
-								_led = ULED("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg, 0x1 << (counter % 16), m_feature['val_coil'] + counter)
+								_led = ULED("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg, 0x1 << (counter % 16), m_feature['val_coil'] + counter,
+										    dev_id=self.dev_id, legacy_mode=self.legacy_mode)
 								if self.datadeps.has_key(board_val_reg + counter):
 									self.datadeps[board_val_reg + counter]+=[_led]
 								else:
@@ -600,7 +627,8 @@ class Board(object):
 							while counter < max_count:
 								board_val_reg = m_feature['val_reg'] - (100 * (board_id - 1))
 								board_timeout_reg = m_feature['timeout_reg'] - (100 * (board_id - 1)) - 1000
-								_wd = Watchdog("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg + counter, board_timeout_reg + counter, dev_id=0)
+								_wd = Watchdog("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg + counter, board_timeout_reg + counter,
+											   dev_id=self.dev_id, legacy_mode=self.legacy_mode)
 								if self.datadeps.has_key(board_val_reg + counter):
 									self.datadeps[board_val_reg + counter]+=[_wd]
 								else:
@@ -611,9 +639,12 @@ class Board(object):
 							while counter < max_count:
 								board_val_reg = m_feature['val_reg'] - (100 * (board_id - 1))
 								if m_feature.has_key('cal_reg'):
-									_ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, regcal=m_feature['cal_reg'] + 1, regmode=m_feature['mode_reg'], reg_res=m_feature['res_val_reg'], modes=m_feature['modes'])
+									_ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, regcal=m_feature['cal_reg'] + 1,
+													   regmode=m_feature['mode_reg'], reg_res=m_feature['res_val_reg'], modes=m_feature['modes'],
+													   dev_id=self.dev_id, legacy_mode=self.legacy_mode)
 								else:
-									_ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter)
+									_ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, dev_id=self.dev_id,
+													   legacy_mode=self.legacy_mode)
 								if self.datadeps.has_key(board_val_reg + counter):
 									self.datadeps[board_val_reg + counter]+=[_ao]
 								else:
@@ -625,19 +656,22 @@ class Board(object):
 							while counter < max_count:
 								board_val_reg = m_feature['val_reg'] - (100 * (board_id - 1))
 								if m_feature.has_key('cal_reg'):
-									_ai = AnalogInput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, regcal=m_feature['cal_reg'] + 4)
+									_ai = AnalogInput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, regcal=m_feature['cal_reg'] + 4,
+													  dev_id=self.dev_id, legacy_mode=self.legacy_mode)
 								else:
-									_ai = AnalogInput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter * 2)
+									_ai = AnalogInput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter * 2, dev_id=self.dev_id,
+													  legacy_mode=self.legacy_mode)
 								if self.datadeps.has_key(board_val_reg + counter):
 									self.datadeps[board_val_reg + counter]+=[_ai]
 								else:
 									self.datadeps[board_val_reg + counter] = [_ai]
 								Devices.register_device(AI, _ai)
 								counter+=1
-						elif m_feature['type'] == 'REGISTER' and m_feature['major_group'] == board_id and self.Config.getbooldef("MAIN", "allow_register_access", False):
+						elif m_feature['type'] == 'REGISTER' and m_feature['major_group'] == board_id and self.direct_access:
 							while counter < max_count:
-								board_val_reg = m_feature['val_reg'] - (100 * (board_id - 1))
-								_reg = Register("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg + counter, dev_id=0)
+								board_val_reg = m_feature['start_reg'] - (100 * (board_id - 1))
+								_reg = Register("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg + counter, dev_id=self.dev_id,
+											    legacy_mode=self.legacy_mode)
 								if board_val_reg < 1000 and self.datadeps.has_key(board_val_reg + counter):
 									self.datadeps[board_val_reg + counter] += [_reg]
 								elif board_val_reg < 1000:
@@ -647,22 +681,24 @@ class Board(object):
 						elif m_feature['type'] == 'UART' and m_feature['major_group'] == board_id:
 							while counter < max_count:
 								board_val_reg = m_feature['conf_reg'] - (100 * (board_id - 1))
-								_uart = Uart("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, dev_id=0)
+								_uart = Uart("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, dev_id=self.dev_id,
+											 legacy_mode=self.legacy_mode)
 								Devices.register_device(UART, _uart)
 								counter+=1
 
 	def set_data(self, register, data):
 		# ToDo!
 		changeset = []
-		#print data
+		print data
 		for i in range(len(data)):
 			try:
 				if data[i] == self.data[i]: continue
 			except:
-				pass
+				logger.exception("invalid data scanned")
 			if self.datadeps.has_key(i):
 				changeset += self.datadeps[i]  # add devices to set
 
+		print changeset
 		self.data = data
 		if len(changeset) > 0:
 			proxy = Proxy(set(changeset))
@@ -672,17 +708,20 @@ class Board(object):
 class Relay(object):
 	pending_id = 0
 	
-	def __init__(self, circuit, arm, coil, reg, mask, dev_id=0):
+	def __init__(self, circuit, arm, coil, reg, mask, dev_id=0, legacy_mode=True):
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.arm = arm
+		self.legacy_mode = legacy_mode
 		self.coil = coil
 		self.bitmask = mask
 		self.regvalue = lambda: arm.data[reg]
-		#self.reg.devices.add(self)
 
 	def full(self):
-		return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value, 'pending': self.pending_id != 0}
+		if self.legacy_mode:
+			return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value, 'pending': self.pending_id != 0}
+		else:
+			return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value, 'pending': self.pending_id != 0, 'glob_dev_id': self.dev_id}
 
 	def simple(self):
 		return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value}
@@ -738,25 +777,24 @@ class Relay(object):
 class ULED(object):
 	pending_id = 0
 	
-	def __init__(self, circuit, arm, post, reg, mask, coil, dev_id=0):
+	def __init__(self, circuit, arm, post, reg, mask, coil, dev_id=0, legacy_mode=True):
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.arm = arm
+		self.legacy_mode = legacy_mode
 		self.bitmask = mask
 		self.regvalue = lambda: arm.data[reg]
 		self.valreg = reg
 		self.coil = coil
-		#print "TEST A"
-		#print "TEST B"
-		#print "TEST C"
-		#self.reg.devices.add(self)
 		#self.regcounter1.devices.add(self)
 		#self.regcounter2.devices.add(self)
 		#self.regdebounce.devices.add(self)
-		#print "TEST D"
 
 	def full(self):
-		return {'dev': 'led', 'circuit': self.circuit, 'value': self.value}
+		if self.legacy_mode:
+			return {'dev': 'led', 'circuit': self.circuit, 'value': self.value}
+		else:
+			return {'dev': 'led', 'circuit': self.circuit, 'value': self.value, 'glob_dev_id': self.dev_id}
 
 	def simple(self):
 		return {'dev': 'led', 'circuit': self.circuit, 'value': self.value}
@@ -796,17 +834,21 @@ class ULED(object):
 
 class Watchdog(object):
 	
-	def __init__(self, circuit, arm, post, reg, timeout_reg, dev_id=0):
+	def __init__(self, circuit, arm, post, reg, timeout_reg, dev_id=0, legacy_mode=True):
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.arm = arm
+		self.legacy_mode = legacy_mode
 		self.timeoutvalue = lambda: arm.configs[timeout_reg]
 		self.regvalue = lambda: arm.data[reg]
 		self.valreg = reg
 		self.toreg = timeout_reg
 
 	def full(self):
-		return {'dev': 'wd', 'circuit': self.circuit, 'value': self.regvalue(), 'timeout': self.timeoutvalue()}
+		if self.legacy_mode:
+			return {'dev': 'wd', 'circuit': self.circuit, 'value': self.regvalue(), 'timeout': self.timeoutvalue()}
+		else:
+			return {'dev': 'wd', 'circuit': self.circuit, 'value': self.regvalue(), 'timeout': self.timeoutvalue(), 'glob_dev_id': self.dev_id}			
 
 	def simple(self):
 		return {'dev': 'wd', 'circuit': self.circuit, 'value': self.regvalue()}
@@ -861,15 +903,20 @@ class Watchdog(object):
 
 
 class Register():
-	def __init__(self, circuit, arm, post, reg, dev_id=0):
+	def __init__(self, circuit, arm, post, reg, reg_type="input", dev_id=0, legacy_mode=True):
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.arm = arm
+		self.legacy_mode = legacy_mode
 		self.regvalue = lambda: arm.data[reg]
 		self.valreg = reg
+		self.reg_type = reg_type
 
 	def full(self):
-		return {'dev': 'register', 'circuit': self.circuit, 'value': self.regvalue()}
+		if self.legacy_mode:
+			return {'dev': 'register', 'circuit': self.circuit, 'value': self.regvalue()}
+		else:
+			return {'dev': 'register', 'circuit': self.circuit, 'value': self.regvalue(), 'glob_dev_id': self.dev_id}			
 		
 
 	def simple(self):
@@ -912,10 +959,11 @@ class Register():
 	
 
 class Input():
-	def __init__(self, circuit, arm, reg, mask, regcounter=None, regdebounce=None, dev_id=0):
+	def __init__(self, circuit, arm, reg, mask, regcounter=None, regdebounce=None, dev_id=0, legacy_mode=True):
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.arm = arm
+		self.legacy_mode = legacy_mode
 		self.bitmask = mask
 		self.counterreg = regcounter
 		self.debouncereg = regdebounce
@@ -951,9 +999,14 @@ class Input():
 			return 0
 
 	def full(self):
-		return {'dev': 'input', 'circuit': self.circuit, 'value': self.value,
-				'debounce': self.debounce, 'counter_mode': self.counter_mode,
-				'counter': self.counter}
+		if self.legacy_mode:
+			return {'dev': 'input', 'circuit': self.circuit, 'value': self.value,
+					'debounce': self.debounce, 'counter_mode': self.counter_mode,
+					'counter': self.counter}
+		else:
+			return {'dev': 'input', 'circuit': self.circuit, 'value': self.value,
+					'debounce': self.debounce, 'counter_mode': self.counter_mode,
+					'counter': self.counter, 'glob_dev_id': self.dev_id}			
 
 	def simple(self):
 		return {'dev': 'input', 'circuit': self.circuit, 'value': self.value}
@@ -983,9 +1036,10 @@ class Input():
 		return self.value
 
 class Uart():
-	def __init__(self, circuit, arm, reg, dev_id=0):
+	def __init__(self, circuit, arm, reg, dev_id=0, legacy_mode=True):
 		self.dev_id = dev_id
 		self.circuit = circuit
+		self.legacy_mode = legacy_mode
 		self.arm = arm
 		self.regvalue = lambda: arm.configs[reg - 1000]
 		self.valreg = reg
@@ -999,7 +1053,10 @@ class Uart():
 		return 0
 
 	def full(self):
-		return {'dev': 'uart', 'circuit': self.circuit, 'conf': self.conf}
+		if self.legacy_mode:
+			return {'dev': 'uart', 'circuit': self.circuit, 'conf': self.conf}
+		else:
+			return {'dev': 'uart', 'circuit': self.circuit, 'conf': self.conf, 'glob_dev_id': self.dev_id}
 
 	def simple(self):
 		return {'dev': 'uart', 'circuit': self.circuit, 'conf': self.conf}
@@ -1026,14 +1083,15 @@ def uint16_to_int(inp):
 	return inp
 
 
-class AnalogOutput():
-	def __init__(self, circuit, arm, reg, regcal=-1, regmode=-1, reg_res=-1, dev_id=0, modes=['Voltage']):
+class  AnalogOutput():
+	def __init__(self, circuit, arm, reg, regcal=-1, regmode=-1, reg_res=-1, dev_id=0, modes=['Voltage'], legacy_mode=True):
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.reg = reg
 		self.regvalue = lambda: arm.data[reg]
 		self.regcal = regcal
 		self.regmode = regmode
+		self.legacy_mode = legacy_mode
 		self.reg_res = reg_res
 		self.modes = modes
 		self.arm = arm
@@ -1070,8 +1128,13 @@ class AnalogOutput():
 			return 0
 
 	def full(self):
-		return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value,
+		if self.legacy_mode:
+			return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value,
 				'unit': unit_names[VOLT] if self.is_voltage() else unit_names[AMPERE], 'modes': self.modes}
+		else:
+			return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value,
+				'unit': unit_names[VOLT] if self.is_voltage() else unit_names[AMPERE], 'modes': self.modes,
+				'glob_dev_id': self.dev_id}			
 
 	def simple(self):
 		return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value}
@@ -1122,12 +1185,13 @@ class AnalogOutput():
 				raise gen.Return(float(valuei) * 0.0025)
 
 class AnalogInput():
-	def __init__(self, circuit, arm, reg, regcal=-1, dev_id=0):
+	def __init__(self, circuit, arm, reg, regcal=-1, dev_id=0, legacy_mode=True):
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.regvalue = lambda: arm.data[reg]
 		self.valreg = reg
 		self.regcal = regcal
+		self.legacy_mode = legacy_mode
 		#self.reg.devices.add(self)
 		self.arm = arm
 		self.is_voltage = lambda: True
@@ -1180,9 +1244,14 @@ class AnalogInput():
 			self.arm.neuron.client.write_register(1000 + self.regcal - 1, val, unit=self.arm.modbus_address)
 
 	def full(self):
-		return {'dev': 'ai', 'circuit': self.circuit, 'value': self.value,
-				'unit': unit_names[VOLT] if self.is_voltage() else unit_names[AMPERE]}
-
+		if self.legacy_mode:
+			return {'dev': 'ai', 'circuit': self.circuit, 'value': self.value,
+					'unit': unit_names[VOLT] if self.is_voltage() else unit_names[AMPERE]}
+		else:
+			return {'dev': 'ai', 'circuit': self.circuit, 'value': self.value,
+					'unit': unit_names[VOLT] if self.is_voltage() else unit_names[AMPERE],
+					'glob_dev_id': self.dev_id}
+			
 	def simple(self):
 		return {'dev': 'ai', 'circuit': self.circuit, 'value': self.value}
 

@@ -1,0 +1,13 @@
+---
+type: DOMAT MMIO
+modbus_features:
+    - f_index     : 0
+      type        : REGISTER
+      major_group : 1
+      count       : 12
+      start_reg   : 0
+#    - f_index     : 1
+#      type        : REGISTER
+#      major_group : 1
+#      count       : 10
+#      start_reg     : 500

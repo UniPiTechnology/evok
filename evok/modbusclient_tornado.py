@@ -116,6 +116,7 @@ def StartClient(client, host='127.0.0.1', port=502, callback=None):
 	''' Connect to tcp host and, join to client.transport, wait for reply data
 		Reconnect on close
 	''' 
+	print "CLIENT STARTED"
 	while True:
 		try:
 			stream = yield TCPClient().connect(host, port)

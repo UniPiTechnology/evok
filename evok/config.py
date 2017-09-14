@@ -103,6 +103,9 @@ class OWSensorDevice():
 		self.sensor_dev = sensor_dev 
 		self.circuit = sensor_dev.circuit
 		
+	def full(self):
+		return self.sensor_dev.full()
+		
 class I2CBusDevice():
 	def __init__(self, bus_driver, dev_id):
 		self.dev_id = dev_id
@@ -201,13 +204,16 @@ def create_devices(Config, hw_dict):
 				#permanent thermometer
 				bus = Config.get(section, "bus")
 				owbus = (Devices.by_int(OWBUS, bus)).bus_driver
-				typ = Config.get(section, "type")
+				ow_type = Config.get(section, "type")
 				address = Config.get(section, "address")
 				interval = Config.getintdef(section, "interval", 15)
-				sensor_dev = owclient.MySensorFabric(address, typ, owbus, interval=interval, circuit=circuit,
+				sensor_dev = owclient.MySensorFabric(address, ow_type, owbus, interval=interval, circuit=circuit,
 												 is_static=True)
-				sensor = OWSensorDevice(sensor_dev, dev_id=0)
-				Devices.register_device(SENSOR, sensor)
+				if ow_type in ["DS2408","DS2406", "DS2404"]:
+					sensor = OWSensorDevice(sensor_dev, dev_id=0)
+					Devices.register_device(SENSOR, sensor)
+				else:
+					Devices.register_device(SENSOR, sensor)
 			elif devclass == '1WRELAY':
 				# Relays on DS2404
 				sensor = Config.get(section, "sensor")
@@ -323,7 +329,9 @@ def create_devices(Config, hw_dict):
 				modbus_port   =  Config.getintdef(section, "modbus_port", 502)
 				scanfreq = Config.getfloatdef(section, "scan_frequency", 1)
 				scan_enabled = Config.getbooldef(section, "scan_enabled", True)
-				neuron = Neuron(circuit, Config, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict, dev_id=dev_counter)
+				allow_register_access = Config.getbooldef(section, "allow_register_access", False)
+				neuron = Neuron(circuit, Config, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict, direct_access=allow_register_access, 
+							    dev_id=dev_counter)
 				Devices.register_device(NEURON, neuron)
 			elif devclass == 'EXTENSION':
 				from neuron import UartNeuron
@@ -336,10 +344,10 @@ def create_devices(Config, hw_dict):
 				uart_stopbits = Config.getintdef(section, "stop_bits", 1)
 				uart_address = Config.getintdef(section, "address", 15)
 				device_name = Config.getstringdef(section, "device_name", "unspecified")
+				allow_register_access = Config.getbooldef(section, "allow_register_access", False)
 				neuron = UartNeuron(circuit, Config, modbus_uart_port, scanfreq, scan_enabled, hw_dict, baud_rate=uart_baud_rate, 
-								    parity=uart_parity, stopbits=uart_stopbits, device_name=device_name, uart_address=uart_address, dev_id=dev_counter)
-				#neuron.switch_to_async(None)
-				#
+								    parity=uart_parity, stopbits=uart_stopbits, device_name=device_name, uart_address=uart_address,
+								    direct_access=allow_register_access, dev_id=dev_counter)
 				Devices.register_device(NEURON, neuron)
 				#neuron.readboards()
 				#for c in neuron.client.read_holding_registers(1000, count=5, unit=15):

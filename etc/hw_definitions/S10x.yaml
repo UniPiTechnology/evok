@@ -1,5 +1,7 @@
 ---
 type: S10
+first_board_data_count: 20
+first_board_conf_count: 31
 modbus_features:
     - f_index     : 0
       type        : AO
@@ -77,4 +79,4 @@ modbus_features:
       type        : REGISTER
       major_group : 1
       count       : 21
-      val_reg     : 0
+      start_reg     : 0
