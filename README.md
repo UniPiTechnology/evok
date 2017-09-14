@@ -59,7 +59,7 @@ _**(Beta only for now)**_
 
 The installation script should take care of everything, but be aware there may be some issues with limited and/or broken functionality. Please report any bugs you find on this github repository.
 
-To install first connect to your Neuron via SSH (username root: password unipi by default) and run the following:
+To install first connect to your Neuron via SSH (username root: password unipi on our [OpenSource image] by default) and run the following:
 
     wget https://github.com/UniPiTechnology/evok/archive/master.zip
     unzip master.zip
@@ -207,6 +207,7 @@ Apache License, Version 2.0
 ----
 Raspberry Pi is a trademark of the Raspberry Pi Foundation
 
+[OpenSource image]:https://files.unipi.technology/s/public?path=%2FSoftware%2FOpen-Source%20Images
 [IndieGogo]:https://www.indiegogo.com/projects/unipi-the-universal-raspberry-pi-add-on-board
 [NEURON]:http://www.unipi.technology
 [UniPi 1.1]:https://www.unipi.technology/products/unipi-1-1-19?categoryId=1&categorySlug=unipi-1-1
