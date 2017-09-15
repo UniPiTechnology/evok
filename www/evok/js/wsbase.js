@@ -286,7 +286,7 @@ function WebSocketRegister() {
 }
 
 function makePostRequest(action, params) {
-	 if (use_legacy_api) {
+	 if (legacy_api) {
 		$.ajax({
 	    	crossDomain: true,
 	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + '/rest/' + action,
