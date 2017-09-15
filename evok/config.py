@@ -207,10 +207,10 @@ def create_devices(Config, hw_dict):
 				ow_type = Config.get(section, "type")
 				address = Config.get(section, "address")
 				interval = Config.getintdef(section, "interval", 15)
-				sensor_dev = owclient.MySensorFabric(address, ow_type, owbus, interval=interval, circuit=circuit,
+				sensor = owclient.MySensorFabric(address, ow_type, owbus, interval=interval, circuit=circuit,
 												 is_static=True)
 				if ow_type in ["DS2408","DS2406", "DS2404"]:
-					sensor = OWSensorDevice(sensor_dev, dev_id=0)
+					sensor = OWSensorDevice(sensor, dev_id=0)
 					Devices.register_device(SENSOR, sensor)
 				else:
 					Devices.register_device(SENSOR, sensor)
