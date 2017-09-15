@@ -3,7 +3,7 @@ $.fn.exists = function () {
 }
 
 var legacy_api = true;
-var api_port = 8080
+var api_port = location.port || (location.protocol === 'https:' ? '443' : '80');
 
 var ws = null;
 var use_polling = false;

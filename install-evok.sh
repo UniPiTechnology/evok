@@ -340,19 +340,21 @@ pip install tornado toro jsonrpclib pymodbus pyyaml tornado_json tornado-webserv
 cp -r etc/hw_definitions /etc/
 cp -r etc/nginx/sites-enabled /etc/nginx/
 
+rm -rf /etc/nginx/sites-enabled/default
+
 #detect version of UniPi
-echo 'Please choose version of UniPi you are using:'
+echo 'Please choose the type of your UniPi product:'
 PS3="Your model:"
 options=(
-    "UniPi 1.x"
-    "UniPi Lite 1.x"
-    "UniPi Neuron series"
+    "UniPi Neuron"
+	"UniPi Lite 1.x"
+	"UniPi 1.x"
 )
 select option in "${options[@]}"; do
     case "$REPLY" in
         1)
-            echo "Installing Evok for UniPi 1.x"
-            install_unipi_1
+			echo "Installing Evok for UniPi Neuron series including Neuron TCP Modbus Server"
+            install_unipi_neuron
             break
             ;;
         2)
@@ -361,8 +363,8 @@ select option in "${options[@]}"; do
             break
             ;;
         3)
-            echo "Installing Evok for UniPi Neuron series including Neuron TCP Modbus Server"
-            install_unipi_neuron
+            echo "Installing Evok for UniPi 1.x"
+            install_unipi_1
             break
             ;;
         *)
