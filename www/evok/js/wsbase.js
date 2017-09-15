@@ -2,7 +2,7 @@ $.fn.exists = function () {
     return this.length !== 0;
 }
 
-var legacy_api = false;
+var legacy_api = true;
 var api_port = 8080
 
 var ws = null;
