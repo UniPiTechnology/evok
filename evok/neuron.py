@@ -298,7 +298,7 @@ class UartBoard(object):
 		self.Config = Config
 		self.circuit = circuit
 		self.direct_access = direct_access
-		self.legacy_mode = Config.getbooldef('MAIN','legacy_api',True)
+		self.legacy_mode = not (Config.getbooldef('MAIN','use_experimental_api',False))
 		self.neuron = neuron
 		self.modbus_address = modbus_address
 		self.sw = versions[0]
@@ -516,8 +516,7 @@ class Board(object):
 		self.Config = Config
 		self.circuit = circuit
 		self.direct_access = direct_access
-		self.legacy_mode = Config.getbooldef('MAIN','legacy_api',True)
-		self.neuron = neuron
+		self.legacy_mode = not (Config.getbooldef('MAIN','use_experimental_api',False))
 		self.modbus_address = circuit
 		self.sw = versions[0]
 		self.ndi = (versions[1] & 0xff00) >> 8

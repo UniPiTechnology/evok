@@ -3,6 +3,7 @@
 import os
 import ConfigParser
 import tornado.httpserver
+import tornado.httpclient
 import tornado.ioloop
 import tornado.web
 from tornado import gen
@@ -29,7 +30,7 @@ except ImportError:
 	from urlparse import urlparse  # py3
 
 import signal
-import rpc_handler
+
 import json
 import config
 from devices import *
@@ -45,10 +46,13 @@ if not os.path.isfile(config_path):
 	config_path = os.path.dirname(os.path.realpath(__file__)) + '/evok.conf'
 Config.read(config_path)
 
+wh = None
 cors = False
 corsdomains = '*'
 use_output_schema = Config.getbooldef('MAIN','output_schema',False)
-use_legacy_api = Config.getbooldef('MAIN','legacy_api',True)
+use_legacy_api = not(Config.getbooldef('MAIN','use_experimental_api',False))
+
+import rpc_handler
 
 class UserCookieHelper():
 	_passwords = []
@@ -82,6 +86,22 @@ class IndexHandler(UserCookieHelper, tornado.web.RequestHandler):
 
 
 registered_ws = {}
+
+class WhHandler():
+	def __init__(self, url):
+		self.http_client = tornado.httpclient.AsyncHTTPClient()
+		self.url = url
+
+	def open(self):
+		logger.debug("New WebSocket modbusclient_rs485 connected")
+		if not registered_ws.has_key("all"):
+			registered_ws["all"] = set()
+
+		registered_ws["all"].add(self)
+	
+	def on_event(self, device):
+		self.http_client.fetch(self.url)
+
 
 class WsHandler(websocket.WebSocketHandler):
 
@@ -652,7 +672,10 @@ class RestDIHandler(UserCookieHelper, APIHandler):
 		"title": "Neuron_Instruction",
 		"type": "object",
 		"properties": {
-			"value": { "type": "string"},
+			"value": { "type": "number"},
+			"counter": {
+				"type": "number"
+			},
 			"counter_mode": {
 				"type": "string",
 				"enum": ["disabled"]
@@ -2167,7 +2190,8 @@ def main():
 	tornado.options.parse_command_line()
 
 	config.read_eprom_config()
-
+	
+	#tornado.httpclient.AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
 	log_file = Config.getstringdef("MAIN", "log_file", "/var/log/evok.log")
 	log_level = Config.getstringdef("MAIN", "log_level", "ERROR").upper()
 
@@ -2251,11 +2275,6 @@ def main():
 	except Exception, e:
 		pass
 
-
-
-	#app.add_handlers(r'%s.*' % webname , [(r"/", IndexHandler, dict(staticfiles=staticfiles))])
-
-
 	#### prepare http server #####
 	httpServer = tornado.httpserver.HTTPServer(app)
 	httpServer.listen(port)
@@ -2273,14 +2292,21 @@ def main():
 	else:
 		modbus_context = None
 
-	soapServices = [
-		('UniPiQueryService', UniPiQueryService),
-		('UniPiCommandService', UniPiCommandService),
-		('UniPiProbeService', UniPiProbeService)		
-				]
-	soapApp = webservices.WebService(soapServices)
-	soapServer = tornado.httpserver.HTTPServer(soapApp)
-	soapServer.listen(8081)
+	if not use_legacy_api:
+		soapServices = [
+			('UniPiQueryService', UniPiQueryService),
+			('UniPiCommandService', UniPiCommandService),
+			('UniPiProbeService', UniPiProbeService)		
+			]
+		soapApp = webservices.WebService(soapServices)
+		soapServer = tornado.httpserver.HTTPServer(soapApp)
+		soapServer.listen(8081)
+
+
+
+	if Config.getbooldef("MAIN", "webhook_enabled", False):
+		wh = WhHandler(Config.getstringdef("MAIN", "webhook_address", "http://127.0.0.1:80/index.html"))
+		wh.open()
 
 	mainLoop = tornado.ioloop.IOLoop.instance()
 
