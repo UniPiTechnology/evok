@@ -154,6 +154,8 @@ install_unipi_1() {
         update-rc.d pigpiod defaults
         update-rc.d evok defaults
     fi
+	
+	sed -i -e "s/port = 8080/port = ${internal_port_number}/" /etc/evok.conf
 
     #backup uninstallation script
     cp uninstall-evok.sh /opt/evok/
@@ -232,6 +234,8 @@ install_unipi_lite_1() {
         update-rc.d evok defaults
     fi
 
+	sed -i -e "s/port = 8080/port = ${internal_port_number}/" /etc/evok.conf
+	
     #backup uninstallation script
     cp uninstall-evok.sh /opt/evok/
 
@@ -303,6 +307,8 @@ install_unipi_neuron() {
         update-rc.d evok defaults
     fi
 
+	sed -i -e "s/port = 8080/port = ${internal_port_number}/" /etc/evok.conf
+	
     #backup uninstallation script
     cp uninstall-evok.sh /opt/evok/
 
@@ -341,6 +347,17 @@ cp -r etc/hw_definitions /etc/
 cp -r etc/nginx/sites-enabled /etc/nginx/
 
 rm -rf /etc/nginx/sites-enabled/default
+
+echo 'Please select which port you wish the internal API to use: (8080 by default, can be changed in /etc/evok.conf)'
+read -p 'API Port to use: ' internal_port_number
+
+echo 'Please select which port you wish the built-in web interface to use (will also proxy request to the API port): '
+echo '(80 by default, can be changed in /etc/nginx/sites-enabled/evok)'
+echo 'WARNING: If you wish to use another web server, you may have to disable NGINX by deleting the /etc/nginx/sites-enabled/evok file'
+read -p 'Website Port to use: ' external_port_number
+sed -i -e "s/listen 80/listen ${external_port_number}/" /etc/nginx/sites-enabled/evok
+sed -i -e "s/localhost:8080/localhost:${internal_port_number}/" /etc/nginx/sites-enabled/evok
+
 
 #detect version of UniPi
 echo 'Please choose the type of your UniPi product:'
