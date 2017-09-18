@@ -27,13 +27,17 @@ class DeviceList(dict):
 		if circuit is None:
 			if major_group is not None:
 				outp = []
-				if len(devdict.values > 1):
+				if len(devdict.values()) > 1:
 					for single_dev in devdict.values():	
 						if single_dev.major_group == major_group:
-							outp += single_dev
+							outp += [single_dev]
 					return outp
-				elif len(devdict.values > 0): 
-					return devdict.values()
+				elif len(devdict.values()) > 0:
+					single_dev = devdict.values()[0]
+					if single_dev.major_group == major_group:
+						return devdict.values()
+					else:
+						return []
 				else:
 					return []
 			else:

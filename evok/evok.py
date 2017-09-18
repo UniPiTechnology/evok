@@ -1513,7 +1513,6 @@ class LoadAllHandler(UserCookieHelper, APIHandler):
 	if use_legacy_api:
 		def get(self):
 			"""This function returns a heterogeneous list of all devices exposed via the REST API"""
-			#print Devices.by_int(INPUT)
 			result = map(lambda dev: dev.full(), Devices.by_int(INPUT))
 			result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
 			result += map(lambda dev: dev.full(), Devices.by_int(AI))
@@ -1529,7 +1528,6 @@ class LoadAllHandler(UserCookieHelper, APIHandler):
 		@schema.validate()
 		def get(self):
 			"""This function returns a heterogeneous list of all devices exposed via the REST API"""
-			#print Devices.by_int(INPUT)
 			result = map(lambda dev: dev.full(), Devices.by_int(INPUT))
 			result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
 			result += map(lambda dev: dev.full(), Devices.by_int(OUTPUT))
@@ -1546,7 +1544,6 @@ class LoadAllHandler(UserCookieHelper, APIHandler):
 		@schema.validate(output_schema=out_schema, output_example=out_example)
 		def get(self):
 			"""This function returns a heterogeneous list of all devices exposed via the REST API"""
-			#print Devices.by_int(INPUT)
 			result = map(lambda dev: dev.full(), Devices.by_int(INPUT))
 			result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
 			result += map(lambda dev: dev.full(), Devices.by_int(OUTPUT))
