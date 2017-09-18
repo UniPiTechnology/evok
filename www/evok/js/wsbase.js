@@ -205,7 +205,7 @@ function update_values() {
 	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + '/rest/all',
 	        dataType: 'json',
 	        success: function (data) {
-	            data = sortResults(data);
+	            //data = sortResults(data);
 	            $.each(data, function (name, msg) {
 	                SyncDevice(msg);
 	            });
@@ -219,7 +219,7 @@ function update_values() {
 	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + '/rest/all',
 	        dataType: 'json',
 	        success: function (data) {
-	            data = sortResults(data.data);
+	            //data = sortResults(data.data);
 	            $.each(data, function (name, msg) {
 	                SyncDevice(msg);
 	            });

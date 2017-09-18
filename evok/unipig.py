@@ -16,12 +16,13 @@ from log import *
 
 #Todo: remove, obsolette
 class Eprom(object):
-	def __init__(self, i2cbus, circuit, address=0x50, size=256, dev_id=0):
+	def __init__(self, i2cbus, circuit, address=0x50, size=256, major_group=1, dev_id=0):
 		# running with blocking
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.i2cbus = i2cbus
 		self.size = size
+		self.major_group = major_group
 		self.i2c = i2cbus.i2c_open(i2cbus.busid, address, 0)
 		atexit.register(self.stop)
 		self.__init_board_version()
@@ -75,11 +76,12 @@ MCP23008_OLAT = 0x0A  # latch output status
 
 
 class UnipiMcp(object):
-	def __init__(self, i2cbus, circuit, address=0x20, dev_id=0):
+	def __init__(self, i2cbus, circuit, address=0x20, major_group=1, dev_id=0):
 		self.dev_id = dev_id
 		# running with blocking
 		self.circuit = circuit
 		self.i2cbus = i2cbus
+		self.major_group = major_group
 		self.i2c = i2cbus.i2c_open(i2cbus.busid, address, 0)
 		atexit.register(self.stop)
 		i2cbus.i2c_write_byte_data(self.i2c, MCP23008_IODIR, 0x00)  # all output !
@@ -161,9 +163,10 @@ _lastt = 0
 class Relay(object):
 	pending_id = 0
 
-	def __init__(self, circuit, mcp, pin, dev_id=0):
+	def __init__(self, circuit, mcp, pin, major_group=1, dev_id=0):
 		self.dev_id = dev_id
 		self.circuit = circuit
+		self.major_group = major_group
 		self.mcp = mcp
 		self.pin = pin
 		self._mask = 1 << pin
@@ -243,10 +246,11 @@ class UnipiMCP342x(object):
 		MCP342[128] single/multi channel A/D convertor
 	"""
 
-	def __init__(self, i2cbus, circuit, address=0x68, dev_id=0):
+	def __init__(self, i2cbus, circuit, address=0x68, major_group=1, dev_id=0):
 		# running with blocking
 		#self.__config = 0x1c | channel  # continuos operation, 18bit, gain=1
 		self.circuit = circuit
+		self.major_group = major_group
 		self.i2cbus = i2cbus
 		self.dev_id = dev_id
 		self.i2c = i2cbus.i2c_open(i2cbus.busid, address, 0)
@@ -392,9 +396,10 @@ class UnipiMCP342x(object):
 
 class AnalogInput():
 	def __init__(self, circuit, mcp, channel, bits=18, gain=1, continuous=False, interval=5.0, correction=5.0, rom=None,
-				 corr_addr=None, dev_id=0):
+				 corr_addr=None, major_group=1, dev_id=0):
 		self.dev_id = dev_id
 		self.circuit = circuit
+		self.major_group = major_group
 		self.mcp = mcp
 		self.channel = channel
 		self.conf = False
@@ -616,11 +621,12 @@ class UnipiPCA9685(object):
 
 
 class AnalogOutputPCA():
-	def __init__(self, circuit, pca, channel, dev_id=0):
+	def __init__(self, circuit, pca, channel, major_group=1, dev_id=0):
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.pca = pca
 		self.channel = channel
+		self.major_group = major_group
 		self.value = 0
 		self.value = self.pca.channels[self.channel][1]/409.5
 
@@ -651,10 +657,11 @@ class AnalogOutputPCA():
 #
 #################################################################
 class AnalogOutputGPIO():
-	def __init__(self, gpiobus, circuit, pin=18, frequency=400, value=0, dev_id=0):
+	def __init__(self, gpiobus, circuit, pin=18, frequency=400, major_group=1, value=0, dev_id=0):
 		self.dev_id = dev_id
 		self.bus = gpiobus
 		self.circuit = circuit
+		self.major_group = major_group
 		self.pin = pin
 		self.frequency = frequency
 		self.value = value
@@ -712,10 +719,11 @@ class AnalogOutputGPIO():
 #################################################################
 
 class Input():
-	def __init__(self, gpiobus, circuit, pin, debounce=None, counter_mode='disabled', dev_id=0):
+	def __init__(self, gpiobus, circuit, pin, debounce=None, major_group=1, counter_mode='disabled', dev_id=0):
 		self.dev_id = dev_id
 		self.bus = gpiobus
 		self.circuit = circuit
+		self.major_group = major_group
 		self.pin = pin
 		self.mask = 1 << pin
 		self._debounce = 0 if not debounce else debounce / 1000.0  # millisecs
@@ -814,9 +822,10 @@ class Input():
 
 
 class DS2408_pio(object):
-	def __init__(self, circuit, ds2408, pin, dev_id=0):
+	def __init__(self, circuit, ds2408, pin, major_group=1, dev_id=0):
 		self.circuit = circuit
 		self.dev_id = dev_id
+		self.major_group = major_group
 		self.ds2408 = ds2408
 		self.pin = pin
 		self.value = None

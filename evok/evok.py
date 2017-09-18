@@ -49,7 +49,7 @@ Config.read(config_path)
 wh = None
 cors = False
 corsdomains = '*'
-use_output_schema = Config.getbooldef('MAIN','output_schema',False)
+use_output_schema = Config.getbooldef('MAIN','regenerate_api_docs',False)
 use_legacy_api = not(Config.getbooldef('MAIN','use_experimental_api',False))
 
 import rpc_handler
@@ -253,7 +253,6 @@ class LegacyRestHandler(UserCookieHelper, tornado.web.RequestHandler):
 
 	@tornado.web.authenticated
 	def get(self, dev, circuit, prop):
-		#print "%s-%s-%s" %(dev,circuit,prop)
 		device = Devices.by_name(dev, circuit)
 		if prop:
 			if prop[0] in ('_'): raise Exception('Invalid property name')
@@ -266,18 +265,14 @@ class LegacyRestHandler(UserCookieHelper, tornado.web.RequestHandler):
 
 	# usage: POST /rest/DEVICE/CIRCUIT
 	#		  post-data: prop1=value1&prop2=value2...
-
-	#@tornado.web.authenticated
 	@tornado.gen.coroutine
 	def post(self, dev, circuit, prop):
 		try:
-			#print "%s-%s-%s" %(dev,circuit,prop)
 			device = Devices.by_name(dev, circuit)
 			kw = dict([(k, v[0]) for (k, v) in self.request.body_arguments.iteritems()])
 			result = device.set(**kw)
 			if is_future(result):
 				result = yield result
-			#print result
 			self.write(json.dumps({'success': True, 'result': result}))
 		except Exception, E:
 			self.write(json.dumps({'success': False, 'errors': {'__all__': str(E)}}))
@@ -285,7 +280,6 @@ class LegacyRestHandler(UserCookieHelper, tornado.web.RequestHandler):
 	
 	
 	def options(self):
-		# no body
 		self.set_status(204)
 		self.finish()
 
@@ -341,8 +335,6 @@ class RestLEDHandler(UserCookieHelper, APIHandler):
 	# usage: GET /rest/DEVICE/CIRCUIT
 	#		or
 	#		GET /rest/DEVICE/CIRCUIT/PROPERTY
-
-
 	if not use_output_schema:
 		@tornado.web.authenticated
 		@schema.validate()
@@ -369,9 +361,6 @@ class RestLEDHandler(UserCookieHelper, APIHandler):
 
 	# usage: POST /rest/DEVICE/CIRCUIT
 	#		  post-data: prop1=value1&prop2=value2...
-
-	#@tornado.web.authenticated
-
 	if not use_output_schema:
 		@schema.validate(input_schema=post_inp_schema, input_example=post_inp_example)
 		@tornado.gen.coroutine
@@ -459,8 +448,6 @@ class RestWatchdogHandler(UserCookieHelper, APIHandler):
 	# usage: GET /rest/DEVICE/CIRCUIT
 	#		or
 	#		GET /rest/DEVICE/CIRCUIT/PROPERTY
-
-
 	if not use_output_schema:
 		@tornado.web.authenticated
 		@schema.validate()
@@ -487,9 +474,6 @@ class RestWatchdogHandler(UserCookieHelper, APIHandler):
 
 	# usage: POST /rest/DEVICE/CIRCUIT
 	#		  post-data: prop1=value1&prop2=value2...
-
-	#@tornado.web.authenticated
-
 	if not use_output_schema:
 		@schema.validate(input_schema=post_inp_schema, input_example=post_inp_example)
 		@tornado.gen.coroutine
@@ -959,7 +943,6 @@ class RestAIHandler(UserCookieHelper, APIHandler):
 	# usage: GET /rest/DEVICE/CIRCUIT
 	#		or
 	#		GET /rest/DEVICE/CIRCUIT/PROPERTY
-
 	if not use_output_schema:	
 		@tornado.web.authenticated
 		@schema.validate()
@@ -986,8 +969,6 @@ class RestAIHandler(UserCookieHelper, APIHandler):
 
 	# usage: POST /rest/DEVICE/CIRCUIT
 	#		  post-data: prop1=value1&prop2=value2...
-
-	#@tornado.web.authenticated
 	if not use_output_schema:
 		@schema.validate(input_schema=post_inp_schema, input_example=post_inp_example)
 		@tornado.gen.coroutine
@@ -1079,7 +1060,6 @@ class RestAOHandler(UserCookieHelper, APIHandler):
 	# usage: GET /rest/DEVICE/CIRCUIT
 	#		or
 	#		GET /rest/DEVICE/CIRCUIT/PROPERTY
-	
 	if not use_output_schema:
 		@tornado.web.authenticated
 		@schema.validate()
@@ -1107,22 +1087,16 @@ class RestAOHandler(UserCookieHelper, APIHandler):
 
 	# usage: POST /rest/DEVICE/CIRCUIT
 	#		  post-data: prop1=value1&prop2=value2...
-
-	#@tornado.web.authenticated
-
 	if not use_output_schema:
 		@schema.validate(input_schema=post_inp_schema, input_example=post_inp_example)
 		@tornado.gen.coroutine
 		def post(self, circuit, prop):
 			try:
-				#print "%s-%s-%s" %(dev,circuit,prop)
 				device = Devices.by_name("ao", circuit)
-				#print self.request.body_arguments
 				js_dict = json.loads(self.request.body)
 				result = device.set(**js_dict)
 				if is_future(result):
 					result = yield result
-				#print result
 				raise Return({'success': True, 'result': result})
 			except Return,E:
 				raise E
@@ -1133,14 +1107,11 @@ class RestAOHandler(UserCookieHelper, APIHandler):
 		@tornado.gen.coroutine
 		def post(self, circuit, prop):
 			try:
-				#print "%s-%s-%s" %(dev,circuit,prop)
 				device = Devices.by_name("ao", circuit)
-				#print self.request.body_arguments
 				js_dict = json.loads(self.request.body)
 				result = device.set(**js_dict)
 				if is_future(result):
 					result = yield result
-				#print result
 				raise Return({'success': True, 'result': result})
 			except Return,E:
 				raise E
@@ -1208,8 +1179,6 @@ class RestROHandler(UserCookieHelper, APIHandler):
 	# usage: GET /rest/DEVICE/CIRCUIT
 	#		or
 	#		GET /rest/DEVICE/CIRCUIT/PROPERTY
-
-	
 	if not use_output_schema:
 		@tornado.web.authenticated
 		@schema.validate()
@@ -1236,7 +1205,6 @@ class RestROHandler(UserCookieHelper, APIHandler):
 
 	# usage: POST /rest/DEVICE/CIRCUIT
 	#		  post-data: prop1=value1&prop2=value2...
-	#@tornado.web.authenticated
 	if not use_output_schema:
 		@schema.validate(input_schema=post_inp_schema, input_example=post_inp_example)
 		@tornado.gen.coroutine
@@ -1271,7 +1239,6 @@ class RestROHandler(UserCookieHelper, APIHandler):
 				raise Return({'success': False, 'errors': str(E)})	
 	
 	def options(self):
-		# no body
 		self.set_status(204)
 		self.finish()
 
@@ -1483,12 +1450,12 @@ class LoadAllHandler(UserCookieHelper, APIHandler):
 							"glob_dev_id": {"type": "number"},
 							"circuit": {"type": "string"},
 							"address": {"type": "string"},
-							"ow_type": {"type": "string"},
+							"typ": {"type": "string"},
 							"interval": {"type": "number"},
 							"lost": {"type": "boolean"},
 							"time": {"type": "number"}
 						},
-						"required": ["dev", "circuit", "address", "ow_type"]
+						"required": ["dev", "circuit", "address", "typ"]
 					},
 					{
 						"type": "object",
@@ -1565,6 +1532,7 @@ class LoadAllHandler(UserCookieHelper, APIHandler):
 			#print Devices.by_int(INPUT)
 			result = map(lambda dev: dev.full(), Devices.by_int(INPUT))
 			result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
+			result += map(lambda dev: dev.full(), Devices.by_int(OUTPUT))
 			result += map(lambda dev: dev.full(), Devices.by_int(AI))
 			result += map(lambda dev: dev.full(), Devices.by_int(AO))
 			result += map(lambda dev: dev.full(), Devices.by_int(SENSOR))
@@ -1581,6 +1549,7 @@ class LoadAllHandler(UserCookieHelper, APIHandler):
 			#print Devices.by_int(INPUT)
 			result = map(lambda dev: dev.full(), Devices.by_int(INPUT))
 			result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
+			result += map(lambda dev: dev.full(), Devices.by_int(OUTPUT))
 			result += map(lambda dev: dev.full(), Devices.by_int(AI))
 			result += map(lambda dev: dev.full(), Devices.by_int(AO))
 			result += map(lambda dev: dev.full(), Devices.by_int(SENSOR))
@@ -2215,7 +2184,7 @@ def main():
 	pw = Config.getstringdef("MAIN", "rpcpassword", "")
 	if pw: rpc_handler.userBasicHelper._passwords.append(pw)
 
-	cors = Config.getbooldef("MAIN", "enable_cors", False)
+	cors = True
 	corsdomains = Config.getstringdef("MAIN", "cors_domains", "*")
 	define("cors", default=True, help="enable CORS support", type=bool)
 	port = Config.getintdef("MAIN", "port", 8080)

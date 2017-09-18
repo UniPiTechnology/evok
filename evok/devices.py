@@ -22,10 +22,22 @@ class DeviceList(dict):
 		except KeyError:
 			return super(DeviceList, self).__getitem__(self.altnames[key])
 
-	def by_int(self, devtypeid, circuit=None):
+	def by_int(self, devtypeid, circuit=None, major_group=None):
 		devdict = self._arr[devtypeid]
 		if circuit is None:
-			return devdict.values()
+			if major_group is not None:
+				outp = []
+				if len(devdict.values > 1):
+					for single_dev in devdict.values():	
+						if single_dev.major_group == major_group:
+							outp += single_dev
+					return outp
+				elif len(devdict.values > 0): 
+					return devdict.values()
+				else:
+					return []
+			else:
+				return devdict.values()
 		try:
 			return devdict[circuit]
 		except KeyError:

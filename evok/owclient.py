@@ -28,15 +28,15 @@ SUPPORTED_DEVICES = ["DS18S20", "DS18B20", "DS2438", "DS2408"]
 
 import fcntl
 
-
 def set_non_blocking(fd):
 	flags = fcntl.fcntl(fd, fcntl.F_GETFL)
 	fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
 class MySensor(object):
-	def __init__(self, addr, typ, bus, interval=None, dynamic=True, circuit=None, is_static=False):
+	def __init__(self, addr, typ, bus, interval=None, dynamic=True, circuit=None, major_group=1, is_static=False):
 		self.type = typ
 		self.circuit = circuit if circuit != None else addr
+		self.major_group = major_group
 		self.address = addr
 		self.interval = bus.interval if interval is None else interval  # seconds
 		self.is_dynamic_interval = dynamic  # dynamically change interval #TODO
@@ -111,15 +111,12 @@ class MySensor(object):
 class DS18B20(MySensor):  # thermometer
 
 	def full(self):
-		if use_legacy_api:
-			return {'dev': 'temp', 'circuit': self.circuit, 'address': self.address,
-					'value': self.value, 'lost': self.lost, 'time': self.time, 'interval': self.interval, 'typ': self.type}
-		else:
-			return {'dev': 'temp', 'circuit': self.circuit, 'address': self.address,
-					'value': self.value, 'lost': self.lost, 'time': self.time, 'interval': self.interval, 'ow_type': self.type}			
+		return {'dev': 'temp', 'circuit': self.circuit, 'address': self.address,
+				'value': self.value, 'lost': self.lost, 'time': self.time, 'interval': self.interval, 'typ': self.type}
+		
 
 	def simple(self):
-		return {'dev': 'temp', 'circuit': self.circuit, 'value': self.value, 'lost': self.lost, 'ow_type': self.type}
+		return {'dev': 'temp', 'circuit': self.circuit, 'value': self.value, 'lost': self.lost, 'typ': self.type}
 
 	def read_val_from_sens(self, sens):
 		new_val = float(sens.temperature)
@@ -147,10 +144,11 @@ class DS18B20(MySensor):  # thermometer
 #		 self.value = (sens.VDD, sens.VAD, sens.temperature)
 
 class DS2408(MySensor):
-	def __init__(self, addr, typ, bus, interval=None, is_dynamic_interval=True, circuit=None, is_static=False):
+	def __init__(self, addr, typ, bus, interval=None, is_dynamic_interval=True, circuit=None, major_group=1, is_static=False):
 		self.type = typ
 		self.circuit = circuit if circuit != None else addr
 		self.address = addr
+		self.major_group = major_group
 		self.interval = bus.interval if interval is None else interval  # seconds
 		self.is_dynamic_interval = is_dynamic_interval  # dynamically change interval #TODO
 		self.last_value = None
@@ -171,10 +169,7 @@ class DS2408(MySensor):
 		self.value = pios_values
 
 	def full(self):
-		if use_legacy_api:
-			return {'dev': '1wdevice', 'circuit': self.circuit, 'address': self.address, 'value': None, 'typ': self.type}
-		else:
-			return {'dev': '1wdevice', 'circuit': self.circuit, 'address': self.address, 'value': None, 'ow_type': self.type}			
+		return {'dev': '1wdevice', 'circuit': self.circuit, 'address': self.address, 'value': None, 'typ': self.type}		
 
 	def simple(self):
 		return self.full()
@@ -216,7 +211,7 @@ class DS2408(MySensor):
 							pio.set_value(value[pio.pin])
 
 
-def MySensorFabric(address, typ, bus, interval=None, dynamic=True, circuit=None, is_static=False):
+def MySensorFabric(address, typ, bus, interval=None, dynamic=True, circuit=None, major_group = 1, is_static=False):
 	if (typ == 'DS18B20') or (typ == 'DS18S20'):
 		return DS18B20(address, typ, bus, interval=interval, circuit=circuit)
 	# elif (typ == 'DS2438'):
@@ -229,13 +224,14 @@ def MySensorFabric(address, typ, bus, interval=None, dynamic=True, circuit=None,
 
 
 class OwBusDriver(multiprocessing.Process):
-	def __init__(self, circuit, taskPipe, resultPipe, interval=60, scan_interval=300, bus='--i2c=/dev/i2c-1:ALL'):
+	def __init__(self, circuit, taskPipe, resultPipe, interval=60, scan_interval=300, major_group=1, bus='--i2c=/dev/i2c-1:ALL'):
 		multiprocessing.Process.__init__(self)
 		self.circuit = circuit
 		self.taskQ = taskPipe[0]
 		self.taskWr = taskPipe[1]
 		self.resultRd = resultPipe[0]
 		self.resultQ = resultPipe[1]
+		self.major_group = major_group
 		self.scan_interval = scan_interval
 		self.interval = interval
 		self.scanned = set()
@@ -243,9 +239,6 @@ class OwBusDriver(multiprocessing.Process):
 		self.bus = bus
 		self.register_in_caller = lambda x: None  # pro registraci, zatim prazdna funkce
 		# ow.init(bus)
-
-	#		self.logger = logging.getLogger(Globals.APP_NAME)
-	#		self.logger.debug("owclient initialized")
 
 
 	def full(self):
@@ -305,12 +298,9 @@ class OwBusDriver(multiprocessing.Process):
 			circuit = obj[0]
 			mysensor = next(x for x in self.mysensors if x.circuit == circuit)
 			if mysensor: mysensor._set_value(obj[1])
-			#print "Temperature %s is %s" % (obj[0],obj[1])
-
 
 	# ####################################w.init(b#
 	# this part is running used in subprocess
-
 	def do_scan(self):
 		""" Initiate 1wire bus scanning, 
 			check existence in self.scanned
@@ -379,8 +369,7 @@ class OwBusDriver(multiprocessing.Process):
 		scan_time = time.time() + self.scan_interval
 		mysensor = min(self.mysensors, key=lambda x: x.time)
 		while True:
-			t1 = time.time()
-			#if t1 <= scan_time: 
+			t1 = time.time() 
 			if t1 >= scan_time:
 				self.do_scan()
 				t1 = time.time()

@@ -1,6 +1,6 @@
 
 server {
-	listen       80 default_server;
+	listen 80 default_server;
 	server_name  _;
 
 	#ssl on;
@@ -15,7 +15,7 @@ server {
 	}
 
 	location /ws {
-    	proxy_pass http://127.0.0.1:8080/ws;
+    	proxy_pass http://localhost:8080;
     	proxy_set_header Host $host:$server_port;
     	proxy_http_version 1.1;
     	proxy_set_header Upgrade $http_upgrade;
@@ -28,13 +28,13 @@ server {
 	}
 
 	location /rest {
-		proxy_pass       http://localhost:8080;
+		proxy_pass http://localhost:8080;
 		proxy_set_header Host      $host:$server_port;
 		#proxy_set_header X-Real-IP $remote_addr;
 	}
 	
 	location /json {
-		proxy_pass       http://localhost:8080;
+		proxy_pass http://localhost:8080;
 		proxy_set_header Host      $host:$server_port;
 		#proxy_set_header X-Real-IP $remote_addr;
 	}
