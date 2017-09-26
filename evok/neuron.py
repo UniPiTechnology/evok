@@ -175,7 +175,7 @@ class Neuron(object):
 	def readboards(self):
 		""" Try to read version registers on 3 boards and create subdevices """
 		# ToDo - destroy all boards and subdevices before creating
-		print "READING BOARDS SPI"
+		logger.info("Reading SPI boards")
 		for board in self.boards:
 			del (board)
 		self.boards = list()
@@ -190,7 +190,7 @@ class Neuron(object):
 				board.parse_definition(self.hw_dict, i)
 				self.boards.append(board)
 			except ENoBoard:
-				print "No board on SPI %d" % i 
+				logger.info("No board on SPI %d" % i) 
 				continue
 			except Exception, E:
 				logger.exception(str(E))
@@ -262,7 +262,7 @@ class UartNeuron(object):
 
 	@gen.coroutine
 	def readboards(self):
-		print "READING BOARDS UART"
+		logger.info("Reading the UART board on Modbus address %d" % self.modbus_address)
 		self.boards = list()
 		try:
 			for defin in self.hw_dict.definitions:
@@ -280,7 +280,7 @@ class UartNeuron(object):
 			board.parse_definition(self.hw_dict, 1)
 			self.boards.append(board)
 		except ENoBoard:
-			print "No board detected on UART %d" % self.modbus_address
+			logger.info("No board detected on UART %d" % self.modbus_address)
 		except Exception, E:
 			logger.exception(str(E))
 			pass
@@ -451,7 +451,6 @@ class UartBoard(object):
 									self.neuron.datadeps[board_val_reg + counter] = [_ao]
 								Devices.register_device(AO, _ao)
 								counter+=1
-								print counter
 						elif m_feature['type'] == 'AI' and m_feature['major_group'] == board_id:
 							while counter < max_count:
 								board_val_reg = m_feature['val_reg']
@@ -1339,8 +1338,6 @@ class  AnalogOutput():
 	def set(self, value=None, frequency=None, mode=None):
 		if mode is not None and mode in self.modes:
 			val = self.arm.neuron.modbus_cache_map(1, self.regmode, unit=self.arm.modbus_address)[0]
-			
-			print "set mode " + mode + str(val) 
 			if mode == "Voltage":
 				val &= ~0b1
 				if (self.mode == 'Current'):
@@ -1389,7 +1386,6 @@ class AnalogInput():
 			self.is_voltage = lambda: not bool(self.arm.neuron.modbus_cache_map.get_register(1, self.regcal, unit=self.arm.modbus_address)[0] & 0b1)
 		self.reg_shift = 2 if self.is_voltage() else 0
 		if regcal >= 0:
-			print [regcal + self.reg_shift + 1, regcal + self.reg_shift + 1, regcal + self.reg_shift + 2]
 			self.vfactor = arm.volt_ref / 4095 * (1 + uint16_to_int(self.arm.neuron.modbus_cache_map.get_register(1, regcal + self.reg_shift + 1, unit=self.arm.modbus_address)[0]) / 10000.0)
 			self.vfactorx = arm.volt_refx / 4095 * (1 + uint16_to_int(self.arm.neuron.modbus_cache_map.get_register(1, regcal + self.reg_shift + 1, unit=self.arm.modbus_address)[0]) / 10000.0)
 			self.voffset = (uint16_to_int(self.arm.neuron.modbus_cache_map.get_register(1, regcal + self.reg_shift + 2, unit=self.arm.modbus_address)[0]) / 10000.0)

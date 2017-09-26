@@ -130,7 +130,6 @@ class WsHandler(websocket.WebSocketHandler):
 	def on_event(self, device):
 		#print "Sending to: %s,%s" % (str(self), device)
 		try:
-			print device.full()
 			self.write_message(json.dumps(device.full()))
 		except Exception as e:
 			logger.error("Exc: %s", str(e))
@@ -1201,7 +1200,6 @@ class RestROHandler(UserCookieHelper, APIHandler):
 			try:
 				device = Devices.by_name("relay", circuit)
 				js_dict = json.loads(self.request.body)
-				#print js_dict
 				result = device.set(**js_dict)
 				if is_future(result):
 					result = yield result
@@ -1217,7 +1215,6 @@ class RestROHandler(UserCookieHelper, APIHandler):
 			try:
 				device = Devices.by_name("relay", circuit)
 				js_dict = json.loads(self.request.body)
-				#print js_dict
 				result = device.set(**js_dict)
 				if is_future(result):
 					result = yield result
@@ -1245,7 +1242,6 @@ class RemoteCMDHandler(UserCookieHelper, tornado.web.RequestHandler): # ToDo CHE
 			if status in ('start', 'stop', 'enable', 'disable'):
 				result, error = yield call_shell_subprocess('service %s %s' % (service, status))
 		if service == 'pw':
-			#print 'echo -e "%s\n%s" | passwd root' % (status, status)
 			yield call_shell_subprocess('echo -e "%s\\n%s" | passwd root' % (status, status))
 		self.finish()
 

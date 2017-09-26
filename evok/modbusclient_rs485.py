@@ -330,7 +330,7 @@ def UartStartClient(client, callback=None):
 	''' Connect to tcp host and, join to client.transport, wait for reply data
 		Reconnect on close
 	''' 
-	print "UART CLIENT STARTED" #+ str(callback)
+	_logger.info("UART client started") #+ str(callback)
 	while True:
 		if callback:
 			yield callback()

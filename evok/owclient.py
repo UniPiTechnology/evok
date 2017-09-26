@@ -308,13 +308,12 @@ class OwBusDriver(multiprocessing.Process):
 			join sens with mysensor
 		"""
 		for sens in ow.Sensor("/uncached").sensors():
-			print sens
 			if not (sens in self.scanned):
 				address = sens.address
 				try:
 					# find sensor in list self.mysenors by address
 					mysensor = next(x for x in self.mysensors if x.address == address)
-					#print "Sensor found " + str(mysensor.circuit)
+					logger.info("Sensor found " + str(mysensor.circuit))
 				except Exception:
 					#if not found, create new one
 					mysensor = MySensorFabric(address, sens.type, self, interval=15)
@@ -328,7 +327,6 @@ class OwBusDriver(multiprocessing.Process):
 
 	def do_command(self, cmd):
 		command, circuit, value = cmd
-		#print "cmd %s" % command
 		if command == OWCMD_INTERVAL:
 			mysensor = next(x for x in self.mysensors if x.circuit == circuit)
 			if mysensor:
@@ -351,13 +349,6 @@ class OwBusDriver(multiprocessing.Process):
 			Peridocally scan 1wire sensors, else sleep
 		"""
 		signal.signal(signal.SIGINT, signal.SIG_IGN)
-		# apigpio.mainprog = 0
-		# for i in range(25):
-		# try:
-		# if not (i in (0,1,2,self.taskQ.fileno(), self.resultQ.fileno())):
-		#		 os.close(i)
-		#   except Exception, E:
-		#	 print str(E)
 		ow.init(self.bus)
 		logger.debug("Entering 1wire loop")
 		self.do_scan()
