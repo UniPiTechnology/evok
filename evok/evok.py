@@ -146,7 +146,7 @@ class WsHandler(websocket.WebSocketHandler):
 				cmd = None
 			#get FULL state of each IO
 			if cmd == "all":
-				result = {}
+				result = []
 				devices = [INPUT, RELAY, AI, AO, SENSOR]
 				for dev in devices:
 					result += map(lambda dev: dev.full(), Devices.by_int(dev))
@@ -561,8 +561,6 @@ class RestRegisterHandler(UserCookieHelper, APIHandler):
 	# usage: GET /rest/DEVICE/CIRCUIT
 	#		or
 	#		GET /rest/DEVICE/CIRCUIT/PROPERTY
-
-
 	if not use_output_schema:
 		@tornado.web.authenticated
 		@schema.validate()
@@ -589,9 +587,7 @@ class RestRegisterHandler(UserCookieHelper, APIHandler):
 
 	# usage: POST /rest/DEVICE/CIRCUIT
 	#		  post-data: prop1=value1&prop2=value2...
-
 	#@tornado.web.authenticated
-
 	if not use_output_schema:
 		@schema.validate(input_schema=post_inp_schema, input_example=post_inp_example)
 		@tornado.gen.coroutine
@@ -694,8 +690,6 @@ class RestDIHandler(UserCookieHelper, APIHandler):
 	# usage: GET /rest/DEVICE/CIRCUIT
 	#		or
 	#		GET /rest/DEVICE/CIRCUIT/PROPERTY
-
-
 	if not use_output_schema:
 		@tornado.web.authenticated
 		@schema.validate()
@@ -722,9 +716,6 @@ class RestDIHandler(UserCookieHelper, APIHandler):
 
 	# usage: POST /rest/DEVICE/CIRCUIT
 	#		  post-data: prop1=value1&prop2=value2...
-
-	#@tornado.web.authenticated
-
 	if not use_output_schema:
 		@schema.validate(input_schema=post_inp_schema, input_example=post_inp_example)
 		@tornado.gen.coroutine
@@ -849,8 +840,6 @@ class RestDOHandler(UserCookieHelper, APIHandler):
 
 	# usage: POST /rest/DEVICE/CIRCUIT
 	#		  post-data: prop1=value1&prop2=value2...
-
-	#@tornado.web.authenticated
 	if not use_output_schema:
 		@schema.validate(input_schema=post_inp_schema, input_example=post_inp_example)
 		@tornado.gen.coroutine
@@ -2079,7 +2068,7 @@ class JSONHandler(APIHandler):
 
 
 class UniPiQueryService(soaphandler.SoapHandler):
-	""" Service that return an list with Hello and World str elements, not uses input parameters """
+	""" Service that return a list with Hello and World str elements, not uses input parameters """
 	@webservice(_params=None,_returns=xmltypes.Array(xmltypes.String))
 	def setValueByIndex(self):#, feature, major_index, minor_index,  ):
 		return ["Hello","World"]
@@ -2091,14 +2080,14 @@ class UniPiQueryService(soaphandler.SoapHandler):
 		return [""]
 
 class UniPiCommandService(soaphandler.SoapHandler):
-	""" Service that return an list with Hello and World str elements, not uses input parameters """
+	""" Service that return a list with Hello and World str elements, not uses input parameters """
 	@webservice(_params=None,_returns=xmltypes.Array(xmltypes.String))
 	def sayHello(self):
 		return ["Hello","World"]
 
 
 class UniPiProbeService(soaphandler.SoapHandler):
-	""" Service that return an list with Hello and World str elements, not uses input parameters """
+	""" Service that return a list with Hello and World str elements, not uses input parameters """
 	@webservice(_params=None,_returns=xmltypes.Array(xmltypes.String))
 	def sayHello(self):
 		return ["Hello","World"]

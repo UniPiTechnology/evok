@@ -37,7 +37,8 @@ modbus_features:
       major_group : 1
       modes       :
         - Simple
-        - DirectSwitch
+        - PWM
+        - ComplexPWM
       val_reg     : 1
       pwm_reg     : 16
       pwm_ps_reg  : 1017
@@ -79,4 +80,4 @@ modbus_features:
       type        : REGISTER
       major_group : 1
       count       : 21
-      start_reg     : 0
+      start_reg   : 0

@@ -209,11 +209,9 @@ def create_devices(Config, hw_dict):
 				interval = Config.getintdef(section, "interval", 15)
 				sensor = owclient.MySensorFabric(address, ow_type, owbus, interval=interval, circuit=circuit,
 												 is_static=True)
-				if ow_type in ["DS2408","DS2406", "DS2404"]:
+				if ow_type in ["DS2408","DS2406", "DS2404", "DS2413"]:
 					sensor = OWSensorDevice(sensor, dev_id=0)
-					Devices.register_device(SENSOR, sensor)
-				else:
-					Devices.register_device(SENSOR, sensor)
+				Devices.register_device(SENSOR, sensor)
 			elif devclass == '1WRELAY':
 				# Relays on DS2404
 				sensor = Config.get(section, "sensor")
@@ -349,9 +347,6 @@ def create_devices(Config, hw_dict):
 								    parity=uart_parity, stopbits=uart_stopbits, device_name=device_name, uart_address=uart_address,
 								    direct_access=allow_register_access, dev_id=dev_counter)
 				Devices.register_device(NEURON, neuron)
-				#neuron.readboards()
-				#for c in neuron.client.read_holding_registers(1000, count=5, unit=15):
-				#	print int(c)
 			elif devclass == 'HWDEF':
 				dev_counter += 1
 

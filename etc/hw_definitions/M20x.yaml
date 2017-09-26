@@ -35,7 +35,8 @@ modbus_features:
       major_group : 1
       modes       :
         - Simple
-        - DirectSwitch
+        - PWM
+        - ComplexPWM
       val_reg     : 1
       pwm_reg     : 16
       pwm_ps_reg  : 1017
@@ -96,7 +97,6 @@ modbus_features:
       val_reg     : 101
       modes       :
         - Simple
-        - DirectSwitch
     - f_index     : 9
       count       : 1
       type        : WD

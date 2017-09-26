@@ -1,10 +1,10 @@
 ---
-type: DOMAT MMIO
+type: CUSTOM MODBUS DEVICE
 modbus_features:
     - f_index     : 0
       type        : REGISTER
       major_group : 1
-      count       : 12
+      count       : 10
       start_reg   : 0
 #    - f_index     : 1
 #      type        : REGISTER

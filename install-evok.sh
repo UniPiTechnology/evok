@@ -348,16 +348,17 @@ cp -r etc/nginx/sites-enabled /etc/nginx/
 
 rm -rf /etc/nginx/sites-enabled/default
 
-echo 'Please select which port you wish the internal API to use: (8080 by default, can be changed in /etc/evok.conf)'
-read -p 'API Port to use: ' internal_port_number
-
 echo 'Please select which port you wish the built-in web interface to use (will also proxy request to the API port): '
-echo '(80 by default, can be changed in /etc/nginx/sites-enabled/evok)'
+echo '(use 80 if you do not know what this means, can be later changed in /etc/nginx/sites-enabled/evok)'
+echo 'IMPORTANT WARNING: !!!This port cannot be the same as the internal API port in the next section!!!'
 echo 'WARNING: If you wish to use another web server, you may have to disable NGINX by deleting the /etc/nginx/sites-enabled/evok file'
 read -p 'Website Port to use: ' external_port_number
+
+echo 'Please select which port you wish the internal API to use: (use 8080 if you do not know what this means, can be changed in /etc/evok.conf)'
+read -p 'API Port to use: ' internal_port_number
+
 sed -i -e "s/listen 80/listen ${external_port_number}/" /etc/nginx/sites-enabled/evok
 sed -i -e "s/localhost:8080/localhost:${internal_port_number}/" /etc/nginx/sites-enabled/evok
-
 
 #detect version of UniPi
 echo 'Please choose the type of your UniPi product:'

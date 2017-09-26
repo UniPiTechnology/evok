@@ -60,7 +60,7 @@ class ModbusServer(tcpserver.TCPServer):
 
 
 class ModbusConnection(object):
-    """Handles a connection to Modbus/TCP modbusclient_rs485, executing modbus requests.
+    """Handles a connection to Modbus/TCP client, executing modbus requests.
 
     Input stream asynchronously reads data chunks, in callback sending o framer for processing.
     Recognized requests are executed and results writed onection is closed.

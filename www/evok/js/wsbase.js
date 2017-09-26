@@ -10,10 +10,17 @@ var use_polling = false;
 var timer = null;
 
 
+function compare(a,b) {
+	  if (a.circuit < b.circuit)
+	    return -1;
+	  if (a.circuit > b.circuit)
+	    return 1;
+	  return 0;
+}
+
+
 function sortResults(data) {
-    return data.sort(function (a, b) {
-        return a.circuit - b.circuit;
-    });
+    return data.sort(compare);
 }
 
 function SyncDevice(msg) {
@@ -163,8 +170,10 @@ function SyncDevice(msg) {
             $('#inputs_list').append(li);
             $('#inputs_list').listview('refresh');
         }
-    }
-    else {
+        else if (device == 'neuron') {
+        	
+        }
+    } else {
         //get elements
         var main_el = document.getElementById(ns + "_value");
         var label = document.getElementById(ns + "_label");
@@ -205,7 +214,7 @@ function update_values() {
 	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + '/rest/all',
 	        dataType: 'json',
 	        success: function (data) {
-	            //data = sortResults(data);
+	            data = sortResults(data);
 	            $.each(data, function (name, msg) {
 	                SyncDevice(msg);
 	            });
@@ -219,7 +228,7 @@ function update_values() {
 	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + '/rest/all',
 	        dataType: 'json',
 	        success: function (data) {
-	            //data = sortResults(data.data);
+	            data = sortResults(data);
 	            $.each(data, function (name, msg) {
 	                SyncDevice(msg);
 	            });
@@ -274,7 +283,7 @@ function WebSocketRegister() {
         };
 
         ws.onclose = function () {
-            alert("Connection is closed...");
+            //alert("Connection is closed...");
             setTimeout(WebSocketRegister, 1000);
             ws = null;
         };

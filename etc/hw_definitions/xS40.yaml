@@ -7,7 +7,6 @@ modbus_features:
       major_group : 1
       modes       :
         - Simple
-        - DirectSwitch
       val_reg     : 1
     - f_index     : 1
       type        : DI

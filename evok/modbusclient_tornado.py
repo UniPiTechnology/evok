@@ -105,6 +105,12 @@ class ModbusClientProtocol():
 		raise gen.Return(res)
 
 	@gen.coroutine
+	def read_coils(self, address, count=1, **kwargs):
+		request = ReadCoilsRequest(address, count=1, **kwargs)
+		res = yield self.execute(request)
+		raise gen.Return(res)
+
+	@gen.coroutine
 	def write_register(self, address, value, **kwargs):
 		request = WriteSingleRegisterRequest(address, value, **kwargs)
 		res = yield self.execute(request)

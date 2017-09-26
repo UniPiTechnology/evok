@@ -125,23 +125,24 @@ class DS18B20(MySensor):  # thermometer
 		else:
 			logger.debug("PoR detected! 85C")
 
-# class DS2438(MySensor):  # vdd + vad + thermometer
-#
-#	 def full(self):
-#		 if not (type(self.value) is tuple):
-#			 self.value = (None, None, None)
-#		 return {'dev': 'ds2438', 'circuit': self.circuit, 'vdd': self.value[0], 'vad': self.value[1],
-#				 'temp': self.value[2], 'lost': self.lost, 'time': self.time, 'interval': self.interval,
-#				   'typ': self.type}
-#
-#	 def simple(self):
-#		 if not (type(self.value) is tuple):
-#			 self.value = (None, None, None)
-#		 return {'dev': 'ds2438', 'circuit': self.circuit, 'vdd': self.value[0], 'vad': self.value[1],
-#				 'temp': self.value[2], 'lost': self.lost, 'typ': self.type}
-#
-#	 def read_val_from_sens(self, sens):
-#		 self.value = (sens.VDD, sens.VAD, sens.temperature)
+class DS2438(MySensor):  # vdd + vad + thermometer
+
+	def full(self):
+		if not (type(self.value) is tuple):
+			self.value = (None, None, None)
+		return {'dev': 'temp', 'circuit': self.circuit, 'humidity': (((float(self.value[1]) / (float(self.value[0]) - 0.16)) / 0.0062) / (1.0546 - 0.00216 * float(self.value[2]))), 'vdd': self.value[0], 'vad': self.value[1],
+				 'temp': self.value[2], 'lost': self.lost, 'time': self.time, 'interval': self.interval,
+				   'typ': self.type}
+
+	def simple(self):
+		if not (type(self.value) is tuple):
+			self.value = (None, None, None)
+		return {'dev': 'temp', 'circuit': self.circuit, 'vdd': self.value[0], 'vad': self.value[1],
+				 'temp': self.value[2], 'lost': self.lost, 'typ': self.type}
+
+	def read_val_from_sens(self, sens):
+		self.value = (sens.VDD, sens.VAD, sens.temperature)
+
 
 class DS2408(MySensor):
 	def __init__(self, addr, typ, bus, interval=None, is_dynamic_interval=True, circuit=None, major_group=1, is_static=False):
@@ -180,7 +181,7 @@ class DS2408(MySensor):
 	def set_pio(self, pio, value):
 		if self.type == 'DS2408':
 			setattr(self.sens, 'PIO_'+repr(pio), str(value))
-		elif self.type == 'DS2406':
+		elif self.type == 'DS2406' or self.type == 'DS2413':
 			pio_alpha = dict(zip(range(0, 26), string.ascii_uppercase))
 			setattr(self.sens, 'PIO_'+pio_alpha[pio], str(value))
 
@@ -214,9 +215,9 @@ class DS2408(MySensor):
 def MySensorFabric(address, typ, bus, interval=None, dynamic=True, circuit=None, major_group = 1, is_static=False):
 	if (typ == 'DS18B20') or (typ == 'DS18S20'):
 		return DS18B20(address, typ, bus, interval=interval, circuit=circuit)
-	# elif (typ == 'DS2438'):
-	#	 return DS2438(address, typ, bus, interval=interval, circuit=circuit)
-	elif (typ == 'DS2408') or (typ == 'DS2406'):
+	elif (typ == 'DS2438'):
+		return DS2438(address, typ, bus, interval=interval, circuit=circuit)
+	elif (typ == 'DS2408') or (typ == 'DS2406') or (typ == 'DS2413'):
 		return DS2408(address, typ, bus, interval=interval, circuit=circuit, is_static=is_static)
 	else:
 		logger.debug("Unsupported 1wire device %s (%s) detected", typ, address)
@@ -307,6 +308,7 @@ class OwBusDriver(multiprocessing.Process):
 			join sens with mysensor
 		"""
 		for sens in ow.Sensor("/uncached").sensors():
+			print sens
 			if not (sens in self.scanned):
 				address = sens.address
 				try:
