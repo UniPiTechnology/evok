@@ -1,11 +1,9 @@
 import devents
 
 """
-   Structured list/dict of all devices in system
+   Structured list/dict of all devices in the system
    
 """
-
-
 class DeviceList(dict):
 	def __init__(self, altnames):
 		super(DeviceList, self).__init__()
@@ -133,7 +131,6 @@ devtype_altnames = {
 	'rs485': 'uart'
 	}
 
-## 
 Devices = DeviceList(devtype_altnames)
 for n in devtype_names:
 	Devices[n] = {}
@@ -161,10 +158,6 @@ unit_altnames = {
 	'Ohm': 'ohm'
 }
 
-
 class UniPiDevice(object):
 	def __init__(self):
 		False
-		
-		
-		

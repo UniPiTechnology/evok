@@ -92,15 +92,15 @@ class ModbusCacheMap(object):
 		changeset = []
 		for m_reg_group in self.modbus_reg_map:
 			if self.frequency[m_reg_group['start_reg']] >= m_reg_group['frequency']:	# only read once for every [frequency] cycles
-				try:
+				#try:
 					val = yield self.neuron.client.read_input_registers(m_reg_group['start_reg'], m_reg_group['count'], unit=unit)
 					for index in range(m_reg_group['count']):
 						if (m_reg_group['start_reg'] + index) in self.neuron.datadeps and self.registered[(m_reg_group['start_reg'] + index)] != val.registers[index]:
 							changeset += self.neuron.datadeps[m_reg_group['start_reg'] + index]
 						self.registered[(m_reg_group['start_reg'] + index)] = val.registers[index]
 					self.frequency[m_reg_group['start_reg']] = 1
-				except Exception:
-					pass
+				#except Exception:
+				#	pass
 			else:
 				self.frequency[m_reg_group['start_reg']] += 1
 		if len(changeset) > 0:
@@ -656,6 +656,7 @@ class Board(object):
 					elif m_feature['type'] == 'UART' and m_feature['major_group'] == board_id:
 						while counter < max_count:
 							board_val_reg = m_feature['conf_reg']
+							yield gen.sleep(0.3)
 							_uart = Uart("%s_%02d" % (self.circuit, len(Devices.by_int(UART, major_group=m_feature['major_group'])) + 1), self, board_val_reg + counter, dev_id=self.dev_id,
 										 major_group=m_feature['major_group'], parity_modes=m_feature['parity_modes'], speed_modes=m_feature['speed_modes'],
 										 stopb_modes=m_feature['stopb_modes'], legacy_mode=self.legacy_mode)
@@ -1142,17 +1143,45 @@ class Uart():
 		self.legacy_mode = legacy_mode
 		self.arm = arm
 		self.parity_modes = parity_modes
-		self.parity_mode = 'None'
 		self.speed_modes = speed_modes
-		self.speed_mode = '19200bps'
 		self.stopb_modes = stopb_modes
-		self.stopb_mode = 'One'
 		self.speed_mask  = 0x0001000f 		# Termios mask
 		self.parity_mask = 0x00000300 		# Termios mask
 		self.stopb_mask  = 0x00000040 		# Termios mask
 		self.major_group = major_group
 		self.valreg = reg
 		self.regvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, unit=self.arm.modbus_address)[0]
+		parity_mode_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, unit=self.arm.modbus_address)[0]) & self.parity_mask
+		speed_mode_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, unit=self.arm.modbus_address)[0]) & self.speed_mask
+		stopb_mode_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, unit=self.arm.modbus_address)[0]) & self.stopb_mask
+		if parity_mode_val == 0x00000300:
+			self.parity_mode = 'Odd'
+		elif parity_mode_val == 0x00000200:
+			self.parity_mode = 'Even'
+		else:
+			self.parity_mode = 'None'
+		
+		if speed_mode_val == 0x0000000b:
+			self.speed_mode = '2400bps'
+		elif speed_mode_val == 0x0000000c:
+			self.speed_mode = '4800bps'
+		elif speed_mode_val == 0x0000000d:
+			self.speed_mode = '9600bps'
+		elif speed_mode_val == 0x0000000e:
+			self.speed_mode = '19200bps'
+		elif speed_mode_val == 0x0000000f:
+			self.speed_mode = '38400bps'
+		elif speed_mode_val == 0x00010001:
+			self.speed_mode = '57600bps'
+		elif speed_mode_val == 0x00010002:
+			self.speed_mode = '115200bps'
+		else:
+			self.speed_mode = '19200bps'
+			
+		if stopb_mode_val == 0x00000040:
+			self.stopb_mode = 'Two'
+		else:
+			self.stopb_mode = 'One'
 
 
 	@property
@@ -1176,7 +1205,7 @@ class Uart():
 		val = self.regvalue()
 		if conf_value is not None:
 			self.arm.neuron.client.write_register(self.valreg, conf_value, unit=self.arm.modbus_address)
-		if parity_mode is not None and parity_mode in self.parity_modes:
+		if parity_mode is not None and parity_mode in self.parity_modes and parity_mode != self.parity_mode:
 			val &= ~self.parity_mask
 			if parity_mode == 'None':
 				val = val
@@ -1187,8 +1216,9 @@ class Uart():
 			else:
 				val = val
 			self.arm.neuron.client.write_register(self.valreg, val, unit=self.arm.modbus_address)
+			self.parity_mode = parity_mode
 			
-		if speed_mode is not None and speed_mode in self.speed_modes:
+		if speed_mode is not None and speed_mode in self.speed_modes and speed_mode != self.speed_mode:
 			val &= ~self.speed_mask
 			if speed_mode == '2400bps':
 				val |= 0x0000000b
@@ -1207,14 +1237,17 @@ class Uart():
 			else:
 				val |= 0x0000000e				
 			self.arm.neuron.client.write_register(self.valreg, val, unit=self.arm.modbus_address)		
-									
-		if stopb_mode is not None and stopb_mode in self.stopb_modes:
+			self.speed_mode = speed_mode
+			
+		if stopb_mode is not None and stopb_mode in self.stopb_modes and stopb_mode != self.stopb_mode:
 			val &= ~self.stopb_mask
 			if stopb_mode == 'One':
 				val = val
 			elif stopb_mode == 'Two':
 				val |= 0x00000040
 			self.arm.neuron.client.write_register(self.valreg, val, unit=self.arm.modbus_address)	
+			self.stopb_mode = stopb_mode
+			
 		raise gen.Return(self.full())
 			
 	def get(self):

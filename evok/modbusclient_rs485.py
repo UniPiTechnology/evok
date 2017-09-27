@@ -338,18 +338,6 @@ def UartStartClient(client, callback=None):
 			try:
 				yield client.scan_boards()
 				yield gen.sleep(0.5)
-				#stream = yield TCPClient().connect(host, port)
-				#client.setTransport(stream)
-				#if callback is not None:
-				#	yield callback()
-				#while (True):
-				#	try:
-				#		client.scan_boards()
-				#	except Exception, E:
-				#		pass
-				#yield future
-			#except StreamClosedError:
-			#	pass
 			except Exception, E:
 				_logger.exception(str(E))
 
