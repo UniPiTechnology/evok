@@ -1,5 +1,14 @@
 ---
 type: xS30
+modbus_register_blocks:
+    - board_index : 1
+      start_reg   : 0
+      count       : 52
+      frequency   : 1
+    - board_index : 1
+      start_reg   : 1000
+      count       : 36
+      frequency   : 10
 modbus_features: 
     - f_index     : 0
       type        : DI
@@ -7,7 +16,6 @@ modbus_features:
       major_group : 1
       modes       :
         - Simple
-        - Counter
       min_v       : 5
       max_v       : 24
       val_reg     : 1
@@ -19,7 +27,6 @@ modbus_features:
       major_group : 1
       modes       :
         - Simple
-        - Counter
       min_v       : 5
       max_v       : 24
       val_reg     : 0
@@ -28,6 +35,21 @@ modbus_features:
     - f_index     : 2
       type        : UART
       major_group : 1
+      parity_modes :
+        - None
+        - Odd
+        - Even
+      speed_modes :
+        - 2400bps
+        - 4800bps
+        - 9600bps
+        - 19200bps
+        - 38400bps
+        - 57600bps
+        - 115200bps
+      stopb_modes :
+        - One
+        - Two
       count       : 1
       conf_reg    : 1034
     - f_index     : 3
@@ -42,8 +64,10 @@ modbus_features:
       count       : 1
       val_reg     : 2
       timeout_reg : 1008
+      reset_coil  : 1002
+      nv_sav_coil : 1003
     - f_index     : 5
       type        : REGISTER
       major_group : 1
-      count       : 2
+      count       : 52
       start_reg   : 0

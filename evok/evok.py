@@ -121,14 +121,13 @@ class WsHandler(websocket.WebSocketHandler):
 		return True
 		
 	def open(self):
-		logger.debug("New WebSocket modbusclient_rs485 connected")
+		logger.debug("New WebSocket client connected")
 		if not registered_ws.has_key("all"):
 			registered_ws["all"] = set()
 
 		registered_ws["all"].add(self)
 
 	def on_event(self, device):
-		#print "Sending to: %s,%s" % (str(self), device)
 		try:
 			self.write_message(json.dumps(device.full()))
 		except Exception as e:

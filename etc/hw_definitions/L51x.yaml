@@ -1,8 +1,32 @@
 ---
 type: L51
+modbus_register_blocks:
+    - board_index : 1
+      start_reg   : 0
+      count       : 21
+      frequency   : 1
+    - board_index : 1
+      start_reg   : 1000
+      count       : 32
+      frequency   : 5
+    - board_index : 2
+      start_reg   : 100
+      count       : 28
+      frequency   : 1
+    - board_index : 2
+      start_reg   : 1100
+      count       : 24
+      frequency   : 5
+    - board_index : 3
+      start_reg   : 200
+      count       : 28
+      frequency   : 1
+    - board_index : 3
+      start_reg   : 1200
+      count       : 24
+      frequency   : 5
 modbus_features:
-    - f_index     : 1
-      type        : AO
+    - type        : AO
       count       : 1
       major_group : 1
       modes       :
@@ -19,8 +43,7 @@ modbus_features:
       res_val_reg : 4
       cal_reg     : 1024
       mode_reg    : 1019
-    - f_index     : 2
-      type        : AI
+    - type        : AI
       count       : 1
       major_group : 1
       min_v       : 0
@@ -29,20 +52,17 @@ modbus_features:
       max_c       : 0.020      
       val_reg     : 3
       cal_reg     : 1024  
-    - f_index     : 3
-      type        : DO
+    - type        : DO
       count       : 4
       major_group : 1
       modes       :
         - Simple
         - PWM
-        - ComplexPWM
       val_reg     : 1
       pwm_reg     : 16
       pwm_ps_reg  : 1017
       pwm_c_reg   : 1018
-    - f_index     : 4
-      type        : DI
+    - type        : DI
       count       : 4
       major_group : 1
       modes       :
@@ -57,24 +77,20 @@ modbus_features:
       deboun_reg  : 1010
       polar_reg   : 1015
       toggle_reg  : 1016
-    - f_index     : 5
-      type        : UART
+    - type        : UART
       major_group : 1
       count       : 1
       conf_reg    : 1031
-    - f_index     : 6
-      type        : LED
+    - type        : LED
       major_group : 1
       count       : 4
       val_reg     : 20
-    - f_index     : 7
-      type        : WD
+    - type        : WD
       count       : 1
       major_group : 1
       val_reg     : 6
       timeout_reg : 1008
-    - f_index     : 8
-      type        : DI
+    - type        : DI
       count       : 6
       major_group : 2
       modes       :
@@ -89,15 +105,13 @@ modbus_features:
       deboun_reg  : 1110
       polar_reg   : 1117
       toggle_reg  : 1118
-    - f_index     : 9
-      type        : RO
+    - type        : RO
       major_group : 2
       count       : 5
       val_reg     : 101
       modes       :
         - Simple
-    - f_index     : 10
-      type        : AO
+    - type        : AO
       count       : 4
       major_group : 2
       modes       :
@@ -106,8 +120,7 @@ modbus_features:
       max_v       : 10
       val_reg     : 102
       mode_reg    : 1019
-    - f_index     : 11
-      type        : AI
+    - type        : AI
       count       : 4
       major_group : 2
       min_v       : 0
@@ -115,18 +128,15 @@ modbus_features:
       min_c       : 0
       max_c       : 0.020      
       val_reg     : 106  
-    - f_index     : 12
-      type        : WD
+    - type        : WD
       major_group : 2
       count       : 1
       val_reg     : 114
       timeout_reg : 1108
-    - f_index     : 13
-      type        : RS485
+    - type        : RS485
       major_group : 2
       count       : 1
-    - f_index     : 14
-      type        : DI
+    - type        : DI
       count       : 6
       major_group : 3
       modes       :
@@ -141,15 +151,13 @@ modbus_features:
       deboun_reg  : 1210
       polar_reg   : 1225
       toggle_reg  : 1226
-    - f_index     : 15
-      type        : RO
+    - type        : RO
       major_group : 3
       count       : 6
       val_reg     : 201
       modes       :
         - Simple
-    - f_index     : 16
-      type        : AO
+    - type        : AO
       count       : 4
       major_group : 3
       modes       :
@@ -158,8 +166,7 @@ modbus_features:
       max_v       : 10
       val_reg     : 202
       mode_reg    : 1219
-    - f_index     : 17
-      type        : AI
+    - type        : AI
       count       : 4
       major_group : 3
       min_v       : 0
@@ -167,14 +174,12 @@ modbus_features:
       min_c       : 0
       max_c       : 0.020        
       val_reg     : 206
-    - f_index     : 18
-      type        : WD
+    - type        : WD
       major_group : 3
       count       : 1
       val_reg     : 202
       timeout_reg : 1208
-    - f_index     : 19
-      type        : REGISTER
+    - type        : REGISTER
       major_group : 1
       count       : 21
       start_reg   : 0

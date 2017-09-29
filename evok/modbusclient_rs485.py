@@ -68,6 +68,7 @@ import logging
 _logger = logging.getLogger(__name__)
 
 client_dict = {}
+messages = 0
 
 class AsyncErrorResponse(ModbusResponse):
 	SerialConnectionError = 1
@@ -270,7 +271,7 @@ class AsyncModbusSerialClient(ModbusSerialClient):
 		self._last_frame_end = time.time()
 		return result
 	def _timeout(self):
-		_logger.info("AsyncModbusSerialClient._timeout()")
+		#_logger.info("AsyncModbusSerialClient._timeout()")
 		self.framer.processError(AsyncErrorResponse.SerialReadTimeout,  self._handleResponse)
 
 def read_gen_cb(result):
@@ -336,8 +337,8 @@ def UartStartClient(client, callback=None):
 			yield callback()
 		while True:
 			try:
-				yield client.scan_boards()
 				yield gen.sleep(0.5)
+				yield client.scan_boards(invoc=True)
 			except Exception, E:
 				_logger.exception(str(E))
 
