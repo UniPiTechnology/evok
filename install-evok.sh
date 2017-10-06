@@ -34,14 +34,14 @@ ask() {
 
 kernelget() {
     kver=$(uname -r|cut -d\- -f1|tr -d '+'| tr -d '[A-Z][a-z]')
-    #echo "Verze '$1 $kver'"
+    # Echo "Verze '$1 $kver'"
     if [[ $1 == $kver ]]
     then
         return 1
     fi
     local IFS=.
     local i ver1=($1) ver2=($kver)
-    # fill empty fields in ver1 with zeros
+    # Fill empty fields in ver1 with zeros
     for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
     do
         ver1[i]=0
@@ -50,7 +50,7 @@ kernelget() {
     do
         if [[ -z ${ver2[i]} ]]
         then
-            # fill empty fields in ver2 with zeros
+            # Fill empty fields in ver2 with zeros
             ver2[i]=0
         fi
         if ((10#${ver1[i]} > 10#${ver2[i]}))
@@ -66,20 +66,20 @@ kernelget() {
 }
 
 enable_ic2() {
-    #enable i2c for kernel after 3.18.5
+    # Enable i2c for kernel after 3.18.5
     if kernelget 3.18.5 ;then
         echo "Using kernel newer than 3.18.5"
         if ! grep -q 'device_tree_param=i2c1=on' /boot/config.txt ;then
             echo -e "$(cat /boot/config.txt) \n\n#Enable i2c bus 1\ndevice_tree_param=i2c1=on\ndtoverlay=i2c-rtc,mcp7941x\ndtoverlay=unipiee\ndtoverlay=neuronee\n" > /boot/config.txt
 		fi
-    else #comment out blacklisted i2c on kernel < 3.18.5
+    else # Comment out blacklisted i2c on kernel < 3.18.5
         echo "Using kernel older than 3.18.5"
         if ! grep -q '#blacklist i2c-bcm2708' /etc/modprobe.d/raspi-blacklist.conf ;then
             sed -i '/blacklist i2c-bcm2708/s/^/#/g' /etc/modprobe.d/raspi-blacklist.conf
         fi
     fi
 
-    #load modules
+    # Load modules
     if ! grep -q 'i2c-bcm2708' /etc/modules ;then
         echo -e '\ni2c-bcm2708' >> /etc/modules
     fi
@@ -88,18 +88,18 @@ enable_ic2() {
         echo -e '\ni2c-dev' >> /etc/modules
     fi
 
-    #load modules manually
+    # Load modules manually
     modprobe i2c-bcm2708
     modprobe i2c-dev
 }
 
 install_unipi_1() {
-    #load UniPi 1.x EEPROM
+    # Load UniPi 1.x EEPROM
     if ! grep -q 'unipi_eprom' /etc/modules ;then
         echo "unipi_eprom" >> /etc/modules
     fi
 
-    #load UniPi RTC
+    # Load UniPi RTC
     if ! grep -q 'unipi_rtc' /etc/modules ;then
         echo "unipi_rtc" >> /etc/modules
     fi
@@ -110,20 +110,20 @@ install_unipi_1() {
         kill $(pidof pigpiod)
     fi
 
-    #install pigpio
+    # Install pigpio
     cd pigpio
     make -j4
     make install
     cd ..
 
-    #copy tornadorpc
+    # Copy tornadorpc
     cp -r tornadorpc_evok /usr/local/lib/python2.7/dist-packages/
 
-    #copy evok
+    # Copy evok
     cp -r evok/ /opt/
     mkdir -p /var/www/evok && cp -r www/* /var/www/
 
-    #copy default config file and init scipts
+    # Copy default config file and init scipts
     if [ -f /etc/evok.conf ]; then
         echo "/etc/evok.conf file already exists"
         if ask "Do you want to overwrite your /etc/evok.conf file?"; then
@@ -157,20 +157,32 @@ install_unipi_1() {
 	
 	sed -i -e "s/port = 8080/port = ${internal_port_number}/" /etc/evok.conf
 
-    #backup uninstallation script
+    # Backup uninstallation script
     cp uninstall-evok.sh /opt/evok/
 
-    echo "Evok installed sucessfully."
-    echo "Info:"
-    echo "     1. Edit /etc/evok.conf file according to your choice."
-    echo "        If you are running Apache or other daemon at port 80, you must set either evok or apache port different than the other."
-    echo "     2. Run 'service evok start/restart/stop' to control the daemon."
-    echo "     (3. To uninstall evok run /opt/evok/uninstall-evok.sh)"
-
+	echo '##################################'
+    echo '## Evok installed sucessfully.  ##'
+    echo '## Info:                        ##'
+    echo '## 1. Edit /etc/evok.conf file  ##'
+	echo '## according to your choice.    ##'
+    echo '## If you are running Apache or ##'
+	echo '## other daemon at port 80, you ##'
+    echo '## must set either evok or      ##'
+	echo '## apache port different than   ##'
+	echo '## the other.                   ##'
+    echo '## 2. Run "service evok         ##'
+	echo '## [start|restart|stop]" to     ##' 
+	echo '## control the daemon.          ##'
+    echo '## (3. To uninstall evok run    ##'
+	echo '## /opt/evok/uninstall-evok.sh) ##'
+	echo '##################################'
     if ask "Is it OK to reboot now?"; then
         reboot
     else
-        echo 'Remember to reboot your Raspberry Pi in order to start using Evok'
+		echo '################################################'
+        echo '## Remember to reboot your Raspberry Pi in    ##'
+		echo '## order to start using Evok                  ##'
+		echo '################################################'
         service pigpiod start
         service evok start
     fi
@@ -178,7 +190,7 @@ install_unipi_1() {
 }
 
 install_unipi_lite_1() {
-    #load UniPi 1.x EEPROM
+    # Load UniPi 1.x EEPROM
     if ! grep -q 'unipi_eprom' /etc/modules ;then
         echo "unipi_eprom" >> /etc/modules
     fi
@@ -189,20 +201,20 @@ install_unipi_lite_1() {
         kill $(pidof pigpiod)
     fi
 
-    #install pigpio
+    # Install pigpio
     cd pigpio
     make -j4
     make install
     cd ..
 
-    #copy tornadorpc
+    # Copy tornadorpc
     cp -r tornadorpc_evok /usr/local/lib/python2.7/dist-packages/
 
-    #copy evok
+    # Copy evok
     cp -r evok/ /opt/
     mkdir -p /var/www/evok && cp -r www/* /var/www/
 
-    #copy default config file and init scipts
+    # Copy default config file and init scipts
     if [ -f /etc/evok.conf ]; then
         echo "/etc/evok.conf file already exists"
         if ask "Do you want to overwrite your /etc/evok.conf file?"; then
@@ -236,20 +248,32 @@ install_unipi_lite_1() {
 
 	sed -i -e "s/port = 8080/port = ${internal_port_number}/" /etc/evok.conf
 	
-    #backup uninstallation script
+    # Backup uninstall script
     cp uninstall-evok.sh /opt/evok/
 
-    echo "Evok installed sucessfully."
-    echo "Info:"
-    echo "     1. Edit /etc/evok.conf file according to your choice."
-    echo "        If you are running Apache or other daemon at port 80, you must set either evok or apache port different than the other."
-    echo "     2. Run 'service evok start/restart/stop' to control the daemon."
-    echo "     (3. To uninstall evok run /opt/evok/uninstall-evok.sh)"
-
+	echo '##################################'
+    echo '## Evok installed sucessfully.  ##'
+    echo '## Info:                        ##'
+    echo '## 1. Edit /etc/evok.conf file  ##'
+	echo '## according to your choice.    ##'
+    echo '## If you are running Apache or ##'
+	echo '## other daemon at port 80, you ##'
+    echo '## must set either evok or      ##'
+	echo '## apache port different than   ##'
+	echo '## the other.                   ##'
+    echo '## 2. Run "service evok         ##'
+	echo '## [start|restart|stop]" to     ##' 
+	echo '## control the daemon.          ##'
+    echo '## (3. To uninstall evok run    ##'
+	echo '## /opt/evok/uninstall-evok.sh) ##'
+	echo '##################################'
     if ask "Is it OK to reboot now?"; then
         reboot
     else
-        echo 'Remember to reboot your Raspberry Pi in order to start using Evok'
+		echo '################################################'
+        echo '## Remember to reboot your Raspberry Pi in    ##'
+		echo '## order to start using Evok                  ##'
+		echo '################################################'
         service pigpiod start
         service evok start
     fi
@@ -257,30 +281,31 @@ install_unipi_lite_1() {
 }
 
 install_unipi_neuron() {
-    #load UniPi2 EEPROM
+    # Load UniPi2 EEPROM
     if ! grep -q 'unipi2_eprom' /etc/modules ;then
         echo "unipi2_eprom" >> /etc/modules
     fi
 
-    #load UniPi2 RTC
+    # Load UniPi2 RTC
     if ! grep -q 'unipi_rtc' /etc/modules ;then
         echo "unipi_rtc" >> /etc/modules
     fi
 
-    #install neuron tcp server
+    # Install neuron_tcp_server 1.0.1
     wget https://github.com/UniPiTechnology/neuron_tcp_modbus_overlay/archive/v1.0.1.zip
     unzip v1.0.1.zip
     cd neuron_tcp_modbus_overlay-1.0.1
     yes n | bash $PWD/install.sh
     cd ..
-    #copy tornadorpc
+    
+	# Copy tornadorpc
     cp -r tornadorpc_evok /usr/local/lib/python2.7/dist-packages/
 
-    #copy evok
+    # Copy evok
     cp -r evok/ /opt/
     mkdir -p /var/www/evok && cp -r www/* /var/www/
 
-    #copy default config file and init scipts
+    # Copy default config file and init scipts
     if [ -f /etc/evok-neuron.conf ]; then
         echo "/etc/evok-neuron.conf file already exists"
         if ask "Do you want to overwrite your /etc/evok-neuron.conf file?"; then
@@ -293,6 +318,8 @@ install_unipi_neuron() {
         cp etc/evok-neuron.conf /etc/evok.conf
     fi
 
+
+	
     chmod +x /opt/evok/evok.py
 
     manager=$(cat /proc/1/comm)
@@ -309,16 +336,20 @@ install_unipi_neuron() {
 
 	sed -i -e "s/port = 8080/port = ${internal_port_number}/" /etc/evok.conf
 	
-    #backup uninstallation script
+    # Backup uninstallation script
     cp uninstall-evok.sh /opt/evok/
-
-    echo "Evok installed sucessfully."
-    echo "Info:"
-    echo "     1. If you are running Apache or other daemon at port 80, you must set either evok or apache port different than the other."
-    echo "     2. Run 'service evok start/restart/stop' to control the daemon."
-    echo "     (3. To uninstall evok run /opt/evok/uninstall-evok.sh)"
-
-    if ask "Is it OK to reboot now?"; then
+	echo '##############################################################'
+    echo '## Evok installed sucessfully.                              ##'
+    echo '## Info:                                                    ##'
+    echo '## 1. If you are running Apache or other daemon at port 80, ##'
+	echo '## you must set either evok or apache port different than   ##'
+	echo '## the other.                                               ##'
+    echo "## 2. Run 'service evok start/restart/stop' to control the  ##"
+	echo '## daemon.                                                  ##'
+    echo '## (3. To uninstall evok run /opt/evok/uninstall-evok.sh)   ##'
+	echo '##############################################################'
+    echo ' '
+	if ask "Is it OK to reboot now?"; then
         reboot
     else
         echo 'Remember to reboot your Raspberry Pi in order to start using Evok'
@@ -342,32 +373,51 @@ cp -r etc/opt /etc/
 apt-get update
 apt-get install -y python-ow python-pip make python-dev nginx
 pip install tornado toro jsonrpclib pymodbus pyyaml tornado_json tornado-webservices
+pip install pymodbus --upgrade
+ln -sf /etc/nginx/sites-enabled/evok /etc/evok-nginx.conf
 
 cp -r etc/hw_definitions /etc/
 cp -r etc/nginx/sites-enabled /etc/nginx/
 
 rm -rf /etc/nginx/sites-enabled/default
 
-echo 'Please select which port you wish the built-in web interface to use (will also proxy request to the API port): '
-echo '(use 80 if you do not know what this means, can be later changed in /etc/nginx/sites-enabled/evok)'
-echo 'IMPORTANT WARNING: !!!This port cannot be the same as the internal API port in the next section!!!'
-echo 'WARNING: If you wish to use another web server, you may have to disable NGINX by deleting the /etc/nginx/sites-enabled/evok file'
-read -p 'Website Port to use: ' external_port_number
-
-echo 'Please select which port you wish the internal API to use: (use 8080 if you do not know what this means, can be changed in /etc/evok.conf)'
-read -p 'API Port to use: ' internal_port_number
-
+echo '#########################################################################'
+echo '#########################################################################'
+echo '## Please select which port you wish the built-in web interface to use ##' 
+echo '##(will also proxy request to the API port); (use 80 if you do not know #'
+echo '## what this means, can be later changed in                            ##'
+echo '## /etc/nginx/sites-enabled/evok)                                      ##'
+echo '## IMPORTANT WARNING: !!!This port cannot be the same as the internal  ##'
+echo '## API port in the next section!!!                                     ##' 
+echo '## WARNING: If you wish to use another web server, you may have to     ##'
+echo '## disable NGINX by deleting the /etc/nginx/sites-enabled/evok file    ##'
+echo '#########################################################################'
+echo '#########################################################################'
+echo ' '
+read -p 'Website Port to use: >' external_port_number
+echo ' '
+echo '#########################################################################'
+echo '## Please select which port you wish the internal API to use: (use 8080 #'
+echo '## if you do not know what this means, can be changed in               ##'
+echo '## "/etc/evok.conf" later)                                             ##'
+echo '#########################################################################'
+echo ' '
+read -p 'API Port to use: >' internal_port_number
+echo ' '
 sed -i -e "s/listen 80/listen ${external_port_number}/" /etc/nginx/sites-enabled/evok
 sed -i -e "s/localhost:8080/localhost:${internal_port_number}/" /etc/nginx/sites-enabled/evok
-
-#detect version of UniPi
-echo 'Please choose the type of your UniPi product:'
-PS3="Your model:"
+echo ' '
+echo '###################################################'
+echo '## Please choose the type of your UniPi product: ##'
+echo '###################################################'
+echo ' ' 
+PS3="Your model: >"
 options=(
     "UniPi Neuron"
 	"UniPi Lite 1.x"
 	"UniPi 1.x"
 )
+echo ''
 select option in "${options[@]}"; do
     case "$REPLY" in
         1)

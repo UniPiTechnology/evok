@@ -44,6 +44,7 @@ modbus_features:
       max_c       : 0.020      
       val_reg     : 3
       cal_reg     : 1024  
+      mode_reg    : 1024
     - type        : DO
       count       : 4
       major_group : 1

@@ -1,4 +1,6 @@
-#!/usr/bin/python
+''''
+	Code specific to UniPi 1.1 devices
+'''
 
 import struct
 import time
@@ -14,7 +16,6 @@ from devices import *
 import config
 from log import *
 
-#Todo: remove, obsolette
 class Eprom(object):
 	def __init__(self, i2cbus, circuit, address=0x50, size=256, major_group=1, dev_id=0):
 		# running with blocking

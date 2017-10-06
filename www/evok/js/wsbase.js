@@ -31,34 +31,82 @@ function SyncDevice(msg) {
     var device = msg.dev;
     var typ = msg.typ;
     var value = msg.value;
+    var humidity = "N/A";
     var unit = "";
     var ns = "unipi_" + device + "_" + circuit;
+	var neuron_sn = 0;
+	var neuron_name = "";
+	var uart_speed_modes = [""]
+	var uart_speed_mode = ""
+	var uart_parity_modes = [""]
+	var uart_parity_mode = ""
+	var uart_stopb_modes = [""]
+	var uart_stopb_mode = ""
+	var watchdog_timeout = 5000
+	var watchdog_nv_save = 0
+	var watchdog_reset = 0
+	var watchdog_was_wd_reset = 0
     if (device == 'ai') {
         name = "Analog Input " + circuit_display_name;
         value = msg.value.toFixed(3);
         unit = "V";
     }
     else if (device == 'ao') {
-        name = "Analog output " + circuit_display_name;
+        name = "Analog Output " + circuit_display_name;
         unit = "V";
         value = msg.value.toFixed(1);
     }
     else if (device == 'relay') {
         name = "Relay " + circuit_display_name;
+    	if (("relay_type" in msg) && msg.relay_type == "digital") {
+    		name = "Digital Output " + circuit_display_name;
+    	}
     }
     else if (device == 'input') {
         name = "Input " + circuit_display_name;
         counter = msg.counter;
     }
+    else if (device == 'uart') {
+    	name = "UART Port " + circuit_display_name;
+    	uart_speed_modes = msg.speed_modes
+    	uart_speed_mode = msg.speed_mode
+    	uart_parity_modes = msg.parity_modes
+    	uart_parity_mode = msg.parity_mode
+    	uart_stopb_modes = msg.stopb_modes
+    	uart_stopb_mode = msg.stopb_mode
+    }
+    else if (device == 'wd') {
+    	name = "Board Watchdog " + circuit_display_name;
+    	watchdog_timeout = msg.timeout[0]
+    	watchdog_nv_save = msg.nv_save
+    	watchdog_reset = msg.reset
+    	watchdog_was_wd_reset = msg.was_wd_reset
+    }
     else if (device == 'temp' || device == '1wdevice') {
         name = "Sensor " + typ + " - " + circuit_display_name;
         if (msg.value == null) {
-            value = "null";
+            value = "N/A";
         }
         else {
             value = msg.value.toFixed(1);
             unit = "°C";
         }
+    }
+    else if (device == '1wdevice' && typ == 'DS2438') {
+        name = "" + typ + " - " + circuit_display_name;
+        if (msg.value == null) {
+            value = "N/A";
+            humidity = "N/A";
+        }
+        else {
+            value = msg.temp.toFixed(1);
+            humidity = msg.humidity.toFixed(1);
+            unit = "°C";
+        }   	
+    } else if (device == 'neuron') {
+    	neuron_sn = msg.sn
+    	neuron_name = msg.model
+    	name = "Neuron " + neuron_name;
     }
     //todo: unite names of device types here and in evok
     if (!$('#' + ns + '_li').length > 0) {
@@ -87,10 +135,15 @@ function SyncDevice(msg) {
             main_el.max = 10;
             main_el.step = 0.1;
         }
-        else if (device == "temp" || device == "1wdevice") {
+        else if (device == "temp") {
             main_el = document.createElement("h1");
-            main_el.textContent = value + unit;
+        	main_el.textContent = value + unit;
             main_el.className = "ui-li-aside";
+        }
+        else if (device == "1wdevice") {
+            main_el = document.createElement("h1");
+            main_el.textContent = "" + humidity + "%Hum " + value + unit;
+            main_el.className = "ui-li-aside";        	
         }
         else if (device == "input") {
             cnt_el = document.createElement("h1");
@@ -114,6 +167,34 @@ function SyncDevice(msg) {
             }
             main_el.textContent = state + unit;
             main_el.className = "ui-li-aside";
+        }
+        else if (device == "neuron") {
+            main_el = document.createElement("h1");
+            if (neuron_sn != null) {
+            	main_el.textContent = "S/N: " + neuron_sn;
+            } else {
+            	main_el.textContent = "";
+            }
+            main_el.className = "ui-li-aside";
+        }
+        else if (device == "uart") {
+            main_el = document.createElement("h1");
+        	main_el.textContent = "Speed: " + uart_speed_mode + " Parity: " + uart_parity_mode;
+            main_el.className = "ui-li-aside";
+        }
+        else if (device == 'wd') {
+            main_el = document.createElement("h1");
+            if (watchdog_was_wd_reset == 0) {
+            	main_el.textContent = "[Not Triggered] " + "Timeout: " + watchdog_timeout;
+            } else {
+            	main_el.textContent = "[Reset Triggered] " + "Timeout: " + watchdog_timeout;
+            }
+        	
+            main_el.className = "ui-li-aside";
+        	//watchdog_timeout = msg.timeout[0]
+        	//watchdog_nv_save = msg.nv_save
+        	//watchdog_reset = msg.reset
+        	//watchdog_was_wd_reset = msg.was_wd_reset
         }
         else {
             main_el = document.createElement("h1");
@@ -166,12 +247,35 @@ function SyncDevice(msg) {
             list.insertBefore(li, divider);
             $('#inputs_list').listview('refresh');
         }
-        else if (device == 'temp' || device == '1wdevice') {
+        else if (device == 'input') {
+            var divider = document.getElementById("unipi_ai_divider");
+            var list = document.getElementById("inputs_list");
+            list.insertBefore(li, divider);
+            $('#inputs_list').listview('refresh');
+        }
+        else if (device == 'temp') {
             $('#inputs_list').append(li);
             $('#inputs_list').listview('refresh');
         }
+        else if (device == '1wdevice' && typ == 'DS2438') {
+            $('#inputs_list').append(li);
+            $('#inputs_list').listview('refresh');        	
+        }
         else if (device == 'neuron') {
-        	
+            var divider = document.getElementById("unipi_uart_divider");
+            var list = document.getElementById("system_list");
+            list.insertBefore(li, divider);
+            $('#system_list').listview('refresh');             
+        }
+        else if (device == "uart") {
+            var divider = document.getElementById("unipi_watchdog_divider");
+            var list = document.getElementById("system_list");
+            list.insertBefore(li, divider);
+            $('#system_list').listview('refresh'); 
+        }
+        else if (device == 'wd') {
+        	$('#system_list').append(li);
+        	$('#system_list').listview('refresh'); 
         }
     } else {
         //get elements
@@ -195,11 +299,31 @@ function SyncDevice(msg) {
         }
         //inputs
         else if (device == 'input') {
-            //if (msg.counter_mode != "disabled") {
-                //var counter_el = document.getElementById(ns + "_counter");
-                //counter_el.innerHTML = counter;
-            //}
+            if (msg.counter_mode != "Disabled") {
+               var counter_el = document.getElementById(ns + "_counter");
+               //counter_el.innerHTML = counter;
+            }
             main_el.innerHTML = (value == 1) ? "On" : "Off";
+        }
+        else if (device == '1wdevice' && typ == 'DS2438') {
+        	main_el.innerHTML = "" + humidity + "%Hum " + value + unit;       	
+        }
+        else if (device == 'neuron') {
+            if (neuron_sn != null) {
+            	main_el.innerHTML = "S/N: " + neuron_sn;
+            } else {
+            	main_el.innerHTML = "";
+            }
+        }
+        else if (device == 'uart') {
+        	main_el.innerHTML  = "Speed: " + uart_speed_mode + " Parity: " + uart_parity_mode;
+        }
+        else if (device == 'wd') {
+            if (watchdog_was_wd_reset == 0) {
+            	main_el.innerHTML =  "[Not Triggered] " + "Timeout: " + watchdog_timeout;
+            } else {
+            	main_el.innerHTML =  "[Reset Triggered] " + "Timeout: " + watchdog_timeout;
+            }
         }
         else {
             main_el.innerHTML = value + unit;

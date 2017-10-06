@@ -20,6 +20,23 @@ class DeviceList(dict):
 		except KeyError:
 			return super(DeviceList, self).__getitem__(self.altnames[key])
 
+	def remove_item(self, key, value):
+		del (self[devtype_names[key]])[value.circuit]
+		#try:
+		#except KeyError:
+		#	del (self[self.altnames[key]])[value]
+		#super(DeviceList, self).pop(key)
+
+	def remove_global_device(self, glob_dev_id):
+		for devtype_name in devtype_names:
+			to_delete = []
+			for dev_name in self[devtype_name]:
+				if ((self[devtype_name])[dev_name]).dev_id == glob_dev_id:
+					to_delete += [(self[devtype_name])[dev_name]]
+			for value in to_delete:
+				del (self[devtype_name])[value.circuit]
+
+
 	def by_int(self, devtypeid, circuit=None, major_group=None):
 		devdict = self._arr[devtypeid]
 		if circuit is None:

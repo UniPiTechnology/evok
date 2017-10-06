@@ -1,6 +1,6 @@
 
 server {
-	listen 80 default_server;
+	listen 88 default_server;
 	server_name  _;
 
 	#ssl on;

@@ -3,11 +3,15 @@ type: xS40
 modbus_register_blocks:
     - board_index : 1
       start_reg   : 0
-      count       : 20
+      count       : 2
       frequency   : 1
     - board_index : 1
+      start_reg   : 2
+      count       : 18
+      frequency   : 10000
+    - board_index : 1
       start_reg   : 1000
-      count       : 23
+      count       : 24
       frequency   : 10
 modbus_features: 
     - type        : RO

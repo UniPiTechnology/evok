@@ -1,17 +1,10 @@
-# import logging
-#import threading
 import multiprocessing
 import os
 import time
 import ow
-#import math
-#import datetime
 import signal
-#import apigpio
 import string
-
 from tornado.ioloop import IOLoop
-
 import devents
 import devices
 from log import *

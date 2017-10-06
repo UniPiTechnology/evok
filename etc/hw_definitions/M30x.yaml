@@ -34,7 +34,7 @@ modbus_features:
       val_reg     : 2
       res_val_reg : 4
       cal_reg     : 1024
-      mode_reg    : 1019
+      mode_reg    : 1024
     - type        : AI
       count       : 1
       major_group : 1

@@ -6,6 +6,7 @@ import tornado.httpserver
 import tornado.httpclient
 import tornado.ioloop
 import tornado.web
+
 from tornado import gen
 from tornado.options import define, options
 from tornado import websocket
@@ -53,6 +54,7 @@ use_output_schema = Config.getbooldef('MAIN','regenerate_api_docs',False)
 use_legacy_api = not(Config.getbooldef('MAIN','use_experimental_api',False))
 
 import rpc_handler
+import neuron
 
 class UserCookieHelper():
 	_passwords = []
@@ -159,9 +161,7 @@ class WsHandler(websocket.WebSocketHandler):
 					value = None
 				try:
 					device = Devices.by_name(dev, circuit)
-					# result = device.set(value)
 					func = getattr(device, cmd)
-					#print type(value), value
 					if value is not None:
 						if type(value) == dict:
 							result = func(**value)
@@ -2116,14 +2116,7 @@ def gener_config_cb(mainloop, modbus_context):
 
 	def config_cb(device, *kwargs):
 		pass
-		# if registered_ws.has_key("all"):
-		#	 map(lambda x: x.on_event(device), registered_ws['all'])
-		#if add_computes(device):
-		#	mainloop.add_callback(compute)
-			# print device
-			# d = device.full()
-			# print "%s%s " % (d['dev'], d['circuit'])
-
+	
 	if modbus_context:
 		return config_cb_modbus
 	return config_cb
@@ -2154,8 +2147,6 @@ def main():
 
 	logger.info("Starting using config file %s", config_path)
 
-	webname = Config.getstringdef("MAIN", "webname", "unipi")
-	staticfiles = Config.getstringdef("MAIN", "staticfiles", "/var/www/evok")
 	cookie_secret = Config.getstringdef("MAIN", "secret", "ut5kB3hhf6VmZCujXGQ5ZHb1EAfiXHcy")
 	hw_dict = config.HWDict('/etc/hw_definitions/')
 
