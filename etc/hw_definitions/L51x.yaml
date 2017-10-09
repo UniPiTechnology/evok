@@ -46,12 +46,15 @@ modbus_features:
     - type        : AI
       count       : 1
       major_group : 1
+      modes       :
+        - Voltage
+        - Current
       min_v       : 0
       max_v       : 10
       min_c       : 0
       max_c       : 0.020      
       val_reg     : 3
-      cal_reg     : 1024
+      cal_reg     : 1024 
       mode_reg    : 1024      
     - type        : DO
       count       : 4
@@ -60,6 +63,7 @@ modbus_features:
         - Simple
         - PWM
       val_reg     : 1
+      val_coil    : 0
       pwm_reg     : 16
       pwm_ps_reg  : 1017
       pwm_c_reg   : 1018
@@ -69,7 +73,10 @@ modbus_features:
       modes       :
         - Simple
         - DirectSwitch
-        - Counter
+      ds_modes    :
+        - Simple
+        - Inverted
+        - Toggle
       min_v       : 5
       max_v       : 24
       val_reg     : 0
@@ -80,24 +87,49 @@ modbus_features:
       toggle_reg  : 1016
     - type        : UART
       major_group : 1
+      parity_modes :
+        - None
+        - Odd
+        - Even
+      speed_modes :
+        - 2400bps
+        - 4800bps
+        - 9600bps
+        - 19200bps
+        - 38400bps
+        - 57600bps
+        - 115200bps
+      stopb_modes :
+        - One
+        - Two
       count       : 1
       conf_reg    : 1031
     - type        : LED
       major_group : 1
       count       : 4
+      val_coil    : 8
       val_reg     : 20
     - type        : WD
-      count       : 1
       major_group : 1
+      count       : 1
       val_reg     : 6
       timeout_reg : 1008
+      nv_sav_coil : 1003
+      reset_coil  : 1002
+    - type        : REGISTER
+      major_group : 1
+      count       : 21
+      start_reg   : 0
     - type        : DI
       count       : 6
       major_group : 2
       modes       :
         - Simple
         - DirectSwitch
-        - Counter
+      ds_modes    :
+        - Simple
+        - Inverted
+        - Toggle
       min_v       : 5
       max_v       : 24
       val_reg     : 100
@@ -110,6 +142,7 @@ modbus_features:
       major_group : 2
       count       : 5
       val_reg     : 101
+      val_coil    : 100
       modes       :
         - Simple
     - type        : AO
@@ -120,42 +153,72 @@ modbus_features:
       min_v       : 0
       max_v       : 10
       val_reg     : 102
-      mode_reg    : 1019
+      mode_reg    : 1119
     - type        : AI
       count       : 4
       major_group : 2
+      modes       :
+        - Voltage
+        - SecondaryAI
       min_v       : 0
       max_v       : 10
       min_c       : 0
       max_c       : 0.020      
-      val_reg     : 106  
+      val_reg     : 106
+      mode_reg    : 1119 
     - type        : WD
       major_group : 2
       count       : 1
       val_reg     : 114
       timeout_reg : 1108
-    - type        : RS485
+      nv_sav_coil : 1103
+      reset_coil  : 1102
+    - type        : UART
+      parity_modes :
+        - None
+        - Odd
+        - Even
+      speed_modes :
+        - 2400bps
+        - 4800bps
+        - 9600bps
+        - 19200bps
+        - 38400bps
+        - 57600bps
+        - 115200bps
+      stopb_modes :
+        - One
+        - Two
       major_group : 2
+      conf_reg    : 1123
       count       : 1
+    - type        : REGISTER
+      major_group : 2
+      count       : 28
+      start_reg   : 100
     - type        : DI
       count       : 6
       major_group : 3
       modes       :
         - Simple
         - DirectSwitch
-        - Counter
+      ds_modes    :
+        - Simple
+        - Inverted
+        - Toggle
       min_v       : 5
       max_v       : 24
       val_reg     : 200
-      counter_reg : 203
-      direct_reg  : 1224
+      counter_reg : 216
+      direct_reg  : 1216
       deboun_reg  : 1210
-      polar_reg   : 1225
-      toggle_reg  : 1226
+      polar_reg   : 1217
+      toggle_reg  : 1218
     - type        : RO
       major_group : 3
-      count       : 6
+      count       : 5
       val_reg     : 201
+      val_coil    : 200
       modes       :
         - Simple
     - type        : AO
@@ -170,17 +233,42 @@ modbus_features:
     - type        : AI
       count       : 4
       major_group : 3
+      modes       :
+        - Voltage
+        - SecondaryAI
       min_v       : 0
       max_v       : 10
       min_c       : 0
-      max_c       : 0.020        
+      max_c       : 0.020      
       val_reg     : 206
+      mode_reg    : 1219 
     - type        : WD
       major_group : 3
       count       : 1
-      val_reg     : 202
+      val_reg     : 214
       timeout_reg : 1208
+      nv_sav_coil : 1203
+      reset_coil  : 1202
+    - type        : UART
+      parity_modes :
+        - None
+        - Odd
+        - Even
+      speed_modes :
+        - 2400bps
+        - 4800bps
+        - 9600bps
+        - 19200bps
+        - 38400bps
+        - 57600bps
+        - 115200bps
+      stopb_modes :
+        - One
+        - Two
+      major_group :3
+      conf_reg    : 1223
+      count       : 1
     - type        : REGISTER
-      major_group : 1
-      count       : 21
-      start_reg   : 0
+      major_group : 3
+      count       : 28
+      start_reg   : 200

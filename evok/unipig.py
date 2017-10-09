@@ -19,6 +19,7 @@ from log import *
 class Eprom(object):
 	def __init__(self, i2cbus, circuit, address=0x50, size=256, major_group=1, dev_id=0):
 		# running with blocking
+		self.devtype = EE
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.i2cbus = i2cbus
@@ -78,6 +79,7 @@ MCP23008_OLAT = 0x0A  # latch output status
 
 class UnipiMcp(object):
 	def __init__(self, i2cbus, circuit, address=0x20, major_group=1, dev_id=0):
+		self.devtype = MCP
 		self.dev_id = dev_id
 		# running with blocking
 		self.circuit = circuit
@@ -165,6 +167,7 @@ class Relay(object):
 	pending_id = 0
 
 	def __init__(self, circuit, mcp, pin, major_group=1, dev_id=0):
+		self.devtype = RELAY
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.major_group = major_group
@@ -398,6 +401,7 @@ class UnipiMCP342x(object):
 class AnalogInput():
 	def __init__(self, circuit, mcp, channel, bits=18, gain=1, continuous=False, interval=5.0, correction=5.0, rom=None,
 				 corr_addr=None, major_group=1, dev_id=0):
+		self.devtype = AI
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.major_group = major_group
@@ -504,6 +508,7 @@ class UnipiPCA9685(object):
 
 
 	def __init__(self, i2cbus, circuit, address, frequency=400, dev_id=0):
+		self.devtype = I2CBUS
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.i2cbus = i2cbus
@@ -623,6 +628,7 @@ class UnipiPCA9685(object):
 
 class AnalogOutputPCA():
 	def __init__(self, circuit, pca, channel, major_group=1, dev_id=0):
+		self.devtype = AO
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.pca = pca
@@ -659,6 +665,7 @@ class AnalogOutputPCA():
 #################################################################
 class AnalogOutputGPIO():
 	def __init__(self, gpiobus, circuit, pin=18, frequency=400, major_group=1, value=0, dev_id=0):
+		self.devtype = AO
 		self.dev_id = dev_id
 		self.bus = gpiobus
 		self.circuit = circuit
@@ -721,6 +728,7 @@ class AnalogOutputGPIO():
 
 class Input():
 	def __init__(self, gpiobus, circuit, pin, debounce=None, major_group=1, counter_mode='disabled', dev_id=0):
+		self.devtype = INPUT
 		self.dev_id = dev_id
 		self.bus = gpiobus
 		self.circuit = circuit
@@ -824,6 +832,7 @@ class Input():
 
 class DS2408_pio(object):
 	def __init__(self, circuit, ds2408, pin, major_group=1, dev_id=0):
+		self.devtype = SENSOR
 		self.circuit = circuit
 		self.dev_id = dev_id
 		self.major_group = major_group

@@ -68,12 +68,16 @@ kernelget() {
 enable_ic2() {
     # Enable i2c for kernel after 3.18.5
     if kernelget 3.18.5 ;then
-        echo "Using kernel newer than 3.18.5"
-        if ! grep -q 'device_tree_param=i2c1=on' /boot/config.txt ;then
+		echo '####################################'
+        echo '## Using kernel newer than 3.18.5 ##'
+        echo '####################################'
+		if ! grep -q 'device_tree_param=i2c1=on' /boot/config.txt ;then
             echo -e "$(cat /boot/config.txt) \n\n#Enable i2c bus 1\ndevice_tree_param=i2c1=on\ndtoverlay=i2c-rtc,mcp7941x\ndtoverlay=unipiee\ndtoverlay=neuronee\n" > /boot/config.txt
 		fi
     else # Comment out blacklisted i2c on kernel < 3.18.5
-        echo "Using kernel older than 3.18.5"
+		echo '####################################'
+        echo '## Using kernel older than 3.18.5 ##'
+		echo '####################################'
         if ! grep -q '#blacklist i2c-bcm2708' /etc/modprobe.d/raspi-blacklist.conf ;then
             sed -i '/blacklist i2c-bcm2708/s/^/#/g' /etc/modprobe.d/raspi-blacklist.conf
         fi
@@ -125,12 +129,16 @@ install_unipi_1() {
 
     # Copy default config file and init scipts
     if [ -f /etc/evok.conf ]; then
-        echo "/etc/evok.conf file already exists"
+		echo '#####################################################'
+        echo '## The "/etc/evok-neuron.conf" file already exists ##'
+        echo '#####################################################'
         if ask "Do you want to overwrite your /etc/evok.conf file?"; then
             cp etc/evok-unipi1.1.conf /etc/evok.conf
         else
-            echo "Your current config file was not overwritten."
-            echo "Please see a diff between the new and your current config file."
+			echo '#####################################################################'
+            echo '## Your current config file was not overwritten.                   ##'
+            echo '## Please do a diff between your new and previous config file.     ##'
+			echo '#####################################################################'
         fi
     else
         cp etc/evok-unipi1.1.conf /etc/evok.conf
@@ -216,12 +224,16 @@ install_unipi_lite_1() {
 
     # Copy default config file and init scipts
     if [ -f /etc/evok.conf ]; then
-        echo "/etc/evok.conf file already exists"
+		echo '#####################################################'
+        echo '## The "/etc/evok-neuron.conf" file already exists ##'
+        echo '#####################################################'
         if ask "Do you want to overwrite your /etc/evok.conf file?"; then
             cp etc/evok-lite.conf /etc/evok.conf
         else
-            echo "Your current config file was not overwritten."
-            echo "Please see a diff between the new and your current config file."
+			echo '#####################################################################'
+            echo '## Your current config file was not overwritten.                   ##'
+            echo '## Please do a diff between your new and previous config file.     ##'
+			echo '#####################################################################'
         fi
     else
         cp etc/evok-lite.conf /etc/evok.conf
@@ -307,12 +319,16 @@ install_unipi_neuron() {
 
     # Copy default config file and init scipts
     if [ -f /etc/evok-neuron.conf ]; then
-        echo "/etc/evok-neuron.conf file already exists"
-        if ask "Do you want to overwrite your /etc/evok-neuron.conf file?"; then
+		echo '#####################################################'
+        echo '## The "/etc/evok-neuron.conf" file already exists ##'
+        echo '#####################################################'
+		if ask "Do you want to overwrite your /etc/evok-neuron.conf file?"; then
             cp etc/evok-neuron.conf /etc/evok.conf
         else
-            echo "Your current config file was not overwritten."
-            echo "Please see a diff between the new and your current config file."
+			echo '#####################################################################'
+            echo '## Your current config file was not overwritten.                   ##'
+            echo '## Please do a diff between your new and previous config file.     ##'
+			echo '#####################################################################'
         fi
     else
         cp etc/evok-neuron.conf /etc/evok.conf
@@ -352,17 +368,23 @@ install_unipi_neuron() {
 	if ask "Is it OK to reboot now?"; then
         reboot
     else
-        echo 'Remember to reboot your Raspberry Pi in order to start using Evok'
-    fi
+		echo '#######################################################################'
+        echo '## Remember to reboot your Raspberry Pi in order to start using Evok ##'
+		echo '#######################################################################'
+	fi
     echo ' '
 }
 
 if [ "$EUID" -ne 0 ]; then
-    echo "Please run this script as root"
+	echo '####################################'
+    echo '## Please run this script as root ##'
+	echo '####################################'
     exit
 fi
 
-echo "Installing evok..."
+echo '########################'
+echo '## Installing evok... ##'
+echo '########################'
 cp -r boot/overlays /boot/
 
 enable_ic2
@@ -384,8 +406,8 @@ rm -rf /etc/nginx/sites-enabled/default
 echo '#########################################################################'
 echo '#########################################################################'
 echo '## Please select which port you wish the built-in web interface to use ##' 
-echo '##(will also proxy request to the API port); (use 80 if you do not know #'
-echo '## what this means, can be later changed in                            ##'
+echo '## (will also proxy request to the API port);                          ##'
+echo '## (use 80 if you do not know what this means, can be later changed in ##'
 echo '## /etc/nginx/sites-enabled/evok)                                      ##'
 echo '## IMPORTANT WARNING: !!!This port cannot be the same as the internal  ##'
 echo '## API port in the next section!!!                                     ##' 
@@ -397,8 +419,8 @@ echo ' '
 read -p 'Website Port to use: >' external_port_number
 echo ' '
 echo '#########################################################################'
-echo '## Please select which port you wish the internal API to use: (use 8080 #'
-echo '## if you do not know what this means, can be changed in               ##'
+echo '## Please select which port you wish the internal API to use 			 ##'
+echo '## (use 8080 if you do not know what this means, can be changed in     ##'
 echo '## "/etc/evok.conf" later)                                             ##'
 echo '#########################################################################'
 echo ' '
@@ -421,21 +443,29 @@ echo ''
 select option in "${options[@]}"; do
     case "$REPLY" in
         1)
-			echo "Installing Evok for UniPi Neuron series including Neuron TCP Modbus Server"
+			echo '################################################################################'
+			echo '## Installing Evok for UniPi Neuron series including Neuron TCP Modbus Server ##'
+			echo '################################################################################'
             install_unipi_neuron
             break
             ;;
         2)
-            echo "Installing Evok for UniPi Lite 1.x"
+			echo '########################################'
+            echo '## Installing Evok for UniPi Lite 1.x ##'
+			echo '########################################'
             install_unipi_lite_1
             break
             ;;
         3)
-            echo "Installing Evok for UniPi 1.x"
+			echo '###################################'
+            echo '## Installing Evok for UniPi 1.x ##'
+			echo '###################################'
             install_unipi_1
             break
             ;;
         *)
-            echo "Invalid option"
+			echo '####################'
+            echo '## Invalid option ##'
+			echo '####################'
     esac
 done

@@ -62,6 +62,9 @@ function SyncDevice(msg) {
     		name = "Digital Output " + circuit_display_name;
     	}
     }
+    else if (device == 'led') {
+        name = "ULED " + circuit_display_name;
+    }
     else if (device == 'input') {
         name = "Input " + circuit_display_name;
         counter = msg.counter;
@@ -116,7 +119,7 @@ function SyncDevice(msg) {
         div = document.createElement("div");
         div.className = "ui-field-contain";
 
-        if (device == 'relay') {
+        if (device == 'relay' || device == 'led') {
             main_el = document.createElement("select");
             main_el.className = "ui-li-aside";
             var option_on = document.createElement("option");
@@ -184,17 +187,19 @@ function SyncDevice(msg) {
         }
         else if (device == 'wd') {
             main_el = document.createElement("h1");
-            if (watchdog_was_wd_reset == 0) {
-            	main_el.textContent = "[Not Triggered] " + "Timeout: " + watchdog_timeout;
+            var enabled_text = "";
+            if (value == 1) {
+            	enabled_text = "[Enabled]"
             } else {
-            	main_el.textContent = "[Reset Triggered] " + "Timeout: " + watchdog_timeout;
+            	enabled_text = "[Disabled]"
+            }
+            if (watchdog_was_wd_reset == 0) {
+            	main_el.textContent = enabled_text + " [Not Triggered] " + "Timeout: " + watchdog_timeout;
+            } else {
+            	main_el.textContent = enabled_text + " [Reset Triggered] " + "Timeout: " + watchdog_timeout;
             }
         	
             main_el.className = "ui-li-aside";
-        	//watchdog_timeout = msg.timeout[0]
-        	//watchdog_nv_save = msg.nv_save
-        	//watchdog_reset = msg.reset
-        	//watchdog_was_wd_reset = msg.was_wd_reset
         }
         else {
             main_el = document.createElement("h1");
@@ -231,8 +236,21 @@ function SyncDevice(msg) {
                 makePostRequest('ao/' + circuit, 'value=' + $(this).val());
             });
         }
-        else if (device == 'relay') {
+        else if (device == 'led') {
             var divider = document.getElementById("unipi_ao_divider");
+            var list = document.getElementById("outputs_list");
+            list.insertBefore(li, divider);
+            $('#' + main_el.id).flipswitch();
+            $('#outputs_list').listview('refresh');
+            $('#' + main_el.id).bind("change", function (event, ui) {
+                makePostRequest('led/' + circuit, 'value=' + $(this).val());
+            });        	
+        }
+        else if (device == 'relay') {
+            var divider = document.getElementById("unipi_led_divider");
+        	if (("relay_type" in msg) && msg.relay_type == "digital") {
+        		divider = document.getElementById("unipi_relay_divider");
+        	} 
             var list = document.getElementById("outputs_list");
             list.insertBefore(li, divider);
             $('#' + main_el.id).flipswitch();
@@ -285,13 +303,21 @@ function SyncDevice(msg) {
         label.textContent = name;
         //outputs
         if (device == 'relay') {
-            //TODO: remove re-binding when/if more events for flispwitch are available to prevent looping
+            //unbind to prevent looping
+        	$('#' + main_el.id).unbind("change");
+            $("#" + ns + "_value").val(value).flipswitch("refresh");
+            //and bind again
+            $('#' + main_el.id).bind("change", function (event, ui) {
+                makePostRequest('relay/' + circuit, 'value=' + $(this).val());
+            });
+        }
+        else if (device == 'led') {
             //unbind to prevent looping
             $('#' + main_el.id).unbind("change");
             $("#" + ns + "_value").val(value).flipswitch("refresh");
             //and bind again
             $('#' + main_el.id).bind("change", function (event, ui) {
-                makePostRequest('relay/' + circuit, 'value=' + $(this).val());
+                makePostRequest('led/' + circuit, 'value=' + $(this).val());
             });
         }
         else if (device == 'ao') {
@@ -319,10 +345,16 @@ function SyncDevice(msg) {
         	main_el.innerHTML  = "Speed: " + uart_speed_mode + " Parity: " + uart_parity_mode;
         }
         else if (device == 'wd') {
-            if (watchdog_was_wd_reset == 0) {
-            	main_el.innerHTML =  "[Not Triggered] " + "Timeout: " + watchdog_timeout;
+            var enabled_text = "";
+            if (value == 1) {
+            	enabled_text = "[Enabled]"
             } else {
-            	main_el.innerHTML =  "[Reset Triggered] " + "Timeout: " + watchdog_timeout;
+            	enabled_text = "[Disabled]"
+            }
+            if (watchdog_was_wd_reset == 0) {
+            	main_el.innerHTML = enabled_text + " [Not Triggered] " + "Timeout: " + watchdog_timeout;
+            } else {
+            	main_el.innerHTML = enabled_text + " [Reset Triggered] " + "Timeout: " + watchdog_timeout;
             }
         }
         else {

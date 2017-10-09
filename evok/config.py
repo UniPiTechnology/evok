@@ -343,10 +343,11 @@ def create_devices(Config, hw_dict):
 				uart_address = Config.getintdef(section, "address", 15)
 				device_name = Config.getstringdef(section, "device_name", "unspecified")
 				allow_register_access = Config.getbooldef(section, "allow_register_access", False)
+				neuron_uart_circuit = Config.getstringdef(section, "neuron_uart_circuit", "None")
 				circuit = str(dev_counter)
 				neuron = UartNeuron(circuit, Config, modbus_uart_port, scanfreq, scan_enabled, hw_dict, baud_rate=uart_baud_rate, 
 								    parity=uart_parity, stopbits=uart_stopbits, device_name=device_name, uart_address=uart_address,
-								    direct_access=allow_register_access, dev_id=dev_counter)
+								    direct_access=allow_register_access, dev_id=dev_counter, neuron_uart_circuit=neuron_uart_circuit)
 				Devices.register_device(NEURON, neuron)
 			elif devclass == 'HWDEF':
 				dev_counter += 1

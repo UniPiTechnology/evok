@@ -124,6 +124,7 @@ class ModbusCacheMap(object):
 
 class Neuron(object):
 	def __init__(self, circuit, Config, modbus_server, modbus_port, scan_freq, scan_enabled, hw_dict, direct_access=False, major_group=1, dev_id=0):
+		self.devtype = NEURON
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.hw_dict = hw_dict
@@ -208,7 +209,8 @@ class Neuron(object):
 			self.is_scanning = False
 
 class UartNeuron(object):
-	def __init__(self, circuit, Config, port, scan_freq, scan_enabled, hw_dict, baud_rate=19200, parity='N', stopbits=1, uart_address=15, major_group=1, device_name='unspecified', direct_access=False, dev_id=0):
+	def __init__(self, circuit, Config, port, scan_freq, scan_enabled, hw_dict, baud_rate=19200, parity='N', stopbits=1, uart_address=15, major_group=1, device_name='unspecified', direct_access=False, neuron_uart_circuit="None", dev_id=0):
+		self.devtype = NEURON
 		self.modbus_cache_map = None
 		self.datadeps = {}
 		self.boards = list()
@@ -226,6 +228,7 @@ class UartNeuron(object):
 		self.baud_rate = baud_rate
 		self.parity = parity
 		self.stopbits = stopbits
+		self.neuron_uart_circuit = neuron_uart_circuit
 		self.hw_board_dict = {}
 		if scan_freq == 0:
 			self.scan_interval = 0
@@ -281,7 +284,8 @@ class UartNeuron(object):
 			self.do_scanning = False
 
 	def full(self):
-		return {'dev': 'neuron', 'circuit': self.circuit, 'version_registers': self.versions, 'model': self.device_name}
+		return {'dev': 'neuron', 'circuit': self.circuit, 'version_registers': self.versions, 'model': self.device_name, 
+			    'uart_circuit': self.neuron_uart_circuit, 'uart_port': self.port}
 		
 	@gen.coroutine
 	def scan_boards(self, invoc=False):
@@ -313,6 +317,7 @@ class Proxy(object):
 
 class UartBoard(object):
 	def __init__(self, Config, circuit, modbus_address, neuron, versions, direct_access=False, major_group=1, dev_id=0):
+		self.devtype = BOARD
 		self.dev_id = dev_id
 		self.Config = Config
 		self.circuit = circuit
@@ -478,6 +483,7 @@ class UartBoard(object):
 
 class Board(object):
 	def __init__(self, Config, circuit, neuron, versions, major_group=1, dev_id=0, direct_access=False):
+		self.devtype = BOARD
 		self.dev_id = dev_id
 		self.Config = Config
 		self.circuit = circuit
@@ -647,6 +653,7 @@ class Board(object):
 class Relay(object):
 	pending_id = 0
 	def __init__(self, circuit, arm, coil, reg, mask, dev_id=0, major_group=0, pwmcyclereg=-1, pwmprescalereg=-1, pwmdutyreg=-1, legacy_mode=True, digital_only=False, modes=['Simple']):
+		self.devtype = RELAY
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.arm = arm
@@ -801,6 +808,7 @@ class Relay(object):
 
 class ULED(object):
 	def __init__(self, circuit, arm, post, reg, mask, coil, dev_id=0, major_group=0, legacy_mode=True):
+		self.devtype = LED
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.arm = arm
@@ -808,7 +816,7 @@ class ULED(object):
 		self.legacy_mode = legacy_mode
 		self.bitmask = mask
 		self.valreg = reg
-		self.regvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, unit=self.arm.modbus_address)
+		self.regvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, unit=self.arm.modbus_address)[0]
 		self.coil = coil
 		
 	def full(self):
@@ -858,6 +866,7 @@ class ULED(object):
 class Watchdog(object):
 	
 	def __init__(self, circuit, arm, post, reg, timeout_reg, nv_save_coil=-1, reset_coil=-1, wd_reset_ro_coil=-1, dev_id=0, major_group=0, legacy_mode=True):
+		self.devtype = WATCHDOG
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.arm = arm
@@ -953,6 +962,7 @@ class Watchdog(object):
 
 class Register():
 	def __init__(self, circuit, arm, post, reg, reg_type="input", dev_id=0, major_group=0, legacy_mode=True):
+		self.devtype = REGISTER
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.arm = arm
@@ -1007,6 +1017,7 @@ class Register():
 class Input():
 	def __init__(self, circuit, arm, reg, mask, regcounter=None, regdebounce=None, regmode=None, regtoggle=None, regpolarity=None,
 				 dev_id=0, major_group=0, modes=['Simple'], ds_modes=['Simple'], counter_modes=['Enabled', 'Disabled'], legacy_mode=True):
+		self.devtype = INPUT
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.arm = arm
@@ -1142,6 +1153,7 @@ class Input():
 
 class Uart():
 	def __init__(self, circuit, arm, reg, dev_id=0, parity_modes=['None'], speed_modes=['19200bps'], stopb_modes = ['One'], major_group=0, legacy_mode=True):
+		self.devtype = UART
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.legacy_mode = legacy_mode
@@ -1272,6 +1284,7 @@ def uint16_to_int(inp):
 
 class WiFiAdapter():
 	def __init__(self, circuit, arm, reg, dev_id=0, major_group=0, ip_addr="192.168.1.100", enabled=False, enabled_routing=False, legacy_mode=True):
+		self.devtype = WIFI
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.legacy_mode = legacy_mode
@@ -1280,6 +1293,8 @@ class WiFiAdapter():
 		self.enabled_val = enabled
 		self.enabled_routing_val = enabled_routing
 		self.ip_addr = ip_addr
+		self.packets_recieved = 0
+		self.packets_sent = 0
 
 	@property
 	def enabled(self):
@@ -1297,7 +1312,8 @@ class WiFiAdapter():
 			
 
 	def full(self):
-			return {'dev': 'wifi', 'enabled': self.enabled, "routing": self.routing_enabled, 'circuit': self.circuit, 'ip': self.ip_addr, 'glob_dev_id': self.dev_id}
+			return {'dev': 'wifi', 'enabled': self.enabled, "routing": self.routing_enabled, 'circuit': self.circuit, 'ip': self.ip_addr, 
+				    'glob_dev_id': self.dev_id, 'packets_recieved': self.packets_recieved, 'packets_sent': self.packets_sent}
 
 	def simple(self):
 		return {'dev': 'wifi', 'circuit': self.circuit, 'enabled': self.enabled, 'routing': self.routing_enabled, 'ip': self.ip_addr}
@@ -1319,6 +1335,7 @@ class WiFiAdapter():
 
 class AnalogOutput():
 	def __init__(self, circuit, arm, reg, regcal=-1, regmode=-1, reg_res=0, dev_id=0, modes=['Voltage'], major_group=0, legacy_mode=True):
+		self.devtype = AO
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.reg = reg
@@ -1454,6 +1471,7 @@ class AnalogOutput():
 
 class AnalogInput():
 	def __init__(self, circuit, arm, reg, regcal=-1, regmode=-1, dev_id=0, major_group=0, legacy_mode=True, modes=['Voltage']):
+		self.devtype = AI
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.valreg = reg

@@ -116,6 +116,10 @@ modbus_features:
       timeout_reg : 1008
       nv_sav_coil : 1003
       reset_coil  : 1002
+    - type        : REGISTER
+      major_group : 1
+      count       : 21
+      start_reg   : 0
     - type        : DI
       count       : 6
       major_group : 2
@@ -188,6 +192,10 @@ modbus_features:
       major_group : 2
       conf_reg    : 1123
       count       : 1
+    - type        : REGISTER
+      major_group : 2
+      count       : 24
+      start_reg   : 100
     - type        : DI
       count       : 14
       major_group : 3
@@ -221,6 +229,6 @@ modbus_features:
       nv_sav_coil : 1203
       reset_coil  : 1202
     - type        : REGISTER
-      major_group : 1
-      count       : 21
-      start_reg   : 0
+      major_group : 3
+      count       : 27
+      start_reg   : 200

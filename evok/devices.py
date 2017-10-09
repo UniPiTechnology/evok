@@ -110,6 +110,7 @@ OUTPUT = 17
 LED = 18
 WATCHDOG = 19
 REGISTER = 20
+WIFI = 21
 
 
 
@@ -135,7 +136,8 @@ devtype_names = (
 	'output',
 	'led',
 	'watchdog',
-	'register'
+	'register',
+	'wifi'
 )
 
 devtype_altnames = {

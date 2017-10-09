@@ -36,7 +36,7 @@ modbus_features:
       toggle_reg  : 1028
     - type        : AO
       count       : 4
-      major_group : 2
+      major_group : 1
       modes       :
         - Voltage
       min_v       : 0
@@ -45,7 +45,7 @@ modbus_features:
       mode_reg    : 1019
     - type        : AI
       count       : 4
-      major_group : 2
+      major_group : 1
       modes       :
         - Voltage
         - SecondaryAI

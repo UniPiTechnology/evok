@@ -90,9 +90,11 @@ class IndexHandler(UserCookieHelper, tornado.web.RequestHandler):
 registered_ws = {}
 
 class WhHandler():
-	def __init__(self, url):
+	def __init__(self, url, allowed_types, complex_events):
 		self.http_client = tornado.httpclient.AsyncHTTPClient()
 		self.url = url
+		self.allowed_types = allowed_types
+		self.complex_events = complex_events
 
 	def open(self):
 		logger.debug("New WebSocket modbusclient_rs485 connected")
@@ -102,7 +104,11 @@ class WhHandler():
 		registered_ws["all"].add(self)
 	
 	def on_event(self, device):
-		self.http_client.fetch(self.url)
+		if devtype_names[device.devtype] in self.allowed_types:
+			if self.complex_events:
+				self.http_client.fetch(self.url)
+			else:
+				self.http_client.fetch(self.url,method="POST",body=json.dumps(device.full()))
 
 
 class WsHandler(websocket.WebSocketHandler):
@@ -2245,8 +2251,11 @@ def main():
 
 
 
+
 	if Config.getbooldef("MAIN", "webhook_enabled", False):
-		wh = WhHandler(Config.getstringdef("MAIN", "webhook_address", "http://127.0.0.1:80/index.html"))
+		wh_types = json.loads(Config.getstringdef("MAIN", "webhook_device_mask", '["input", "sensor", "uart", "watchdog"]'))
+		wh_complex = Config.getbooldef("MAIN", "webhook_complex_events", False)
+		wh = WhHandler(Config.getstringdef("MAIN", "webhook_address", "http://127.0.0.1:80/index.html"), wh_types, wh_complex)
 		wh.open()
 
 	mainLoop = tornado.ioloop.IOLoop.instance()

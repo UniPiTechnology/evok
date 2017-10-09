@@ -27,6 +27,7 @@ def set_non_blocking(fd):
 
 class MySensor(object):
 	def __init__(self, addr, typ, bus, interval=None, dynamic=True, circuit=None, major_group=1, is_static=False):
+		self.devtype = devices.SENSOR
 		self.type = typ
 		self.circuit = circuit if circuit != None else addr
 		self.major_group = major_group
@@ -220,6 +221,7 @@ def MySensorFabric(address, typ, bus, interval=None, dynamic=True, circuit=None,
 class OwBusDriver(multiprocessing.Process):
 	def __init__(self, circuit, taskPipe, resultPipe, interval=60, scan_interval=300, major_group=1, bus='--i2c=/dev/i2c-1:ALL'):
 		multiprocessing.Process.__init__(self)
+		self.devtype = devices.OWBUS
 		self.circuit = circuit
 		self.taskQ = taskPipe[0]
 		self.taskWr = taskPipe[1]
