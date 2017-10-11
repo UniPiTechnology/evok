@@ -120,6 +120,10 @@ modbus_features:
       major_group : 1
       count       : 21
       start_reg   : 0
+    - type        : REGISTER
+      major_group : 1
+      count       : 32
+      start_reg   : 1000
     - type        : DI
       count       : 6
       major_group : 2
@@ -196,6 +200,10 @@ modbus_features:
       major_group : 2
       count       : 28
       start_reg   : 100
+    - type        : REGISTER
+      major_group : 2
+      count       : 24
+      start_reg   : 1100
     - type        : DI
       count       : 6
       major_group : 3
@@ -265,10 +273,14 @@ modbus_features:
       stopb_modes :
         - One
         - Two
-      major_group :3
+      major_group : 3
       conf_reg    : 1223
       count       : 1
     - type        : REGISTER
       major_group : 3
       count       : 28
       start_reg   : 200
+    - type        : REGISTER
+      major_group : 3
+      count       : 24
+      start_reg   : 1200

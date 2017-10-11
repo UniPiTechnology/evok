@@ -120,6 +120,10 @@ modbus_features:
       major_group : 1
       count       : 21
       start_reg   : 0
+    - type        : REGISTER
+      major_group : 1
+      count       : 32
+      start_reg   : 1000
     - type        : DI
       count       : 6
       major_group : 2
@@ -153,7 +157,7 @@ modbus_features:
       min_v       : 0
       max_v       : 10
       val_reg     : 102
-      mode_reg    : 1019
+      mode_reg    : 1119
     - type        : AI
       count       : 4
       major_group : 2
@@ -196,6 +200,10 @@ modbus_features:
       major_group : 2
       count       : 24
       start_reg   : 100
+    - type        : REGISTER
+      major_group : 2
+      count       : 24
+      start_reg   : 1100
     - type        : DI
       count       : 14
       major_group : 3
@@ -230,5 +238,9 @@ modbus_features:
       reset_coil  : 1202
     - type        : REGISTER
       major_group : 3
-      count       : 27
+      count       : 31
       start_reg   : 200
+    - type        : REGISTER
+      major_group : 3
+      count       : 27
+      start_reg   : 1200

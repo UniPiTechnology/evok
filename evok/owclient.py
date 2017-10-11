@@ -27,6 +27,7 @@ def set_non_blocking(fd):
 
 class MySensor(object):
 	def __init__(self, addr, typ, bus, interval=None, dynamic=True, circuit=None, major_group=1, is_static=False):
+		self.alias = ""
 		self.devtype = devices.SENSOR
 		self.type = typ
 		self.circuit = circuit if circuit != None else addr

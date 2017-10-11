@@ -112,6 +112,10 @@ modbus_features:
       major_group : 1
       count       : 21
       start_reg   : 0
+    - type        : REGISTER
+      major_group : 1
+      count       : 32
+      start_reg   : 1000
     - type        : DI
       count       : 16
       major_group : 2
@@ -143,3 +147,7 @@ modbus_features:
       major_group : 2
       count       : 63
       start_reg   : 100
+    - type        : REGISTER
+      major_group : 2
+      count       : 40
+      start_reg   : 1100

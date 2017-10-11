@@ -72,10 +72,6 @@ There are many ways of controlling your UniPi device, the easiest is using a web
 
     http://your.pi.ip.address:88
 
-It will show you something like this
-
-todo: gif
-
 The example web interface is using websocket to receive all events from the UniPi and controls the UniPi device via the REST api.
 
 ## REST API:

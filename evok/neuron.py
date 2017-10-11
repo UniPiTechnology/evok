@@ -33,6 +33,7 @@ import config
 from time import sleep
 from modbusclient_rs485 import AsyncErrorResponse
 from cgitb import reset
+import subprocess
 
 class ENoBoard(Exception):
 	pass
@@ -45,7 +46,7 @@ class ModbusCacheMap(object):
 		self.registered = {}
 		self.frequency = {}
 		for m_reg_group in modbus_reg_map:
-			self.frequency[m_reg_group['start_reg']] = 1000000	# frequency less than 1/million are not read on start
+			self.frequency[m_reg_group['start_reg']] = 10000001	# frequency less than 1/10 million are not read on start
 			for index in range(m_reg_group['count']):
 				self.registered[(m_reg_group['start_reg'] + index)] = None
 		
@@ -62,10 +63,10 @@ class ModbusCacheMap(object):
 	@gen.coroutine
 	def do_scan(self, unit=0, initial=False):
 		if initial:
-			yield self.sem.acquire()		
+			yield self.sem.acquire()
 		changeset = []
 		for m_reg_group in self.modbus_reg_map:
-			if self.frequency[m_reg_group['start_reg']] >= m_reg_group['frequency']:	# only read once for every [frequency] cycles
+			if (self.frequency[m_reg_group['start_reg']] >= m_reg_group['frequency']) or (self.frequency[m_reg_group['start_reg']] == 0):	# only read once for every [frequency] cycles
 				try:
 					val = yield self.neuron.client.read_input_registers(m_reg_group['start_reg'], m_reg_group['count'], unit=unit)
 					if not isinstance(val, AsyncErrorResponse) and not isinstance(val, ModbusIOException) and not isinstance(val, ExceptionResponse):
@@ -124,6 +125,7 @@ class ModbusCacheMap(object):
 
 class Neuron(object):
 	def __init__(self, circuit, Config, modbus_server, modbus_port, scan_freq, scan_enabled, hw_dict, direct_access=False, major_group=1, dev_id=0):
+		self.alias = ""
 		self.devtype = NEURON
 		self.dev_id = dev_id
 		self.circuit = circuit
@@ -145,11 +147,22 @@ class Neuron(object):
 		self.boards = list()
 		self.modbus_cache_map = None
 		self.versions = []
+		self.logfile = Config.getstringdef("MAIN", "log_file", "/var/log/evok.log")
 
 	def switch_to_async(self, loop):
 		self.loop = loop
 		self.client = ModbusClientProtocol()
 		loop.add_callback(lambda: StartClient(self.client, self.modbus_server, self.modbus_port, self.readboards))
+
+	@gen.coroutine
+	def set(self, print_log=None, alias=None):
+		if alias is not None:
+			self.alias = alias
+		if print_log is not None:
+			log_tail = subprocess.check_output(["tail", "-n 255", self.logfile])
+			raise gen.Return(log_tail)
+		else:	
+			raise gen.Return(self.full())
 
 	@gen.coroutine
 	def readboards(self):
@@ -210,12 +223,13 @@ class Neuron(object):
 
 class UartNeuron(object):
 	def __init__(self, circuit, Config, port, scan_freq, scan_enabled, hw_dict, baud_rate=19200, parity='N', stopbits=1, uart_address=15, major_group=1, device_name='unspecified', direct_access=False, neuron_uart_circuit="None", dev_id=0):
+		self.alias = ""
 		self.devtype = NEURON
 		self.modbus_cache_map = None
 		self.datadeps = {}
 		self.boards = list()
 		self.dev_id = dev_id
-		self.circuit = "RS485_" + str(uart_address) + "_" + str(circuit)
+		self.circuit = "UART_" + str(uart_address) + "_" + str(circuit)
 		self.hw_dict = hw_dict
 		self.port = port
 		self.direct_access = direct_access
@@ -236,6 +250,7 @@ class UartNeuron(object):
 			self.scan_interval = 1.0 / scan_freq
 		self.scan_enabled = scan_enabled
 		self.versions = []
+		self.logfile = Config.getstringdef("MAIN", "log_file", "/var/log/evok.log")
 
 	def switch_to_async(self, loop):
 		self.loop = loop
@@ -245,6 +260,16 @@ class UartNeuron(object):
 			self.client = modbusclient_rs485.AsyncModbusGeneratorClient(method='rtu', stopbits=self.stopbits, bytesize=8, parity=self.parity, baudrate=self.baud_rate, timeout=1.5, port=self.port)
 			modbusclient_rs485.client_dict[self.port] = self.client
 		loop.add_callback(lambda: modbusclient_rs485.UartStartClient(self, self.readboards))
+
+	@gen.coroutine
+	def set(self, alias=None, print_log=None):
+		if alias is not None:
+			self.alias = alias
+		if print_log is not None:
+			log_tail = subprocess.check_output(["tail", "-n 255", self.logfile])
+			raise gen.Return(log_tail)
+		else:
+			return gen.Return(self.full())
 
 	@gen.coroutine
 	def readboards(self):
@@ -317,6 +342,7 @@ class Proxy(object):
 
 class UartBoard(object):
 	def __init__(self, Config, circuit, modbus_address, neuron, versions, direct_access=False, major_group=1, dev_id=0):
+		self.alias = ""
 		self.devtype = BOARD
 		self.dev_id = dev_id
 		self.Config = Config
@@ -337,6 +363,12 @@ class UartBoard(object):
 		self.serial = versions[5] + (versions[6] << 16)
 		self.nai1 = self.nai if self.hw != 0 else 1  # full featured AI (with switched V/A)
 		self.nai2 = 0 if self.hw != 0 else 1  		 # Voltage only AI
+
+	@gen.coroutine
+	def set(self, alias=None):
+		if not alias is None:
+			self.alias = alias 
+		return gen.Return(self.full())
 
 	@gen.coroutine
 	def parse_definition(self, hw_dict, board_id):
@@ -483,6 +515,7 @@ class UartBoard(object):
 
 class Board(object):
 	def __init__(self, Config, circuit, neuron, versions, major_group=1, dev_id=0, direct_access=False):
+		self.alias = ""
 		self.devtype = BOARD
 		self.dev_id = dev_id
 		self.Config = Config
@@ -504,6 +537,12 @@ class Board(object):
 		self.nai1 = self.nai if self.hw != 0 else 1  # full featured AI (with switched V/A)
 		self.nai2 = 0 if self.hw != 0 else 1  # Voltage only AI
 
+	@gen.coroutine
+	def set(self, alias=None):
+		if not alias is None:
+			self.alias = alias 
+		return gen.Return(self.full())
+	
 	@gen.coroutine
 	def parse_definition(self, hw_dict, board_id):
 		self.volt_refx = 33000
@@ -653,6 +692,7 @@ class Board(object):
 class Relay(object):
 	pending_id = 0
 	def __init__(self, circuit, arm, coil, reg, mask, dev_id=0, major_group=0, pwmcyclereg=-1, pwmprescalereg=-1, pwmdutyreg=-1, legacy_mode=True, digital_only=False, modes=['Simple']):
+		self.alias = ""
 		self.devtype = RELAY
 		self.dev_id = dev_id
 		self.circuit = circuit
@@ -728,7 +768,7 @@ class Relay(object):
 		raise gen.Return(1 if value else 0)
 
 	@gen.coroutine
-	def set(self, value=None, timeout=None, mode=None, pwm_freq=None, pwm_duty=None):
+	def set(self, value=None, timeout=None, mode=None, pwm_freq=None, pwm_duty=None, alias=None):
 		""" Sets new on/off status. Disable pending timeouts
 		"""
 		if mode is not None and mode in self.modes:
@@ -796,6 +836,9 @@ class Relay(object):
 				raise gen.Return(self.full())
 			raise gen.Return((1 if value else 0))
 
+		if alias is not None:
+			self.alias = alias
+
 		def timercallback():
 			self.pending_id = None
 			self.arm.write_bit(self.coil, 0 if value else 1, unit=self.arm.modbus_address)
@@ -808,6 +851,7 @@ class Relay(object):
 
 class ULED(object):
 	def __init__(self, circuit, arm, post, reg, mask, coil, dev_id=0, major_group=0, legacy_mode=True):
+		self.alias = ""
 		self.devtype = LED
 		self.dev_id = dev_id
 		self.circuit = circuit
@@ -853,19 +897,22 @@ class ULED(object):
 		yield self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.modbus_address)
 		raise gen.Return(1 if value else 0)
 
-	def set(self, value=None):
+	def set(self, value=None, alias=None):
 		""" Sets new on/off status. Disable pending timeouts
 		"""
-		if value is None:
-			raise Exception('Value must be specified')
-		value = int(value)
-		self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.modbus_address)
-		return (1 if value else 0)
+		if alias is not None:
+			self.alias = alias
+		if value is not None:
+			value = int(value)
+			self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.modbus_address)
+			return (1 if value else 0)
+		else:
+			return self.full()
 
 
 class Watchdog(object):
-	
 	def __init__(self, circuit, arm, post, reg, timeout_reg, nv_save_coil=-1, reset_coil=-1, wd_reset_ro_coil=-1, dev_id=0, major_group=0, legacy_mode=True):
+		self.alias = ""
 		self.devtype = WATCHDOG
 		self.dev_id = dev_id
 		self.circuit = circuit
@@ -929,9 +976,12 @@ class Watchdog(object):
 
 
 	@gen.coroutine
-	def set(self, value=None, timeout=None, reset=None, nv_save=None):
+	def set(self, value=None, timeout=None, reset=None, nv_save=None, alias=None):
 		""" Sets new on/off status. Disable pending timeouts
 		"""
+		if alias is not None:
+			self.alias = alias
+		
 		if self.nv_save_coil >= 0 and nv_save is not None and nv_save != self.nvsavvalue:
 			if nv_save != 0:
 				self.nvsavvalue = 1
@@ -962,6 +1012,7 @@ class Watchdog(object):
 
 class Register():
 	def __init__(self, circuit, arm, post, reg, reg_type="input", dev_id=0, major_group=0, legacy_mode=True):
+		self.alias = ""
 		self.devtype = REGISTER
 		self.dev_id = dev_id
 		self.circuit = circuit
@@ -1005,18 +1056,21 @@ class Register():
 		raise gen.Return(value if value else 0)
 
 	@gen.coroutine
-	def set(self, value=None, timeout=None):
+	def set(self, value=None, timeout=None, alias=None):
 		""" Sets new on/off status. Disable pending timeouts
 		"""
-		if value is None:
-			raise Exception('Value must be specified')
-		value = int(value)
-		self.arm.neuron.client.write_register(self.valreg, value if value else 0, unit=self.arm.modbus_address)
-		raise gen.Return(value if value else 0)
+		if alias is not None:
+			self.alias = alias
+		if value is not None:
+			value = int(value)
+			self.arm.neuron.client.write_register(self.valreg, value if value else 0, unit=self.arm.modbus_address)
+			raise gen.Return(value if value else 0)
+		raise gen.Return(self.full())
 	
 class Input():
 	def __init__(self, circuit, arm, reg, mask, regcounter=None, regdebounce=None, regmode=None, regtoggle=None, regpolarity=None,
 				 dev_id=0, major_group=0, modes=['Simple'], ds_modes=['Simple'], counter_modes=['Enabled', 'Disabled'], legacy_mode=True):
+		self.alias = ""
 		self.devtype = INPUT
 		self.dev_id = dev_id
 		self.circuit = circuit
@@ -1096,7 +1150,10 @@ class Input():
 			return {'dev': 'input', 'circuit': self.circuit, 'value': self.value}
 
 	@gen.coroutine
-	def set(self, debounce=None, mode=None, counter=None, counter_mode=None, ds_mode=None):
+	def set(self, debounce=None, mode=None, counter=None, counter_mode=None, ds_mode=None, alias=None):
+		if alias is not None:
+			self.alias = alias
+		
 		if mode is not None and mode != self.mode and mode in self.modes:
 			self.mode = mode
 			if self.mode == 'DirectSwitch':
@@ -1153,6 +1210,7 @@ class Input():
 
 class Uart():
 	def __init__(self, circuit, arm, reg, dev_id=0, parity_modes=['None'], speed_modes=['19200bps'], stopb_modes = ['One'], major_group=0, legacy_mode=True):
+		self.alias = ""
 		self.devtype = UART
 		self.dev_id = dev_id
 		self.circuit = circuit
@@ -1216,8 +1274,10 @@ class Uart():
 		return {'dev': 'uart', 'circuit': self.circuit, 'conf_value': self.conf}
 
 	@gen.coroutine
-	def set(self, conf_value=None, parity_mode=None, speed_mode=None, stopb_mode=None):
+	def set(self, conf_value=None, parity_mode=None, speed_mode=None, stopb_mode=None, alias=None):
 		val = self.regvalue()
+		if alias is not None:
+			self.alias = alias
 		if conf_value is not None:
 			self.arm.neuron.client.write_register(self.valreg, conf_value, unit=self.arm.modbus_address)
 		if parity_mode is not None and parity_mode in self.parity_modes and parity_mode != self.parity_mode:
@@ -1284,6 +1344,7 @@ def uint16_to_int(inp):
 
 class WiFiAdapter():
 	def __init__(self, circuit, arm, reg, dev_id=0, major_group=0, ip_addr="192.168.1.100", enabled=False, enabled_routing=False, legacy_mode=True):
+		self.alias = ""
 		self.devtype = WIFI
 		self.dev_id = dev_id
 		self.circuit = circuit
@@ -1310,6 +1371,9 @@ class WiFiAdapter():
 		else:
 			return 'Disabled'
 			
+	@gen.coroutine
+	def get_packets(self):
+		subprocess.check_output([""])
 
 	def full(self):
 			return {'dev': 'wifi', 'enabled': self.enabled, "routing": self.routing_enabled, 'circuit': self.circuit, 'ip': self.ip_addr, 
@@ -1319,7 +1383,9 @@ class WiFiAdapter():
 		return {'dev': 'wifi', 'circuit': self.circuit, 'enabled': self.enabled, 'routing': self.routing_enabled, 'ip': self.ip_addr}
 
 	@gen.coroutine
-	def set(self, enabled=None, routing=None):
+	def set(self, enabled=None, routing=None, alias=None):
+		if alias is not None:
+			self.alias = alias
 		if enabled is not None and enabled in ['Enabled', 'Disabled'] and enabled != self.enabled:
 			if enabled == 'Enabled':
 				self.enabled_val = True
@@ -1335,6 +1401,7 @@ class WiFiAdapter():
 
 class AnalogOutput():
 	def __init__(self, circuit, arm, reg, regcal=-1, regmode=-1, reg_res=0, dev_id=0, modes=['Voltage'], major_group=0, legacy_mode=True):
+		self.alias = ""
 		self.devtype = AO
 		self.dev_id = dev_id
 		self.circuit = circuit
@@ -1346,7 +1413,6 @@ class AnalogOutput():
 		self.reg_res = reg_res
 		self.regresvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.regres, unit=self.arm.modbus_address)[0]
 		self.modes = modes
-		
 		self.arm = arm
 		self.major_group = major_group
 		if regcal >= 0:
@@ -1438,7 +1504,9 @@ class AnalogOutput():
 			raise gen.Return(float(valuei) * 0.0025)
 
 	@gen.coroutine
-	def set(self, value=None, frequency=None, mode=None):
+	def set(self, value=None, frequency=None, mode=None, alias=None):
+		if alias is not None:
+			self.alias = alias
 		if mode is not None and mode in self.modes:
 			val = self.arm.neuron.modbus_cache_map.get_register(1, self.regmode, unit=self.arm.modbus_address)[0]
 			if mode == "Voltage":
@@ -1471,6 +1539,7 @@ class AnalogOutput():
 
 class AnalogInput():
 	def __init__(self, circuit, arm, reg, regcal=-1, regmode=-1, dev_id=0, major_group=0, legacy_mode=True, modes=['Voltage']):
+		self.alias = ""
 		self.devtype = AI
 		self.dev_id = dev_id
 		self.circuit = circuit
@@ -1529,7 +1598,9 @@ class AnalogInput():
 			return 0
 
 	@gen.coroutine
-	def set(self, mode=None, secondary_ai_mode=None):
+	def set(self, mode=None, secondary_ai_mode=None, alias=None):
+		if alias is not None:
+			self.alias = alias
 		if mode is not None and mode in self.modes and mode != self.mode:
 			self.mode = mode
 			if self.mode == "Voltage":

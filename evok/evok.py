@@ -2142,7 +2142,7 @@ def main():
 	
 	#tornado.httpclient.AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
 	log_file = Config.getstringdef("MAIN", "log_file", "/var/log/evok.log")
-	log_level = Config.getstringdef("MAIN", "log_level", "ERROR").upper()
+	log_level = Config.getstringdef("MAIN", "log_level", "INFO").upper()
 
 	#rotating file handler
 	filelog_handler = logging.handlers.TimedRotatingFileHandler(filename=log_file, when='D', backupCount=7)
