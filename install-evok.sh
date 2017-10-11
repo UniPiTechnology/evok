@@ -126,6 +126,7 @@ install_unipi_1() {
     # Copy evok
     cp -r evok/ /opt/
     mkdir -p /var/www/evok && cp -r www/* /var/www/
+	chmod -R a+rx /var/www
 
     # Copy default config file and init scipts
     if [ -f /etc/evok.conf ]; then
@@ -221,6 +222,7 @@ install_unipi_lite_1() {
     # Copy evok
     cp -r evok/ /opt/
     mkdir -p /var/www/evok && cp -r www/* /var/www/
+	chmod -R a+rx /var/www
 
     # Copy default config file and init scipts
     if [ -f /etc/evok.conf ]; then
@@ -316,6 +318,7 @@ install_unipi_neuron() {
     # Copy evok
     cp -r evok/ /opt/
     mkdir -p /var/www/evok && cp -r www/* /var/www/
+	chmod -R a+rx /var/www
 
     # Copy default config file and init scipts
     if [ -f /etc/evok-neuron.conf ]; then
@@ -419,7 +422,7 @@ echo ' '
 read -p 'Website Port to use: >' external_port_number
 echo ' '
 echo '#########################################################################'
-echo '## Please select which port you wish the internal API to use 			 ##'
+echo '## Please select which port you wish the internal API to use           ##'
 echo '## (use 8080 if you do not know what this means, can be changed in     ##'
 echo '## "/etc/evok.conf" later)                                             ##'
 echo '#########################################################################'
