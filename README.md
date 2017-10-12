@@ -59,8 +59,9 @@ _**(Beta only for now)**_
 
 The installation script should take care of everything, but be aware there may be some issues with limited and/or broken functionality. Please report any bugs you find on this github repository.
 
-To install first connect to your Neuron via SSH (username root: password unipi on our [OpenSource image] by default, though you can use standard ***Raspbian Jessie*** or ***Raspbian Stretch***) and run the following:
+To install first connect to your Neuron via SSH (you can use standard ***Raspbian Jessie*** or ***Raspbian Stretch*** - username:pi password:raspberry) and run the following:
 
+    sudo su
     wget https://github.com/UniPiTechnology/evok/archive/master.zip
     unzip master.zip
     cd evok-master
