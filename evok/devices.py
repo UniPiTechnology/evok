@@ -5,6 +5,7 @@ import devents
    
 """
 class DeviceList(dict):
+	alias_dict = {}
 	def __init__(self, altnames):
 		super(DeviceList, self).__init__()
 		self._arr = []
@@ -60,7 +61,10 @@ class DeviceList(dict):
 		try:
 			return devdict[circuit]
 		except KeyError:
-			raise Exception('Invalid device circuit number %s' % str(circuit))
+			if self.alias_dict.has_key(circuit):
+				return self.alias_dict[circuit] 
+			else:
+				raise Exception('Invalid device circuit number %s' % str(circuit))
 
 	def by_name(self, devtype, circuit=None):
 		try:
@@ -73,7 +77,10 @@ class DeviceList(dict):
 		try:
 			return devdict[circuit]
 		except KeyError:
-			raise Exception('Invalid device circuit number %s' % str(circuit))
+			if self.alias_dict.has_key(circuit):
+				return self.alias_dict[circuit] 
+			else:
+				raise Exception('Invalid device circuit number %s' % str(circuit))
 
 	def register_device(self, devtype, device):
 		""" can be called with devtype = INTEGER or NAME
@@ -87,6 +94,13 @@ class DeviceList(dict):
 		devdict[str(device.circuit)] = device
 		devents.config(device)
 
+	def add_alias(self, key, device):
+		alias_key = "al_" + key
+		if not self.alias_dict.has_key(alias_key):
+			self.alias_dict[alias_key] = device
+			return True
+		else:
+			return False
 
 # # define device types constants
 RELAY = 0
@@ -149,6 +163,7 @@ devtype_altnames = {
 	'wd': 'watchdog',
 	'rs485': 'uart'
 	}
+
 
 Devices = DeviceList(devtype_altnames)
 for n in devtype_names:

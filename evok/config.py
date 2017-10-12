@@ -9,6 +9,7 @@ from log import *
 from devices import *
 import yaml
 from _ctypes import sizeof
+from neuron import WiFiAdapter
 
 try:
 	import unipig
@@ -73,7 +74,6 @@ def read_eprom_config():
 
 
 class HWDict():
-	
 	def __init__(self, d_path):
 		self.definitions = []
 		for filen in os.listdir(d_path):
@@ -87,7 +87,6 @@ class HWDict():
 
 	
 class HWDefinition():
-	
 	def __init__(self):
 		False
 	
@@ -183,10 +182,7 @@ def create_devices(Config, hw_dict):
 			res = re.search('^(.*\D)(\d+)$', section)
 			if not res: continue
 		devclass = res.group(1)
-		# devclass = re.sub('[_-]*$','',devclass)
-		# circuit = int(res.group(2))
 		circuit = res.group(2)
-		# print "%s %s %s" % (section,devclass, circuit)
 		try:
 			if devclass == 'OWBUS':
 				import owclient
@@ -355,3 +351,10 @@ def create_devices(Config, hw_dict):
 		except Exception, E:
 			logger.exception("Error in config section %s - %s", section, str(E))
 			#raise
+
+def add_aliases(alis_conf):
+	pass
+
+def add_wifi():
+	wifi = WiFiAdapter("1_01")
+	Devices.register_device(WIFI, wifi)

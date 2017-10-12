@@ -309,8 +309,11 @@ class UartNeuron(object):
 			self.do_scanning = False
 
 	def full(self):
-		return {'dev': 'neuron', 'circuit': self.circuit, 'version_registers': self.versions, 'model': self.device_name, 
-			    'uart_circuit': self.neuron_uart_circuit, 'uart_port': self.port}
+		return {'dev': 'neuron', 'circuit': self.circuit,
+			    'version_registers': self.versions, 
+			    'model': self.device_name, 
+			    'uart_circuit': self.neuron_uart_circuit, 
+			    'uart_port': self.port}
 		
 	@gen.coroutine
 	def scan_boards(self, invoc=False):
@@ -731,16 +734,40 @@ class Relay(object):
 	def full(self):
 		if self.digital_only:
 			if self.mode == 'PWM':
-				return {'dev': 'relay', 'relay_type': 'digital', 'circuit': self.circuit, 'value': self.value, 'pending': self.pending_id != 0, 'mode': self.mode, 'modes': self.modes, 'glob_dev_id': self.dev_id,
-					    'pwm_freq': self.pwm_freq, 'pwm_duty': self.pwm_duty}	
+				return {'dev': 'relay', 
+					    'relay_type': 'digital', 
+					    'circuit': self.circuit, 
+					    'value': self.value, 
+					    'pending': self.pending_id != 0, 
+					    'mode': self.mode, 
+					    'modes': self.modes, 
+					    'glob_dev_id': self.dev_id,
+					    'pwm_freq': self.pwm_freq, 
+					    'pwm_duty': self.pwm_duty}	
 			else:	
-				return {'dev': 'relay', 'relay_type': 'digital', 'circuit': self.circuit, 'value': self.value, 'pending': self.pending_id != 0, 'mode': self.mode, 'modes': self.modes, 'glob_dev_id': self.dev_id}
+				return {'dev': 'relay', 
+					    'relay_type': 'digital', 
+					    'circuit': self.circuit, 
+					    'value': self.value, 
+					    'pending': self.pending_id != 0, 
+					    'mode': self.mode, 
+					    'modes': self.modes, 
+					    'glob_dev_id': self.dev_id}
 		else:
-			return {'dev': 'relay', 'relay_type': 'physical', 'circuit': self.circuit, 'value': self.value, 'pending': self.pending_id != 0, 'mode': self.mode, 'modes': self.modes, 'glob_dev_id': self.dev_id}
+			return {'dev': 'relay', 
+				    'relay_type': 'physical', 
+				    'circuit': self.circuit, 
+				    'value': self.value, 
+				    'pending': self.pending_id != 0, 
+				    'mode': self.mode, 
+				    'modes': self.modes, 
+				    'glob_dev_id': self.dev_id}
 						
 
 	def simple(self):
-		return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value}
+		return {'dev': 'relay', 
+			    'circuit': self.circuit, 
+			    'value': self.value}
 
 	@property
 	def value(self):
@@ -931,10 +958,19 @@ class Watchdog(object):
 		self.toreg = timeout_reg
 
 	def full(self):
-		return {'dev': 'wd', 'circuit': self.circuit, 'value': self.value, 'timeout': self.timeout, 'was_wd_reset': self.was_wd_boot_value, 'reset': 0, 'nv_save':self.nvsavvalue, 'glob_dev_id': self.dev_id}
+		return {'dev': 'wd', 
+			    'circuit': self.circuit, 
+			    'value': self.value, 
+			    'timeout': self.timeout, 
+			    'was_wd_reset': self.was_wd_boot_value, 
+			    'reset': 0, 
+			    'nv_save':self.nvsavvalue, 
+			    'glob_dev_id': self.dev_id}
 	
 	def simple(self):
-		return {'dev': 'wd', 'circuit': self.circuit, 'value': self.regvalue()}
+		return {'dev': 'wd', 
+			    'circuit': self.circuit, 
+			    'value': self.regvalue()}
 
 	@property
 	def value(self):
@@ -1025,12 +1061,19 @@ class Register():
 
 	def full(self):
 		if self.legacy_mode:
-			return {'dev': 'register', 'circuit': self.circuit, 'value': self.regvalue()}
+			return {'dev': 'register', 
+				    'circuit': self.circuit, 
+				    'value': self.regvalue()}
 		else:
-			return {'dev': 'register', 'circuit': self.circuit, 'value': self.regvalue(), 'glob_dev_id': self.dev_id}			
+			return {'dev': 'register', 
+				    'circuit': self.circuit, 
+				    'value': self.regvalue(), 
+				    'glob_dev_id': self.dev_id}			
 
 	def simple(self):
-		return {'dev': 'register', 'circuit': self.circuit, 'value': self.regvalue()}
+		return {'dev': 'register', 
+			    'circuit': self.circuit, 
+			    'value': self.regvalue()}
 
 	@property
 	def value(self):
@@ -1133,21 +1176,40 @@ class Input():
 
 	def full(self):
 		if self.mode != 'DirectSwitch':
-			return {'dev': 'input', 'circuit': self.circuit, 'value': self.value,
-					'debounce': self.debounce, 'counter_modes': self.counter_modes, 'counter_mode': self.counter_mode,
-					'counter': self.counter if self.counter_mode == 'Enabled' else 0, 'mode': self.mode,  
-					'modes': self.modes, 'glob_dev_id': self.dev_id}
+			return {'dev': 'input',
+				    'circuit': self.circuit,
+				    'value': self.value,
+					'debounce': self.debounce, 
+					'counter_modes': self.counter_modes, 
+					'counter_mode': self.counter_mode,
+					'counter': self.counter if self.counter_mode == 'Enabled' else 0, 
+					'mode': self.mode,  
+					'modes': self.modes, 
+					'glob_dev_id': self.dev_id}
 		else:
-			return {'dev': 'input', 'circuit': self.circuit, 'value': self.value,
-					'debounce': self.debounce, 'counter_modes': self.counter_modes, 'counter_mode': self.counter_mode,
-					'counter': self.counter if self.counter_mode == 'Enabled' else 0, 'mode': self.mode,  
-					'modes': self.modes, 'ds_mode': self.ds_mode, 'ds_modes': self.ds_modes, 'glob_dev_id': self.dev_id}					
+			return {'dev': 'input', 
+				    'circuit': self.circuit, 
+				    'value': self.value,
+					'debounce': self.debounce, 
+					'counter_modes': self.counter_modes, 
+					'counter_mode': self.counter_mode,
+					'counter': self.counter if self.counter_mode == 'Enabled' else 0, 
+					'mode': self.mode,  
+					'modes': self.modes, 
+					'ds_mode': self.ds_mode, 
+					'ds_modes': self.ds_modes, 
+					'glob_dev_id': self.dev_id}					
 
 	def simple(self):
 		if self.counter_mode == 'Enabled':
-			return {'dev': 'input', 'circuit': self.circuit, 'value': self.value, 'counter': self.counter}
+			return {'dev': 'input', 
+				    'circuit': self.circuit, 
+				    'value': self.value, 
+				    'counter': self.counter}
 		else:
-			return {'dev': 'input', 'circuit': self.circuit, 'value': self.value}
+			return {'dev': 'input', 
+				    'circuit': self.circuit, 
+				    'value': self.value}
 
 	@gen.coroutine
 	def set(self, debounce=None, mode=None, counter=None, counter_mode=None, ds_mode=None, alias=None):
@@ -1266,12 +1328,21 @@ class Uart():
 		return 0
 
 	def full(self):
-			return {'dev': 'uart', 'circuit': self.circuit, 'conf_value': self.conf, 'parity_modes': self.parity_modes, 
-				   'parity_mode': self.parity_mode,'speed_modes': self.speed_modes, 'speed_mode': self.speed_mode,
-				   'stopb_modes': self.stopb_modes, 'stopb_mode': self.stopb_mode, 'glob_dev_id': self.dev_id}
+			return {'dev': 'uart', 
+				    'circuit': self.circuit, 
+				    'conf_value': self.conf, 
+				    'parity_modes': self.parity_modes, 
+				    'parity_mode': self.parity_mode,
+				    'speed_modes': self.speed_modes, 
+				    'speed_mode': self.speed_mode,
+				    'stopb_modes': self.stopb_modes, 
+				    'stopb_mode': self.stopb_mode, 
+				    'glob_dev_id': self.dev_id}
 
 	def simple(self):
-		return {'dev': 'uart', 'circuit': self.circuit, 'conf_value': self.conf}
+		return {'dev': 'uart', 
+			    'circuit': self.circuit, 
+			    'conf_value': self.conf}
 
 	@gen.coroutine
 	def set(self, conf_value=None, parity_mode=None, speed_mode=None, stopb_mode=None, alias=None):
@@ -1343,20 +1414,29 @@ def uint16_to_int(inp):
 
 
 class WiFiAdapter():
-	def __init__(self, circuit, arm, reg, dev_id=0, major_group=0, ip_addr="192.168.1.100", enabled=False, enabled_routing=False, legacy_mode=True):
+	def __init__(self, circuit, dev_id=0, major_group=0, ip_addr="192.168.1.100", enabled=False, enabled_routing=False, legacy_mode=True):
 		self.alias = ""
 		self.devtype = WIFI
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.legacy_mode = legacy_mode
-		self.arm = arm
 		self.major_group = major_group
 		self.enabled_val = enabled
 		self.enabled_routing_val = enabled_routing
 		self.ip_addr = ip_addr
 		self.packets_recieved = 0
 		self.packets_sent = 0
-
+		try:
+			if ("UP" in subprocess.check_output(["ifconfig", "-a", "wlan0"])) and ("running" in subprocess.check_output(["systemctl", "status", "unipidns"])):
+				self.enabled_val = True
+		except subprocess.CalledProcessError:
+			self.enabled_val = False
+		try:	
+			if ("MASQUERADE" in subprocess.check_output(["iptables", "-t", "nat", "-L"])):
+				self.enabled_routing_val = True
+		except subprocess.CalledProcessError:
+			self.enabled_routing_val = False			
+			
 	@property
 	def enabled(self):
 		if self.enabled_val:
@@ -1373,28 +1453,43 @@ class WiFiAdapter():
 			
 	@gen.coroutine
 	def get_packets(self):
-		subprocess.check_output([""])
+		subprocess.check_output(["ifconfig", "-a", "wlan0"])
 
 	def full(self):
-			return {'dev': 'wifi', 'enabled': self.enabled, "routing": self.routing_enabled, 'circuit': self.circuit, 'ip': self.ip_addr, 
-				    'glob_dev_id': self.dev_id, 'packets_recieved': self.packets_recieved, 'packets_sent': self.packets_sent}
+			return {'dev': 'wifi', 
+				    'ap_enabled': self.enabled, 
+				    'eth0_masq': self.routing_enabled, 
+				    'circuit': self.circuit, 
+				    #'ip': self.ip_addr, 
+				    #'packets_recieved': self.packets_recieved, 
+				    #'packets_sent': self.packets_sent,
+				    'glob_dev_id': self.dev_id}
 
 	def simple(self):
-		return {'dev': 'wifi', 'circuit': self.circuit, 'enabled': self.enabled, 'routing': self.routing_enabled, 'ip': self.ip_addr}
+		return {'dev': 'wifi', 
+			    'circuit': self.circuit, 
+			    'ap_enabled': self.enabled, 
+			    'eth0_masq': self.routing_enabled, 
+			    #'ip': self.ip_addr,
+			    'glob_dev_id': self.dev_id}
 
 	@gen.coroutine
-	def set(self, enabled=None, routing=None, alias=None):
+	def set(self, ap_enabled=None, eth0_masq=None, alias=None):
 		if alias is not None:
 			self.alias = alias
-		if enabled is not None and enabled in ['Enabled', 'Disabled'] and enabled != self.enabled:
-			if enabled == 'Enabled':
+		if ap_enabled is not None and ap_enabled in ['Enabled', 'Disabled'] and ap_enabled != self.enabled:
+			if ap_enabled == 'Enabled':
+				subprocess.check_output(["systemctl", "start", "unipidns"])
 				self.enabled_val = True
 			else:
+				subprocess.check_output(["systemctl", "stop", "unipidns"])
 				self.enabled_val = False
-		if routing is not None and routing in ['Enabled', 'Disabled'] and routing != self.routing_enabled:
-			if routing == 'Enabled':
+		if eth0_masq is not None and eth0_masq in ['Enabled', 'Disabled'] and eth0_masq != self.routing_enabled:
+			if eth0_masq == 'Enabled':
+				subprocess.check_output(["iptables", "-t", "nat", "-A", "POSTROUTING", "-o", "eth0", "-j", "MASQUERADE"])
 				self.enabled_routing_val = True
 			else:
+				subprocess.check_output(["iptables", "-t", "nat", "-D", "POSTROUTING", "-o", "eth0", "-j", "MASQUERADE"])
 				self.enabled_routing_val = False
 		raise gen.Return(self.full())
 
@@ -1422,7 +1517,7 @@ class AnalogOutput():
 		self.is_voltage = lambda: True
 		if circuit == '1_01' and regcal >= 0:
 			self.is_voltage = lambda: bool(self.arm.neuron.modbus_cache_map.get_register(1, self.regmode, unit=self.arm.modbus_address)[0] == 0)
-		if self.is_voltage:
+		if self.is_voltage():
 			self.mode = 'Voltage'
 		elif self.arm.neuron.modbus_cache_map.get_register(1, self.regmode, unit=self.arm.modbus_address)[0] == 1:
 			self.mode = 'Current'
@@ -1465,32 +1560,51 @@ class AnalogOutput():
 	def full(self):
 		if self.legacy_mode:
 			if self.mode == 'Resistance':
-				return {'dev': 'ao', 'circuit': self.circuit, 'value': self.res_value,
-					'unit': unit_names[VOLT] if self.is_voltage() else unit_names[AMPERE], 'modes': self.modes, 'mode': self.mode}				
+				return {'dev': 'ao', 
+					    'circuit': self.circuit, 
+					    'value': self.res_value,
+					    'unit': unit_names[VOLT] if self.is_voltage() else unit_names[AMPERE], 
+					    'modes': self.modes, 
+					    'mode': self.mode}				
 			else:
-				return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value,
-					'unit': unit_names[VOLT] if self.is_voltage() else unit_names[AMPERE], 'modes': self.modes, 'mode': self.mode}
+				return {'dev': 'ao', 
+					    'circuit': self.circuit, 
+					    'value': self.value,
+					    'unit': unit_names[VOLT] if self.is_voltage() else unit_names[AMPERE], 
+					    'modes': self.modes, 
+					    'mode': self.mode}
 		else:
 			if self.mode == 'Resistance':
-				return {'dev': 'ao', 'circuit': self.circuit, 'value': self.res_value,
-					'unit': unit_names[VOLT] if self.is_voltage() else unit_names[AMPERE], 'modes': self.modes, 'mode': self.mode,
-					'glob_dev_id': self.dev_id}
+				return {'dev': 'ao', 
+					    'circuit': self.circuit, 
+					    'value': self.res_value,
+					    'unit': unit_names[VOLT] if self.is_voltage() else unit_names[AMPERE], 
+					    'modes': self.modes, 
+					    'mode': self.mode,
+					    'glob_dev_id': self.dev_id}
 			else:
-				return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value,
-					'unit': unit_names[VOLT] if self.is_voltage() else unit_names[AMPERE], 'modes': self.modes, 'mode': self.mode,
-					'glob_dev_id': self.dev_id}							
+				return {'dev': 'ao', 
+					    'circuit': self.circuit, 
+					    'value': self.value,
+					    'unit': unit_names[VOLT] if self.is_voltage() else unit_names[AMPERE], 
+					    'modes': self.modes, 
+					    'mode': self.mode,
+					    'glob_dev_id': self.dev_id}							
 
 	def simple(self):
 		if self.mode == 'Resistance':
-			return {'dev': 'ao', 'circuit': self.circuit, 'value': self.res_value}
+			return {'dev': 'ao', 
+				    'circuit': self.circuit, 
+				    'value': self.res_value}
 		else:
-			return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value}
+			return {'dev': 'ao', 
+				    'circuit': self.circuit, 
+				    'value': self.value}
 
 	@gen.coroutine
 	def set_value(self, value):
 		if self.circuit == '1_01':
 			valuei = int((float(value) - self.offset) / self.factor)
-
 		else:
 			valuei = int((float(value) / 0.0025))
 		if valuei < 0:
@@ -1509,11 +1623,11 @@ class AnalogOutput():
 			self.alias = alias
 		if mode is not None and mode in self.modes:
 			val = self.arm.neuron.modbus_cache_map.get_register(1, self.regmode, unit=self.arm.modbus_address)[0]
+			cur_val = self.value
 			if mode == "Voltage":
 				val = 0
 				if (self.mode == 'Current'):
 					self.factor = (self.factor / 10) * 3
-				self.arm.neuron.client.write_register(self.regmode, val, unit=self.arm.modbus_address)
 			elif mode == "Current":
 				val = 1
 				if (self.mode == 'Voltage' or self.mode == 'Resistance'):
@@ -1522,7 +1636,10 @@ class AnalogOutput():
 				val = 3
 			self.mode = mode	
 			self.arm.neuron.client.write_register(self.regmode, val, unit=self.arm.modbus_address)
-		if  not (value is None):
+			if mode == "Voltage" or mode == "Current":
+				yield self.set_value(cur_val)		# Restore original value (i.e. 1.5V becomes 1.5mA)
+
+		if not (value is None):
 			if self.circuit == '1_01':
 				valuei = int((float(value) - self.offset) / self.factor)
 			else:
@@ -1560,8 +1677,11 @@ class AnalogInput():
 		self.major_group = major_group
 		self.is_voltage = lambda: True
 		if circuit == '1_01' and regcal >= 0:
-			self.is_voltage = lambda: not bool(self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, unit=self.arm.modbus_address)[0] & 0b1)
-			if not self.is_voltage:
+			self.is_voltage = lambda: bool(self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, unit=self.arm.modbus_address)[0] == 0)
+			if self.is_voltage():
+				self.mode = "Voltage"
+			else:
+				self.mode = "Current"
 				self.unit_name = unit_names[AMPERE]
 		elif circuit != '1_01':
 			self.is_voltage = lambda: not bool(self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, unit=self.arm.modbus_address)[0] == 1)
@@ -1585,7 +1705,10 @@ class AnalogInput():
 	def value(self):
 		try:
 			if self.circuit == '1_01':
-				return (self.regvalue() * self.vfactor) + self.voffset
+				if self.regvalue() == 65535 or self.regvalue() == 0:
+					return 0
+				else:
+					return (self.regvalue() * self.vfactor) + self.voffset
 			else:
 				byte_arr = bytearray(4)
 				byte_arr[2] = (self.regvalue() >> 8) & 255
@@ -1606,12 +1729,16 @@ class AnalogInput():
 			if self.mode == "Voltage":
 				self.unit_name = unit_names[VOLT]
 				if 'SecondaryAI' in self.modes:
+					self.vfactor = (self.factor * 10) / 3
+					self.vfactorx = (self.factor * 10) / 3
 					yield self.arm.neuron.client.write_register(self.regmode, 1, unit=self.arm.modbus_address)
 				else:
 					yield self.arm.neuron.client.write_register(self.regmode, 0, unit=self.arm.modbus_address)
 			elif self.mode == "Current":
 				self.unit_name = unit_names[AMPERE]
 				if 'SecondaryAI' in self.modes:
+					self.vfactor = (self.factor / 10) * 3
+					self.vfactorx = (self.factor / 10) * 3
 					yield self.arm.neuron.client.write_register(self.regmode, 3, unit=self.arm.modbus_address)				
 				else:
 					yield self.arm.neuron.client.write_register(self.regmode, 1, unit=self.arm.modbus_address)
@@ -1628,14 +1755,27 @@ class AnalogInput():
 
 	def full(self):
 			if self.mode == 'SecondaryAI':
-				return {'dev': 'ai', 'circuit': self.circuit, 'value': self.value, 'unit': self.unit_name, 'glob_dev_id': self.dev_id, 
-					    'mode': self.mode, 'modes': self.modes, 'secondary_ai_mode': self.sec_ai_mode}
+				return {'dev': 'ai', 
+					    'circuit': self.circuit, 
+					    'value': self.value, 
+					    'unit': self.unit_name, 
+					    'glob_dev_id': self.dev_id, 
+					    'mode': self.mode, 
+					    'modes': self.modes, 
+					    'secondary_ai_mode': self.sec_ai_mode}
 			else:	
-				return {'dev': 'ai', 'circuit': self.circuit, 'value': self.value,
-					'unit': self.unit_name,	'glob_dev_id': self.dev_id, 'mode': self.mode, 'modes': self.modes}
+				return {'dev': 'ai', 
+					    'circuit': self.circuit, 
+					    'value': self.value,
+					    'unit': self.unit_name,	
+					    'glob_dev_id': self.dev_id, 
+					    'mode': self.mode, 
+					    'modes': self.modes}
 		
 	def simple(self):
-		return {'dev': 'ai', 'circuit': self.circuit, 'value': self.value}
+		return {'dev': 'ai', 
+			    'circuit': self.circuit, 
+			    'value': self.value}
 
 	@property
 	def voltage(self):

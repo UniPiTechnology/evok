@@ -879,7 +879,125 @@ class RestDOHandler(UserCookieHelper, APIHandler):
 		# no body
 		self.set_status(204)
 		self.finish()
-		
+
+class RestWiFiHandler(UserCookieHelper, APIHandler):
+	get_out_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"dev": {
+				"type": "string",
+				"enum": ["ai"]
+			},
+			"circuit": {"type": "string"},
+			"unit": {"type": "string"},
+			"glob_dev_id": {"type": "number"},
+			"mode": {"type": "string"},
+			"value": {"type": "number"}
+		},
+	}
+	
+	get_out_example = {"value": 0.004243475302661791, "unit": "V", "circuit": "1_01", "dev": "ai"}
+	
+	post_inp_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			"value": { "type": "string"},
+			"mode": {"type": "string"}
+		},
+	}
+	
+	
+	post_inp_example = {"value": 1}
+	
+	post_out_schema = {
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "Neuron_Instruction",
+		"type": "object",
+		"properties": {
+			#"result": { "type": "number"},
+			"error": { "type": "array"},
+			"success": { "type": "boolean"}
+		},
+		"required": ["success"]
+	}
+	
+	post_out_example = {"result": 1, "success": True}
+	
+	
+	def initialize(self):
+		enable_cors(self)
+		self.set_header("Access-Control-Allow-Origin", "*")
+		self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+		self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
+	# usage: GET /rest/DEVICE/CIRCUIT
+	#		or
+	#		GET /rest/DEVICE/CIRCUIT/PROPERTY
+	if not use_output_schema:	
+		@tornado.web.authenticated
+		@schema.validate()
+		def get(self, circuit, prop):
+			device = Devices.by_name("wifi", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result
+	else:
+		@tornado.web.authenticated
+		@schema.validate(output_schema=get_out_schema, output_example=get_out_example)
+		def get(self, circuit, prop):
+			device = Devices.by_name("wifi", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result		
+
+
+	# usage: POST /rest/DEVICE/CIRCUIT
+	#		  post-data: prop1=value1&prop2=value2...
+	if not use_output_schema:
+		@schema.validate(input_schema=post_inp_schema, input_example=post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				device = Devices.by_name("wifi", circuit)
+				js_dict = json.loads(self.request.body)
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				raise Return({'success': True, 'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'success': False, 'errors': str(E)})
+	else:
+		@schema.validate(output_schema=post_out_schema, output_example=post_out_example, input_schema=post_inp_schema, input_example=post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				device = Devices.by_name("wifi", circuit)
+				js_dict = json.loads(self.request.body)
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				raise Return({'success': True, 'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'success': False, 'errors': str(E)})
+	
+	def options(self):
+		self.set_status(204)
+		self.finish()
+
 class RestAIHandler(UserCookieHelper, APIHandler):
 	get_out_schema = {
 		"$schema": "http://json-schema.org/draft-04/schema#",
@@ -1513,6 +1631,7 @@ class LoadAllHandler(UserCookieHelper, APIHandler):
 			result += map(lambda dev: dev.full(), Devices.by_int(NEURON))
 			result += map(lambda dev: dev.full(), Devices.by_int(UART))
 			result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
+			result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
 			self.write(json.dumps(result))
 	elif not use_output_schema:
 		@schema.validate()
@@ -1529,6 +1648,7 @@ class LoadAllHandler(UserCookieHelper, APIHandler):
 			result += map(lambda dev: dev.full(), Devices.by_int(NEURON))
 			result += map(lambda dev: dev.full(), Devices.by_int(UART))
 			result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
+			result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
 			return result
 	else:
 		@schema.validate(output_schema=out_schema, output_example=out_example)
@@ -1545,6 +1665,7 @@ class LoadAllHandler(UserCookieHelper, APIHandler):
 			result += map(lambda dev: dev.full(), Devices.by_int(NEURON))
 			result += map(lambda dev: dev.full(), Devices.by_int(UART))
 			result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
+			result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
 			return result
 	
 	def options(self):
@@ -2155,7 +2276,7 @@ def main():
 
 	cookie_secret = Config.getstringdef("MAIN", "secret", "ut5kB3hhf6VmZCujXGQ5ZHb1EAfiXHcy")
 	hw_dict = config.HWDict('/etc/hw_definitions/')
-
+	alias_dict = config.HWDict('/var/evok')
 
 	pw = Config.getstringdef("MAIN", "password", "")
 	if pw: userCookieHelper._passwords.append(pw)
@@ -2202,6 +2323,7 @@ def main():
 				(r"/rest/output/?([^/]+)/?([^/]+)?/?", RestDOHandler),
 				(r"/rest/do/?([^/]+)/?([^/]+)?/?", RestDOHandler),
 				(r"/rest/ai/?([^/]+)/?([^/]+)?/?", RestAIHandler),
+				(r"/rest/wifi/?([^/]+)/?([^/]+)?/?", RestWiFiHandler),
 				(r"/rest/ao/?([^/]+)/?([^/]+)?/?", RestAOHandler),
 				(r"/rest/relay/?([^/]+)/?([^/]+)?/?", RestROHandler),
 				(r"/rest/led/?([^/]+)/?([^/]+)?/?", RestLEDHandler),
@@ -2266,6 +2388,9 @@ def main():
 	devents.register_status_cb(gener_status_cb(mainLoop, modbus_context))
 	# create hw devices
 	config.create_devices(Config, hw_dict)
+	config.add_aliases(alias_dict)
+	if Config.getbooldef("MAIN", "wifi_control_enabled", False):
+		config.add_wifi()
 	'''
 	""" Setting the '_server' attribute if not set - simple link to mainloop"""
 	for (srv, urlspecs) in app.handlers:
@@ -2299,9 +2424,6 @@ def main():
 		for bus in Devices.by_int(GPIOBUS):
 			bus.bus_driver.switch_to_sync()
 		logger.info("Shutting down")
-		#try: httpServer.stop()
-		#except: pass
-		#todo: and shut immediately?
 		tornado.ioloop.IOLoop.instance().stop()
 
 	signal.signal(signal.SIGTERM, sig_handler)

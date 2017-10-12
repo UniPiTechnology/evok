@@ -104,7 +104,6 @@ class MySensor(object):
 		self.lostinterval = self.interval
 
 class DS18B20(MySensor):  # thermometer
-
 	def full(self):
 		return {'dev': 'temp', 'circuit': self.circuit, 'address': self.address,
 				'value': self.value, 'lost': self.lost, 'time': self.time, 'interval': self.interval, 'typ': self.type}
