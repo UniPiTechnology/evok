@@ -327,14 +327,17 @@ class AsyncModbusGeneratorClient(AsyncModbusSerialClient):
 		raise gen.Return(fut_result.result())
 	
 @gen.coroutine
-def UartStartClient(client, callback=None):
+def UartStartClient(client, callback=None, callback_args=None):
 	''' Connect to tcp host and, join to client.transport, wait for reply data
 		Reconnect on close
 	''' 
 	_logger.info("UART client started") #+ str(callback)
 	while True:
 		if callback:
-			yield callback()
+			if callback_args is not None:
+				yield callback(callback_args)
+			else:
+				yield callback()
 		while True:
 			try:
 				yield gen.sleep(0.5)

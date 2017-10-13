@@ -315,10 +315,36 @@ install_unipi_neuron() {
 	# Copy tornadorpc
     cp -r tornadorpc_evok /usr/local/lib/python2.7/dist-packages/
 
+	# Setup wifi
+	echo "############################################################################"
+	echo "## !!! POTENTIALLY DANGEROUS: Do you wish to install WiFi AP support? !!! ##"
+	echo "## !!! DO NOT USE WITH CUSTOM NETWORK CONFIGURATION                   !!! ##"
+	echo "## !!! USE ONLY WITH PLAIN RASPBIAN STRETCH                           !!! ##"
+	echo "############################################################################"
+	echo ' '
+	if ask "(N/Y)"
+		apt-get install hostapd dnsmasq iproute2
+		systemctl disable hostapd dnsmasq
+		systemctl stop hostapd dnsmasq
+		sed -i -e 's/option domain-name/#option domain-name/' /etc/dhcp/dhcpd.conf
+		sed -i -e 's/option domain-name-servers/#option domain-name-servers/' /etc/dhcp/dhcpd.conf
+		sed -i -e 's/#authoritative/authoritative/' /etc/dhcp/dhcpd.conf
+		sed -i -e 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+	else
+		ifconfig wlan0 down
+	fi
+	
     # Copy evok
     cp -r evok/ /opt/
     mkdir -p /var/www/evok && cp -r www/* /var/www/
+	mkdir -p /var/evok && cp -r var/* /var/evok/
+	mkdir -p /opt && cp -r opt/* /opt/
+	cp -r opt/unipiap/systemd/* /etc/systemd/system/
+	systemctl daemon-reload
+	systemctl disable unipiap
+	systemctl disable unipidns
 	chmod -R a+rx /var/www
+	chmod -R a+rx /var/evok
 
     # Copy default config file and init scipts
     if [ -f /etc/evok-neuron.conf ]; then
@@ -336,8 +362,6 @@ install_unipi_neuron() {
     else
         cp etc/evok-neuron.conf /etc/evok.conf
     fi
-
-
 	
     chmod +x /opt/evok/evok.py
 

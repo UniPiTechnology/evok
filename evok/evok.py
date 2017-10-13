@@ -2276,7 +2276,7 @@ def main():
 
 	cookie_secret = Config.getstringdef("MAIN", "secret", "ut5kB3hhf6VmZCujXGQ5ZHb1EAfiXHcy")
 	hw_dict = config.HWDict('/etc/hw_definitions/')
-	alias_dict = config.HWDict('/var/evok')
+	alias_dict = (config.HWDict('/var/evok/')).definitions
 
 	pw = Config.getstringdef("MAIN", "password", "")
 	if pw: userCookieHelper._passwords.append(pw)
@@ -2388,7 +2388,6 @@ def main():
 	devents.register_status_cb(gener_status_cb(mainLoop, modbus_context))
 	# create hw devices
 	config.create_devices(Config, hw_dict)
-	config.add_aliases(alias_dict)
 	if Config.getbooldef("MAIN", "wifi_control_enabled", False):
 		config.add_wifi()
 	'''
@@ -2405,11 +2404,11 @@ def main():
 		for device in Devices.by_int(bustype):
 			device.bus_driver.switch_to_async(mainLoop)
 
-	for bustype in (ADCHIP, NEURON):
-		for device in Devices.by_int(bustype):
-			device.switch_to_async(mainLoop)
-			
+	for device in Devices.by_int(ADCHIP):
+		device.switch_to_async(mainLoop)
+	
 	for neuron in Devices.by_int(NEURON):
+		neuron.switch_to_async(mainLoop, alias_dict)
 		if neuron.scan_enabled:
 			neuron.start_scanning()
 

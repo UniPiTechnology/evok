@@ -5,6 +5,7 @@ import re
 import struct
 import ConfigParser
 import neuron
+from tornado import gen
 from log import *
 from devices import *
 import yaml
@@ -352,8 +353,20 @@ def create_devices(Config, hw_dict):
 			logger.exception("Error in config section %s - %s", section, str(E))
 			#raise
 
-def add_aliases(alis_conf):
-	pass
+@gen.coroutine
+def add_aliases(alias_conf):
+	if alias_conf is not None:
+		for alias_conf_single in alias_conf:
+			if alias_conf_single is not None:
+				if "version" in alias_conf_single and "aliases" in alias_conf_single and alias_conf_single["version"] == 1.0:
+					for dev_pointer in alias_conf_single['aliases']:
+						try:
+							dev_obj = Devices.by_int(dev_pointer["dev_type"], dev_pointer["circuit"])
+							print str(dev_obj) + str(dev_pointer["name"])
+							if Devices.add_alias(dev_pointer["name"], dev_obj):
+								dev_obj.alias = dev_pointer["name"]
+						except Exception, E:
+							logger.exception(str(E))
 
 def add_wifi():
 	wifi = WiFiAdapter("1_01")

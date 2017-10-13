@@ -149,15 +149,16 @@ class Neuron(object):
 		self.versions = []
 		self.logfile = Config.getstringdef("MAIN", "log_file", "/var/log/evok.log")
 
-	def switch_to_async(self, loop):
+	def switch_to_async(self, loop, alias_dict):
 		self.loop = loop
 		self.client = ModbusClientProtocol()
-		loop.add_callback(lambda: StartClient(self.client, self.modbus_server, self.modbus_port, self.readboards))
+		loop.add_callback(lambda: StartClient(self.client, self.modbus_server, self.modbus_port, self.readboards, callback_args=alias_dict))
 
 	@gen.coroutine
 	def set(self, print_log=None, alias=None):
 		if alias is not None:
-			self.alias = alias
+			if Devices.add_alias(alias, self, file_update=True):
+				self.alias = alias
 		if print_log is not None:
 			log_tail = subprocess.check_output(["tail", "-n 255", self.logfile])
 			raise gen.Return(log_tail)
@@ -165,7 +166,7 @@ class Neuron(object):
 			raise gen.Return(self.full())
 
 	@gen.coroutine
-	def readboards(self):
+	def readboards(self, alias_dict):
 		""" Try to read version registers on 3 boards and create subdevices """
 		logger.info("Reading SPI boards")
 		for board in self.boards:
@@ -187,7 +188,8 @@ class Neuron(object):
 			except Exception, E:
 				logger.exception(str(E))
 				pass
-
+		yield config.add_aliases(alias_dict)	
+		
 	def start_scanning(self):
 		self.do_scanning = True
 		if not self.is_scanning:
@@ -252,19 +254,20 @@ class UartNeuron(object):
 		self.versions = []
 		self.logfile = Config.getstringdef("MAIN", "log_file", "/var/log/evok.log")
 
-	def switch_to_async(self, loop):
+	def switch_to_async(self, loop, alias_dict):
 		self.loop = loop
 		if self.port in modbusclient_rs485.client_dict:
 			self.client = modbusclient_rs485.client_dict[self.port]
 		else:
 			self.client = modbusclient_rs485.AsyncModbusGeneratorClient(method='rtu', stopbits=self.stopbits, bytesize=8, parity=self.parity, baudrate=self.baud_rate, timeout=1.5, port=self.port)
 			modbusclient_rs485.client_dict[self.port] = self.client
-		loop.add_callback(lambda: modbusclient_rs485.UartStartClient(self, self.readboards))
+		loop.add_callback(lambda: modbusclient_rs485.UartStartClient(self, self.readboards, callback_args=alias_dict))
 
 	@gen.coroutine
 	def set(self, alias=None, print_log=None):
 		if alias is not None:
-			self.alias = alias
+			if Devices.add_alias(alias, self, file_update=True):
+				self.alias = alias
 		if print_log is not None:
 			log_tail = subprocess.check_output(["tail", "-n 255", self.logfile])
 			raise gen.Return(log_tail)
@@ -272,7 +275,7 @@ class UartNeuron(object):
 			return gen.Return(self.full())
 
 	@gen.coroutine
-	def readboards(self):
+	def readboards(self, alias_dict):
 		logger.info("Reading the UART board on Modbus address %d" % self.modbus_address)
 		self.boards = list()
 		try:
@@ -290,6 +293,7 @@ class UartNeuron(object):
 			board = UartBoard(self.Config, self.circuit, self.modbus_address, self, self.versions, dev_id=self.dev_id)
 			yield board.parse_definition(self.hw_dict, 1)
 			self.boards.append(board)
+			yield config.add_aliases(alias_dict)
 		except ENoBoard:
 			logger.info("No board detected on UART %d" % self.modbus_address)
 		except Exception, E:
@@ -370,7 +374,8 @@ class UartBoard(object):
 	@gen.coroutine
 	def set(self, alias=None):
 		if not alias is None:
-			self.alias = alias 
+			if Devices.add_alias(alias, self, file_update=True):
+				self.alias = alias
 		return gen.Return(self.full())
 
 	@gen.coroutine
@@ -543,7 +548,8 @@ class Board(object):
 	@gen.coroutine
 	def set(self, alias=None):
 		if not alias is None:
-			self.alias = alias 
+			if Devices.add_alias(alias, self, file_update=True):
+				self.alias = alias
 		return gen.Return(self.full())
 	
 	@gen.coroutine
@@ -804,7 +810,6 @@ class Relay(object):
 				self.pwm_duty_val = 0
 				self.arm.neuron.client.write_register(self.pwmdutyreg, 0, unit=self.arm.modbus_address)
 			if mode == 'PWM' and mode != self.mode:
-
 				self.mode = mode
 			else:
 				self.mode = mode
@@ -858,13 +863,14 @@ class Relay(object):
 				timeout = float(timeout)
 			self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.modbus_address)
 
+		if alias is not None:
+			if Devices.add_alias(alias, self, file_update=True):
+				self.alias = alias
+
 		if timeout is None:
 			if self.mode == 'PWM':
 				raise gen.Return(self.full())
 			raise gen.Return((1 if value else 0))
-
-		if alias is not None:
-			self.alias = alias
 
 		def timercallback():
 			self.pending_id = None
@@ -924,11 +930,12 @@ class ULED(object):
 		yield self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.modbus_address)
 		raise gen.Return(1 if value else 0)
 
-	def set(self, value=None, alias=None):
+	def set(self, value=None, alias=None, file_update=True):
 		""" Sets new on/off status. Disable pending timeouts
 		"""
 		if alias is not None:
-			self.alias = alias
+			if Devices.add_alias(alias, self):
+				self.alias = alias
 		if value is not None:
 			value = int(value)
 			self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.modbus_address)
@@ -1016,7 +1023,8 @@ class Watchdog(object):
 		""" Sets new on/off status. Disable pending timeouts
 		"""
 		if alias is not None:
-			self.alias = alias
+			if Devices.add_alias(alias, self, file_update=True):
+				self.alias = alias
 		
 		if self.nv_save_coil >= 0 and nv_save is not None and nv_save != self.nvsavvalue:
 			if nv_save != 0:
@@ -1103,7 +1111,8 @@ class Register():
 		""" Sets new on/off status. Disable pending timeouts
 		"""
 		if alias is not None:
-			self.alias = alias
+			if Devices.add_alias(alias, self, file_update=True):
+				self.alias = alias
 		if value is not None:
 			value = int(value)
 			self.arm.neuron.client.write_register(self.valreg, value if value else 0, unit=self.arm.modbus_address)
@@ -1214,8 +1223,9 @@ class Input():
 	@gen.coroutine
 	def set(self, debounce=None, mode=None, counter=None, counter_mode=None, ds_mode=None, alias=None):
 		if alias is not None:
-			self.alias = alias
-		
+			if Devices.add_alias(alias, self, file_update=True):
+				self.alias = alias
+						
 		if mode is not None and mode != self.mode and mode in self.modes:
 			self.mode = mode
 			if self.mode == 'DirectSwitch':
@@ -1348,7 +1358,8 @@ class Uart():
 	def set(self, conf_value=None, parity_mode=None, speed_mode=None, stopb_mode=None, alias=None):
 		val = self.regvalue()
 		if alias is not None:
-			self.alias = alias
+			if Devices.add_alias(alias, self, file_update=True):
+				self.alias = alias
 		if conf_value is not None:
 			self.arm.neuron.client.write_register(self.valreg, conf_value, unit=self.arm.modbus_address)
 		if parity_mode is not None and parity_mode in self.parity_modes and parity_mode != self.parity_mode:
@@ -1457,7 +1468,7 @@ class WiFiAdapter():
 
 	def full(self):
 			return {'dev': 'wifi', 
-				    'ap_enabled': self.enabled, 
+				    'ap_state': self.enabled, 
 				    'eth0_masq': self.routing_enabled, 
 				    'circuit': self.circuit, 
 				    #'ip': self.ip_addr, 
@@ -1468,17 +1479,18 @@ class WiFiAdapter():
 	def simple(self):
 		return {'dev': 'wifi', 
 			    'circuit': self.circuit, 
-			    'ap_enabled': self.enabled, 
+			    'ap_state': self.enabled, 
 			    'eth0_masq': self.routing_enabled, 
 			    #'ip': self.ip_addr,
 			    'glob_dev_id': self.dev_id}
 
 	@gen.coroutine
-	def set(self, ap_enabled=None, eth0_masq=None, alias=None):
+	def set(self, ap_state=None, eth0_masq=None, alias=None):
 		if alias is not None:
-			self.alias = alias
-		if ap_enabled is not None and ap_enabled in ['Enabled', 'Disabled'] and ap_enabled != self.enabled:
-			if ap_enabled == 'Enabled':
+			if Devices.add_alias(alias, self, file_update=True):
+				self.alias = alias
+		if ap_state is not None and ap_state in ['Enabled', 'Disabled'] and ap_state != self.enabled:
+			if ap_state == 'Enabled':
 				subprocess.check_output(["systemctl", "start", "unipidns"])
 				self.enabled_val = True
 			else:
@@ -1620,7 +1632,8 @@ class AnalogOutput():
 	@gen.coroutine
 	def set(self, value=None, frequency=None, mode=None, alias=None):
 		if alias is not None:
-			self.alias = alias
+			if Devices.add_alias(alias, self, file_update=True):
+				self.alias = alias
 		if mode is not None and mode in self.modes:
 			val = self.arm.neuron.modbus_cache_map.get_register(1, self.regmode, unit=self.arm.modbus_address)[0]
 			cur_val = self.value
@@ -1638,7 +1651,6 @@ class AnalogOutput():
 			self.arm.neuron.client.write_register(self.regmode, val, unit=self.arm.modbus_address)
 			if mode == "Voltage" or mode == "Current":
 				yield self.set_value(cur_val)		# Restore original value (i.e. 1.5V becomes 1.5mA)
-
 		if not (value is None):
 			if self.circuit == '1_01':
 				valuei = int((float(value) - self.offset) / self.factor)
@@ -1723,7 +1735,8 @@ class AnalogInput():
 	@gen.coroutine
 	def set(self, mode=None, secondary_ai_mode=None, alias=None):
 		if alias is not None:
-			self.alias = alias
+			if Devices.add_alias(alias, self, file_update=True):
+				self.alias = alias
 		if mode is not None and mode in self.modes and mode != self.mode:
 			self.mode = mode
 			if self.mode == "Voltage":

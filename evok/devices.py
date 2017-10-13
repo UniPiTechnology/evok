@@ -1,4 +1,6 @@
 import devents
+import yaml
+from log import *
 
 """
    Structured list/dict of all devices in the system
@@ -94,13 +96,28 @@ class DeviceList(dict):
 		devdict[str(device.circuit)] = device
 		devents.config(device)
 
-	def add_alias(self, key, device):
-		alias_key = "al_" + key
-		if not self.alias_dict.has_key(alias_key):
+	def add_alias(self, alias_key, device, file_update=False):
+		if not (alias_key.startswith("al_")):
+			return False
+		if not alias_key in self.alias_dict:
+			if device.alias in self.alias_dict:
+				del self.alias_dict[device.alias]
 			self.alias_dict[alias_key] = device
+			if file_update:
+				self.save_alias_dict()
 			return True
 		else:
 			return False
+		
+	def save_alias_dict(self):
+		try:
+			with open("/var/evok/evok-alias.yaml", 'w+') as yfile:
+				out_dict = {"version": 1.0, "aliases":[]}
+				for	single_alias in self.alias_dict:
+					out_dict["aliases"] += [{"circuit": self.alias_dict[single_alias].circuit, "dev_type": self.alias_dict[single_alias].devtype, "name": single_alias}]
+				yfile.write(yaml.dump(out_dict))
+		except Exception, E:
+			logger.exception(str(E))
 
 # # define device types constants
 RELAY = 0

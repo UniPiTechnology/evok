@@ -118,7 +118,7 @@ class ModbusClientProtocol():
 
 
 @gen.coroutine
-def StartClient(client, host='127.0.0.1', port=502, callback=None):
+def StartClient(client, host='127.0.0.1', port=502, callback=None, callback_args=None):
 	''' Connect to tcp host and, join to client.transport, wait for reply data
 		Reconnect on close
 	''' 
@@ -129,7 +129,10 @@ def StartClient(client, host='127.0.0.1', port=502, callback=None):
 			client.setTransport(stream)
 			future = stream.read_until_close(streaming_callback = client.dataReceived)
 			if callback:
-				yield callback()
+				if callback_args is not None:
+					yield callback(callback_args)
+				else:
+					yield callback()
 			yield future
 		except StreamClosedError:
 			pass
