@@ -123,10 +123,37 @@ install_unipi_1() {
     # Copy tornadorpc
     cp -r tornadorpc_evok /usr/local/lib/python2.7/dist-packages/
 
+	# Setup wifi
+	echo "############################################################################"
+	echo "## !!! POTENTIALLY DANGEROUS: Do you wish to install WiFi AP support? !!! ##"
+	echo "## !!! DO NOT USE WITH CUSTOM NETWORK CONFIGURATION                   !!! ##"
+	echo "## !!! USE ONLY WITH PLAIN RASPBIAN STRETCH                           !!! ##"
+	echo "############################################################################"
+	echo ' '
+	if ask "(Install WiFi?)"; then
+		apt-get install hostapd dnsmasq iproute2
+		systemctl disable hostapd dnsmasq
+		systemctl stop hostapd dnsmasq
+		sed -i -e 's/option domain-name/#option domain-name/' /etc/dhcp/dhcpd.conf
+		sed -i -e 's/option domain-name-servers/#option domain-name-servers/' /etc/dhcp/dhcpd.conf
+		sed -i -e 's/#authoritative/authoritative/' /etc/dhcp/dhcpd.conf
+		sed -i -e 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+		sed -i -e 's/wifi_control_enabled = False/wifi_control_enabled = True/' etc/evok-unipi1.1.conf
+	else
+		ifconfig wlan0 down
+	fi
+	
     # Copy evok
     cp -r evok/ /opt/
     mkdir -p /var/www/evok && cp -r www/* /var/www/
+	mkdir -p /var/evok && cp -r var/* /var/evok/
+	mkdir -p /opt && cp -r opt/* /opt/
+	cp -r opt/unipiap/systemd/* /etc/systemd/system/
+	systemctl daemon-reload
+	systemctl disable unipiap
+	systemctl disable unipidns
 	chmod -R a+rx /var/www
+	chmod -R a+rx /var/evok
 
     # Copy default config file and init scipts
     if [ -f /etc/evok.conf ]; then
@@ -219,10 +246,37 @@ install_unipi_lite_1() {
     # Copy tornadorpc
     cp -r tornadorpc_evok /usr/local/lib/python2.7/dist-packages/
 
+	# Setup wifi
+	echo "############################################################################"
+	echo "## !!! POTENTIALLY DANGEROUS: Do you wish to install WiFi AP support? !!! ##"
+	echo "## !!! DO NOT USE WITH CUSTOM NETWORK CONFIGURATION                   !!! ##"
+	echo "## !!! USE ONLY WITH PLAIN RASPBIAN STRETCH                           !!! ##"
+	echo "############################################################################"
+	echo ' '
+	if ask "(Install WiFi?)"; then
+		apt-get install hostapd dnsmasq iproute2
+		systemctl disable hostapd dnsmasq
+		systemctl stop hostapd dnsmasq
+		sed -i -e 's/option domain-name/#option domain-name/' /etc/dhcp/dhcpd.conf
+		sed -i -e 's/option domain-name-servers/#option domain-name-servers/' /etc/dhcp/dhcpd.conf
+		sed -i -e 's/#authoritative/authoritative/' /etc/dhcp/dhcpd.conf
+		sed -i -e 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+		sed -i -e 's/wifi_control_enabled = False/wifi_control_enabled = True/' etc/evok-lite.conf
+	else
+		ifconfig wlan0 down
+	fi
+	
     # Copy evok
     cp -r evok/ /opt/
     mkdir -p /var/www/evok && cp -r www/* /var/www/
+	mkdir -p /var/evok && cp -r var/* /var/evok/
+	mkdir -p /opt && cp -r opt/* /opt/
+	cp -r opt/unipiap/systemd/* /etc/systemd/system/
+	systemctl daemon-reload
+	systemctl disable unipiap
+	systemctl disable unipidns
 	chmod -R a+rx /var/www
+	chmod -R a+rx /var/evok
 
     # Copy default config file and init scipts
     if [ -f /etc/evok.conf ]; then
@@ -322,7 +376,7 @@ install_unipi_neuron() {
 	echo "## !!! USE ONLY WITH PLAIN RASPBIAN STRETCH                           !!! ##"
 	echo "############################################################################"
 	echo ' '
-	if ask "(N/Y)"
+	if ask "(Install WiFi?)"; then
 		apt-get install hostapd dnsmasq iproute2
 		systemctl disable hostapd dnsmasq
 		systemctl stop hostapd dnsmasq
@@ -330,6 +384,7 @@ install_unipi_neuron() {
 		sed -i -e 's/option domain-name-servers/#option domain-name-servers/' /etc/dhcp/dhcpd.conf
 		sed -i -e 's/#authoritative/authoritative/' /etc/dhcp/dhcpd.conf
 		sed -i -e 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+		sed -i -e 's/wifi_control_enabled = False/wifi_control_enabled = True/' etc/evok-neuron.conf
 	else
 		ifconfig wlan0 down
 	fi
@@ -385,8 +440,8 @@ install_unipi_neuron() {
     echo '## Evok installed sucessfully.                              ##'
     echo '## Info:                                                    ##'
     echo '## 1. If you are running Apache or other daemon at port 80, ##'
-	echo '## you must set either evok or apache port different than   ##'
-	echo '## the other.                                               ##'
+	echo '## you must set either evok or apache port to be different  ##'
+	echo '## from each other.                                         ##'
     echo "## 2. Run 'service evok start/restart/stop' to control the  ##"
 	echo '## daemon.                                                  ##'
     echo '## (3. To uninstall evok run /opt/evok/uninstall-evok.sh)   ##'
@@ -420,7 +475,7 @@ cp -r etc/modprobe.d /etc/
 cp -r etc/opt /etc/
 
 apt-get update
-apt-get install -y python-ow python-pip make python-dev nginx
+apt-get install -y python-ow python-pip make python-dev nginx vim
 pip install tornado toro jsonrpclib pymodbus pyyaml tornado_json tornado-webservices
 pip install pymodbus --upgrade
 ln -sf /etc/nginx/sites-enabled/evok /etc/evok-nginx.conf

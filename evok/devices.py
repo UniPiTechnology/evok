@@ -38,6 +38,7 @@ class DeviceList(dict):
 					to_delete += [(self[devtype_name])[dev_name]]
 			for value in to_delete:
 				del (self[devtype_name])[value.circuit]
+				
 
 
 	def by_int(self, devtypeid, circuit=None, major_group=None):

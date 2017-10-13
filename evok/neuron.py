@@ -202,13 +202,16 @@ class Neuron(object):
 			self.do_scanning = False
 
 	def full(self):
-		return {'dev': 'neuron', 
+		ret = {'dev': 'neuron', 
 			    'circuit': self.circuit, 
 			    'model': config.globals['model'], 
 			    'sn': config.globals['serial'], 
 			    'ver2': config.globals['version2'],
 			    'board_count': len(self.boards), 
 			    'version_registers': self.versions}
+		if self.alias != '':
+			ret['alias': self.alias]
+		return ret
 	
 	@gen.coroutine
 	def scan_boards(self):
@@ -313,11 +316,14 @@ class UartNeuron(object):
 			self.do_scanning = False
 
 	def full(self):
-		return {'dev': 'neuron', 'circuit': self.circuit,
+		ret = {'dev': 'neuron', 'circuit': self.circuit,
 			    'version_registers': self.versions, 
 			    'model': self.device_name, 
 			    'uart_circuit': self.neuron_uart_circuit, 
 			    'uart_port': self.port}
+		if self.alias != '':
+			ret['alias'] = self.alias
+		return ret
 		
 	@gen.coroutine
 	def scan_boards(self, invoc=False):
@@ -738,36 +744,22 @@ class Relay(object):
 
 
 	def full(self):
+		ret =  {'dev': 'relay', 
+				'relay_type': 'physical', 
+				'circuit': self.circuit, 
+				'value': self.value, 
+				'pending': self.pending_id != 0, 
+				'mode': self.mode, 
+				'modes': self.modes, 
+				'glob_dev_id': self.dev_id}
 		if self.digital_only:
+			ret['relay_type'] = 'digital'
 			if self.mode == 'PWM':
-				return {'dev': 'relay', 
-					    'relay_type': 'digital', 
-					    'circuit': self.circuit, 
-					    'value': self.value, 
-					    'pending': self.pending_id != 0, 
-					    'mode': self.mode, 
-					    'modes': self.modes, 
-					    'glob_dev_id': self.dev_id,
-					    'pwm_freq': self.pwm_freq, 
-					    'pwm_duty': self.pwm_duty}	
-			else:	
-				return {'dev': 'relay', 
-					    'relay_type': 'digital', 
-					    'circuit': self.circuit, 
-					    'value': self.value, 
-					    'pending': self.pending_id != 0, 
-					    'mode': self.mode, 
-					    'modes': self.modes, 
-					    'glob_dev_id': self.dev_id}
-		else:
-			return {'dev': 'relay', 
-				    'relay_type': 'physical', 
-				    'circuit': self.circuit, 
-				    'value': self.value, 
-				    'pending': self.pending_id != 0, 
-				    'mode': self.mode, 
-				    'modes': self.modes, 
-				    'glob_dev_id': self.dev_id}
+				ret['pwm_freq'] = self.pwm_freq
+				ret['pwm_duty'] = self.pwm_duty
+		if self.alias != '':
+			ret['alias'] = self.alias
+		return ret
 						
 
 	def simple(self):
@@ -897,10 +889,11 @@ class ULED(object):
 		self.coil = coil
 		
 	def full(self):
-		if self.legacy_mode:
-			return {'dev': 'led', 'circuit': self.circuit, 'value': self.value}
-		else:
-			return {'dev': 'led', 'circuit': self.circuit, 'value': self.value, 'glob_dev_id': self.dev_id}
+		ret = {'dev': 'led', 'circuit': self.circuit, 'value': self.value, 'glob_dev_id': self.dev_id}
+		if self.alias != '':
+			ret['alias'] = self.alias
+		return ret
+
 
 	def simple(self):
 		return {'dev': 'led', 'circuit': self.circuit, 'value': self.value}
@@ -965,14 +958,17 @@ class Watchdog(object):
 		self.toreg = timeout_reg
 
 	def full(self):
-		return {'dev': 'wd', 
-			    'circuit': self.circuit, 
-			    'value': self.value, 
-			    'timeout': self.timeout, 
-			    'was_wd_reset': self.was_wd_boot_value, 
-			    'reset': 0, 
-			    'nv_save':self.nvsavvalue, 
-			    'glob_dev_id': self.dev_id}
+		ret = {'dev': 'wd', 
+			   'circuit': self.circuit, 
+			   'value': self.value, 
+			   'timeout': self.timeout, 
+			   'was_wd_reset': self.was_wd_boot_value, 
+			   'reset': 0, 
+			   'nv_save':self.nvsavvalue, 
+			   'glob_dev_id': self.dev_id}
+		if self.alias != '':
+			ret['alias'] = self.alias
+		return ret
 	
 	def simple(self):
 		return {'dev': 'wd', 
@@ -1068,15 +1064,13 @@ class Register():
 		self.reg_type = reg_type
 
 	def full(self):
-		if self.legacy_mode:
-			return {'dev': 'register', 
-				    'circuit': self.circuit, 
-				    'value': self.regvalue()}
-		else:
-			return {'dev': 'register', 
-				    'circuit': self.circuit, 
-				    'value': self.regvalue(), 
-				    'glob_dev_id': self.dev_id}			
+		ret = {'dev': 'register', 
+			   'circuit': self.circuit, 
+			   'value': self.regvalue(), 
+			   'glob_dev_id': self.dev_id}
+		if self.alias != '':
+			ret['alias'] = self.alias
+		return ret			
 
 	def simple(self):
 		return {'dev': 'register', 
