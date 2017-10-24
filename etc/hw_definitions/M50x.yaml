@@ -41,6 +41,7 @@ modbus_features:
       modes       :
         - Voltage
         - Current
+      tolerances  : brain
       min_v       : 0
       max_v       : 10
       min_c       : 0
@@ -155,7 +156,9 @@ modbus_features:
       major_group : 2
       modes       :
         - Voltage
-        - SecondaryAI
+        - Current
+        - Resistance
+      tolerances  : 500series
       min_v       : 0
       max_v       : 10
       min_c       : 0

@@ -2,7 +2,7 @@
 
 
 def _status(device, **kwarg):
-    #print device.simple()
+    #print device.full()
     pass
 
 

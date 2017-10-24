@@ -1,4 +1,3 @@
-
 import os
 import multiprocessing
 import re
@@ -18,7 +17,6 @@ try:
 except:
 	pass
 
-
 globals = {
 	'version': "1.0",
 	'devices': {
@@ -30,7 +28,6 @@ globals = {
 	'version1': None,
 	'version2': None,
 }
-
 
 def read_eprom_config():
 	try:
@@ -59,7 +56,6 @@ def read_eprom_config():
 				logger.debug("eprom: UniPi version %s, serial: %d", globals['version'], globals['serial'])
 	except Exception, E:
 		pass
-
 	try:
 		with open('/sys/class/i2c-dev/i2c-1/device/1-0057/eeprom','r') as f:
 			bytes=f.read(128)
@@ -71,9 +67,6 @@ def read_eprom_config():
 	except Exception, E:
 		pass
 	
-
-
-
 class HWDict():
 	def __init__(self, d_path):
 		self.definitions = []
@@ -86,7 +79,6 @@ class HWDict():
 				except Exception, E:
 					pass	
 
-	
 class HWDefinition():
 	def __init__(self):
 		False
@@ -304,7 +296,6 @@ def create_devices(Config, hw_dict):
 					correction = Config.getfloatdef(section, "correction", globals['devices']['ai'][circuit])
 				else:
 					correction = Config.getfloatdef(section, "correction", 5.564920867)
-				#print correction
 				mcai = Devices.by_int(ADCHIP, chip)
 				try:
 					corr_rom = Config.get(section, "corr_rom")
@@ -320,11 +311,12 @@ def create_devices(Config, hw_dict):
 			elif devclass == 'NEURON':
 				from neuron import Neuron
 				dev_counter += 1
-				modbus_server =  Config.getstringdef(section, "modbus_server", "127.0.0.1")
-				modbus_port   =  Config.getintdef(section, "modbus_port", 502)
+				modbus_server = Config.getstringdef(section, "modbus_server", "127.0.0.1")
+				modbus_port = Config.getintdef(section, "modbus_port", 502)
 				scanfreq = Config.getfloatdef(section, "scan_frequency", 1)
 				scan_enabled = Config.getbooldef(section, "scan_enabled", True)
 				allow_register_access = Config.getbooldef(section, "allow_register_access", False)
+				circuit = Config.getintdef(section, "global_id", 2)
 				neuron = Neuron(circuit, Config, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict, direct_access=allow_register_access, 
 							    dev_id=dev_counter)
 				Devices.register_device(NEURON, neuron)
@@ -341,17 +333,14 @@ def create_devices(Config, hw_dict):
 				device_name = Config.getstringdef(section, "device_name", "unspecified")
 				allow_register_access = Config.getbooldef(section, "allow_register_access", False)
 				neuron_uart_circuit = Config.getstringdef(section, "neuron_uart_circuit", "None")
-				circuit = str(dev_counter)
+				circuit = Config.getintdef(section, "global_id", 2)
 				neuron = UartNeuron(circuit, Config, modbus_uart_port, scanfreq, scan_enabled, hw_dict, baud_rate=uart_baud_rate, 
 								    parity=uart_parity, stopbits=uart_stopbits, device_name=device_name, uart_address=uart_address,
 								    direct_access=allow_register_access, dev_id=dev_counter, neuron_uart_circuit=neuron_uart_circuit)
 				Devices.register_device(NEURON, neuron)
-			elif devclass == 'HWDEF':
-				dev_counter += 1
 
 		except Exception, E:
 			logger.exception("Error in config section %s - %s", section, str(E))
-			#raise
 
 @gen.coroutine
 def add_aliases(alias_conf):
@@ -362,7 +351,7 @@ def add_aliases(alias_conf):
 					for dev_pointer in alias_conf_single['aliases']:
 						try:
 							dev_obj = Devices.by_int(dev_pointer["dev_type"], dev_pointer["circuit"])
-							print str(dev_obj) + str(dev_pointer["name"])
+							logger.info("Alias loaded: " + str(dev_obj) + " " + str(dev_pointer["name"]))
 							if Devices.add_alias(dev_pointer["name"], dev_obj):
 								dev_obj.alias = dev_pointer["name"]
 						except Exception, E:

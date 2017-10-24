@@ -58,7 +58,6 @@ import tornado.ioloop
 from functools import partial
 from tornado.locks import Semaphore
 
-
 import serial
 
 import time

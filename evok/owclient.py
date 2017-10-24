@@ -17,7 +17,7 @@ OWCMD_SCAN = 2
 OWCMD_SCAN_INTERVAL = 3
 OWCMD_DEFAULT_INTERVAL = 4
 OWCMD_SET_PIO = 5
-SUPPORTED_DEVICES = ["DS18S20", "DS18B20", "DS2438", "DS2408"]
+SUPPORTED_DEVICES = ["DS18S20", "DS18B20", "DS2438", "DS2408", "DS2413"]
 
 import fcntl
 
@@ -105,12 +105,22 @@ class MySensor(object):
 
 class DS18B20(MySensor):  # thermometer
 	def full(self):
-		return {'dev': 'temp', 'circuit': self.circuit, 'address': self.address,
-				'value': self.value, 'lost': self.lost, 'time': self.time, 'interval': self.interval, 'typ': self.type}
+		return {'dev': 'temp', 
+			    'circuit': self.circuit, 
+			    'address': self.address,
+				'value': self.value, 
+				'lost': self.lost, 
+				'time': self.time, 
+				'interval': self.interval, 
+				'typ': self.type}
 		
 
 	def simple(self):
-		return {'dev': 'temp', 'circuit': self.circuit, 'value': self.value, 'lost': self.lost, 'typ': self.type}
+		return {'dev': 'temp', 
+			    'circuit': self.circuit, 
+			    'value': self.value, 
+			    'lost': self.lost, 
+			    'typ': self.type}
 
 	def read_val_from_sens(self, sens):
 		new_val = float(sens.temperature)
@@ -124,15 +134,27 @@ class DS2438(MySensor):  # vdd + vad + thermometer
 	def full(self):
 		if not (type(self.value) is tuple):
 			self.value = (None, None, None)
-		return {'dev': 'temp', 'circuit': self.circuit, 'humidity': (((float(self.value[1]) / (float(self.value[0]) - 0.16)) / 0.0062) / (1.0546 - 0.00216 * float(self.value[2]))), 'vdd': self.value[0], 'vad': self.value[1],
-				 'temp': self.value[2], 'lost': self.lost, 'time': self.time, 'interval': self.interval,
-				   'typ': self.type}
+		return {'dev': 'temp', 
+			    'circuit': self.circuit, 
+			    'humidity': (((float(self.value[1]) / (float(self.value[0]) - 0.16)) / 0.0062) / (1.0546 - 0.00216 * float(self.value[2]))), 
+			    'vdd': self.value[0], 
+			    'vad': self.value[1],
+				'temp': self.value[2], 
+				'lost': self.lost, 
+				'time': self.time, 
+				'interval': self.interval,
+				'typ': self.type}
 
 	def simple(self):
 		if not (type(self.value) is tuple):
 			self.value = (None, None, None)
-		return {'dev': 'temp', 'circuit': self.circuit, 'vdd': self.value[0], 'vad': self.value[1],
-				 'temp': self.value[2], 'lost': self.lost, 'typ': self.type}
+		return {'dev': 'temp', 
+			    'circuit': self.circuit, 
+			    'vdd': self.value[0], 
+			    'vad': self.value[1],
+				'temp': self.value[2], 
+				'lost': self.lost, 
+				'typ': self.type}
 
 	def read_val_from_sens(self, sens):
 		self.value = (sens.VDD, sens.VAD, sens.temperature)
@@ -164,7 +186,11 @@ class DS2408(MySensor):
 		self.value = pios_values
 
 	def full(self):
-		return {'dev': '1wdevice', 'circuit': self.circuit, 'address': self.address, 'value': None, 'typ': self.type}		
+		return {'dev': '1wdevice', 
+			    'circuit': self.circuit, 
+			    'address': self.address, 
+			    'value': None, 
+			    'typ': self.type}		
 
 	def simple(self):
 		return self.full()
@@ -238,7 +264,9 @@ class OwBusDriver(multiprocessing.Process):
 
 
 	def full(self):
-		return {'dev': 'owbus', 'circuit': self.circuit, 'bus': self.bus}
+		return {'dev': 'owbus', 
+			    'circuit': self.circuit, 
+			    'bus': self.bus}
 
 	def list(self):
 		list = dict()

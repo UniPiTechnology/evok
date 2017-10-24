@@ -31,7 +31,7 @@ class Eprom(object):
 		self.__init_board_version()
 
 	def full(self):
-		return {'dev': 'ee', 'circuit': self.circuit}
+		return {'dev': 'ee', 'circuit': self.circuit, 'glob_dev_id': self.dev_id}
 
 	def stop(self):
 		self.i2cbus.i2c_close(self.i2c)
@@ -98,7 +98,7 @@ class UnipiMcp(object):
 		self.i2cbus.i2c_close(self.i2c)
 
 	def full(self):
-		return {'dev': 'mcp', 'circuit': self.circuit}
+		return {'dev': 'mcp', 'circuit': self.circuit, 'glob_dev_id': self.dev_id}
 
 	def register_relay(self, relay):
 		if not (relay in self.relays):
@@ -181,7 +181,7 @@ class Relay(object):
 		#self.logger.debug("Relay %d initialized on MCP", self.circuit)
 
 	def full(self):
-		return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value, 'pending': self.pending_id != 0}
+		return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value, 'pending': self.pending_id != 0, 'glob_dev_id': self.dev_id}
 
 	def simple(self):
 		return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value}
@@ -273,7 +273,7 @@ class UnipiMCP342x(object):
 		self.i2cbus.i2c_close(self.i2c)
 
 	def full(self):
-		return {'dev': 'adchip', 'circuit': self.circuit}
+		return {'dev': 'adchip', 'circuit': self.circuit, 'glob_dev_id': self.dev_id}
 
 	def switch_to_async(self, mainLoop):
 		mainLoop.add_callback(self.measure_loop, mainLoop)
@@ -449,7 +449,8 @@ class AnalogInput():
 
 	def full(self):
 		return {'dev': 'ai', 'circuit': self.circuit, 'value': self.value,
-				'time': self.mtime, 'interval': self.interval, 'bits': self.bits, 'gain': self.gain}
+				'time': self.mtime, 'interval': self.interval, 'bits': self.bits, 'gain': self.gain,
+				'glob_dev_id': self.dev_id, 'mode': "Simple", "modes": ["Simple"]}
 
 	def simple(self):
 		return {'dev': 'ai', 'circuit': self.circuit, 'value': self.value}
@@ -625,7 +626,7 @@ class UnipiPCA9685(object):
 		self.i2cbus.i2c_close(self.i2c)
 
 	def full(self):
-		return {'dev': 'pca9685', 'circuit': self.circuit}
+		return {'dev': 'pca9685', 'circuit': self.circuit, 'glob_dev_id': self.dev_id}
 
 	def register_output(self, output):
 		if not (output in self.channels):
@@ -645,7 +646,7 @@ class AnalogOutputPCA():
 		self.value = self.pca.channels[self.channel][1]/409.5
 
 	def full(self):
-		return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value, 'frequency': self.pca.frequency}
+		return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value, 'frequency': self.pca.frequency, 'glob_dev_id': self.dev_id}
 
 	def simple(self):
 		return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value}
@@ -686,7 +687,7 @@ class AnalogOutputGPIO():
 		gpiobus.set_PWM_dutycycle(pin, self.__calc_value(value))
 
 	def full(self):
-		return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value, 'frequency': self.frequency}
+		return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value, 'frequency': self.frequency, 'glob_dev_id': self.dev_id}
 
 	def simple(self):
 		return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value}
@@ -770,7 +771,8 @@ class Input():
 		return {'dev': 'input', 'circuit': self.circuit, 'value': self.value,
 				'bitvalue' : self.__value, 
 				'time': self.tick, 'debounce': self.debounce,
-				'counter_mode': self.counter_mode == 'rising' or self.counter_mode == 'falling'}
+				'counter_mode': self.counter_mode == 'rising' or self.counter_mode == 'falling',
+				'glob_dev_id': self.dev_id}
 
 	def simple(self):
 		return {'dev': 'input', 'circuit': self.circuit, 'value': self.value,
@@ -880,7 +882,7 @@ class DS2408_pio(object):
 class DS2408_input(DS2408_pio):
 	def full(self):
 		return {'dev': 'input', 'circuit': self.circuit, 'value': self.value,
-				'time': 0, 'debounce': 0}
+				'time': 0, 'debounce': 0, 'glob_dev_id': self.dev_id}
 
 	def simple(self):
 		return {'dev': 'input', 'circuit': self.circuit, 'value': self.value}
@@ -889,7 +891,7 @@ class DS2408_relay(DS2408_pio):
 	pending_id = 0
 
 	def full(self):
-		return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value, 'pending': self.pending_id != 0}
+		return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value, 'pending': self.pending_id != 0, 'glob_dev_id': self.dev_id}
 
 	def simple(self):
 		return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value}

@@ -23,13 +23,11 @@ from pymodbus.pdu import ModbusExceptions as merror
 
 __all__ = [ "StartTcpServer" ]
 
-
 #---------------------------------------------------------------------------#
 # Logging
 #---------------------------------------------------------------------------#
 import logging
 _logger = logging.getLogger(__name__)
-
 
 #---------------------------------------------------------------------------#
 # Modbus TCP Server
@@ -58,7 +56,6 @@ class ModbusServer(tcpserver.TCPServer):
         _logger.debug("Client Disconnected [%s]" % str(conn.address))
         self._connections.remove(conn)
 
-
 class ModbusConnection(object):
     """Handles a connection to Modbus/TCP client, executing modbus requests.
 
@@ -81,7 +78,6 @@ class ModbusConnection(object):
         """ deregister itself from ModbusServer"""
         delegate.on_close(self)
 
-
     def _on_data(self, data):
         """
         Callback when we receive any data
@@ -92,7 +88,6 @@ class ModbusConnection(object):
             _logger.debug(" ".join([hex(ord(x)) for x in data]))
         self.framer.processIncomingPacket(data, self.execute)
         self.stream.read_bytes(1,callback=self._on_data)
-
 
     def send(self, message):
         """ Send a request (string) to the network
@@ -106,7 +101,6 @@ class ModbusConnection(object):
             if _logger.isEnabledFor(logging.DEBUG):
                 _logger.debug('send: %s' % b2a_hex(pdu))
             return self.stream.write(pdu)
-
 
     def execute(self, request):
         """
@@ -125,7 +119,6 @@ class ModbusConnection(object):
         response.unit_id = request.unit_id
         self.send(response)
 
-
     @gen.coroutine
     def close(self):
         """ Closes the connection.
@@ -138,7 +131,6 @@ class ModbusConnection(object):
         #    yield self._serving_future
         #except Exception:
         #    pass
-
 
 class ModbusApplication(object):
     def __init__(self, store, framer=None, identity=None):
@@ -167,7 +159,6 @@ class ModbusApplication(object):
         if isinstance(identity, ModbusDeviceIdentification):
             self.control.Identity.update(identity)
 
-
 #---------------------------------------------------------------------------# 
 # Starting Factory
 #---------------------------------------------------------------------------# 
@@ -183,13 +174,11 @@ def StartTcpServer(context, identity=None, address=None):
     modbus_server.listen(address[1],address=address[0])
     ioloop.IOLoop.current().start()
 
-
 #--------------------------------------------------------------------------#
 # Testing proc
 #--------------------------------------------------------------------------#
 
 def main():
-
     logging.basicConfig()
     #server_log   = logging.getLogger("pymodbus.server")
     #protocol_log = logging.getLogger("pymodbus.protocol")
@@ -228,7 +217,6 @@ def main():
     identity.MajorMinorRevision = '1.0'
 
     StartTcpServer(context, identity=identity, address=("localhost", 5020)) 
-
 
 if __name__ == '__main__':
     main()

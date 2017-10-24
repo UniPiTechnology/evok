@@ -73,7 +73,7 @@ class ModbusCacheMap(object):
 						for index in range(m_reg_group['count']):
 							if (m_reg_group['start_reg'] + index) in self.neuron.datadeps and self.registered[(m_reg_group['start_reg'] + index)] != val.registers[index]:
 								for ddep in self.neuron.datadeps[m_reg_group['start_reg'] + index]:
-									if not ((isinstance(ddep, Input) or isinstance(ddep, ULED)) and not ddep.value_delta(val.registers[index])):
+									if (not ((isinstance(ddep, Input) or isinstance(ddep, ULED)))) or ddep.value_delta(val.registers[index]):
 										changeset += [ddep]
 							self.registered[(m_reg_group['start_reg'] + index)] = val.registers[index]
 							self.frequency[m_reg_group['start_reg']] = 1
@@ -128,7 +128,7 @@ class Neuron(object):
 		self.alias = ""
 		self.devtype = NEURON
 		self.dev_id = dev_id
-		self.circuit = circuit
+		self.circuit = str(circuit)
 		self.hw_dict = hw_dict
 		self.datadeps = {}
 		self.Config = Config
@@ -136,7 +136,7 @@ class Neuron(object):
 		self.modbus_server = modbus_server
 		self.modbus_port = modbus_port
 		self.major_group = major_group
-		self.modbus_address = circuit
+		self.modbus_address = 0
 		self.do_scanning = False
 		self.is_scanning = False
 		if scan_freq == 0:
@@ -155,15 +155,12 @@ class Neuron(object):
 		loop.add_callback(lambda: StartClient(self.client, self.modbus_server, self.modbus_port, self.readboards, callback_args=alias_dict))
 
 	@gen.coroutine
-	def set(self, print_log=None, alias=None):
-		if alias is not None:
-			if Devices.add_alias(alias, self, file_update=True):
-				self.alias = alias
-		if print_log is not None:
+	def set(self, print_log=None):
+		if print_log is not None and print_log != 0:
 			log_tail = subprocess.check_output(["tail", "-n 255", self.logfile])
 			raise gen.Return(log_tail)
 		else:	
-			raise gen.Return(self.full())
+			raise gen.Return("")
 
 	@gen.coroutine
 	def readboards(self, alias_dict):
@@ -179,7 +176,7 @@ class Neuron(object):
 					raise ENoBoard("Bad request")
 				else:
 					self.versions += [versions.registers]
-				board = Board(self.Config, i, self, versions.registers, direct_access=self.direct_access, dev_id=self.dev_id)
+				board = Board(self.Config, i, self, versions.registers, major_group=i, direct_access=self.direct_access, dev_id=self.dev_id)
 				yield board.parse_definition(self.hw_dict, i)
 				self.boards.append(board)
 			except ENoBoard:
@@ -207,8 +204,8 @@ class Neuron(object):
 			    'model': config.globals['model'], 
 			    'sn': config.globals['serial'], 
 			    'ver2': config.globals['version2'],
-			    'board_count': len(self.boards), 
-			    'version_registers': self.versions}
+			    'board_count': len(self.boards),
+			    'glob_dev_id': self.dev_id}
 		if self.alias != '':
 			ret['alias': self.alias]
 		return ret
@@ -267,15 +264,12 @@ class UartNeuron(object):
 		loop.add_callback(lambda: modbusclient_rs485.UartStartClient(self, self.readboards, callback_args=alias_dict))
 
 	@gen.coroutine
-	def set(self, alias=None, print_log=None):
-		if alias is not None:
-			if Devices.add_alias(alias, self, file_update=True):
-				self.alias = alias
-		if print_log is not None:
+	def set(self, print_log=None):
+		if print_log is not None and print_log != 0:
 			log_tail = subprocess.check_output(["tail", "-n 255", self.logfile])
 			raise gen.Return(log_tail)
 		else:
-			return gen.Return(self.full())
+			return gen.Return("")
 
 	@gen.coroutine
 	def readboards(self, alias_dict):
@@ -510,7 +504,7 @@ class UartBoard(object):
 						elif m_feature['type'] == 'REGISTER' and m_feature['major_group'] == board_id and self.direct_access:
 							while counter < max_count:
 								board_val_reg = m_feature['start_reg']
-								_reg = Register("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg + counter, dev_id=self.dev_id,
+								_reg = Register("%s_%02d" % (self.circuit, board_val_reg + counter), self, counter, board_val_reg + counter, dev_id=self.dev_id,
 											    major_group=0, legacy_mode=self.legacy_mode)
 								if board_val_reg and self.neuron.datadeps.has_key(board_val_reg + counter):
 									self.neuron.datadeps[board_val_reg + counter] += [_reg]
@@ -669,15 +663,16 @@ class Board(object):
 					elif m_feature['type'] == 'AI' and m_feature['major_group'] == board_id:
 						while counter < max_count:
 							board_val_reg = m_feature['val_reg']
+							tolerances = m_feature['tolerances']
 							if m_feature.has_key('cal_reg'):
 								_ai = AnalogInput("%s_%02d" % (self.circuit, len(Devices.by_int(AI, major_group=m_feature['major_group'])) + 1), self, board_val_reg + counter, regcal=m_feature['cal_reg'], regmode=m_feature['mode_reg'],
-												  dev_id=self.dev_id, major_group=m_feature['major_group'], modes=m_feature['modes'], legacy_mode=self.legacy_mode)
+												  dev_id=self.dev_id, major_group=m_feature['major_group'], tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
 							elif 'SecondaryAI' in m_feature['modes']:
 								_ai = AnalogInput("%s_%02d" % (self.circuit, len(Devices.by_int(AI, major_group=m_feature['major_group'])) + 1), self, board_val_reg + counter * 2, regmode=m_feature['mode_reg'],
-												 dev_id=self.dev_id, major_group=m_feature['major_group'], modes=m_feature['modes'], legacy_mode=self.legacy_mode)
+												 dev_id=self.dev_id, major_group=m_feature['major_group'], tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
 							else:
 								_ai = AnalogInput("%s_%02d" % (self.circuit, len(Devices.by_int(AI, major_group=m_feature['major_group'])) + 1), self, board_val_reg + counter * 2, dev_id=self.dev_id,
-												  major_group=m_feature['major_group'], regmode=m_feature['mode_reg'], modes=m_feature['modes'], legacy_mode=self.legacy_mode)
+												  major_group=m_feature['major_group'], regmode=m_feature['mode_reg'], tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
 							if self.neuron.datadeps.has_key(board_val_reg + counter):
 								self.neuron.datadeps[board_val_reg + counter]+=[_ai]
 							else:
@@ -687,7 +682,7 @@ class Board(object):
 					elif m_feature['type'] == 'REGISTER' and m_feature['major_group'] == board_id and self.direct_access:
 						while counter < max_count:
 							board_val_reg = m_feature['start_reg']
-							_reg = Register("%s_%02d" % (self.circuit, len(Devices.by_int(REGISTER, major_group=m_feature['major_group'])) + 1), self, counter, board_val_reg + counter, dev_id=self.dev_id,
+							_reg = Register("%s_%d" % (self.circuit, board_val_reg + counter), self, counter, board_val_reg + counter, dev_id=self.dev_id,
 										    major_group=m_feature['major_group'], legacy_mode=self.legacy_mode)
 							if board_val_reg and self.neuron.datadeps.has_key(board_val_reg + counter):
 								self.neuron.datadeps[board_val_reg + counter] += [_reg]
@@ -860,9 +855,8 @@ class Relay(object):
 				self.alias = alias
 
 		if timeout is None:
-			if self.mode == 'PWM':
-				raise gen.Return(self.full())
-			raise gen.Return((1 if value else 0))
+			raise gen.Return(self.full())
+
 
 		def timercallback():
 			self.pending_id = None
@@ -870,9 +864,8 @@ class Relay(object):
 
 		self.pending_id = IOLoop.instance().add_timeout(
 			datetime.timedelta(seconds=float(timeout)), timercallback)
-		if self.mode == 'PWM':
-			raise gen.Return(self.full())
-		raise gen.Return((1 if value else 0))
+
+		raise gen.Return(self.full())
 
 class ULED(object):
 	def __init__(self, circuit, arm, post, reg, mask, coil, dev_id=0, major_group=0, legacy_mode=True):
@@ -922,8 +915,9 @@ class ULED(object):
 		"""
 		yield self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.modbus_address)
 		raise gen.Return(1 if value else 0)
-
-	def set(self, value=None, alias=None, file_update=True):
+	
+	@gen.coroutine
+	def set(self, value=None, alias=None):
 		""" Sets new on/off status. Disable pending timeouts
 		"""
 		if alias is not None:
@@ -932,10 +926,7 @@ class ULED(object):
 		if value is not None:
 			value = int(value)
 			self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.modbus_address)
-			return (1 if value else 0)
-		else:
-			return self.full()
-
+		raise gen.Return(self.full())
 
 class Watchdog(object):
 	def __init__(self, circuit, arm, post, reg, timeout_reg, nv_save_coil=-1, reset_coil=-1, wd_reset_ro_coil=-1, dev_id=0, major_group=0, legacy_mode=True):
@@ -961,10 +952,9 @@ class Watchdog(object):
 		ret = {'dev': 'wd', 
 			   'circuit': self.circuit, 
 			   'value': self.value, 
-			   'timeout': self.timeout, 
-			   'was_wd_reset': self.was_wd_boot_value, 
-			   'reset': 0, 
-			   'nv_save':self.nvsavvalue, 
+			   'timeout': self.timeout[0], 
+			   'was_wd_reset': self.was_wd_boot_value,
+			   'nv_save' :self.nvsavvalue, 
 			   'glob_dev_id': self.dev_id}
 		if self.alias != '':
 			ret['alias'] = self.alias
@@ -1043,12 +1033,7 @@ class Watchdog(object):
 				self.nvsavvalue = 0
 				self.arm.neuron.client.write_coil(self.reset_coil, 1, unit=self.arm.modbus_address)
 		
-		if reset is not None:
-			raise gen.Return(1 if value else 0)
-		if timeout is not None or nv_save is not None:
-			val = yield self.full()
-			raise gen.Return(val)
-		raise gen.Return(1 if value else 0)
+		raise gen.Return(self.full())
 
 class Register():
 	def __init__(self, circuit, arm, post, reg, reg_type="input", dev_id=0, major_group=0, legacy_mode=True):
@@ -1101,7 +1086,7 @@ class Register():
 		raise gen.Return(value if value else 0)
 
 	@gen.coroutine
-	def set(self, value=None, timeout=None, alias=None):
+	def set(self, value=None, alias=None):
 		""" Sets new on/off status. Disable pending timeouts
 		"""
 		if alias is not None:
@@ -1110,7 +1095,7 @@ class Register():
 		if value is not None:
 			value = int(value)
 			self.arm.neuron.client.write_register(self.valreg, value if value else 0, unit=self.arm.modbus_address)
-			raise gen.Return(value if value else 0)
+
 		raise gen.Return(self.full())
 	
 class Input():
@@ -1178,30 +1163,22 @@ class Input():
 		return (self.regvalue() ^ new_val) & self.bitmask
 
 	def full(self):
-		if self.mode != 'DirectSwitch':
-			return {'dev': 'input',
-				    'circuit': self.circuit,
-				    'value': self.value,
-					'debounce': self.debounce, 
-					'counter_modes': self.counter_modes, 
-					'counter_mode': self.counter_mode,
-					'counter': self.counter if self.counter_mode == 'Enabled' else 0, 
-					'mode': self.mode,  
-					'modes': self.modes, 
-					'glob_dev_id': self.dev_id}
-		else:
-			return {'dev': 'input', 
-				    'circuit': self.circuit, 
-				    'value': self.value,
-					'debounce': self.debounce, 
-					'counter_modes': self.counter_modes, 
-					'counter_mode': self.counter_mode,
-					'counter': self.counter if self.counter_mode == 'Enabled' else 0, 
-					'mode': self.mode,  
-					'modes': self.modes, 
-					'ds_mode': self.ds_mode, 
-					'ds_modes': self.ds_modes, 
-					'glob_dev_id': self.dev_id}					
+		ret = {'dev': 'input',
+			   'circuit': self.circuit,
+			   'value': self.value,
+			   'debounce': self.debounce, 
+			   'counter_modes': self.counter_modes, 
+			   'counter_mode': self.counter_mode,
+			   'counter': self.counter if self.counter_mode == 'Enabled' else 0, 
+		       'mode': self.mode,  
+			   'modes': self.modes, 
+			   'glob_dev_id': self.dev_id }
+		if self.mode == 'DirectSwitch':
+			ret['ds_mode'] = self.ds_mode
+			ret['ds_modes'] = self.ds_modes
+		if self.alias == '':
+			ret['alias'] = self.alias
+		return ret					
 
 	def simple(self):
 		if self.counter_mode == 'Enabled':
@@ -1332,16 +1309,19 @@ class Uart():
 		return 0
 
 	def full(self):
-			return {'dev': 'uart', 
-				    'circuit': self.circuit, 
-				    'conf_value': self.conf, 
-				    'parity_modes': self.parity_modes, 
-				    'parity_mode': self.parity_mode,
-				    'speed_modes': self.speed_modes, 
-				    'speed_mode': self.speed_mode,
-				    'stopb_modes': self.stopb_modes, 
-				    'stopb_mode': self.stopb_mode, 
-				    'glob_dev_id': self.dev_id}
+		ret = {'dev': 'uart', 
+			   'circuit': self.circuit, 
+			   'conf_value': self.conf, 
+			   'parity_modes': self.parity_modes, 
+			   'parity_mode': self.parity_mode,
+			   'speed_modes': self.speed_modes, 
+			   'speed_mode': self.speed_mode,
+			   'stopb_modes': self.stopb_modes, 
+			   'stopb_mode': self.stopb_mode, 
+			   'glob_dev_id': self.dev_id}
+		if self.alias != '':
+			ret['alias'] = self.alias
+		return ret
 
 	def simple(self):
 		return {'dev': 'uart', 
@@ -1351,9 +1331,7 @@ class Uart():
 	@gen.coroutine
 	def set(self, conf_value=None, parity_mode=None, speed_mode=None, stopb_mode=None, alias=None):
 		val = self.regvalue()
-		if alias is not None:
-			if Devices.add_alias(alias, self, file_update=True):
-				self.alias = alias
+
 		if conf_value is not None:
 			self.arm.neuron.client.write_register(self.valreg, conf_value, unit=self.arm.modbus_address)
 		if parity_mode is not None and parity_mode in self.parity_modes and parity_mode != self.parity_mode:
@@ -1398,6 +1376,10 @@ class Uart():
 				val |= 0x00000040
 			self.arm.neuron.client.write_register(self.valreg, val, unit=self.arm.modbus_address)	
 			self.stopb_mode = stopb_mode
+		
+		if alias is not None:
+			if Devices.add_alias(alias, self, file_update=True):
+				self.alias = alias
 			
 		raise gen.Return(self.full())
 			
@@ -1461,14 +1443,14 @@ class WiFiAdapter():
 		subprocess.check_output(["ifconfig", "-a", "wlan0"])
 
 	def full(self):
-			return {'dev': 'wifi', 
-				    'ap_state': self.enabled, 
-				    'eth0_masq': self.routing_enabled, 
-				    'circuit': self.circuit, 
-				    #'ip': self.ip_addr, 
-				    #'packets_recieved': self.packets_recieved, 
-				    #'packets_sent': self.packets_sent,
-				    'glob_dev_id': self.dev_id}
+		ret = {'dev': 'wifi', 
+			   'ap_state': self.enabled, 
+			   'eth0_masq': self.routing_enabled, 
+			   'circuit': self.circuit, 
+			   'glob_dev_id': self.dev_id}
+		if self.alias != '':
+			ret['alias'] = self.alias
+		return ret
 
 	def simple(self):
 		return {'dev': 'wifi', 
@@ -1564,38 +1546,20 @@ class AnalogOutput():
 			return 0
 
 	def full(self):
-		if self.legacy_mode:
-			if self.mode == 'Resistance':
-				return {'dev': 'ao', 
-					    'circuit': self.circuit, 
-					    'value': self.res_value,
-					    'unit': unit_names[VOLT] if self.is_voltage() else unit_names[AMPERE], 
-					    'modes': self.modes, 
-					    'mode': self.mode}				
-			else:
-				return {'dev': 'ao', 
-					    'circuit': self.circuit, 
-					    'value': self.value,
-					    'unit': unit_names[VOLT] if self.is_voltage() else unit_names[AMPERE], 
-					    'modes': self.modes, 
-					    'mode': self.mode}
+		ret = {'dev': 'ao', 
+			   'circuit': self.circuit, 
+			   'mode': self.mode,
+			   'modes': self.modes, 
+			   'glob_dev_id': self.dev_id}		
+		if self.mode == 'Resistance':
+			ret['value'] = self.res_value,
+			ret['unit'] = (unit_names[OHM])
 		else:
-			if self.mode == 'Resistance':
-				return {'dev': 'ao', 
-					    'circuit': self.circuit, 
-					    'value': self.res_value,
-					    'unit': unit_names[VOLT] if self.is_voltage() else unit_names[AMPERE], 
-					    'modes': self.modes, 
-					    'mode': self.mode,
-					    'glob_dev_id': self.dev_id}
-			else:
-				return {'dev': 'ao', 
-					    'circuit': self.circuit, 
-					    'value': self.value,
-					    'unit': unit_names[VOLT] if self.is_voltage() else unit_names[AMPERE], 
-					    'modes': self.modes, 
-					    'mode': self.mode,
-					    'glob_dev_id': self.dev_id}							
+			ret['value'] = self.value
+			ret['unit'] = (unit_names[VOLT]) if self.is_voltage() else (unit_names[AMPERE]) 
+		if self.alias != '':
+			ret['alias'] = self.alias
+		return ret
 
 	def simple(self):
 		if self.mode == 'Resistance':
@@ -1624,7 +1588,7 @@ class AnalogOutput():
 			raise gen.Return(float(valuei) * 0.0025)
 
 	@gen.coroutine
-	def set(self, value=None, frequency=None, mode=None, alias=None):
+	def set(self, value=None, mode=None, alias=None):
 		if alias is not None:
 			if Devices.add_alias(alias, self, file_update=True):
 				self.alias = alias
@@ -1655,13 +1619,10 @@ class AnalogOutput():
 			elif valuei > 4095:
 				valuei = 4095
 			self.arm.neuron.client.write_register(self.reg, valuei, unit=self.arm.modbus_address)
-			if self.circuit == '1_01':
-				raise gen.Return(float(valuei) * self.factor + self.offset)
-			else:
-				raise gen.Return(float(valuei) * 0.0025)
+		raise gen.Return(self.full())
 
 class AnalogInput():
-	def __init__(self, circuit, arm, reg, regcal=-1, regmode=-1, dev_id=0, major_group=0, legacy_mode=True, modes=['Voltage']):
+	def __init__(self, circuit, arm, reg, regcal=-1, regmode=-1, dev_id=0, major_group=0, legacy_mode=True, tolerances='brain', modes=['Voltage']):
 		self.alias = ""
 		self.devtype = AI
 		self.dev_id = dev_id
@@ -1675,22 +1636,22 @@ class AnalogInput():
 		self.modes = modes
 		self.mode = 'Voltage'
 		self.unit_name = unit_names[VOLT]
+		self.tolerances = tolerances
 		self.sec_ai_mode = 0
-		if circuit != '1_01':
-			self.sec_ai_mode = self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, unit=self.arm.modbus_address)[0]
-			if self.sec_ai_mode != 0  and self.sec_ai_mode != 1 and 'SecondaryAI' in self.modes:
-				self.mode = 'SecondaryAI'
+		if self.tolerances == '500series':
+			self.sec_ai_mode = self.arm.neuron.modbus_cache_map.get_register(1, self.regmode, unit=self.arm.modbus_address)[0]
+			self.mode = self.get_500_series_mode()
+			self.unit_name = self.internal_unit
 		self.major_group = major_group
 		self.is_voltage = lambda: True
-		if circuit == '1_01' and regcal >= 0:
-			self.is_voltage = lambda: bool(self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, unit=self.arm.modbus_address)[0] == 0)
+		if self.tolerances == 'brain' and regcal >= 0:
+			self.is_voltage = lambda: bool(self.arm.neuron.modbus_cache_map.get_register(1, self.regmode, unit=self.arm.modbus_address)[0] == 0)
 			if self.is_voltage():
 				self.mode = "Voltage"
 			else:
 				self.mode = "Current"
 				self.unit_name = unit_names[AMPERE]
-		elif circuit != '1_01':
-			self.is_voltage = lambda: not bool(self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, unit=self.arm.modbus_address)[0] == 1)
+		self.tolerance_mode = self.get_tolerance_mode()
 		self.reg_shift = 2 if self.is_voltage() else 0
 		if regcal >= 0:
 			self.vfactor = arm.volt_ref / 4095 * (1 + uint16_to_int(self.arm.neuron.modbus_cache_map.get_register(1, regcal + self.reg_shift + 1, unit=self.arm.modbus_address)[0]) / 10000.0)
@@ -1726,59 +1687,146 @@ class AnalogInput():
 			logger.exception(str(E))
 			return 0
 
+
+	def get_tolerance_modes(self):
+		if self.tolerances == 'brain':
+			if self.mode == 'Voltage':
+				return ["10.0"]
+			else:
+				return ["20.0"]
+		elif self.tolerances == '500series':
+			if self.mode == 'Voltage':
+				return ["0.0", "2.5", "10.0"]
+			elif self.mode == 'Current':
+				return ["20.0"]
+			elif self.mode == "Resistance":
+				return ["1960.0", "100.0"]
+
+	def get_tolerance_mode(self):
+		if self.tolerances == 'brain':
+			if self.mode == 'Voltage':
+				return "10.0"
+			else:
+				return "20.0"
+		elif self.tolerances == '500series':
+			if self.sec_ai_mode == 0:
+				return "0.0"
+			elif self.sec_ai_mode == 1:
+				return "10.0"
+			elif self.sec_ai_mode == 2:
+				return "2.5"
+			elif self.sec_ai_mode == 3:
+				return "20.0"
+			elif self.sec_ai_mode == 4:
+				return "1960.0"
+			elif self.sec_ai_mode == 5:
+				return "100.0"
+
+	def get_500_series_mode(self):
+		if self.sec_ai_mode == 0:
+			return "Voltage"
+		elif self.sec_ai_mode == 1:
+			return "Voltage"
+		elif self.sec_ai_mode == 2:
+			return "Voltage"
+		elif self.sec_ai_mode == 3:
+			return "Current"
+		elif self.sec_ai_mode == 4:
+			return "Resistance"
+		elif self.sec_ai_mode == 5:
+			return "Resistance"
+
+	def get_500_series_sec_mode(self):
+		if self.mode == "Voltage":
+			if self.tolerance_mode == "0.0":
+				return 0
+			elif self.tolerance_mode == "10.0":
+				return 1
+			elif self.tolerance_mode == "2.5":
+				return 2
+		elif self.mode == "Current":
+			if self.tolerance_mode == "20.0":
+				return 3
+		elif self.mode == "Resistance":
+			if self.tolerance_mode == "1960.0":
+				return 4
+			elif self.tolerance_mode == "100.0":
+				return 5
+
 	@gen.coroutine
-	def set(self, mode=None, secondary_ai_mode=None, alias=None):
+	def set(self, mode=None, range=None, alias=None):
 		if alias is not None:
 			if Devices.add_alias(alias, self, file_update=True):
 				self.alias = alias
-		if mode is not None and mode in self.modes and mode != self.mode:
-			self.mode = mode
+		if mode is not None and mode in self.modes:
+			if self.tolerances == "brain" and mode != self.mode:
+				self.mode = mode
+				if self.mode == "Voltage":
+					self.unit_name = unit_names[VOLT]
+					#self.vfactor = (self.vfactor * 10) / 3
+					#self.vfactorx = (self.vfactorx * 10) / 3
+					yield self.arm.neuron.client.write_register(self.regmode, 0, unit=self.arm.modbus_address)
+				elif self.mode == "Current":
+					self.unit_name = unit_names[AMPERE]
+					#self.vfactor = (self.vfactor / 10) * 3
+					#self.vfactorx = (self.vfactorx / 10) * 3
+					yield self.arm.neuron.client.write_register(self.regmode, 1, unit=self.arm.modbus_address)
+				self.reg_shift = 2 if self.mode == "Voltage" else 0
+				if self.regcal >= 0:
+					self.vfactor = self.arm.volt_ref / 4095 * (1 + uint16_to_int(self.arm.neuron.modbus_cache_map.get_register(1, self.regcal + self.reg_shift + 1, unit=self.arm.modbus_address)[0]) / 10000.0)
+					self.vfactorx = self.arm.volt_refx / 4095 * (1 + uint16_to_int(self.arm.neuron.modbus_cache_map.get_register(1, self.regcal + self.reg_shift + 1, unit=self.arm.modbus_address)[0]) / 10000.0)
+					self.voffset = (uint16_to_int(self.arm.neuron.modbus_cache_map.get_register(1, self.regcal + self.reg_shift + 2, unit=self.arm.modbus_address)[0]) / 10000.0)
+				else:
+					self.vfactor = self.arm.volt_ref / 4095 * (1 / 10000.0)
+					self.vfactorx = self.arm.volt_refx / 4095 * (1 / 10000.0)	
+					self.voffset = 0
+				if self.is_voltage():
+					self.vfactor *= 3
+					self.vfactorx *= 3
+				else:
+					self.vfactor *= 10
+					self.vfactorx *= 10
+				self.tolerance_mode = self.get_tolerance_mode()
+			elif self.tolerances == "500series":
+				self.mode = mode
+				if self.mode == "Voltage":
+					self.unit_name = unit_names[VOLT]
+					self.sec_ai_mode = 1
+				elif self.mode == "Current":
+					self.unit_name = unit_names[AMPERE]
+					self.sec_ai_mode = 3
+				elif self.mode == "Resistance":
+					self.unit_name = unit_names[OHM]
+					self.sec_ai_mode = 4
+				self.tolerance_mode = self.get_tolerance_mode()
+				yield self.arm.neuron.client.write_register(self.regmode, self.sec_ai_mode, unit=self.arm.modbus_address)
+		if self.tolerances == '500series' and range is not None and range in self.get_tolerance_modes():
 			if self.mode == "Voltage":
 				self.unit_name = unit_names[VOLT]
-				if 'SecondaryAI' in self.modes:
-					self.vfactor = (self.factor * 10) / 3
-					self.vfactorx = (self.factor * 10) / 3
-					yield self.arm.neuron.client.write_register(self.regmode, 1, unit=self.arm.modbus_address)
-				else:
-					yield self.arm.neuron.client.write_register(self.regmode, 0, unit=self.arm.modbus_address)
 			elif self.mode == "Current":
-				self.unit_name = unit_names[AMPERE]
-				if 'SecondaryAI' in self.modes:
-					self.vfactor = (self.factor / 10) * 3
-					self.vfactorx = (self.factor / 10) * 3
-					yield self.arm.neuron.client.write_register(self.regmode, 3, unit=self.arm.modbus_address)				
-				else:
-					yield self.arm.neuron.client.write_register(self.regmode, 1, unit=self.arm.modbus_address)
-		if self.mode == 'SecondaryAI' and secondary_ai_mode is not None and secondary_ai_mode >= 0 and secondary_ai_mode < 6:
-			if secondary_ai_mode < 3:
-				self.unit_name = unit_names[VOLT]
-			elif secondary_ai_mode < 4:
 				self.unit_name = unit_names[AMPERE]
 			else:
 				self.unit_name = unit_names[OHM]
-			self.sec_ai_mode = secondary_ai_mode
+			self.tolerance_mode = range
+			self.sec_ai_mode = self.get_500_series_sec_mode()
 			yield self.arm.neuron.client.write_register(self.regmode, self.sec_ai_mode, unit=self.arm.modbus_address)
 		raise gen.Return(self.full())
 
 	def full(self):
-			if self.mode == 'SecondaryAI':
-				return {'dev': 'ai', 
-					    'circuit': self.circuit, 
-					    'value': self.value, 
-					    'unit': self.unit_name, 
-					    'glob_dev_id': self.dev_id, 
-					    'mode': self.mode, 
-					    'modes': self.modes, 
-					    'secondary_ai_mode': self.sec_ai_mode}
-			else:	
-				return {'dev': 'ai', 
-					    'circuit': self.circuit, 
-					    'value': self.value,
-					    'unit': self.unit_name,	
-					    'glob_dev_id': self.dev_id, 
-					    'mode': self.mode, 
-					    'modes': self.modes}
-		
+		ret = {'dev': 'ai', 
+    		   'circuit': self.circuit, 
+		   	   'value': self.value,
+		   	   'unit': self.unit_name,	
+		 	   'glob_dev_id': self.dev_id, 
+	           'mode': self.mode, 
+		   	   'modes': self.modes,
+		   	   'range': self.tolerance_mode,
+		   	   'range_modes': self.get_tolerance_modes()}
+		if self.alias != '':
+			ret['alias'] = self.alias
+		return ret
+
+	
 	def simple(self):
 		return {'dev': 'ai', 
 			    'circuit': self.circuit, 
@@ -1787,3 +1835,12 @@ class AnalogInput():
 	@property
 	def voltage(self):
 		return self.value
+
+	@property
+	def internal_unit(self):
+		if self.mode == "Voltage":
+			return unit_names[VOLT]
+		elif self.mode == "Current":
+			return unit_names[AMPERE]
+		else:
+			return unit_names[OHM]

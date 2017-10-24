@@ -2,7 +2,20 @@ $.fn.exists = function () {
     return this.length !== 0;
 }
 
-var legacy_api = true;
+$.postJSON = function(url, data, success, args) {
+	  args = $.extend({
+	    url: url,
+	    type: 'POST',
+	    data: JSON.stringify(data),
+	    contentType: 'application/json; charset=utf-8',
+	    dataType: 'json',
+	    async: true,
+	    success: success
+	  }, args);
+	  return $.ajax(args);
+};
+
+var legacy_api = false;
 var api_port = location.port || (location.protocol === 'https:' ? '443' : '80');
 
 var ws = null;
@@ -256,7 +269,8 @@ function SyncDevice(msg) {
             $('#' + main_el.id).flipswitch();
             $('#outputs_list').listview('refresh');
             $('#' + main_el.id).bind("change", function (event, ui) {
-                makePostRequest('relay/' + circuit, 'value=' + $(this).val());
+                //makePostRequest('relay/' + circuit, 'value=' + $(this).val());
+            	$.postJSON('relay/' + circuit, {value: $(this).val})
             });
         }
         else if (device == 'input') {
@@ -370,12 +384,14 @@ function update_values() {
 	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + '/rest/all',
 	        dataType: 'json',
 	        success: function (data) {
+				$("#unipi_loading_spinner").css('visibility', 'hidden');
 	            data = sortResults(data);
 	            $.each(data, function (name, msg) {
 	                SyncDevice(msg);
 	            });
 	        },
 	        error: function (data) {
+				$("#unipi_loading_spinner").css('visibility', 'visible');
 	        }
 	    });
     } else {
@@ -384,12 +400,14 @@ function update_values() {
 	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + '/rest/all',
 	        dataType: 'json',
 	        success: function (data) {
-	            data = sortResults(data);
+				$("#unipi_loading_spinner").css('visibility', 'hidden');
+	            data = sortResults(data.data);
 	            $.each(data, function (name, msg) {
 	                SyncDevice(msg);
 	            });
 	        },
 	        error: function (data) {
+				$("#unipi_loading_spinner").css('visibility', 'visible');
 	        }
 	    });    	
     }
@@ -428,6 +446,7 @@ function WebSocketRegister() {
         ws.onmessage = function (evt) {
             var received_msg = evt.data;
             var msg = JSON.parse(evt.data);
+			$("#unipi_loading_spinner").css('visibility', 'hidden');
             if (msg.constructor === Array) {
                 data = sortResults(msg);
                 $.each(data, function (name, msg) {
@@ -443,6 +462,10 @@ function WebSocketRegister() {
             setTimeout(WebSocketRegister, 1000);
             ws = null;
         };
+		
+		ws.onerror = function () {
+			$("#unipi_loading_spinner").css('visibility', 'visible');
+		};
     }
     else {
         alert("WebSocket NOT supported by your Browser!");
@@ -463,12 +486,14 @@ function makePostRequest(action, params) {
 	        }
 	    });
 	} else {
-	    $.ajax({
+		var to_send = {};
+
+		$.ajax({
 	    	crossDomain: true,
-	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + '/json',
+	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + '/rest/' + action,
 	    	dataType: "application/json",
 	        type: 'POST',
-	        data: JSON.stringify({"commands":[]}),
+	        data: JSON.stringify(params),
 	        success: function (data) {
 	        },
 	        error: function (data) {

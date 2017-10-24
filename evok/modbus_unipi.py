@@ -362,8 +362,6 @@ class UnipiContextGpio(UnipiContext):
 	'input' : (InputHandle(14,	 1,	  2,	  3),),
 	}
 
-
-
 identity = ModbusDeviceIdentification()
 identity.VendorName  = 'Unipi Technology'
 identity.ProductCode = 'Evok'

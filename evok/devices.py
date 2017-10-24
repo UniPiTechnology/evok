@@ -1,9 +1,10 @@
 import devents
 import yaml
+import re
 from log import *
 
 """
-   Structured list/dict of all devices in the system
+   Structured dict/dict of all devices in the system
    
 """
 class DeviceList(dict):
@@ -25,10 +26,6 @@ class DeviceList(dict):
 
 	def remove_item(self, key, value):
 		del (self[devtype_names[key]])[value.circuit]
-		#try:
-		#except KeyError:
-		#	del (self[self.altnames[key]])[value]
-		#super(DeviceList, self).pop(key)
 
 	def remove_global_device(self, glob_dev_id):
 		for devtype_name in devtype_names:
@@ -74,7 +71,6 @@ class DeviceList(dict):
 			devdict = self[devtype]
 		except KeyError:
 			devdict = self[self.altnames[devtype]]
-			#raise Exception('Invalid device type %s' % str(devtype))
 		if circuit is None:
 			return devdict.values()
 		try:
@@ -89,7 +85,7 @@ class DeviceList(dict):
 		""" can be called with devtype = INTEGER or NAME
 		"""
 		if devtype is None:
-			raise Exception('Devicetype must contain INTEGER OR NAME')
+			raise Exception('Device type must contain INTEGER or NAME')
 		if type(devtype) is int:
 			devdict = self._arr[devtype]
 		else:
@@ -98,7 +94,8 @@ class DeviceList(dict):
 		devents.config(device)
 
 	def add_alias(self, alias_key, device, file_update=False):
-		if not (alias_key.startswith("al_")):
+		if (not (alias_key.startswith("al_")) or (len(re.findall(r"[A-Za-z0-9\-\._]*", alias_key)) > 2)):
+			raise Exception("Invalid alias %s" % alias_key)
 			return False
 		if not alias_key in self.alias_dict:
 			if device.alias in self.alias_dict:
@@ -165,7 +162,7 @@ devtype_names = (
 	'uart',
 	'neuron',
 	'board',
-	'output',
+	'misc_output',
 	'led',
 	'watchdog',
 	'register',
@@ -174,7 +171,8 @@ devtype_names = (
 
 devtype_altnames = {
 	'di': 'input',
-	'do': 'output',
+	'output': 'relay',
+	'do': 'relay',
 	'analoginput': 'ai',
 	'analogoutput': 'ao',
 	'eprom': 'ee',
@@ -194,13 +192,13 @@ VOLT = 2
 AMPERE = 3
 OHM = 4
 
-unit_names = (
+unit_names = [
 	'',
 	'C',
 	'V',
 	'mA',
 	'Ohm',
-)
+]
 
 unit_altnames = {
 	'': '',
@@ -209,7 +207,3 @@ unit_altnames = {
 	'mA': 'miliampere',
 	'Ohm': 'ohm'
 }
-
-class UniPiDevice(object):
-	def __init__(self):
-		False
