@@ -1563,14 +1563,8 @@ def main():
 
 	logger.info("Starting using config file %s", config_path)
 
-	cookie_secret = Config.getstringdef("MAIN", "secret", "ut5kB3hhf6VmZCujXGQ5ZHb1EAfiXHcy")
 	hw_dict = config.HWDict('/etc/hw_definitions/')
 	alias_dict = (config.HWDict('/var/evok/')).definitions
-
-	pw = Config.getstringdef("MAIN", "password", "")
-	if pw: userCookieHelper._passwords.append(pw)
-	pw = Config.getstringdef("MAIN", "rpcpassword", "")
-	if pw: rpc_handler.userBasicHelper._passwords.append(pw)
 
 	cors = True
 	corsdomains = Config.getstringdef("MAIN", "cors_domains", "*")
@@ -1586,8 +1580,6 @@ def main():
 		modbus_port = options.as_dict()['modbus_port'] # use command-line option instead of config option
 	
 	app_routes = [
-		(r"/auth/login/?", LoginHandler),
-		(r"/auth/logout/?", LogoutHandler),
 		(r"/rpc/?", rpc_handler.Handler),
 		(r"/config/?", ConfigHandler),
 		(r"/config/cmd/?", RemoteCMDHandler),
@@ -1619,17 +1611,15 @@ def main():
 	]
 
 	app = tornado.web.Application(
-		handlers=app_routes,
-		login_url='/auth/login/',
-		cookie_secret=cookie_secret
+		handlers=app_routes
 	)
-	docs = get_api_docs(app_routes)
+	#docs = get_api_docs(app_routes)
 	#print docs
-	try:
-		with open('./API_docs.md', "w") as api_out:
-			api_out.writelines(docs)
-	except Exception, E:
-		logger.exception(str(E))
+	#try:
+	#	with open('./API_docs.md', "w") as api_out:
+	#		api_out.writelines(docs)
+	#except Exception, E:
+	#	logger.exception(str(E))
 
 	#### prepare http server #####
 	httpServer = tornado.httpserver.HTTPServer(app)
@@ -1703,7 +1693,7 @@ def main():
 		if sig in (signal.SIGTERM, signal.SIGINT):
 			tornado.ioloop.IOLoop.instance().add_callback(shutdown)
 
-	#gracefull shutdown
+	#graceful shutdown
 	def shutdown():
 		for bus in Devices.by_int(I2CBUS):
 			bus.bus_driver.switch_to_sync()

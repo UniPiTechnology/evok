@@ -1,0 +1,223 @@
+#%RAML 1.0
+title: EVOK API by UniPi
+version: 1
+protocols: [ HTTP, HTTPS ]
+baseUri: http://localhost/rest
+/all:
+  get:
+    description: The POST operation adds an object to a specified bucket using HTML forms.
+    responses:
+	  200:
+	    body:
+		  type: |
+		    {
+			"$schema": "http://json-schema.org/draft-04/schema#",
+			"title": "Neuron_Instruction",
+			"type": "array",
+			"items": {
+					"anyOf": [
+						{
+							"type": "object",
+							"properties": {
+								"dev": {
+									"type": "string",
+									"enum": ["input"]
+								},
+								"circuit": {"type": "string"},
+								"value": {"type": "number"},
+								"debounce": {"type": "number"},
+								"counter_mode": {
+									"type": "string",
+									"enum": ["Disabled", "Enabled"]
+								},
+								"counter_modes": {"type": "array", "items": {"type": "string"}},
+								"counter": {"type": "number"},
+								"mode": {"type": "string"},
+								"modes": {"type": "array", "items": {"type": "string"}},
+								"ds_mode": {"type": "string"},
+								"ds_modes": {"type": "array", "items": {"type": "string"}},
+								"glob_dev_id": {"type": "number"},
+								"alias": {"type": "string"}
+							},
+							"required": ["dev", "circuit", "value", "counter", "counter_mode", "debounce", "glob_dev_id"]
+						},
+						{
+							"type": "object",
+							"properties": {
+								"dev": {
+									"type": "string",
+									"enum": ["relay"]
+								},
+								"relay_type": {
+									"type": "string",
+									"enum": ["digital", "physical"],
+								},
+								"circuit": {"type": "string"},
+								"value": {"type": "number"},
+								"pending": {"type": "boolean"},
+								"mode": {"type": "string"},
+								"modes": {"type": "array", "items": {"type": "string"}},
+								"glob_dev_id": {"type": "number"},
+								"pwm_freq": {"type": "number"},
+								"pwm_duty": {"type": "number"},
+								"alias": {"type": "string"}
+							},
+							"required": ["dev", "circuit", "value", "pending", "glob_dev_id"]
+						},
+						{
+							"type": "object",
+							"properties": {
+								"dev": {
+									"type": "string",
+									"enum": ["ai"]
+								},
+								"circuit": {"type": "string"},
+								"value": {"type": "number"},
+								"unit": {"type": "string", "enum": ["V", "mA", "Ohm"]},
+								"glob_dev_id": {"type": "number"},
+								"mode": {"type": "string"},
+								"modes": {"type": "array", "items": {"type": "string"}},
+								"secondary_ai_mode": {"type": "number"},
+								"alias": {"type": "string"}
+							},
+							"required": ["dev", "circuit", "unit", "value", "glob_dev_id"]
+						},
+						{
+							"type": "object",
+							"properties": {
+								"dev": {
+									"type": "string",
+									"enum": ["ao"]
+								},
+								"circuit": {"type": "string"},
+								"mode": {"type": "string"},
+								"modes": {"type": "array", "items": {"type": "string"}},
+								"glob_dev_id": {"type": "number"},
+								"value": {"type": "number"},
+								"unit": {"type": "string", "enum": ["V", "mA", "Ohm"]},
+								"alias": {"type": "string"}
+							},
+							"required": ["dev", "circuit", "unit", "value", "glob_dev_id"]
+						},
+						{
+							"type": "object",
+							"properties": {
+								"dev": {
+									"type": "string",
+									"enum": ["led"]
+								},
+								"circuit": {"type": "string"},
+								"value": {"type": "number"},
+								"glob_dev_id": {"type": "number"},
+								"alias": {"type": "string"}
+							},
+							"required": ["dev", "circuit", "value", "glob_dev_id"]
+						},
+						{
+							"type": "object",
+							"properties": {
+								"dev": {
+									"type": "string",
+									"enum": ["wd"]
+								},
+								"circuit": {"type": "string"},
+								"value": {"type": "number"},
+								"timeout": {"type": "number"},
+								"was_wd_reset": {"type": "number"},
+								"nv_save": {"type": "number"},
+								"glob_dev_id": {"type": "number"},
+								"alias": {"type": "string"}
+							},
+							"required": ["dev", "circuit", "value", "timeout", "was_wd_reset", "nv_save", "glob_dev_id"]
+						},
+						{
+							"type": "object",
+							"properties": {
+								"dev": {
+									"type": "string",
+									"enum": ["neuron"]
+								},
+								"circuit": {"type": "string"},
+								"model": {"type": "string"},
+								"sn": {"type": "number"},
+								"ver2": {"type": "string"},
+								"board_count": {"type": "number"},
+								"glob_dev_id": {"type": "number"},
+								"uart_circuit": {"type": "string"},
+								"uart_port": {"type": "string"},
+								"alias": {"type": "string"}
+							},
+							"required": ["dev", "circuit", "glob_dev_id"]
+						},
+						{
+							"type": "object",
+							"properties": {
+								"dev": {
+									"type": "string",
+									"enum": ["register"]
+								},
+								"circuit": {"type": "string"},
+								"value": {"type": "number"},
+								"glob_dev_id": {"type": "number"},
+								"alias": {"type": "string"}
+							},
+							"required": ["dev", "circuit", "value", "glob_dev_id"]
+						},
+						{
+							"type": "object",
+							"properties": {
+								"dev": {
+									"type": "string",
+									"enum": ["temp", "1wdevice"]
+								},
+								"circuit": {"type": "string"},
+								"address": {"type": "string"},
+								"value": {},
+								"humidity": {"type": "number"},
+								"vdd": {"type": "number"},
+								"vad": {"type": "number"},
+								"temp": {"type": "number"},
+								"lost": {"type": "boolean"},
+								"time": {"type": "number"},
+								"interval": {"type": "number"},
+								"typ": {"type": "string"}
+							},
+							"required": ["dev", "circuit", "address", "typ"]
+						},
+						{
+							"type": "object",
+							"properties": {
+								"dev": {
+									"type": "string",
+									"enum": ["uart"]
+								},
+								"circuit": {"type": "string"},
+								"conf_value": {"type": "number"},
+								"parity_modes": {"type": "array", "items": {"type": "string"}},
+								"parity_mode": {"type": "string"},
+								"speed_modes": {"type": "array", "items": {"type": "string"}},
+								"speed_mode": {"type": "string"},
+								"stopb_modes": {"type": "array", "items": {"type": "string"}},
+								"stopb_mode": {"type": "string"},
+								"glob_dev_id": {"type": "number"},
+								"alias": {"type": "string"}
+							},
+							"required": ["dev", "circuit", "parity_modes", "parity_mode", "speed_modes", "speed_mode", "stopb_modes", "stopb_mode", "glob_dev_id"]
+						},
+						{
+							"type": "object",
+							"properties": {
+								"dev": {
+									"type": "string",
+									"enum": ["wifi"]
+								},
+								"circuit": {"type": "string"},
+								"ap_state": {"type": "string", "enum": ["Enabled", "Disabled"]},
+								"eth0_masq": {"type": "string", "enum": ["Enabled", "Disabled"]},
+								"glob_dev_id": {"type": "number"},
+								"alias": {"type": "string"}
+							},
+							"required": ["dev", "circuit", "ap_state", "eth0_masq", "glob_dev_id"]
+						}
+					]
+				}

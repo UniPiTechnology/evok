@@ -1470,7 +1470,10 @@ class WiFiAdapter():
 				subprocess.check_output(["systemctl", "start", "unipidns"])
 				self.enabled_val = True
 			else:
+				if not (("UP" in subprocess.check_output(["ifconfig", "-a", "wlan0"])) and ("running" in subprocess.check_output(["systemctl", "status", "unipidns"]))):
+					raise Exception("WiFi could not be terminated due to invalid state (possibly is starting up?)")
 				subprocess.check_output(["systemctl", "stop", "unipidns"])
+				subprocess.check_output(["systemctl", "stop", "unipiap"])
 				self.enabled_val = False
 		if eth0_masq is not None and eth0_masq in ['Enabled', 'Disabled'] and eth0_masq != self.routing_enabled:
 			if eth0_masq == 'Enabled':
@@ -1494,7 +1497,7 @@ class AnalogOutput():
 		self.regmode = regmode
 		self.legacy_mode = legacy_mode
 		self.reg_res = reg_res
-		self.regresvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.regres, unit=self.arm.modbus_address)[0]
+		self.regresvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.reg_res, unit=self.arm.modbus_address)[0]
 		self.modes = modes
 		self.arm = arm
 		self.major_group = major_group
@@ -1552,7 +1555,7 @@ class AnalogOutput():
 			   'modes': self.modes, 
 			   'glob_dev_id': self.dev_id}		
 		if self.mode == 'Resistance':
-			ret['value'] = self.res_value,
+			ret['value'] = self.res_value
 			ret['unit'] = (unit_names[OHM])
 		else:
 			ret['value'] = self.value
