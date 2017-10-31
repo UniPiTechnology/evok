@@ -838,7 +838,7 @@ class Relay(object):
 			self.arm.neuron.client.write_register(self.pwmprescalereg, self.pwm_prescale_val, unit=self.arm.modbus_address)
 			self.arm.neuron.client.write_register(self.pwmdutyreg, self.pwm_duty_val, unit=self.arm.modbus_address)
 		
-		if self.mode == 'PWM' and pwm_duty is not None:
+		if self.mode == 'PWM' and pwm_duty is not None and float(pwm_duty) > 0.0 and float(pwm_duty) < 100.1:
 			self.pwm_duty = pwm_duty
 			self.pwm_duty_val = float(self.pwm_cycle_val) * float(float(self.pwm_duty) / 100.0)
 			
@@ -938,7 +938,7 @@ class Watchdog(object):
 		self.major_group = major_group
 		self.legacy_mode = legacy_mode
 		self.timeoutvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.toreg, unit=self.arm.modbus_address)
-		self.regvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.toreg, unit=self.arm.modbus_address)
+		self.regvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.toreg, unit=self.arm.modbus_address)[0]
 		self.nvsavvalue = 0
 		self.resetvalue = 0
 		self.nv_save_coil = nv_save_coil
@@ -1003,7 +1003,6 @@ class Watchdog(object):
 		self.arm.neuron.client.write_register(self.valreg, 1 if value else 0, unit=self.arm.modbus_address)
 		raise gen.Return(1 if value else 0)
 
-
 	@gen.coroutine
 	def set(self, value=None, timeout=None, reset=None, nv_save=None, alias=None):
 		""" Sets new on/off status. Disable pending timeouts
@@ -1020,18 +1019,21 @@ class Watchdog(object):
 			self.arm.neuron.client.write_coil(self.nv_save_coil, 1, unit=self.arm.modbus_address)		
 		if value is not None:
 			value = int(value)
-			if not (timeout is None):
-				timeout = int(timeout)
-				if timeout > 65535:
-					timeout = 65535
-				self.arm.neuron.client.write_register(self.toreg, timeout, unit=self.arm.modbus_address)
+
 				
 		self.arm.neuron.client.write_register(self.valreg, 1 if value else 0, unit=self.arm.modbus_address)
+		
+		if not (timeout is None):
+			timeout = int(timeout)
+			if timeout > 65535:
+				timeout = 65535
+			self.arm.neuron.client.write_register(self.toreg, timeout, unit=self.arm.modbus_address)
 		
 		if self.reset_coil >= 0 and reset is not None:
 			if reset != 0:
 				self.nvsavvalue = 0
 				self.arm.neuron.client.write_coil(self.reset_coil, 1, unit=self.arm.modbus_address)
+				logger.info("Performed reset of board %s" % self.circuit)
 		
 		raise gen.Return(self.full())
 
@@ -1176,7 +1178,7 @@ class Input():
 		if self.mode == 'DirectSwitch':
 			ret['ds_mode'] = self.ds_mode
 			ret['ds_modes'] = self.ds_modes
-		if self.alias == '':
+		if self.alias != '':
 			ret['alias'] = self.alias
 		return ret					
 
@@ -1232,11 +1234,11 @@ class Input():
 			self.counter_mode = counter_mode		
 		
 		if debounce is not None:
-			if self.debouncereg is not None:
-				yield self.arm.neuron.client.write_register(self.debouncereg, int(float(debounce)), unit=self.arm.modbus_address)
+			if self.regdebounce is not None:
+				yield self.arm.neuron.client.write_register(self.regdebounce, int(float(debounce)), unit=self.arm.modbus_address)
 		if counter is not None:
-			if self.counterreg is not None:
-				yield self.arm.neuron.client.write_register(self.counterreg, int(float(counter)), unit=self.arm.modbus_address)
+			if self.regcounter is not None:
+				yield self.arm.neuron.client.write_register(self.regcounter, int(float(counter)), unit=self.arm.modbus_address)
 		raise gen.Return(self.full())
 
 	def get(self):
@@ -1595,7 +1597,7 @@ class AnalogOutput():
 		if alias is not None:
 			if Devices.add_alias(alias, self, file_update=True):
 				self.alias = alias
-		if mode is not None and mode in self.modes:
+		if mode is not None and mode in self.modes and self.regmode != -1:
 			val = self.arm.neuron.modbus_cache_map.get_register(1, self.regmode, unit=self.arm.modbus_address)[0]
 			cur_val = self.value
 			if mode == "Voltage":

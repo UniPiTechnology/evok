@@ -26,31 +26,11 @@
     ================================================== -->
     <script rel="javascript" type="text/javascript" src="js/jquery/jquery-2.1.1.min.js"></script>
     <script rel="javascript" type="text/javascript" src="js/jquery/jquery.mobile-1.4.5.min.js"></script>
-    <script rel="javascript" type="text/javascript" src="js/jquery/jquery.tmpl.js"></script>
-    <script rel="javascript" type="text/javascript" src="js/wsbase.js"></script>
-    <script rel="javascript" type="text/javascript" src="js/pages.js"></script>
-    <script rel="javascript" type="text/javascript" src="js/config.js"></script>
+    <script rel="javascript" type="text/javascript" src="js/main.js"></script>
     <script type="text/javascript">
-        //inject templates to the document
-        $.get("templates/templates.tmpl.html", function(templates) {
-            $("body").append(templates);
-        });
         $(document).ready(function() {
-            WebSocketRegister();
-            update_values();
-
-            //hacky way to check ssh password
-            setInterval(function () {
-                CheckNewSshPassword();
-            }, 100);
-        });
-        $(document).on("pagecreate", "#page-settings", function () {
-            $("#template-device-edit-page").tmpl(pages_descr).appendTo("#pages-container");
-            get_config();
-        });
-        $(document).on("pagebeforecreate", "#page-system", function () {
-            $("#template-system-page").tmpl(syspages_descr).appendTo("#div_services_container");
-            get_config();
+            webSocketRegister();
+            updateValues();
         });
     </script>
 
@@ -115,12 +95,9 @@
         <!-- /system -->
         
         <div id="configs" class="ui-content" data-inset="true">
-        	<div id="unipi_digital_inputs_conf">
-				<h4>Digital Inputs</h4>
-				<div class="ui-grid-d ui-responsive">
-					<div class="ui-block-a" id="unipi_id_test_config"><a href="#unipi_config_form_div" id="unipi_config_form_test_button" class="ui-btn ui-shadow ui-corner-all">1.01</a></div>
-				</div>
-			</div>
+        	<div id="unipi_save_all_button_div">
+        		<button class="ui-btn ui-corner-all" id="unipi_save_all_button">Save current state to Flash</button>
+        	</div>
         </div>
         <!-- /configs -->
         
@@ -131,23 +108,6 @@
     <div data-role="popup" id="unipi_config_form_div">
     	<form id="unipi_config_form">
     		<div style="padding:20px 20px;" class="" id="unipi_config_form_inner_div">
-    			<h3>Analog Input Settings</h3>
-    			<h5>Circuit: 1.01</h5>
-    			<label for="unipi_config_form_mode_select_field">Mode:</label>
-    			<select name="unipi_config_form_mode_select_field" data-iconpos="left">
-    				<option value="Voltage">Voltage</option>
-    				<option value="Current">Current</option>
-    				<option value="Resistance">Resistance</option>
-    			</select>
-    			<label for="unipi_config_form_range_select_field">Range:</label>
-    			<select name="unipi_config_form_range_select_field" data-iconpos="left">
-    			    <option value="0.0">0.0</option>
-    				<option value="2.5">2.5</option>
-    				<option value="10.0">10.0</option>
-    			</select>
-    			<label for="unipi_config_form_alias_field">Alias:</label>
-    			<input type="text" name="unipi_config_form_range_select_field" id="unipi_config_form_alias_field" data-wrapper-class="ui-btn">
-    			<button type="submit" class="ui-btn ui-corner-all ui-shadow">Submit</button>
     		</div>
     	</form>
     </div>

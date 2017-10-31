@@ -95,8 +95,15 @@ class DeviceList(dict):
 
 	def add_alias(self, alias_key, device, file_update=False):
 		if (not (alias_key.startswith("al_")) or (len(re.findall(r"[A-Za-z0-9\-\._]*", alias_key)) > 2)):
-			raise Exception("Invalid alias %s" % alias_key)
-			return False
+			if (alias_key == ''):
+				if device.alias in self.alias_dict:
+					del self.alias_dict[device.alias]
+				if file_update:
+					self.save_alias_dict()
+				return True
+			else:
+				raise Exception("Invalid alias %s" % alias_key)
+				return False
 		if not alias_key in self.alias_dict:
 			if device.alias in self.alias_dict:
 				del self.alias_dict[device.alias]
@@ -105,6 +112,8 @@ class DeviceList(dict):
 				self.save_alias_dict()
 			return True
 		else:
+			if (alias_key != device.alias):
+				raise Exception("Duplicate alias %s" % alias_key)
 			return False
 		
 	def save_alias_dict(self):
