@@ -8,6 +8,8 @@ EVOK is the primary Web API for [NEURON] and [UniPi 1.1] devices. It provides a 
 
 Evok is still in active development, so any testing, feedback and contributions are very much welcome and appreciated.
 
+### For more information see our documentation at [api-docs.io].
+
 ## Installation process for ***Neuron*** devices  
 
 In order to install EVOK on Neuron you will need an SD card with a standard ***Raspbian Jessie*** or ***Raspbian Stretch*** image. It is also necessary to enable SSH on the image by creating an empty file named "ssh" in the boot partition of your SD card (the partition should be visible on all systems which support FAT16, which includes Windows, Linux and OSX among others).
