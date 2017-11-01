@@ -1,4 +1,0 @@
-					<div class="ui-block-b"><a href="#unipi_config_form_div" data-rel="popup" data-position-to="window" class="ui-btn ui-shadow ui-corner-all">1.02</a></div>
-					<div class="ui-block-c"><a href="#" class="ui-btn ui-shadow ui-corner-all">1.03</a></div>
-					<div class="ui-block-d"><a href="#" class="ui-btn ui-shadow ui-corner-all">1.04</a></div>
-					<div class="ui-block-e"><a href="#" class="ui-btn ui-shadow ui-corner-all">1.05</a></div>
