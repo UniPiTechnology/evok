@@ -1,7 +1,5 @@
 ![alt text](https://github.com/UniPiTechnology/evok/raw/master/www/evok/js/jquery/images/Uni_pi_logo_new.svg?sanitize=true "UniPi logo")
 
-## Welcome to the UniPi EVOK Documentation
-
 # EVOK - the UniPi API
 
 EVOK is the primary Web API for [NEURON] and [UniPi 1.1] devices. It provides a RESTful interface over HTTP, a JSON-RPC interface, a WebSocket interface a SOAP interface and a bulk JSON interface to UniPi devices.
