@@ -1,13 +1,28 @@
+![alt text](https://github.com/UniPiTechnology/evok/raw/master/www/evok/js/jquery/images/Uni_pi_logo_new.svg?sanitize=true "UniPi logo")
+
+## Welcome to the UniPi EVOK Documentation
+
 # EVOK - the UniPi API
 
-EVOK is the primary WEB API for the [NEURON] and [UniPi 1.1]. It provides a RESTful interface over HTTP, remote-procedure calls and WebSocket interface to relays, digital and analog inputs, digital and analog outputs, board information, leds, and more.
+EVOK is the primary Web API for [NEURON] and [UniPi 1.1] devices. It provides a RESTful interface over HTTP, a JSON-RPC interface, a WebSocket interface a SOAP interface and a bulk JSON interface to UniPi devices.
 
-_**Support for Neuron is available only in the master branch (for now), not in the legacy release version. Please see the [intructions below]!**_
- 
-Evok is still very much in active development, so any testing, contributions and feedback is welcome and appreciated.
+Evok is still in active development, so any testing, feedback and contributions are very much welcome and appreciated.
 
+## Installation process for ***Neuron*** devices  
 
-# Installation process for UniPi 1.1
+In order to install EVOK on Neuron you will need an SD card with a standard ***Raspbian Jessie*** or ***Raspbian Stretch*** image. It is also necessary to enable SSH on the image by creating an empty file named "ssh" in the boot partition of your SD card (the partition should be visible on all systems which support FAT16, which includes Windows, Linux and OSX among others).
+
+To install EVOK itself first connect to your Neuron using SSH (there is a large number of clients you can use, for windows we recommend using [PUTTY]). The default username for Raspbian is "pi" and the default password is "raspberry". After you connect to your Neuron execute the following commands:
+
+    sudo su
+    wget https://github.com/UniPiTechnology/evok/archive/master.zip
+    unzip master.zip
+    cd evok-master
+    bash install-evok.sh
+
+The installation script should take care of everything else, but be aware there may be some issues with limited and/or broken functionality. Please report any bugs you find on the [github repository].
+
+## Installation process for the UniPi 1.1
 
 Access to GPIOs is done using the fantastic [PIGPIO] library. Make sure to install it first before use.
 
@@ -31,17 +46,13 @@ Run the installation script using the following instructions
     chmod +x install-evok.sh uninstall-evok.sh
     sudo ./install-evok.sh
 
-To uninstall it, run the uninstallation script, which is located in the `/opt/evok/` folder after Evok has been installed
+# Instructions for use
+ 
+The EVOK API can be accessed in several different ways, including SOAP, REST, Bulk JSON, JSON, WebSocket et al.
 
-    sudo ./uninstall-evok.sh
+### For more information see our documentation at [api-docs.io].
 
-If you wish to manually changed the configuration of evok, it can be done through the /etc/evok.conf file.
-
-Note that after uninstalling Evok you have to reboot your device to ensure all the files and settings are gone. 
-
-The installation script also enables the I2C subsystem (if not enabled before), but the uninstallation script does not disable it again.
-
-# Debugging
+## Debugging
 
 When reporting a bug or posting questions to [our forum] please set proper logging levels in /etc/evok.conf, restart your device and check the log file (/var/log/evok.log). For more detailed log information you can also run evok by hand. To do that you need to first stop the service by executing the
 
@@ -53,149 +64,19 @@ command and then run it manually as root user
 
 and look through/paste the output of the script.
 
-# Installing EVOK on Neuron 
+## Uninstallation
 
-_**(Beta only for now)**_
+To uninstall EVOK please run the uninstallation script which is located in the `/opt/evok/` folder.
 
-The installation script should take care of everything, but be aware there may be some issues with limited and/or broken functionality. Please report any bugs you find on this github repository.
+    sudo ./uninstall-evok.sh
 
-To install first connect to your Neuron via SSH (you can use standard ***Raspbian Jessie*** or ***Raspbian Stretch*** - username:pi password:raspberry) and run the following:
+Note that after uninstalling Evok you have to reboot your device to ensure all the files and settings are gone. 
 
-    sudo su
-    wget https://github.com/UniPiTechnology/evok/archive/master.zip
-    unzip master.zip
-    cd evok-master
-    bash install-evok.sh
+The installation script also enables the I2C subsystem (if it is not otherwise enabled before), but the uninstallation script does not disable it again.
 
-# API examples
+## Developer Note
 
-There are many ways of controlling your UniPi device, the easiest is using a web browser (make sure to copy the www folder to your desired location and edit evok.conf file) and them simply visit
-
-    http://your.pi.ip.address:88
-
-The example web interface is using websocket to receive all events from the UniPi and controls the UniPi device via the REST api.
-
-## REST API:
-### HTTP GET
-To get a state of your device you can send a HTTP GET request to evok:
-
-    GET /rest/DEVICE/CIRCUIT
-
-or:
-
-    GET /rest/DEVICE/CIRCUIT/PROPERTY
-
-Where DEVICE can be substituted by any of these: 'relay', 'di' or 'input', 'ai' or 'analoginput, 'ao' or 'analogoutput', 'sensor', 'neuron', 'led', 'register' CIRCUIT is the number of circuit (in case of 1Wire sensor, it is its address) corresponding to the number in your configuration file and PROPERTY is mostly 'value'.
-
-### HTTP POST
-Simple example using wget to get status of devices:
-* `wget -qO- http://your.pi.ip.address/rest/all` returns status of all devices configured in evok.conf
-* `wget -qO- http://your.pi.ip.address/rest/relay/1` returns status of relay with circuit nr. 1
-* `wget -qO- http://your.pi.ip.address/rest/relay/1/value` returns whether the relay 1 is on or of (1/0)
-* `wget -qO- http://your.pi.ip.address/rest/ao/1/value` returns the value of analog output
-* `wget -qO- http://your.pi.ip.address/rest/ai/1/value` returns the value of analog input
-
-To control a device, all requests must be sent by HTTP POST. Here is a small example of controlling a relay:
-* `wget -qO- http://your.pi.ip.address/rest/relay/3 --post-data='value=1'` sets relay on
-* `wget -qO- http://your.pi.ip.address/rest/relay/3 --post-data='value=0'` sets relay off
-* `wget -qO- http://your.pi.ip.address/rest/ao/1 --post-data='value=5'` set AO to 5V 
-
-### Websocket
-Register your client at ws://your.unipi.ip.address/ws to receive status messages. Once it is connected, you can also send various commands to the UniPi
-All messages over the websocket protocol are sent in standard JSON string format, e.g. use {"dev":"relay", "circuit":"1", "value":"1"} to set Relay 1 on.
-
-Please look through the wsbase.js file in the www/js/ folder to see more examples for controlling UniPi devices through websockets.
-
-### Python using JsonRPC
-You can also control the UniPi using Python library [jsonrpclib]. See the list of all available methods below.
-
-    from jsonrpclib import Server
-    s=Server("http://your.pi.ip.address/rpc")
-    s.relay_set(1,1)
-    s.relay_get(1)
-    s.relay_set(1,0)
-    s.relay_get(0)
-    s.ai_get(1)
-
-### Python using WebSocket
-
-    import websocket
-    import json
-
-    url = "ws://your.unipi.ip.address/ws"
-
-    def on_message(ws, message):
-        obj = json.loads(message)
-        dev = obj['dev']
-        circuit = obj['circuit']
-        value = obj['value']
-        print message
-
-    def on_error(ws, error):
-        print error
-
-    def on_close(ws):
-        print "Connection closed"
-
-    #receiving messages
-    ws = websocket.WebSocketApp(url, on_message = on_message, on_error = on_error, on_close = on_close)
-    ws.run_forever()
-
-    #sending messages
-    ws = websocket.WebSocket()
-    ws.connect(url)
-    ws.send('{"cmd":"set","dev":"relay","circuit":"3","value":"1"}')
-    ws.close()
-
-### Perl using JsonRPC
-A simple example of controlling the UniPi via RPC
-    use JSON::RPC::Client;
-
-    use JSON::RPC::Client;
-
-    my $client = new JSON::RPC::Client;
-    my $url    = 'http://your.pi.ip.address/rpc';
-
-    $client->prepare($url, ['relay_set']);
-    $client->relay_set(1,1);
-
-There is also a [websocket client library for Perl] to get more control.
-
-##List of available devices:
-* `relay` - relay
-* `input` or `di` - digital input 
-* `ai` - analog input
-* `ao` - analog output
-* `ee` - onboard eeprom
-* `sensor` - 1wire sensor
-* the rest can be found in devices.py 
-
-##List of available methods:
-
-* Digital Inputs
-    * `input_get(circuit)` - get all information of input by circuit number
-    * `input_get_value(circuit)` - get actual state f input by circuit number, returns 0=off/1=on
-    * `input_set(circuit)` - sets the debounce timeout
-* Relays
-    * `relay_get(circuit)` - get state of relay by circuit number
-    * `relay_set(circuit, value)` - set relay by circuit number according value 0=off, 1=on
-    * `relay_set_for_time(circuit, value, timeout)` - set relay by circuit number according value 0=off, 1=on for time(seconds) timeout
-* Analog Inputs
-    * `ai_get(circuit)` - get value of analog input by circuit number
-    * `input_get`
-* Analog Output
-    * `ao_set_value(circuit, value)` - set the value(0-10) of Analog Output by circuit number
-* 1-Wire bus
-    * `owbus_scan(circuit)` - force to scan 1Wire network for new devices
-* 1-Wire sensors
-    * `sensor_get(circuit)` - returns all information in array [value, is_lost, timestamp_of_value, scan_interval] of sensor by given circuit or 1Wire address
-    * `sensor_get_value(circuit)` - returns value of a circuit by given circuit or 1Wire address
-
-More methods can be found in the src file evok.py or owclient.py.
-
-Development
-============
-Want to contribute? Have any improvements or ideas? Great! We are open to all ideas. Contact us on info at unipi DOT technology
+Do you feel like contributing to EVOK, or perhaps have a neat idea for an improvement to our system? Great! We are open to all ideas. Get in touch with us via email to info at unipi DOT technology
 
 License
 ============
@@ -204,6 +85,9 @@ Apache License, Version 2.0
 ----
 Raspberry Pi is a trademark of the Raspberry Pi Foundation
 
+[api-docs.io]:https://evok-rest-api-22.api-docs.io/1.0
+[PUTTY]:http://www.putty.org/
+[github repository]:https://github.com/UniPiTechnology/evok
 [OpenSource image]:https://files.unipi.technology/s/public?path=%2FSoftware%2FOpen-Source%20Images
 [IndieGogo]:https://www.indiegogo.com/projects/unipi-the-universal-raspberry-pi-add-on-board
 [NEURON]:http://www.unipi.technology
@@ -212,8 +96,7 @@ Raspberry Pi is a trademark of the Raspberry Pi Foundation
 [tornado]:https://pypi.python.org/pypi/tornado/
 [toro]:https://pypi.python.org/pypi/toro/
 [tornardorpc]:https://github.com/joshmarshall/tornadorpc
-[jsonrpclib]:https://github.com/joshmarshall/jsonrpclib
-[websocket client library for Perl]:https://metacpan.org/pod/AnyEvent::WebSocket::Client
 [websocket Python library]:https://pypi.python.org/pypi/websocket-client/
 [our forum]:http://forum.unipi.technology/
 [intructions below]:https://github.com/UniPiTechnology/evok#installing-evok-for-neuron
+[jsonrpclib]:https://github.com/joshmarshall/jsonrpclib

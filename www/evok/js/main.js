@@ -961,13 +961,12 @@ function syncDevice(msg) {
         	break;
         }
         }
+    // Device representation already exists 
     } else if (device != 'register') {
-        //get elements
         var main_el = document.getElementById(device_signature + "_value");
         var label = document.getElementById(device_signature + "_label");
-        //and update values
         label.textContent = device_properties["device_name"];
-        //outputs
+        // Set device-specific data
         switch(device) {
         case "relay": {
             //unbind to prevent looping
