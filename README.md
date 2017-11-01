@@ -8,9 +8,20 @@ EVOK is the primary Web API for [NEURON] and [UniPi 1.1] devices. It provides a 
 
 Evok is still in active development, so any testing, feedback and contributions are very much welcome and appreciated.
 
+APIs included in EVOK:
+
+- RESTful WebForms API
+- RESTful JSON API
+- Bulk request JSON API
+- WebSocket API
+- SOAP API
+- JSON-RPC API
+
+EVOK also supports sending notifications via webhook.
+
 ### For more information see our documentation at [api-docs.io].
 
-## Installation process for ***Neuron*** devices  
+## Installation process for the 2.0 EVOK version  
 
 In order to install EVOK on Neuron you will need an SD card with a standard ***Raspbian Jessie*** or ***Raspbian Stretch*** image. It is also necessary to enable SSH on the image by creating an empty file named "ssh" in the boot partition of your SD card (the partition should be visible on all systems which support FAT16, which includes Windows, Linux and OSX among others).
 
@@ -24,7 +35,7 @@ To install EVOK itself first connect to your Neuron using SSH (there is a large 
 
 The installation script should take care of everything else, but be aware there may be some issues with limited and/or broken functionality. Please report any bugs you find on the [github repository].
 
-## Installation process for the UniPi 1.1
+## Installation process for the legacy version
 
 Access to GPIOs is done using the fantastic [PIGPIO] library. Make sure to install it first before use.
 
@@ -49,10 +60,10 @@ Run the installation script using the following instructions
     sudo ./install-evok.sh
 
 # Instructions for use
- 
+
 The EVOK API can be accessed in several different ways, including SOAP, REST, Bulk JSON, JSON, WebSocket et al.
 
-### For more information see our documentation at [api-docs.io].
+### For details on how to do so please see our documentation at [api-docs.io].
 
 ## Debugging
 
@@ -87,7 +98,6 @@ Apache License, Version 2.0
 ----
 Raspberry Pi is a trademark of the Raspberry Pi Foundation
 
-[api-docs.io]:https://evok-rest-api-22.api-docs.io/1.0
 [PUTTY]:http://www.putty.org/
 [github repository]:https://github.com/UniPiTechnology/evok
 [OpenSource image]:https://files.unipi.technology/s/public?path=%2FSoftware%2FOpen-Source%20Images

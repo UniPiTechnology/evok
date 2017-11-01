@@ -858,13 +858,13 @@ function syncDevice(msg) {
         main_el.id = device_signature + "_value";
 
 
-        //create label
+        //Create label
         label = document.createElement("label");
         label.id = device_signature + "_label";
         label.setAttribute("for", main_el.id);
         label.textContent = device_properties["device_name"];
 
-        //create structure
+        //Create the div structure
         div.appendChild(label);
         if (device == "ao") { 
         	div.appendChild(main_el);
@@ -874,7 +874,7 @@ function syncDevice(msg) {
         }
         li.appendChild(div);
 
-        //and append it to the html
+        //And append it to the html
         switch(device) {
         case "ai": {
             var divider = document.getElementById("unipi_temp_divider");

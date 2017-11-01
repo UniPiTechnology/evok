@@ -1,4 +1,27 @@
-Requires following libraries :
+EVOK uses the following third-party python libraries :
+
+tornado 
+toro 
+jsonrpclib 
+pymodbus 
+pyyaml 
+tornado_json 
+tornado-webservices
+
+as well as these native applications:
+
+python-ow 
+python-pip 
+make 
+python-dev 
+nginx 
+vim
+pydmodbus
+hostapd 
+dnsmasq 
+iproute2
+
+List of python imports:
 
 ------------ ADDITIONAL MODULES ---------------
 import ow

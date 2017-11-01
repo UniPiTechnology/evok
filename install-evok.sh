@@ -131,7 +131,7 @@ install_unipi_1() {
 	echo "############################################################################"
 	echo ' '
 	if ask "(Install WiFi?)"; then
-		apt-get install hostapd dnsmasq iproute2
+		apt-get install -y hostapd dnsmasq iproute2
 		systemctl disable hostapd dnsmasq
 		systemctl stop hostapd dnsmasq
 		sed -i -e 's/option domain-name/#option domain-name/' /etc/dhcp/dhcpd.conf
@@ -254,7 +254,7 @@ install_unipi_lite_1() {
 	echo "############################################################################"
 	echo ' '
 	if ask "(Install WiFi?)"; then
-		apt-get install hostapd dnsmasq iproute2
+		apt-get install -y hostapd dnsmasq iproute2
 		systemctl disable hostapd dnsmasq
 		systemctl stop hostapd dnsmasq
 		sed -i -e 's/option domain-name/#option domain-name/' /etc/dhcp/dhcpd.conf
@@ -377,7 +377,7 @@ install_unipi_neuron() {
 	echo "############################################################################"
 	echo ' '
 	if ask "(Install WiFi?)"; then
-		apt-get install hostapd dnsmasq iproute2
+		apt-get install -y hostapd dnsmasq iproute2
 		systemctl disable hostapd dnsmasq
 		systemctl stop hostapd dnsmasq
 		sed -i -e 's/option domain-name/#option domain-name/' /etc/dhcp/dhcpd.conf
