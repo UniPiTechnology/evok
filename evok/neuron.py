@@ -5,6 +5,8 @@
 import struct
 import time
 import datetime
+import unipidali
+import dali
 
 from math import isnan, floor, sqrt
 
@@ -34,6 +36,7 @@ from time import sleep
 from modbusclient_rs485 import AsyncErrorResponse
 from cgitb import reset
 import subprocess
+from unipidali import SyncUnipiDALIDriver
 
 class ENoBoard(Exception):
 	pass
@@ -698,6 +701,16 @@ class Board(object):
 										 stopb_modes=m_feature['stopb_modes'], legacy_mode=self.legacy_mode)
 							Devices.register_device(UART, _uart)
 							counter+=1
+					elif m_feature['type'] == 'DALI_CHANNEL' and m_feature['major_group'] == board_id:
+						while counter < max_count:
+							read_reg = m_feature['read_reg'] + (counter * 3)
+							write_reg = m_feature['write_reg'] + (counter * 2)
+							status_reg = m_feature['status_reg']
+							_dali_c = DALIChannel("%s_%d" % (self.circuit, len(Devices.by_int(DALI_CHANNEL, major_group=m_feature['major_group'])) + 1), 
+												  self, status_reg, 0x1 << counter, read_reg + 1, read_reg, write_reg, read_reg + 2, write_reg + 1, dev_id=self.dev_id, 
+												  major_group=m_feature['major_group'], legacy_mode=self.legacy_mode)
+							Devices.register_device(DALI_CHANNEL, _dali_c)
+							counter+=1
 
 class Relay(object):
 	pending_id = 0
@@ -927,6 +940,47 @@ class ULED(object):
 			value = int(value)
 			self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.modbus_address)
 		raise gen.Return(self.full())
+
+class DALIChannel(object):
+	def __init__(self, circuit, arm, reg_status, status_mask, reg_transmit, reg_receive, reg_receive_counter, reg_config_transmit, reg_config_receive, dev_id=0, major_group=0, legacy_mode=True):
+		self.alias = ""
+		self.devtype = DALI_CHANNEL
+		self.dev_id = dev_id
+		self.circuit = circuit
+		self.arm = arm
+		self.major_group = major_group
+		self.legacy_mode = legacy_mode
+		self.reg_status = reg_status
+		self.status_mask = status_mask
+		self.reg_transmit = reg_transmit
+		self.reg_receive = reg_receive
+		self.reg_receive_counter = reg_receive_counter
+		self.reg_config_transmit = reg_config_transmit
+		self.reg_config_receive = reg_config_receive
+		self.dali_driver = SyncUnipiDALIDriver()
+		
+	def full(self):
+		ret = {'dev': 'dali_channel', 'circuit': self.circuit, 'glob_dev_id': self.dev_id}
+		if self.alias != '':
+			ret['alias'] = self.alias
+		return ret
+
+
+	def simple(self):
+		return {'dev': 'dali_channel', 'circuit': self.circuit}
+	
+	@gen.coroutine
+	def set(self, broadcast_command=None, broadcast_argument=None, alias=None):
+		""" Sets new on/off status. Disable pending timeouts
+		"""
+		if alias is not None:
+			if Devices.add_alias(alias, self):
+				self.alias = alias
+		if broadcast_command is not None:
+			self.dali_driver.send(dali.command.Command(), 10)
+		raise gen.Return(self.full())
+
+
 
 class Watchdog(object):
 	def __init__(self, circuit, arm, post, reg, timeout_reg, nv_save_coil=-1, reset_coil=-1, wd_reset_ro_coil=-1, dev_id=0, major_group=0, legacy_mode=True):
