@@ -392,6 +392,9 @@ function populateConfigForm(form, device, circuit, data) {
 	case "register": {
 		break;
 	}
+	case "dali_channel": {
+		break;
+	}
 	default: {
 		break;
 	}
@@ -464,6 +467,9 @@ function getConfigurationFormTitle(device) {
 	}
 	case "register": {
 		return "Modbus Register Configuration";
+	}
+	case "dali_channel": {
+		return "DALI Channel Configuration";
 	}
 	default: {
 		return "Unknown Device Type Configuration";
@@ -540,6 +546,9 @@ function getDeviceCategoryName(device) {
 	}
 	case "do": {
 		return "Digital Outputs";
+	}
+	case "dali_channel": {
+		return "DALI Channels";
 	}
 	default: {
 		return "Unknown Device Type";
@@ -712,6 +721,9 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 		device_properties["wifi_eth0_masq"] = msg.eth0_masq;
 		break;
 	}
+	case "dali_channel": {
+		break;
+	}
 	}
     if ("alias" in msg) {
     	device_properties["device_name"] = circuit_display_name;
@@ -848,6 +860,10 @@ function syncDevice(msg) {
         	main_el.textContent = device_properties["wifi_ap_state"];
         	break;
         }
+        case "dali_channel": {
+        	main_el = document.createElement("h1");
+        	main_el.textContent = "Channel " + circuit; 
+        }
         default: {
             main_el = document.createElement("h1");
             main_el.textContent = device_properties["value"] + device_properties["unit"];
@@ -949,7 +965,7 @@ function syncDevice(msg) {
         	break;        	
         }
         case "wd": {
-        	var divider = document.getElementById("unipi_wifi_divider");
+        	var divider = document.getElementById("unipi_dali_channel_divider");
             var list = document.getElementById("system_list");
             list.insertBefore(li, divider);
         	$('#system_list').listview('refresh');
@@ -959,6 +975,13 @@ function syncDevice(msg) {
         	$('#system_list').append(li);
             $('#system_list').listview('refresh');
         	break;
+        }
+        case "dali_channel": {
+        	var divider = document.getElementById("unipi_wifi_divider");
+            var list = document.getElementById("system_list");
+            list.insertBefore(li, divider);
+        	$('#system_list').listview('refresh');
+        	break;        	
         }
         }
     // Device representation already exists 
@@ -1036,6 +1059,10 @@ function syncDevice(msg) {
         	main_el.innerHTML = device_properties["wifi_ap_state"];
         	break;
         }
+        case "dali_channel": {
+        	main_el.innerHTML = "Channel " + circuit;
+        	break;
+        }       
         default: {
             main_el.innerHTML = device_properties["value"] + device_properties["unit"];        	
             break;
@@ -1310,8 +1337,7 @@ function webSocketRegister() {
         uri = ((loc.protocol === "https:") ? "wss://" : "ws://") + loc.hostname + ':' + api_port;
 
         ws = new WebSocket(uri + "/ws");
-        //var wnd = null;
-
+        
         if (!ws) {
             setTimeout(webSocketRegister, 1000);
             return;

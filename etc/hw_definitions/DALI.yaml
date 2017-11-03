@@ -1,5 +1,5 @@
 ---
-type: DLI
+type: M60
 modbus_register_blocks:
     - board_index : 1
       start_reg   : 0
@@ -10,7 +10,7 @@ modbus_register_blocks:
       count       : 32
       frequency   : 5
     - board_index : 2
-      start_reg   : 0
+      start_reg   : 100
       count       : 21
       frequency   : 1
 modbus_features:
@@ -118,4 +118,4 @@ modbus_features:
     - type        : REGISTER
       major_group : 2
       count       : 21
-      start_reg   : 0
+      start_reg   : 100

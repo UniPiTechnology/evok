@@ -7,6 +7,7 @@ import time
 import datetime
 import unipidali
 import dali
+import dali.gear.general
 
 from math import isnan, floor, sqrt
 
@@ -37,6 +38,7 @@ from modbusclient_rs485 import AsyncErrorResponse
 from cgitb import reset
 import subprocess
 from unipidali import SyncUnipiDALIDriver
+from dali.address import Broadcast
 
 class ENoBoard(Exception):
 	pass
@@ -706,8 +708,8 @@ class Board(object):
 							read_reg = m_feature['read_reg'] + (counter * 3)
 							write_reg = m_feature['write_reg'] + (counter * 2)
 							status_reg = m_feature['status_reg']
-							_dali_c = DALIChannel("%s_%d" % (self.circuit, len(Devices.by_int(DALI_CHANNEL, major_group=m_feature['major_group'])) + 1), 
-												  self, status_reg, 0x1 << counter, read_reg + 1, read_reg, write_reg, read_reg + 2, write_reg + 1, dev_id=self.dev_id, 
+							_dali_c = DALIChannel("%s_%02d" % (self.circuit, len(Devices.by_int(DALI_CHANNEL, major_group=m_feature['major_group'])) + 1), 
+												  self, counter, status_reg, 0x1 << counter, read_reg + 1, read_reg, write_reg, read_reg + 2, write_reg + 1, dev_id=self.dev_id, 
 												  major_group=m_feature['major_group'], legacy_mode=self.legacy_mode)
 							Devices.register_device(DALI_CHANNEL, _dali_c)
 							counter+=1
@@ -942,7 +944,7 @@ class ULED(object):
 		raise gen.Return(self.full())
 
 class DALIChannel(object):
-	def __init__(self, circuit, arm, reg_status, status_mask, reg_transmit, reg_receive, reg_receive_counter, reg_config_transmit, reg_config_receive, dev_id=0, major_group=0, legacy_mode=True):
+	def __init__(self, circuit, arm, bus_number, reg_status, status_mask, reg_transmit, reg_receive, reg_receive_counter, reg_config_transmit, reg_config_receive, dev_id=0, major_group=0, legacy_mode=True):
 		self.alias = ""
 		self.devtype = DALI_CHANNEL
 		self.dev_id = dev_id
@@ -951,16 +953,18 @@ class DALIChannel(object):
 		self.major_group = major_group
 		self.legacy_mode = legacy_mode
 		self.reg_status = reg_status
+		self.bus_number = bus_number
 		self.status_mask = status_mask
 		self.reg_transmit = reg_transmit
 		self.reg_receive = reg_receive
 		self.reg_receive_counter = reg_receive_counter
 		self.reg_config_transmit = reg_config_transmit
 		self.reg_config_receive = reg_config_receive
-		self.dali_driver = SyncUnipiDALIDriver()
+		self.broadcast_commands = ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off", "turn_on_and_step_up", "DAPC", "reset", "identify_device", "DTR0", "DTR1", "DTR2"]
+		self.dali_driver = SyncUnipiDALIDriver(self.bus_number)
 		
 	def full(self):
-		ret = {'dev': 'dali_channel', 'circuit': self.circuit, 'glob_dev_id': self.dev_id}
+		ret = {'dev': 'dali_channel', 'circuit': self.circuit, 'glob_dev_id': self.dev_id, 'broadcast_commands': self.broadcast_commands}
 		if self.alias != '':
 			ret['alias'] = self.alias
 		return ret
@@ -977,7 +981,44 @@ class DALIChannel(object):
 			if Devices.add_alias(alias, self):
 				self.alias = alias
 		if broadcast_command is not None:
-			self.dali_driver.send(dali.command.Command(), 10)
+			if broadcast_command == "recall_max_level":
+				command = dali.gear.general.RecallMaxLevel(Broadcast())
+			elif broadcast_command == "recall_min_level":
+				command = dali.gear.general.RecallMinLevel(Broadcast())
+			elif broadcast_command == "off":
+				command = dali.gear.general.Off(Broadcast())
+			elif broadcast_command == "up":
+				command = dali.gear.general.Up(Broadcast())
+			elif broadcast_command == "down":
+				command = dali.gear.general.Down(Broadcast())
+			elif broadcast_command == "step_up":
+				command = dali.gear.general.StepUp(Broadcast())
+			elif broadcast_command == "step_down":
+				command = dali.gear.general.StepDown(Broadcast())
+			elif broadcast_command == "step_down_and_off":
+				command = dali.gear.general.StepDownAndOff(Broadcast())
+			elif broadcast_command == "turn_on_and_step_up":
+				command = dali.gear.general.OnAndStepUp(Broadcast())
+			elif broadcast_command == "DAPC" and broadcast_argument is not None:
+				if broadcast_argument == "MASK" or broadcast_argument == "OFF":
+					command = dali.gear.general.DAPC(Broadcast(), broadcast_argument)
+				else:
+					command = dali.gear.general.DAPC(Broadcast(), int(broadcast_argument))
+			elif broadcast_command == "reset":
+				command = dali.gear.general.Reset(Broadcast())
+			elif broadcast_command == "identify_device":
+				command = dali.gear.general.IdentifyDevice(Broadcast())
+			elif broadcast_command == "DTR0":
+				command = dali.gear.general.DTR0(int(broadcast_argument))
+			elif broadcast_command == "DTR1":
+				command = dali.gear.general.DTR1(int(broadcast_argument))
+			elif broadcast_command == "DTR2":
+				command = dali.gear.general.DTR2(int(broadcast_argument))
+			else:
+				raise Exception("Invalid DALI broadcast command: %d" % broadcast_command)
+			self.dali_driver.logger = logger
+			self.dali_driver.debug = True
+			print('Response: {}'.format(self.dali_driver.send(command)))
 		raise gen.Return(self.full())
 
 

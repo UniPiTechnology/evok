@@ -1260,6 +1260,7 @@ class RestLoadAllHandler(UserCookieHelper, APIHandler):
 		result += map(lambda dev: dev.full(), Devices.by_int(UART))
 		result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
 		result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
+		result += map(lambda dev: dev.full(), Devices.by_int(DALI_CHANNEL))
 		self.write(json.dumps(result))
 		self.set_header('Content-Type', 'application/json')
 		self.finish()
