@@ -42,7 +42,7 @@ class MySensor(object):
 		self.readtime = 0
 		self.sens = None
 		if is_static:
-			self.__bus = bus  #can't pickle, must be reset/set  by pickeling/unpicklgin
+			self.__bus = bus  #can't pickle, must be reset/set by pickling/un-pickling
 		bus.register_sensor(self)
 
 	def get_value(self):
