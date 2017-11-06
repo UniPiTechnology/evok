@@ -6,7 +6,7 @@ import struct
 import time
 import datetime
 import unipidali
-import dali
+from dali.bus import Bus
 import dali.gear.general
 
 from math import isnan, floor, sqrt
@@ -38,7 +38,7 @@ from modbusclient_rs485 import AsyncErrorResponse
 from cgitb import reset
 import subprocess
 from unipidali import SyncUnipiDALIDriver
-from dali.address import Broadcast
+from dali.address import Broadcast, Group
 
 class ENoBoard(Exception):
 	pass
@@ -943,6 +943,18 @@ class ULED(object):
 			self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.modbus_address)
 		raise gen.Return(self.full())
 
+class DALIDevice(object):
+	def __init__(self, circuit, arm, bus, dev_id=0):
+		self.alias = ""
+		self.devtype = DALI_DEVICE
+		self.dev_id = dev_id
+	
+	def full(self):
+		ret = {'dev': 'dali_channel', 'circuit': self.circuit, 'glob_dev_id': self.dev_id}
+		if self.alias != '':
+			ret['alias'] = self.alias
+		return ret
+
 class DALIChannel(object):
 	def __init__(self, circuit, arm, bus_number, reg_status, status_mask, reg_transmit, reg_receive, reg_receive_counter, reg_config_transmit, reg_config_receive, dev_id=0, major_group=0, legacy_mode=True):
 		self.alias = ""
@@ -960,11 +972,20 @@ class DALIChannel(object):
 		self.reg_receive_counter = reg_receive_counter
 		self.reg_config_transmit = reg_config_transmit
 		self.reg_config_receive = reg_config_receive
-		self.broadcast_commands = ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off", "turn_on_and_step_up", "DAPC", "reset", "identify_device", "DTR0", "DTR1", "DTR2"]
+		self.broadcast_commands = ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off", 
+								   "turn_on_and_step_up", "DAPC", "reset", "identify_device", "DTR0", "DTR1", "DTR2"]
+		self.group_commands = ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off", 
+							   "turn_on_and_step_up", "DAPC", "reset", "identify_device"]
 		self.dali_driver = SyncUnipiDALIDriver(self.bus_number)
+		self.dali_driver.logger = logger
+		self.dali_driver.debug = True
+		self.dali_bus = Bus(self.circuit, self.dali_driver)
 		
 	def full(self):
-		ret = {'dev': 'dali_channel', 'circuit': self.circuit, 'glob_dev_id': self.dev_id, 'broadcast_commands': self.broadcast_commands}
+		ret = {'dev': 'dali_channel', 'circuit': self.circuit, 'glob_dev_id': self.dev_id, 'broadcast_commands': self.broadcast_commands, 
+			   'group_commands': self.group_commands}
+		if self.dali_bus._bus_scanned:
+			ret['unused_ids'] = self.dali_bus.unused_addresses()
 		if self.alias != '':
 			ret['alias'] = self.alias
 		return ret
@@ -974,13 +995,24 @@ class DALIChannel(object):
 		return {'dev': 'dali_channel', 'circuit': self.circuit}
 	
 	@gen.coroutine
-	def set(self, broadcast_command=None, broadcast_argument=None, alias=None):
+	def set(self, broadcast_command=None, broadcast_argument=None, group_command=None, group_address=None, group_argument=None, scan=None, alias=None):
 		""" Sets new on/off status. Disable pending timeouts
 		"""
 		if alias is not None:
 			if Devices.add_alias(alias, self):
 				self.alias = alias
-		if broadcast_command is not None:
+		if scan is not None:
+#			finished = False
+#			while not finished:
+			#logger.info(self.dali_bus.find_next(0, 0xffffff))
+			try:
+				self.dali_bus.assign_short_addresses()
+			except Exception, E:
+				logger.exception(str(E))
+			
+			logger.info(self.dali_bus.unused_addresses())
+			logger.info(self.dali_bus._devices)
+		elif broadcast_command is not None:
 			if broadcast_command == "recall_max_level":
 				command = dali.gear.general.RecallMaxLevel(Broadcast())
 			elif broadcast_command == "recall_min_level":
@@ -1016,6 +1048,39 @@ class DALIChannel(object):
 				command = dali.gear.general.DTR2(int(broadcast_argument))
 			else:
 				raise Exception("Invalid DALI broadcast command: %d" % broadcast_command)
+			self.dali_driver.logger = logger
+			self.dali_driver.debug = True
+			print('Response: {}'.format(self.dali_driver.send(command)))
+		elif group_command is not None:
+			if group_command == "recall_max_level":
+				command = dali.gear.general.RecallMaxLevel(Group(group_address))
+			elif group_command == "recall_min_level":
+				command = dali.gear.general.RecallMinLevel(Group(group_address))
+			elif group_command == "off":
+				command = dali.gear.general.Off(Group(group_address))
+			elif group_command == "up":
+				command = dali.gear.general.Up(Group(group_address))
+			elif group_command == "down":
+				command = dali.gear.general.Down(Group(group_address))
+			elif group_command == "step_up":
+				command = dali.gear.general.StepUp(Group(group_address))
+			elif group_command == "step_down":
+				command = dali.gear.general.StepDown(Group(group_address))
+			elif group_command == "step_down_and_off":
+				command = dali.gear.general.StepDownAndOff(Group(group_address))
+			elif group_command == "turn_on_and_step_up":
+				command = dali.gear.general.OnAndStepUp(Group(group_address))
+			elif group_command == "DAPC" and group_argument is not None:
+				if group_argument == "MASK" or group_argument == "OFF":
+					command = dali.gear.general.DAPC(Group(group_address), group_argument)
+				else:
+					command = dali.gear.general.DAPC(Group(group_address), int(group_argument))
+			elif group_command == "reset":
+				command = dali.gear.general.Reset(Group(group_address))
+			elif group_command == "identify_device":
+				command = dali.gear.general.IdentifyDevice(Group(group_address))
+			else:
+				raise Exception("Invalid DALI broadcast command (and/or required argument was not provided): %d" % group_command)
 			self.dali_driver.logger = logger
 			self.dali_driver.debug = True
 			print('Response: {}'.format(self.dali_driver.send(command)))
