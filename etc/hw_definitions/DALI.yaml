@@ -1,5 +1,5 @@
 ---
-type: M60
+type: M61
 modbus_register_blocks:
     - board_index : 1
       start_reg   : 0

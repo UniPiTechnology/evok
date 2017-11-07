@@ -657,7 +657,7 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 		break;
 	}
 	case "uart": {
-		device_properties["device_name"] = "UART Port " + circuit_display_name;
+		device_properties["device_name"] = "Serial Port " + circuit_display_name;
     	device_properties["uart_speed_modes"] = msg.speed_modes;
     	device_properties["uart_speed_mode"] = msg.speed_mode;
     	device_properties["uart_parity_modes"] = msg.parity_modes;
@@ -722,6 +722,8 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 		break;
 	}
 	case "dali_channel": {
+		device_properties["device_name"] = "DALI Channel " + circuit_display_name;
+		device_properties["broadcast_commands"] = msg.broadcast_commands;
 		break;
 	}
 	}
@@ -861,8 +863,12 @@ function syncDevice(msg) {
         	break;
         }
         case "dali_channel": {
-        	main_el = document.createElement("h1");
-        	main_el.textContent = "Channel " + circuit; 
+            main_el = document.createElement("input");
+            main_el.className = "out";
+            main_el.min = 0;
+            main_el.step = 1.0;
+            main_el.max = 254;
+        	break;
         }
         default: {
             main_el = document.createElement("h1");
@@ -882,7 +888,7 @@ function syncDevice(msg) {
 
         //Create the div structure
         div.appendChild(label);
-        if (device == "ao") { 
+        if (device == "ao" || device == "dali_channel") { 
         	div.appendChild(main_el);
         } else {
         	div.appendChild(right_div); 
@@ -906,6 +912,7 @@ function syncDevice(msg) {
             $('#' + main_el.id).bind("slidestop", function (event, ui) {
                 makePostRequest('ao/' + circuit, 'value=' + $(this).val());
             });
+
         	break;
         }
         case "led": {
@@ -965,7 +972,7 @@ function syncDevice(msg) {
         	break;        	
         }
         case "wd": {
-        	var divider = document.getElementById("unipi_dali_channel_divider");
+        	var divider = document.getElementById("unipi_wifi_divider");
             var list = document.getElementById("system_list");
             list.insertBefore(li, divider);
         	$('#system_list').listview('refresh');
@@ -977,10 +984,16 @@ function syncDevice(msg) {
         	break;
         }
         case "dali_channel": {
-        	var divider = document.getElementById("unipi_wifi_divider");
-            var list = document.getElementById("system_list");
+        	var divider = document.getElementById("unipi_digital_divider");
+        	$("#unipi_dali_channel_divider").css("display", "block");
+            var list = document.getElementById("outputs_list");
             list.insertBefore(li, divider);
-        	$('#system_list').listview('refresh');
+            $('#' + main_el.id).slider();
+        	$('#outputs_list').listview('refresh');
+            $('#' + main_el.id).bind("slidestop", function (event, ui) {
+                makePostRequest('dali_channel/' + circuit, 'broadcast_command=DAPC&broadcast_argument=' + $(this).val());
+            });
+            $("#" + device_signature + "_value").val(0).slider("refresh");
         	break;        	
         }
         }
@@ -1060,7 +1073,7 @@ function syncDevice(msg) {
         	break;
         }
         case "dali_channel": {
-        	main_el.innerHTML = "Channel " + circuit;
+        	//main_el.innerHTML = "Channel " + circuit;
         	break;
         }       
         default: {
