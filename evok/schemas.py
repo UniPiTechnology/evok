@@ -1110,6 +1110,92 @@ all_get_out_schema = {
 						"eth0_masq",
 						"glob_dev_id"
 					]
+				},
+				{
+				    "type": "object",
+				    "properties": {
+				        "dev": {
+				            "type": "string",
+				            "enum": [
+				                "dali_channel"
+				            ]
+				        },
+				        "circuit": {
+				            "type": "string"
+				        },
+				        "broadcast_commands": {
+				            "type": "array",
+				            "items": {
+				                "type": [
+				                    "string"
+				                ],
+				                "enum": [
+				                    "recall_max_level",
+				                    "recall_min_level",
+				                    "off",
+				                    "up",
+				                    "down",
+				                    "step_up",
+				                    "step_down",
+				                    "step_down_and_off",
+				                    "turn_on_and_step_up",
+				                    "DAPC",
+				                    "reset",
+				                    "identify_device",
+				                    "DTR0",
+				                    "DTR1",
+				                    "DTR2"
+				                ]
+				            }
+				        },
+				        "group_commands": {
+				            "type": "array",
+				            "items": {
+				                "type": [
+				                    "string"
+				                ],
+				                "enum": [
+				                    "recall_max_level",
+				                    "recall_min_level",
+				                    "off",
+				                    "up",
+				                    "down",
+				                    "step_up",
+				                    "step_down",
+				                    "step_down_and_off",
+				                    "turn_on_and_step_up",
+				                    "DAPC",
+				                    "reset",
+				                    "identify_device"
+				                ]
+				            }
+				        },
+				        "glob_dev_id": {
+				            "type": "number",
+				            "minimum": 0
+				        },
+				        "alias": {
+				            "type": "string"
+				        },
+				        "scan_types": {
+				            "type": "array",
+				            "items": {
+				                "type": [
+				                    "string"
+				                ],
+				                "enum": [
+				                    "assigned",
+				                    "unassigned"
+				                ]
+				            }
+				        }
+				    },
+				    "required": [
+				        "dev",
+				        "circuit",
+				        "group_commands",
+				        "glob_dev_id"
+				    ]
 				}
 			]
 		}
@@ -1255,6 +1341,152 @@ relay_post_out_schema = {
 }
 
 relay_post_out_example = {"result": 1, "success": True}
+
+dali_channel_get_out_schema = {
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"title": "Neuron_Instruction",
+	"type": "object",
+	"properties": {
+		"dev": {
+			"type": "string",
+			"enum": [
+				"dali_channel"
+			]
+		},
+		"circuit": {
+			"type": "string"
+		},
+		"broadcast_commands": {
+			"type": "array",
+			"items": {
+				"type": [
+					"string"
+				],
+				"enum": [
+					"recall_max_level",
+					"recall_min_level",
+					"off",
+					"up",
+					"down",
+					"step_up",
+					"step_down",
+					"step_down_and_off",
+					"turn_on_and_step_up",
+					"DAPC",
+					"reset",
+					"identify_device",
+					"DTR0",
+					"DTR1",
+					"DTR2"
+				]
+			}
+		},
+		"group_commands": {
+			"type": "array",
+			"items": {
+				"type": [
+					"string"
+				],
+				"enum": [
+					"recall_max_level",
+					"recall_min_level",
+					"off",
+					"up",
+					"down",
+					"step_up",
+					"step_down",
+					"step_down_and_off",
+					"turn_on_and_step_up",
+					"DAPC",
+					"reset",
+					"identify_device"
+				]
+			}
+		},
+		"glob_dev_id": {
+			"type": "number",
+			"minimum": 0
+		},
+		"alias": {
+			"type": "string"
+		},
+		"scan_types": {
+			"type": "array",
+			"items": {
+				"type": [
+					"string"
+				],
+				"enum": [
+					"assigned",
+					"unassigned"
+				]
+			}
+		}
+	},
+	"required": [
+		"dev",
+		"circuit",
+		"group_commands",
+		"glob_dev_id"
+	]
+}
+
+dali_channel_get_out_example = {"scan_types": ["assigned","unassigned"], "broadcast_commands": ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off", 
+								   "turn_on_and_step_up", "DAPC", "reset", "identify_device", "DTR0", "DTR1", "DTR2"],
+							    "group_commands": ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off", 
+							   "turn_on_and_step_up", "DAPC", "reset", "identify_device"], "circuit": "2_01", "dev": "dali_channel", "glob_dev_id": 1}
+
+dali_channel_post_inp_schema = {
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"title": "Neuron_Instruction",
+	"type": "object",
+	"properties": {
+		"broadcast_command": {
+			"type": "string"
+		},
+		"broadcast_argument": {
+			"type": "number"
+		},
+		"group_command": {
+			"type": "string"
+		},
+		"group_address": {
+			"type": "number",
+			"minimum": 0,
+			"maximum": 63
+		},
+		"group_argument": {
+			"type": "number"
+		},
+		"alias": {
+			"type": "string"
+		},
+		"scan": {
+			"type": "string",
+			"enum": [
+				"unassigned",
+				"assigned"
+			]
+		}
+	}
+}
+
+dali_channel_post_inp_example = {"alias": "abc"}
+
+dali_channel_post_out_schema = {
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"title": "Neuron_Instruction",
+	"type": "object",
+	"properties": {
+		"result": { "type": "number"},
+		"error": { "type": "array"},
+		"success": { "type": "boolean"}
+	},
+	"required": ["success"]
+}
+
+dali_channel_post_out_example = {"result": 1, "success": True}
+
 
 ao_get_out_schema = {
 	"$schema": "http://json-schema.org/draft-04/schema#",

@@ -976,16 +976,17 @@ class DALIChannel(object):
 								   "turn_on_and_step_up", "DAPC", "reset", "identify_device", "DTR0", "DTR1", "DTR2"]
 		self.group_commands = ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off", 
 							   "turn_on_and_step_up", "DAPC", "reset", "identify_device"]
+		self.scan_types = ["assigned", "unassigned"]
 		self.dali_driver = SyncUnipiDALIDriver(self.bus_number)
-		self.dali_driver.logger = logger
-		self.dali_driver.debug = True
+		#self.dali_driver.logger = logger
+		#self.dali_driver.debug = True
 		self.dali_bus = Bus(self.circuit, self.dali_driver)
 		
 	def full(self):
 		ret = {'dev': 'dali_channel', 'circuit': self.circuit, 'glob_dev_id': self.dev_id, 'broadcast_commands': self.broadcast_commands, 
-			   'group_commands': self.group_commands}
-		if self.dali_bus._bus_scanned:
-			ret['unused_ids'] = self.dali_bus.unused_addresses()
+			   'group_commands': self.group_commands, 'scan_types': self.scan_types}
+		#if self.dali_bus._bus_scanned:
+		#	ret['unused_ids'] = self.dali_bus.unused_addresses()
 		if self.alias != '':
 			ret['alias'] = self.alias
 		return ret
@@ -1001,7 +1002,7 @@ class DALIChannel(object):
 		if alias is not None:
 			if Devices.add_alias(alias, self):
 				self.alias = alias
-		if scan is not None:
+		if scan is not None and scan is self.scan_types:
 #			finished = False
 #			while not finished:
 			#logger.info(self.dali_bus.find_next(0, 0xffffff))
@@ -1009,9 +1010,8 @@ class DALIChannel(object):
 				self.dali_bus.assign_short_addresses()
 			except Exception, E:
 				logger.exception(str(E))
-			
-			logger.info(self.dali_bus.unused_addresses())
-			logger.info(self.dali_bus._devices)
+			#logger.info(self.dali_bus.unused_addresses())
+			#logger.info(self.dali_bus._devices)
 		elif broadcast_command is not None:
 			if broadcast_command == "recall_max_level":
 				command = dali.gear.general.RecallMaxLevel(Broadcast())
