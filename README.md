@@ -67,7 +67,7 @@ The EVOK API can be accessed in several different ways, including SOAP, REST, Bu
 
 When reporting a bug or posting questions to [our forum] please set proper logging levels in /etc/evok.conf, restart your device and check the log file (/var/log/evok.log). For more detailed log information you can also run evok by hand. To do that you need to first stop the service by executing the
 
-    systemctl stop evok
+    sudo systemctl stop evok
 
 command and then run it manually as root user 
     
