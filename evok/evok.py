@@ -148,8 +148,7 @@ class WhHandler():
 
 
 class WsHandler(websocket.WebSocketHandler):
-	filter = []
-
+	
 	def check_origin(self, origin):
 		# fix issue when Node-RED removes the 'prefix://'
 		origin_origin = origin
@@ -166,6 +165,7 @@ class WsHandler(websocket.WebSocketHandler):
 		return True
 		
 	def open(self):
+		self.filter = ["default"]
 		logger.debug("New WebSocket client connected")
 		if not registered_ws.has_key("all"):
 			registered_ws["all"] = set()
@@ -176,12 +176,12 @@ class WsHandler(websocket.WebSocketHandler):
 		dev_all = device.full()
 		outp = []
 		try:
-			if len(self.filter) == 0:
+			if len(self.filter) == 1 and self.filter[0] == "default":
 				self.write_message(json.dumps(device.full()))
 			else:
 				for single_dev in dev_all:
 					if single_dev['dev'] in self.filter:
-						outp += single_dev
+						outp += [single_dev]
 				if len(outp) > 0:
 					self.write_message(json.dumps(outp))
 		except Exception as e:
@@ -205,16 +205,18 @@ class WsHandler(websocket.WebSocketHandler):
 					result += map(lambda dev: dev.full(), Devices.by_int(dev))
 				self.write_message(json.dumps(result))
 			#set device state
-			elif cmd == "filter":
+			elif "filter" in cmd:
 				devices = []
 				try:
 					for single_dev in message["devices"]:
-						if single_dev in devtype_names:
+						if str(single_dev) in devtype_names:
 							devices += [single_dev]
-					if len(devices) > 0:
+					if len(devices) > 0 or len(message["devices"]) == 0:
 						self.filter = devices
+					else:
+						raise Exception("Invalid 'devices' argument: %s" % str(message["devices"]))
 				except Exception,E:
-					logger.error("Exc: %s", str(E))
+					logger.exception("Exc: %s", str(E))
 			elif cmd is not None:
 				dev = message["dev"]
 				circuit = message["circuit"]
@@ -223,6 +225,8 @@ class WsHandler(websocket.WebSocketHandler):
 				except:
 					value = None
 				try:
+					if "full" in cmd:
+						self.write_message(json.dumps(result))
 					device = Devices.by_name(dev, circuit)
 					func = getattr(device, cmd)
 					if value is not None:
@@ -235,12 +239,9 @@ class WsHandler(websocket.WebSocketHandler):
 					if is_future(result):
 						result = yield result
 					#send response only to the modbusclient_rs485 requesting full info
-					if cmd == "full":
-						self.write_message(result)
 				#nebo except Exception as e:
 				except Exception, E:
 					logger.error("Exc: %s", str(E))
-					#self.write_message({"error_msg":"Couldn't process this request"})
 
 		except:
 			logger.debug("Skipping WS message: %s", message)
