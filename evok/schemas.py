@@ -255,7 +255,7 @@ uart_post_inp_schema = {
 	}
 }
 
-uart_post_inp_example = {"parity_mode": 'Even'}
+uart_post_inp_example = {"parity_mode": "Even"}
 
 uart_post_out_schema = {
 	"$schema": "http://json-schema.org/draft-04/schema#",
@@ -349,11 +349,18 @@ neuron_post_inp_schema = {
 	"title": "Neuron_Instruction",
 	"type": "object",
 	"properties": {
-		"value": { "type": "string"}
+		"print_log": {
+			"type": "number",
+			"minimum": 0,
+			"maximum": 1
+		}
 	},
+	"required": [
+		"print_log"
+	]
 }
 
-neuron_post_inp_example = {"value": '1'}
+neuron_post_inp_example = {"print_log": '1'}
 
 neuron_post_out_schema = {
 	"$schema": "http://json-schema.org/draft-04/schema#",
@@ -1556,34 +1563,27 @@ ao_get_out_example = {"value": -0.0001, "unit": "V", "circuit": "1_01", "dev": "
 ao_post_inp_schema = {
 	"$schema": "http://json-schema.org/draft-04/schema#",
 	"title": "Neuron_Instruction",
-    "type": "object",
-    "properties": {
-        "mode": {
-            "type": "string",
-            "enum": [
-                "Voltage",
-                "Current",
-                "SecondaryAI"
-            ]
-        },
-        "secondary_ai_mode": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 5
-        },
-        "alias": {
-            "type": "string"
-        },
-        "bits": {
-            "description": "Only for the UniPi 1.1"
-        },
-        "gain": {
-            "description": "Only for the UniPi 1.1"
-        },
-        "interval": {
-            "description": "Only for the UniPi 1.1"
-        }
-    }
+	"type": "object",
+	"properties": {
+		"value": {
+			"type": "number",
+			"minimum": 0
+		},
+		"mode": {
+			"type": "string",
+			"enum": [
+				"Voltage",
+				"Current",
+				"Resistance"
+			]
+		},
+		"alias": {
+			"type": "string"
+		},
+		"frequency": {
+			"description": "Only for the UniPi 1.1"
+		}
+	}
 }
 
 ao_post_inp_example = {"value": 1}
@@ -1747,14 +1747,12 @@ ai_post_out_schema = {
 	"title": "Neuron_Instruction",
 	"type": "object",
 	"properties": {
-		#"result": { "type": "number"},
+		"result": { "type": "object"},
 		"error": { "type": "array"},
-		"success": { "type": "boolean"}
-	},
-	"required": ["success"]
+	}
 }
 
-ai_post_out_example = {"result": 1, "success": True}
+ai_post_out_example = {"result": {}}
 
 
 wifi_get_out_schema = {
@@ -1822,11 +1820,9 @@ wifi_post_out_schema = {
 	"title": "Neuron_Instruction",
 	"type": "object",
 	"properties": {
-		#"result": { "type": "number"},
+		"result": { "type": "object"},
 		"error": { "type": "array"},
-		"success": { "type": "boolean"}
-	},
-	"required": ["success"]
+	}
 }
 
 wifi_post_out_example = {"result": 1, "success": True}
@@ -1972,14 +1968,12 @@ di_post_out_schema = {
 	"title": "Neuron_Instruction",
 	"type": "object",
 	"properties": {
-		"result": { "type": "number"},
+		"result": { "type": "object"},
 		"error": { "type": "array"},
-		"success": { "type": "boolean"}
-	},
-	"required": ["success"]
+	}
 }
 
-di_post_out_example = {"result": 1, "success": True}
+di_post_out_example = {"result": {}}
 
 register_get_out_schema = {
 	"$schema": "http://json-schema.org/draft-04/schema#",
@@ -2016,15 +2010,22 @@ register_get_out_schema = {
 	]
 }
 
-register_get_out_example = {"circuit": "1_01", "value": 1, "dev": "register"}
+register_get_out_example = {"circuit": "1_01", "value": 1, "dev": "register", "glob_dev_id": 1}
 
 register_post_inp_schema = {
 	"$schema": "http://json-schema.org/draft-04/schema#",
 	"title": "Neuron_Instruction",
 	"type": "object",
 	"properties": {
-		"value": { "type": "string"}
-	},
+		"value": {
+			"type": "number",
+			"minimum": 0,
+			"maximum": 65535
+		},
+		"alias": {
+			"type": "string"
+		}
+	}
 }
 
 register_post_inp_example = {"value": '1'}
@@ -2034,14 +2035,12 @@ register_post_out_schema = {
 	"title": "Neuron_Instruction",
 	"type": "object",
 	"properties": {
-		"result": { "type": "number"},
+		"result": { "type": "object"},
 		"error": { "type": "array"},
-		"success": { "type": "boolean"}
-	},
-	"required": ["success"]
+	}
 }
 
-register_post_out_example = {"result": 1, "success": True}
+register_post_out_example = {"result": {}}
 		
 		
 wd_get_out_schema = {
@@ -2096,15 +2095,37 @@ wd_get_out_schema = {
 	]
 }
 
-wd_get_out_example = {"circuit": "1_01", "value": 1, "dev": "led"}
+wd_get_out_example = {
+					  "circuit": "1_01",
+					  "value": 0,
+					  "glob_dev_id": 1,
+					  "dev": "wd",
+					  "timeout": 5000,
+					  "was_wd_reset": 0,
+  					  "nv_save": 0
+}
 
 wd_post_inp_schema = {
 	"$schema": "http://json-schema.org/draft-04/schema#",
 	"title": "Neuron_Instruction",
 	"type": "object",
 	"properties": {
-		"value": { "type": "string"}
-	},
+		"value": {
+			"type": "number"
+		},
+		"timeout": {
+			"type": "number"
+		},
+		"reset": {
+			"type": "number"
+		},
+		"nv_save": {
+			"type": "number"
+		},
+		"alias": {
+			"type": "string"
+		}
+	}
 }
 
 wd_post_inp_example = {"value": '1'}
@@ -2114,11 +2135,9 @@ wd_post_out_schema = {
 	"title": "Neuron_Instruction",
 	"type": "object",
 	"properties": {
-		"result": { "type": "number"},
+		"result": { "type": "object"},
 		"error": { "type": "array"},
-		"success": { "type": "boolean"}
-	},
-	"required": ["success"]
+	}
 }
 
-wd_post_out_example = {"result": 1, "success": True}
+wd_post_out_example = {"result": {}}
