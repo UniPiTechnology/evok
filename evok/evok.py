@@ -205,7 +205,7 @@ class WsHandler(websocket.WebSocketHandler):
 					result += map(lambda dev: dev.full(), Devices.by_int(dev))
 				self.write_message(json.dumps(result))
 			#set device state
-			elif "filter" in cmd:
+			elif cmd == "filter":
 				devices = []
 				try:
 					for single_dev in message["devices"]:
@@ -225,19 +225,20 @@ class WsHandler(websocket.WebSocketHandler):
 				except:
 					value = None
 				try:
-					if "full" in cmd:
+					if cmd == "full":
 						self.write_message(json.dumps(result))
-					device = Devices.by_name(dev, circuit)
-					func = getattr(device, cmd)
-					if value is not None:
-						if type(value) == dict:
-							result = func(**value)
-						else:
-							result = func(value)
 					else:
-						result = func()
-					if is_future(result):
-						result = yield result
+						device = Devices.by_name(dev, circuit)
+						func = getattr(device, cmd)
+						if value is not None:
+							if type(value) == dict:
+								result = func(**value)
+							else:
+								result = func(value)
+						else:
+							result = func()
+						if is_future(result):
+							result = yield result
 					#send response only to the modbusclient_rs485 requesting full info
 				#nebo except Exception as e:
 				except Exception, E:
