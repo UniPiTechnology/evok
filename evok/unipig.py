@@ -141,7 +141,6 @@ class UnipiMcp(object):
 
 	@gen.coroutine
 	def set_bitmap(self, mask, bitmap):
-
 		byte_val = (self.value & ~mask) | (bitmap & mask)
 		with (yield self.i2cbus.iolock.acquire()):
 			#write byte

@@ -215,6 +215,9 @@ class Neuron(object):
 			ret['alias': self.alias]
 		return ret
 	
+	def get(self): 
+		return self.full()
+	
 	@gen.coroutine
 	def scan_boards(self):
 		if self.client.connected:
@@ -323,7 +326,10 @@ class UartNeuron(object):
 		if self.alias != '':
 			ret['alias'] = self.alias
 		return ret
-		
+	
+	def get(self): 
+		return self.full()	
+	
 	@gen.coroutine
 	def scan_boards(self, invoc=False):
 		if self.is_scanning and invoc:
@@ -526,6 +532,9 @@ class UartBoard(object):
 								Devices.register_device(UART, _uart)
 								counter+=1
 
+	def get(self): 
+		return self.full()
+
 class Board(object):
 	def __init__(self, Config, circuit, neuron, versions, major_group=1, dev_id=0, direct_access=False):
 		self.alias = ""
@@ -714,6 +723,9 @@ class Board(object):
 							Devices.register_device(DALI_CHANNEL, _dali_c)
 							counter+=1
 
+	def get(self): 
+		return self.full()
+	
 class Relay(object):
 	pending_id = 0
 	def __init__(self, circuit, arm, coil, reg, mask, dev_id=0, major_group=0, pwmcyclereg=-1, pwmprescalereg=-1, pwmdutyreg=-1, legacy_mode=True, digital_only=False, modes=['Simple']):
@@ -882,6 +894,9 @@ class Relay(object):
 
 		raise gen.Return(self.full())
 
+	def get(self): 
+		return self.full()
+
 class ULED(object):
 	def __init__(self, circuit, arm, post, reg, mask, coil, dev_id=0, major_group=0, legacy_mode=True):
 		self.alias = ""
@@ -943,6 +958,9 @@ class ULED(object):
 			self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.modbus_address)
 		raise gen.Return(self.full())
 
+	def get(self): 
+		return self.full()
+
 class DALIDevice(object):
 	def __init__(self, circuit, arm, bus, dev_id=0):
 		self.alias = ""
@@ -954,6 +972,9 @@ class DALIDevice(object):
 		if self.alias != '':
 			ret['alias'] = self.alias
 		return ret
+	
+	def get(self): 
+		return self.full()
 
 class DALIChannel(object):
 	def __init__(self, circuit, arm, bus_number, reg_status, status_mask, reg_transmit, reg_receive, reg_receive_counter, reg_config_transmit, reg_config_receive, dev_id=0, major_group=0, legacy_mode=True):
@@ -991,6 +1012,9 @@ class DALIChannel(object):
 			ret['alias'] = self.alias
 		return ret
 
+
+	def get(self): 
+		return self.full()
 
 	def simple(self):
 		return {'dev': 'dali_channel', 'circuit': self.circuit}
@@ -1120,6 +1144,9 @@ class Watchdog(object):
 			ret['alias'] = self.alias
 		return ret
 	
+	def get(self): 
+		return self.full()
+	
 	def simple(self):
 		return {'dev': 'wd', 
 			    'circuit': self.circuit, 
@@ -1233,6 +1260,10 @@ class Register():
 			pass
 		return 0
 
+
+	def get(self): 
+		return self.full()
+
 	def get_state(self):
 		""" Returns ( status, is_pending )
 			  current on/off status is taken from last mcp value without reading it from hardware
@@ -1341,6 +1372,7 @@ class Input():
 		if self.alias != '':
 			ret['alias'] = self.alias
 		return ret					
+
 
 	def simple(self):
 		if self.counter_mode == 'Enabled':
@@ -1545,12 +1577,9 @@ class Uart():
 			
 		raise gen.Return(self.full())
 			
-	def get(self):
-		""" Returns ( value, debounce )
-			  current on/off value is taken from last value without reading it from hardware
-		"""
-		return (self.conf)
-
+	def get(self): 
+		return self.full()
+	
 	def get_value(self):
 		""" Returns value
 			  current on/off value is taken from last value without reading it from hardware
@@ -1645,6 +1674,9 @@ class WiFiAdapter():
 				subprocess.check_output(["iptables", "-t", "nat", "-D", "POSTROUTING", "-o", "eth0", "-j", "MASQUERADE"])
 				self.enabled_routing_val = False
 		raise gen.Return(self.full())
+
+	def get(self): 
+		return self.full()
 
 
 class AnalogOutput():
@@ -1785,6 +1817,9 @@ class AnalogOutput():
 				valuei = 4095
 			self.arm.neuron.client.write_register(self.reg, valuei, unit=self.arm.modbus_address)
 		raise gen.Return(self.full())
+
+	def get(self): 
+		return self.full()
 
 class AnalogInput():
 	def __init__(self, circuit, arm, reg, regcal=-1, regmode=-1, dev_id=0, major_group=0, legacy_mode=True, tolerances='brain', modes=['Voltage']):
@@ -1991,6 +2026,8 @@ class AnalogInput():
 			ret['alias'] = self.alias
 		return ret
 
+	def get(self): 
+		return self.full()
 	
 	def simple(self):
 		return {'dev': 'ai', 
