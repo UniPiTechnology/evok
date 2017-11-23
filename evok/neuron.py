@@ -5,6 +5,9 @@
 import struct
 import time
 import datetime
+import unipidali
+from dali.bus import Bus
+import dali.gear.general
 
 from math import isnan, floor, sqrt
 
@@ -34,6 +37,8 @@ from time import sleep
 from modbusclient_rs485 import AsyncErrorResponse
 from cgitb import reset
 import subprocess
+from unipidali import SyncUnipiDALIDriver
+from dali.address import Broadcast, Group
 
 class ENoBoard(Exception):
 	pass
@@ -210,6 +215,9 @@ class Neuron(object):
 			ret['alias': self.alias]
 		return ret
 	
+	def get(self): 
+		return self.full()
+	
 	@gen.coroutine
 	def scan_boards(self):
 		if self.client.connected:
@@ -318,7 +326,10 @@ class UartNeuron(object):
 		if self.alias != '':
 			ret['alias'] = self.alias
 		return ret
-		
+	
+	def get(self): 
+		return self.full()	
+	
 	@gen.coroutine
 	def scan_boards(self, invoc=False):
 		if self.is_scanning and invoc:
@@ -521,6 +532,9 @@ class UartBoard(object):
 								Devices.register_device(UART, _uart)
 								counter+=1
 
+	def get(self): 
+		return self.full()
+
 class Board(object):
 	def __init__(self, Config, circuit, neuron, versions, major_group=1, dev_id=0, direct_access=False):
 		self.alias = ""
@@ -698,7 +712,20 @@ class Board(object):
 										 stopb_modes=m_feature['stopb_modes'], legacy_mode=self.legacy_mode)
 							Devices.register_device(UART, _uart)
 							counter+=1
+					elif m_feature['type'] == 'DALI_CHANNEL' and m_feature['major_group'] == board_id:
+						while counter < max_count:
+							read_reg = m_feature['read_reg'] + (counter * 3)
+							write_reg = m_feature['write_reg'] + (counter * 2)
+							status_reg = m_feature['status_reg']
+							_dali_c = DALIChannel("%s_%02d" % (self.circuit, len(Devices.by_int(DALI_CHANNEL, major_group=m_feature['major_group'])) + 1), 
+												  self, counter, status_reg, 0x1 << counter, read_reg + 1, read_reg, write_reg, read_reg + 2, write_reg + 1, dev_id=self.dev_id, 
+												  major_group=m_feature['major_group'], legacy_mode=self.legacy_mode)
+							Devices.register_device(DALI_CHANNEL, _dali_c)
+							counter+=1
 
+	def get(self): 
+		return self.full()
+	
 class Relay(object):
 	pending_id = 0
 	def __init__(self, circuit, arm, coil, reg, mask, dev_id=0, major_group=0, pwmcyclereg=-1, pwmprescalereg=-1, pwmdutyreg=-1, legacy_mode=True, digital_only=False, modes=['Simple']):
@@ -867,6 +894,9 @@ class Relay(object):
 
 		raise gen.Return(self.full())
 
+	def get(self): 
+		return self.full()
+
 class ULED(object):
 	def __init__(self, circuit, arm, post, reg, mask, coil, dev_id=0, major_group=0, legacy_mode=True):
 		self.alias = ""
@@ -928,6 +958,160 @@ class ULED(object):
 			self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.modbus_address)
 		raise gen.Return(self.full())
 
+	def get(self): 
+		return self.full()
+
+class DALIDevice(object):
+	def __init__(self, circuit, arm, bus, dev_id=0):
+		self.alias = ""
+		self.devtype = DALI_DEVICE
+		self.dev_id = dev_id
+	
+	def full(self):
+		ret = {'dev': 'dali_channel', 'circuit': self.circuit, 'glob_dev_id': self.dev_id}
+		if self.alias != '':
+			ret['alias'] = self.alias
+		return ret
+	
+	def get(self): 
+		return self.full()
+
+class DALIChannel(object):
+	def __init__(self, circuit, arm, bus_number, reg_status, status_mask, reg_transmit, reg_receive, reg_receive_counter, reg_config_transmit, reg_config_receive, dev_id=0, major_group=0, legacy_mode=True):
+		self.alias = ""
+		self.devtype = DALI_CHANNEL
+		self.dev_id = dev_id
+		self.circuit = circuit
+		self.arm = arm
+		self.major_group = major_group
+		self.legacy_mode = legacy_mode
+		self.reg_status = reg_status
+		self.bus_number = bus_number
+		self.status_mask = status_mask
+		self.reg_transmit = reg_transmit
+		self.reg_receive = reg_receive
+		self.reg_receive_counter = reg_receive_counter
+		self.reg_config_transmit = reg_config_transmit
+		self.reg_config_receive = reg_config_receive
+		self.broadcast_commands = ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off", 
+								   "turn_on_and_step_up", "DAPC", "reset", "identify_device", "DTR0", "DTR1", "DTR2"]
+		self.group_commands = ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off", 
+							   "turn_on_and_step_up", "DAPC", "reset", "identify_device"]
+		self.scan_types = ["assigned", "unassigned"]
+		self.dali_driver = SyncUnipiDALIDriver(self.bus_number)
+		#self.dali_driver.logger = logger
+		#self.dali_driver.debug = True
+		self.dali_bus = Bus(self.circuit, self.dali_driver)
+		
+	def full(self):
+		ret = {'dev': 'dali_channel', 'circuit': self.circuit, 'glob_dev_id': self.dev_id, 'broadcast_commands': self.broadcast_commands, 
+			   'group_commands': self.group_commands, 'scan_types': self.scan_types}
+		#if self.dali_bus._bus_scanned:
+		#	ret['unused_ids'] = self.dali_bus.unused_addresses()
+		if self.alias != '':
+			ret['alias'] = self.alias
+		return ret
+
+
+	def get(self): 
+		return self.full()
+
+	def simple(self):
+		return {'dev': 'dali_channel', 'circuit': self.circuit}
+	
+	@gen.coroutine
+	def set(self, broadcast_command=None, broadcast_argument=None, group_command=None, group_address=None, group_argument=None, scan=None, alias=None):
+		""" Sets new on/off status. Disable pending timeouts
+		"""
+		if alias is not None:
+			if Devices.add_alias(alias, self):
+				self.alias = alias
+		if scan is not None and scan is self.scan_types:
+#			finished = False
+#			while not finished:
+			#logger.info(self.dali_bus.find_next(0, 0xffffff))
+			try:
+				self.dali_bus.assign_short_addresses()
+			except Exception, E:
+				logger.exception(str(E))
+			#logger.info(self.dali_bus.unused_addresses())
+			#logger.info(self.dali_bus._devices)
+		elif broadcast_command is not None:
+			if broadcast_command == "recall_max_level":
+				command = dali.gear.general.RecallMaxLevel(Broadcast())
+			elif broadcast_command == "recall_min_level":
+				command = dali.gear.general.RecallMinLevel(Broadcast())
+			elif broadcast_command == "off":
+				command = dali.gear.general.Off(Broadcast())
+			elif broadcast_command == "up":
+				command = dali.gear.general.Up(Broadcast())
+			elif broadcast_command == "down":
+				command = dali.gear.general.Down(Broadcast())
+			elif broadcast_command == "step_up":
+				command = dali.gear.general.StepUp(Broadcast())
+			elif broadcast_command == "step_down":
+				command = dali.gear.general.StepDown(Broadcast())
+			elif broadcast_command == "step_down_and_off":
+				command = dali.gear.general.StepDownAndOff(Broadcast())
+			elif broadcast_command == "turn_on_and_step_up":
+				command = dali.gear.general.OnAndStepUp(Broadcast())
+			elif broadcast_command == "DAPC" and broadcast_argument is not None:
+				if broadcast_argument == "MASK" or broadcast_argument == "OFF":
+					command = dali.gear.general.DAPC(Broadcast(), broadcast_argument)
+				else:
+					command = dali.gear.general.DAPC(Broadcast(), int(broadcast_argument))
+			elif broadcast_command == "reset":
+				command = dali.gear.general.Reset(Broadcast())
+			elif broadcast_command == "identify_device":
+				command = dali.gear.general.IdentifyDevice(Broadcast())
+			elif broadcast_command == "DTR0":
+				command = dali.gear.general.DTR0(int(broadcast_argument))
+			elif broadcast_command == "DTR1":
+				command = dali.gear.general.DTR1(int(broadcast_argument))
+			elif broadcast_command == "DTR2":
+				command = dali.gear.general.DTR2(int(broadcast_argument))
+			else:
+				raise Exception("Invalid DALI broadcast command: %d" % broadcast_command)
+			self.dali_driver.logger = logger
+			self.dali_driver.debug = True
+			print('Response: {}'.format(self.dali_driver.send(command)))
+		elif group_command is not None:
+			if group_command == "recall_max_level":
+				command = dali.gear.general.RecallMaxLevel(Group(group_address))
+			elif group_command == "recall_min_level":
+				command = dali.gear.general.RecallMinLevel(Group(group_address))
+			elif group_command == "off":
+				command = dali.gear.general.Off(Group(group_address))
+			elif group_command == "up":
+				command = dali.gear.general.Up(Group(group_address))
+			elif group_command == "down":
+				command = dali.gear.general.Down(Group(group_address))
+			elif group_command == "step_up":
+				command = dali.gear.general.StepUp(Group(group_address))
+			elif group_command == "step_down":
+				command = dali.gear.general.StepDown(Group(group_address))
+			elif group_command == "step_down_and_off":
+				command = dali.gear.general.StepDownAndOff(Group(group_address))
+			elif group_command == "turn_on_and_step_up":
+				command = dali.gear.general.OnAndStepUp(Group(group_address))
+			elif group_command == "DAPC" and group_argument is not None:
+				if group_argument == "MASK" or group_argument == "OFF":
+					command = dali.gear.general.DAPC(Group(group_address), group_argument)
+				else:
+					command = dali.gear.general.DAPC(Group(group_address), int(group_argument))
+			elif group_command == "reset":
+				command = dali.gear.general.Reset(Group(group_address))
+			elif group_command == "identify_device":
+				command = dali.gear.general.IdentifyDevice(Group(group_address))
+			else:
+				raise Exception("Invalid DALI broadcast command (and/or required argument was not provided): %d" % group_command)
+			self.dali_driver.logger = logger
+			self.dali_driver.debug = True
+			print('Response: {}'.format(self.dali_driver.send(command)))
+		raise gen.Return(self.full())
+
+
+
 class Watchdog(object):
 	def __init__(self, circuit, arm, post, reg, timeout_reg, nv_save_coil=-1, reset_coil=-1, wd_reset_ro_coil=-1, dev_id=0, major_group=0, legacy_mode=True):
 		self.alias = ""
@@ -959,6 +1143,9 @@ class Watchdog(object):
 		if self.alias != '':
 			ret['alias'] = self.alias
 		return ret
+	
+	def get(self): 
+		return self.full()
 	
 	def simple(self):
 		return {'dev': 'wd', 
@@ -1073,6 +1260,10 @@ class Register():
 			pass
 		return 0
 
+
+	def get(self): 
+		return self.full()
+
 	def get_state(self):
 		""" Returns ( status, is_pending )
 			  current on/off status is taken from last mcp value without reading it from hardware
@@ -1181,6 +1372,7 @@ class Input():
 		if self.alias != '':
 			ret['alias'] = self.alias
 		return ret					
+
 
 	def simple(self):
 		if self.counter_mode == 'Enabled':
@@ -1385,12 +1577,9 @@ class Uart():
 			
 		raise gen.Return(self.full())
 			
-	def get(self):
-		""" Returns ( value, debounce )
-			  current on/off value is taken from last value without reading it from hardware
-		"""
-		return (self.conf)
-
+	def get(self): 
+		return self.full()
+	
 	def get_value(self):
 		""" Returns value
 			  current on/off value is taken from last value without reading it from hardware
@@ -1485,6 +1674,9 @@ class WiFiAdapter():
 				subprocess.check_output(["iptables", "-t", "nat", "-D", "POSTROUTING", "-o", "eth0", "-j", "MASQUERADE"])
 				self.enabled_routing_val = False
 		raise gen.Return(self.full())
+
+	def get(self): 
+		return self.full()
 
 
 class AnalogOutput():
@@ -1625,6 +1817,9 @@ class AnalogOutput():
 				valuei = 4095
 			self.arm.neuron.client.write_register(self.reg, valuei, unit=self.arm.modbus_address)
 		raise gen.Return(self.full())
+
+	def get(self): 
+		return self.full()
 
 class AnalogInput():
 	def __init__(self, circuit, arm, reg, regcal=-1, regmode=-1, dev_id=0, major_group=0, legacy_mode=True, tolerances='brain', modes=['Voltage']):
@@ -1831,6 +2026,8 @@ class AnalogInput():
 			ret['alias'] = self.alias
 		return ret
 
+	def get(self): 
+		return self.full()
 	
 	def simple(self):
 		return {'dev': 'ai', 
