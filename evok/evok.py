@@ -148,8 +148,7 @@ class WhHandler():
 
 
 class WsHandler(websocket.WebSocketHandler):
-	filter = []
-
+	
 	def check_origin(self, origin):
 		# fix issue when Node-RED removes the 'prefix://'
 		origin_origin = origin
@@ -166,6 +165,7 @@ class WsHandler(websocket.WebSocketHandler):
 		return True
 		
 	def open(self):
+		self.filter = ["default"]
 		logger.debug("New WebSocket client connected")
 		if not registered_ws.has_key("all"):
 			registered_ws["all"] = set()
@@ -176,12 +176,12 @@ class WsHandler(websocket.WebSocketHandler):
 		dev_all = device.full()
 		outp = []
 		try:
-			if len(self.filter) == 0:
+			if len(self.filter) == 1 and self.filter[0] == "default":
 				self.write_message(json.dumps(device.full()))
 			else:
 				for single_dev in dev_all:
 					if single_dev['dev'] in self.filter:
-						outp += single_dev
+						outp += [single_dev]
 				if len(outp) > 0:
 					self.write_message(json.dumps(outp))
 		except Exception as e:
@@ -209,12 +209,14 @@ class WsHandler(websocket.WebSocketHandler):
 				devices = []
 				try:
 					for single_dev in message["devices"]:
-						if single_dev in devtype_names:
+						if str(single_dev) in devtype_names:
 							devices += [single_dev]
-					if len(devices) > 0:
+					if len(devices) > 0 or len(message["devices"]) == 0:
 						self.filter = devices
+					else:
+						raise Exception("Invalid 'devices' argument: %s" % str(message["devices"]))
 				except Exception,E:
-					logger.error("Exc: %s", str(E))
+					logger.exception("Exc: %s", str(E))
 			elif cmd is not None:
 				dev = message["dev"]
 				circuit = message["circuit"]
@@ -223,24 +225,24 @@ class WsHandler(websocket.WebSocketHandler):
 				except:
 					value = None
 				try:
-					device = Devices.by_name(dev, circuit)
-					func = getattr(device, cmd)
-					if value is not None:
-						if type(value) == dict:
-							result = func(**value)
-						else:
-							result = func(value)
-					else:
-						result = func()
-					if is_future(result):
-						result = yield result
-					#send response only to the modbusclient_rs485 requesting full info
 					if cmd == "full":
-						self.write_message(result)
+						self.write_message(json.dumps(result))
+					else:
+						device = Devices.by_name(dev, circuit)
+						func = getattr(device, cmd)
+						if value is not None:
+							if type(value) == dict:
+								result = func(**value)
+							else:
+								result = func(value)
+						else:
+							result = func()
+						if is_future(result):
+							result = yield result
+					#send response only to the modbusclient_rs485 requesting full info
 				#nebo except Exception as e:
 				except Exception, E:
 					logger.error("Exc: %s", str(E))
-					#self.write_message({"error_msg":"Couldn't process this request"})
 
 		except:
 			logger.debug("Skipping WS message: %s", message)
@@ -320,6 +322,77 @@ class LegacyRestHandler(UserCookieHelper, tornado.web.RequestHandler):
 		self.set_header('Content-Type', 'application/json')
 		self.finish()
 	
+	
+	def options(self):
+		self.set_status(204)
+		self.finish()
+
+class RestDALIChannelHandler(UserCookieHelper, APIHandler):
+	def initialize(self):
+		self.set_header("Access-Control-Allow-Origin", "*")
+		self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+		self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+		enable_cors(self)
+
+	# usage: GET /rest/DEVICE/CIRCUIT
+	#		or
+	#		GET /rest/DEVICE/CIRCUIT/PROPERTY
+	if not use_output_schema:
+		@tornado.web.authenticated
+		@schema.validate()
+		def get(self, circuit, prop):
+			device = Devices.by_name("dali_channel", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result
+	else:
+		@tornado.web.authenticated
+		@schema.validate(output_schema=schemas.dali_channel_get_out_schema, output_example=schemas.dali_channel_get_out_example)
+		def get(self, circuit, prop):
+			device = Devices.by_name("dali_channel", circuit)
+			if prop:
+				if prop[0] in ('_'): raise Exception('Invalid property name')
+				result = {prop: getattr(device, prop)}
+			else:
+				result = device.full()
+			return result
+
+	# usage: POST /rest/DEVICE/CIRCUIT
+	#		  post-data: prop1=value1&prop2=value2...
+	if not use_output_schema:
+		@schema.validate(input_schema=schemas.dali_channel_post_inp_schema, input_example=schemas.dali_channel_post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				device = Devices.by_name("dali_channel", circuit)
+				js_dict = json.loads(self.request.body)
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				raise Return({'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'errors': str(E)})
+	else:
+		@schema.validate(output_schema=schemas.dali_channel_post_out_schema, output_example=schemas.dali_channel_post_out_example,
+						 input_schema=schemas.dali_channel_post_inp_schema, input_example=schemas.dali_channel_post_inp_example)
+		@tornado.gen.coroutine
+		def post(self, circuit, prop):
+			try:
+				device = Devices.by_name("dali_channel", circuit)
+				js_dict = json.loads(self.request.body)
+				result = device.set(**js_dict)
+				if is_future(result):
+					result = yield result
+				raise Return({'result': result})
+			except Return,E:
+				raise E
+			except Exception,E:
+				raise Return({'errors': str(E)})		
 	
 	def options(self):
 		self.set_status(204)
@@ -1216,6 +1289,7 @@ class JSONLoadAllHandler(UserCookieHelper, APIHandler):
 			result += map(lambda dev: dev.full(), Devices.by_int(UART))
 			result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
 			result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
+			result += map(lambda dev: dev.full(), Devices.by_int(DALI_CHANNEL))
 			return result
 	else:
 		@schema.validate(output_schema=schemas.all_get_out_schema, output_example=schemas.all_get_out_example)
@@ -1233,6 +1307,7 @@ class JSONLoadAllHandler(UserCookieHelper, APIHandler):
 			result += map(lambda dev: dev.full(), Devices.by_int(UART))
 			result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
 			result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
+			result += map(lambda dev: dev.full(), Devices.by_int(DALI_CHANNEL))
 			return result
 	
 	def options(self):
@@ -1260,6 +1335,7 @@ class RestLoadAllHandler(UserCookieHelper, APIHandler):
 		result += map(lambda dev: dev.full(), Devices.by_int(UART))
 		result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
 		result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
+		result += map(lambda dev: dev.full(), Devices.by_int(DALI_CHANNEL))
 		self.write(json.dumps(result))
 		self.set_header('Content-Type', 'application/json')
 		self.finish()
@@ -1606,6 +1682,7 @@ def main():
 		(r"/json/uart/?([^/]+)/?([^/]+)?/?", RestUARTHandler),
 		(r"/json/temp/?([^/]+)/?([^/]+)?/?", RestOWireHandler),
 		(r"/json/sensor/?([^/]+)/?([^/]+)?/?", RestOWireHandler),
+		(r"/json/dali_channel/?([^/]+)/?([^/]+)?/?", RestDALIChannelHandler),
 		(r"/json/1wdevice/?([^/]+)/?([^/]+)?/?", RestOWireHandler),
 		(r"/ws/?", WsHandler)
 	]

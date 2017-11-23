@@ -392,6 +392,9 @@ function populateConfigForm(form, device, circuit, data) {
 	case "register": {
 		break;
 	}
+	case "dali_channel": {
+		break;
+	}
 	default: {
 		break;
 	}
@@ -464,6 +467,9 @@ function getConfigurationFormTitle(device) {
 	}
 	case "register": {
 		return "Modbus Register Configuration";
+	}
+	case "dali_channel": {
+		return "DALI Channel Configuration";
 	}
 	default: {
 		return "Unknown Device Type Configuration";
@@ -540,6 +546,9 @@ function getDeviceCategoryName(device) {
 	}
 	case "do": {
 		return "Digital Outputs";
+	}
+	case "dali_channel": {
+		return "DALI Channels";
 	}
 	default: {
 		return "Unknown Device Type";
@@ -648,7 +657,7 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 		break;
 	}
 	case "uart": {
-		device_properties["device_name"] = "UART Port " + circuit_display_name;
+		device_properties["device_name"] = "Serial Port " + circuit_display_name;
     	device_properties["uart_speed_modes"] = msg.speed_modes;
     	device_properties["uart_speed_mode"] = msg.speed_mode;
     	device_properties["uart_parity_modes"] = msg.parity_modes;
@@ -710,6 +719,11 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 		device_properties["device_name"] = "WiFi Adapter " + circuit_display_name;
 		device_properties["wifi_ap_state"] = msg.ap_state;
 		device_properties["wifi_eth0_masq"] = msg.eth0_masq;
+		break;
+	}
+	case "dali_channel": {
+		device_properties["device_name"] = "DALI Channel " + circuit_display_name;
+		device_properties["broadcast_commands"] = msg.broadcast_commands;
 		break;
 	}
 	}
@@ -848,6 +862,14 @@ function syncDevice(msg) {
         	main_el.textContent = device_properties["wifi_ap_state"];
         	break;
         }
+        case "dali_channel": {
+            main_el = document.createElement("input");
+            main_el.className = "out";
+            main_el.min = 0;
+            main_el.step = 1.0;
+            main_el.max = 254;
+        	break;
+        }
         default: {
             main_el = document.createElement("h1");
             main_el.textContent = device_properties["value"] + device_properties["unit"];
@@ -866,7 +888,7 @@ function syncDevice(msg) {
 
         //Create the div structure
         div.appendChild(label);
-        if (device == "ao") { 
+        if (device == "ao" || device == "dali_channel") { 
         	div.appendChild(main_el);
         } else {
         	div.appendChild(right_div); 
@@ -890,6 +912,7 @@ function syncDevice(msg) {
             $('#' + main_el.id).bind("slidestop", function (event, ui) {
                 makePostRequest('ao/' + circuit, 'value=' + $(this).val());
             });
+
         	break;
         }
         case "led": {
@@ -959,6 +982,19 @@ function syncDevice(msg) {
         	$('#system_list').append(li);
             $('#system_list').listview('refresh');
         	break;
+        }
+        case "dali_channel": {
+        	var divider = document.getElementById("unipi_digital_divider");
+        	$("#unipi_dali_channel_divider").css("display", "block");
+            var list = document.getElementById("outputs_list");
+            list.insertBefore(li, divider);
+            $('#' + main_el.id).slider();
+        	$('#outputs_list').listview('refresh');
+            $('#' + main_el.id).bind("slidestop", function (event, ui) {
+                makePostRequest('dali_channel/' + circuit, 'broadcast_command=DAPC&broadcast_argument=' + $(this).val());
+            });
+            $("#" + device_signature + "_value").val(0).slider("refresh");
+        	break;        	
         }
         }
     // Device representation already exists 
@@ -1036,6 +1072,10 @@ function syncDevice(msg) {
         	main_el.innerHTML = device_properties["wifi_ap_state"];
         	break;
         }
+        case "dali_channel": {
+        	//main_el.innerHTML = "Channel " + circuit;
+        	break;
+        }       
         default: {
             main_el.innerHTML = device_properties["value"] + device_properties["unit"];        	
             break;
@@ -1310,8 +1350,7 @@ function webSocketRegister() {
         uri = ((loc.protocol === "https:") ? "wss://" : "ws://") + loc.hostname + ':' + api_port;
 
         ws = new WebSocket(uri + "/ws");
-        //var wnd = null;
-
+        
         if (!ws) {
             setTimeout(webSocketRegister, 1000);
             return;
