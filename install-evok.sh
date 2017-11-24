@@ -87,6 +87,10 @@ enable_ic2() {
 		echo '############################'
 		echo '# Using device tree kernel #'
 		echo '############################'
+		if ! grep -q 'i2c-dev' /etc/modules ;then
+			echo -e '\ni2c-dev' >> /etc/modules
+		fi	
+		modprobe i2c-dev
 	else
 		echo '######################'
 		echo '# Using older kernel #'
@@ -394,6 +398,7 @@ install_unipi_neuron() {
 		fi
 		
 	fi
+	
 	
 	# Install neuron_tcp_server 1.0.1
 	wget https://github.com/UniPiTechnology/neuron_tcp_modbus_overlay/archive/v1.0.1.zip

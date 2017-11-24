@@ -570,6 +570,10 @@ class Board(object):
 	def parse_definition(self, hw_dict, board_id):
 		self.volt_refx = 33000
 		self.volt_ref = 3.3
+		if 'model' not in config.globals:
+			logger.info("NO NEURON EEPROM DATA DETECTED, EXITING")
+			logger.info("PLEASE USE A FRESH EVOK IMAGE, OR ENABLE I2C, I2C-DEV AND THE EEPROM OVERLAY")
+			exit(-1);
 		for defin in hw_dict.definitions:
 			if defin and defin['type'] in config.globals['model']:
 				if defin.has_key('modbus_register_blocks'):
