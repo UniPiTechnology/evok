@@ -30,7 +30,7 @@ modbus_features:
       min_v       : 5
       max_v       : 24
       val_reg     : 0
-      counter_reg : 3
+      counter_reg : 15
       direct_reg  : 1016
       deboun_reg  : 1010
       polar_reg   : 1017
