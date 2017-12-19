@@ -6,6 +6,7 @@ Requires=neurontcp.service
 [Service]
 Type=simple
 ExecStart=/usr/bin/python /opt/evok/evok.py
+StartLimitIntervalSec=300
 TimeoutStopSec=3
 SyslogLevel=debug
 SyslogIdentifier=evok
