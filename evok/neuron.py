@@ -643,10 +643,10 @@ class Board(object):
 							board_val_reg = m_feature['val_reg']
 							_led = ULED("%s_%02d" % (self.circuit, len(Devices.by_int(LED, major_group=m_feature['major_group'])) + 1), self, counter, board_val_reg, 0x1 << (counter % 16), m_feature['val_coil'] + counter,
 									    dev_id=self.dev_id, major_group=m_feature['major_group'], legacy_mode=self.legacy_mode)
-							if self.neuron.datadeps.has_key(board_val_reg + counter):
-								self.neuron.datadeps[board_val_reg + counter]+=[_led]
+							if self.neuron.datadeps.has_key(board_val_reg):
+								self.neuron.datadeps[board_val_reg]+=[_led]
 							else:
-								self.neuron.datadeps[board_val_reg + counter] = [_led]
+								self.neuron.datadeps[board_val_reg] = [_led]
 							Devices.register_device(LED, _led)
 							counter+=1
 					elif m_feature['type'] == 'WD' and m_feature['major_group'] == board_id:
