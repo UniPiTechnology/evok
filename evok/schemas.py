@@ -28,14 +28,17 @@ owire_get_out_schema = {
 			"minimum": 0,
 			"maximum": 100
 		},
+		"illuminance": {
+			"type": "string"
+		},
 		"vdd": {
-			"type": "number"
+			"type": "string"
 		},
 		"vad": {
-			"type": "number"
+			"type": "string"
 		},
 		"temp": {
-			"type": "number"
+			"type": "string"
 		},
 		"lost": {
 			"type": "boolean"
@@ -53,7 +56,7 @@ owire_get_out_schema = {
 	"required": [
 		"dev",
 		"circuit",
-		"address",
+		#"address",
 		"typ"
 	]
 }
@@ -947,14 +950,17 @@ all_get_out_schema = {
 							"minimum": 0,
 							"maximum": 100
 						},
+						"illuminance": {
+							"type": "string"
+						},
 						"vdd": {
-							"type": "number"
+							"type": "string"
 						},
 						"vad": {
-							"type": "number"
+							"type": "string"
 						},
 						"temp": {
-							"type": "number"
+							"type": "string"
 						},
 						"lost": {
 							"type": "boolean"
@@ -972,7 +978,7 @@ all_get_out_schema = {
 					"required": [
 						"dev",
 						"circuit",
-						"address",
+						#"address",
 						"typ"
 					]
 				},
