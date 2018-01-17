@@ -676,8 +676,12 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 	}
 	case "temp": {
 		device_properties["device_name"] = "Sensor " + device_properties["typ"] + " - " + circuit_display_name;
-        if (msg.value == null) {
+        if (msg.value == null && msg.temp == null) {
         	device_properties["value"] = "N/A";
+        }
+        else if (msg.value == null && msg.temp != null) {
+        	device_properties["value"] = parseFloat(msg.temp).toFixed(1);
+        	device_properties["unit"] = "°C";
         }
         else {
         	device_properties["value"] = msg.value.toFixed(1);
@@ -691,10 +695,12 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 	        if (msg.value == null) {
 	        	device_properties["value"] = "N/A";
 	        	device_properties["humidity"] = "N/A";
+	        	device_properties["illuminance"] = "N/A";
 	        }
 	        else {
-	        	device_properties["value"] = msg.temp.toFixed(1);
+	        	device_properties["value"] = parseFloat(msg.temp).toFixed(1);
 	        	device_properties["humidity"] = msg.humidity.toFixed(1);
+	        	device_properties["illuminance"] = msg.illuminance ? parseFloat(msg.illuminance).toFixed(0) : "N/A";
 	        	device_properties["unit"] = "°C";
 	        }   	
 		} else {
@@ -800,8 +806,8 @@ function syncDevice(msg) {
         }
         case "1wdevice": {
             main_el = document.createElement("h1");
-            main_el.textContent = "" + device_properties["humidity"] + "%Hum " + device_properties["value"] + device_properties["unit"];
-            main_el.className = "ui-li-aside";    
+            main_el.textContent = "" + device_properties["humidity"] + "%Hum " + device_properties["value"] + device_properties["unit"] + " " + device_properties["illuminance"] + "Il";
+            main_el.className = "ui-li-aside";
             break;
         }
         case "input": {
