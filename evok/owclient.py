@@ -159,7 +159,7 @@ class DS2438(MySensor):  # vdd + vad + thermometer
 				'typ': self.type}
 
 	def read_val_from_sens(self, sens):
-		self.value = (sens.VDD, sens.VAD, sens.temperature, sens.vcurr)
+		self.value = (sens.VDD, sens.VAD, sens.temperature, sens.VCURR)
 
 
 class DS2408(MySensor):
