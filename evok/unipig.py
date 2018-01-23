@@ -815,7 +815,9 @@ class Input():
 		devents.status(self)
 
 	#@gen.coroutine
-	def set(self, debounce=None, counter=None):
+	def set(self, debounce=None, counter=None, counter_mode=None):
+		if (counter_mode is not None and counter_mode != self.counter_mode and counter_mode in ["rising", "falling", "disabled"]):
+			self.counter_mode = counter_mode
 		if not (debounce is None):
 			if not debounce:
 				self._debounce = 0
@@ -826,6 +828,7 @@ class Input():
 			if self.counter_mode != 'disabled':
 				self.value = counter
 				devents.status(self)
+
 
 	def get(self):
 		""" Returns ( value, debounce )
