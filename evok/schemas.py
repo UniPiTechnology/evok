@@ -34,6 +34,9 @@ owire_get_out_schema = {
 		"vad": {
 			"type": "number"
 		},
+		"vis": {
+			"type": "number"
+		},
 		"temp": {
 			"type": "number"
 		},
@@ -951,6 +954,9 @@ all_get_out_schema = {
 							"type": "number"
 						},
 						"vad": {
+							"type": "number"
+						},
+						"vis": {
 							"type": "number"
 						},
 						"temp": {
