@@ -140,6 +140,7 @@ class DS2438(MySensor):  # vdd + vad + thermometer
 			    'vdd': self.value[0], 
 			    'vad': self.value[1],
 				'temp': self.value[2], 
+				'vis': self.value[3],
 				'lost': self.lost, 
 				'time': self.time, 
 				'interval': self.interval,
@@ -152,12 +153,13 @@ class DS2438(MySensor):  # vdd + vad + thermometer
 			    'circuit': self.circuit, 
 			    'vdd': self.value[0], 
 			    'vad': self.value[1],
-				'temp': self.value[2], 
+				'temp': self.value[2],
+				'vis': self.value[3],
 				'lost': self.lost, 
 				'typ': self.type}
 
 	def read_val_from_sens(self, sens):
-		self.value = (sens.VDD, sens.VAD, sens.temperature)
+		self.value = (sens.VDD, sens.VAD, sens.temperature, sens.vis)
 
 
 class DS2408(MySensor):
