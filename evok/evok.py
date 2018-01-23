@@ -225,20 +225,19 @@ class WsHandler(websocket.WebSocketHandler):
 				except:
 					value = None
 				try:
+					device = Devices.by_name(dev, circuit)
+					func = getattr(device, cmd)
+					if value is not None:
+						if type(value) == dict:
+							result = func(**value)
+						else:
+							result = func(value)
+					else:
+						result = func()
+					if is_future(result):
+						result = yield result
 					if cmd == "full":
 						self.write_message(json.dumps(result))
-					else:
-						device = Devices.by_name(dev, circuit)
-						func = getattr(device, cmd)
-						if value is not None:
-							if type(value) == dict:
-								result = func(**value)
-							else:
-								result = func(value)
-						else:
-							result = func()
-						if is_future(result):
-							result = yield result
 					#send response only to the modbusclient_rs485 requesting full info
 				#nebo except Exception as e:
 				except Exception, E:
