@@ -190,7 +190,8 @@ devtype_altnames = {
 	'analogoutput': 'ao',
 	'eprom': 'ee',
 	'wd': 'watchdog',
-	'rs485': 'uart'
+	'rs485': 'uart',
+	'temp': 'sensor'
 	}
 
 
