@@ -1,6 +1,5 @@
 ### Prerequisites
 
-* [ ] Can you reproduce the problem in safe mode?
 * [ ] Are you running the latest Master or the latest release version?
 * [ ] Did you try to reinstall EVOK?
 * [ ] Did you perform a cursory search on the [forum] and [google]?
