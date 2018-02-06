@@ -1,5 +1,4 @@
 from collections import deque
-import time
 from log import *
 import devices
 

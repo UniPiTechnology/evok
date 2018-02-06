@@ -7,7 +7,7 @@ modbus_register_blocks:
       frequency   : 1
     - board_index : 1
       start_reg   : 1000
-      count       : 31
+      count       : 33
       frequency   : 10
 modbus_features: 
     - type        : RO
@@ -53,7 +53,7 @@ modbus_features:
       stopb_modes :
         - One
         - Two
-      conf_reg    : 1029
+      conf_reg    : 1031
     - type        : LED
       major_group : 1
       count       : 4
@@ -68,5 +68,5 @@ modbus_features:
       reset_coil  : 1002
     - type        : REGISTER
       major_group : 1
-      count       : 52
+      count       : 40
       start_reg   : 0

@@ -11,7 +11,6 @@ from math import isnan, floor
 from tornado import gen
 from tornado.ioloop import IOLoop
 import pigpio
-import devents
 from devices import *
 import config
 from log import *
@@ -40,10 +39,10 @@ class Eprom(object):
 		prefix = self.i2cbus.i2c_read_byte_data(self.i2c, 0xe2)
 		suffix = self.i2cbus.i2c_read_byte_data(self.i2c, 0xe3)
 		if prefix == 1 and suffix == 1:
-			config.globals['version'] = "1.1"
+			config.up_globals['version'] = "1.1"
 		else:
-			config.globals['version'] = "1.0"
-		# print "UniPi version:" + config.globals['version']
+			config.up_globals['version'] = "1.0"
+		# print "UniPi version:" + config.up_globals['version']
 
 	@gen.coroutine
 	def write_byte(self, index, value):
@@ -278,7 +277,6 @@ class UnipiMCP342x(object):
 		mainLoop.add_callback(self.measure_loop, mainLoop)
 
 	def calc_mode(self, channel, bits, gain, continuous):
-		mode = 0
 		if not (channel in range(4)): raise Exception("Bad channel number")
 		mode = channel << 5
 		mode = mode | (bool(continuous) << 4) | ((not bool(continuous)) << 7)  # from one-shoot must be bit7 set
@@ -587,7 +585,7 @@ class UnipiPCA9685(object):
 		with (yield self.i2cbus.iolock.acquire()):
 			byte_val = on & 0xFF
 			extents = [struct.pack("I", byte_val)]
-			result = yield self.i2cbus.apigpio_command_ext(
+			yield self.i2cbus.apigpio_command_ext(
 				pigpio._PI_CMD_I2CWB,
 				self.i2c, self.__LED0_ON_L + self.__LED_MULTIPLIER*channel, 4, extents)
 			result = yield self.i2cbus.apigpio_command(
@@ -696,7 +694,7 @@ class AnalogOutputGPIO():
 			value = 10.0
 		elif value < 0:
 			value = 0.0
-		if config.globals['version'] == "UniPi 1.0":
+		if config.up_globals['version'] == "UniPi 1.0":
 			return int(round((10 - value) * 100))
 		else:
 			return int(round(value * 100))

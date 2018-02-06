@@ -3,39 +3,23 @@
 ------------------------------------------
 '''
 import struct
-import time
 import datetime
-import unipidali
 from dali.bus import Bus
 import dali.gear.general
-
-from math import isnan, floor, sqrt
-
-from yaml import load, dump
-
+from math import sqrt
 from tornado import gen
 from tornado.ioloop import IOLoop
-
 from modbusclient_tornado import ModbusClientProtocol, StartClient
 from pymodbus.pdu import ExceptionResponse
-
-from pymodbus.exceptions import ConnectionException, ModbusIOException
-from pymodbus.register_read_message import ReadHoldingRegistersResponse
-
-import pymodbus.client
-
+from pymodbus.exceptions import ModbusIOException
 from tornado.locks import Semaphore
-
 import modbusclient_rs485
 
-import devents
 from devices import *
 from log import *
-
 import config 
-from time import sleep
+
 from modbusclient_rs485 import AsyncErrorResponse
-from cgitb import reset
 import subprocess
 from unipidali import SyncUnipiDALIDriver
 from dali.address import Broadcast, Group
@@ -206,9 +190,9 @@ class Neuron(object):
 	def full(self):
 		ret = {'dev': 'neuron', 
 			    'circuit': self.circuit, 
-			    'model': config.globals['model'], 
-			    'sn': config.globals['serial'], 
-			    'ver2': config.globals['version2'],
+			    'model': config.up_globals['model'], 
+			    'sn': config.up_globals['serial'], 
+			    'ver2': config.up_globals['version2'],
 			    'board_count': len(self.boards),
 			    'glob_dev_id': self.dev_id}
 		if self.alias != '':
@@ -570,12 +554,12 @@ class Board(object):
 	def parse_definition(self, hw_dict, board_id):
 		self.volt_refx = 33000
 		self.volt_ref = 3.3
-		if 'model' not in config.globals:
+		if 'model' not in config.up_globals:
 			logger.info("NO NEURON EEPROM DATA DETECTED, EXITING")
 			logger.info("PLEASE USE A FRESH EVOK IMAGE, OR ENABLE I2C, I2C-DEV AND THE EEPROM OVERLAY")
 			exit(-1);
 		for defin in hw_dict.definitions:
-			if defin and defin['type'] in config.globals['model']:
+			if defin and defin['type'] in config.up_globals['model']:
 				if defin.has_key('modbus_register_blocks'):
 					if self.neuron.modbus_cache_map == None:
 						self.neuron.modbus_cache_map = ModbusCacheMap(defin['modbus_register_blocks'], self.neuron)
@@ -716,15 +700,15 @@ class Board(object):
 										 stopb_modes=m_feature['stopb_modes'], legacy_mode=self.legacy_mode)
 							Devices.register_device(UART, _uart)
 							counter+=1
-					elif m_feature['type'] == 'DALI_CHANNEL' and m_feature['major_group'] == board_id:
+					elif m_feature['type'] == 'LIGHT_CHANNEL' and m_feature['major_group'] == board_id:
 						while counter < max_count:
 							read_reg = m_feature['read_reg'] + (counter * 3)
 							write_reg = m_feature['write_reg'] + (counter * 2)
 							status_reg = m_feature['status_reg']
-							_dali_c = DALIChannel("%s_%02d" % (self.circuit, len(Devices.by_int(DALI_CHANNEL, major_group=m_feature['major_group'])) + 1), 
+							_light_c = LightChannel("%s_%02d" % (self.circuit, len(Devices.by_int(LIGHT_CHANNEL, major_group=m_feature['major_group'])) + 1), 
 												  self, counter, status_reg, 0x1 << counter, read_reg + 1, read_reg, write_reg, read_reg + 2, write_reg + 1, dev_id=self.dev_id, 
 												  major_group=m_feature['major_group'], legacy_mode=self.legacy_mode)
-							Devices.register_device(DALI_CHANNEL, _dali_c)
+							Devices.register_device(LIGHT_CHANNEL, _light_c)
 							counter+=1
 
 	def get(self): 
@@ -965,14 +949,14 @@ class ULED(object):
 	def get(self): 
 		return self.full()
 
-class DALIDevice(object):
+class LightDevice(object):
 	def __init__(self, circuit, arm, bus, dev_id=0):
 		self.alias = ""
-		self.devtype = DALI_DEVICE
+		self.devtype = LIGHT_DEVICE
 		self.dev_id = dev_id
 	
 	def full(self):
-		ret = {'dev': 'dali_channel', 'circuit': self.circuit, 'glob_dev_id': self.dev_id}
+		ret = {'dev': 'light_channel', 'circuit': self.circuit, 'glob_dev_id': self.dev_id}
 		if self.alias != '':
 			ret['alias'] = self.alias
 		return ret
@@ -980,10 +964,10 @@ class DALIDevice(object):
 	def get(self): 
 		return self.full()
 
-class DALIChannel(object):
+class LightChannel(object):
 	def __init__(self, circuit, arm, bus_number, reg_status, status_mask, reg_transmit, reg_receive, reg_receive_counter, reg_config_transmit, reg_config_receive, dev_id=0, major_group=0, legacy_mode=True):
 		self.alias = ""
-		self.devtype = DALI_CHANNEL
+		self.devtype = LIGHT_CHANNEL
 		self.dev_id = dev_id
 		self.circuit = circuit
 		self.arm = arm
@@ -1002,16 +986,14 @@ class DALIChannel(object):
 		self.group_commands = ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off", 
 							   "turn_on_and_step_up", "DAPC", "reset", "identify_device"]
 		self.scan_types = ["assigned", "unassigned"]
-		self.dali_driver = SyncUnipiDALIDriver(self.bus_number)
-		#self.dali_driver.logger = logger
-		#self.dali_driver.debug = True
-		self.dali_bus = Bus(self.circuit, self.dali_driver)
+		self.light_driver = SyncUnipiDALIDriver(self.bus_number)
+		#self.light_driver.logger = logger
+		#self.light_driver.debug = True
+		self.light_bus = Bus(self.circuit, self.light_driver)
 		
 	def full(self):
-		ret = {'dev': 'dali_channel', 'circuit': self.circuit, 'glob_dev_id': self.dev_id, 'broadcast_commands': self.broadcast_commands, 
+		ret = {'dev': 'light_channel', 'circuit': self.circuit, 'glob_dev_id': self.dev_id, 'broadcast_commands': self.broadcast_commands, 
 			   'group_commands': self.group_commands, 'scan_types': self.scan_types}
-		#if self.dali_bus._bus_scanned:
-		#	ret['unused_ids'] = self.dali_bus.unused_addresses()
 		if self.alias != '':
 			ret['alias'] = self.alias
 		return ret
@@ -1021,7 +1003,7 @@ class DALIChannel(object):
 		return self.full()
 
 	def simple(self):
-		return {'dev': 'dali_channel', 'circuit': self.circuit}
+		return {'dev': 'light_channel', 'circuit': self.circuit}
 	
 	@gen.coroutine
 	def set(self, broadcast_command=None, broadcast_argument=None, group_command=None, group_address=None, group_argument=None, scan=None, alias=None):
@@ -1031,15 +1013,10 @@ class DALIChannel(object):
 			if Devices.add_alias(alias, self):
 				self.alias = alias
 		if scan is not None and scan is self.scan_types:
-#			finished = False
-#			while not finished:
-			#logger.info(self.dali_bus.find_next(0, 0xffffff))
 			try:
-				self.dali_bus.assign_short_addresses()
+				self.light_bus.assign_short_addresses()
 			except Exception, E:
 				logger.exception(str(E))
-			#logger.info(self.dali_bus.unused_addresses())
-			#logger.info(self.dali_bus._devices)
 		elif broadcast_command is not None:
 			if broadcast_command == "recall_max_level":
 				command = dali.gear.general.RecallMaxLevel(Broadcast())
@@ -1075,10 +1052,10 @@ class DALIChannel(object):
 			elif broadcast_command == "DTR2":
 				command = dali.gear.general.DTR2(int(broadcast_argument))
 			else:
-				raise Exception("Invalid DALI broadcast command: %d" % broadcast_command)
-			self.dali_driver.logger = logger
-			self.dali_driver.debug = True
-			print('Response: {}'.format(self.dali_driver.send(command)))
+				raise Exception("Invalid lighting broadcast command: %d" % broadcast_command)
+			self.light_driver.logger = logger
+			self.light_driver.debug = True
+			print('Response: {}'.format(self.light_driver.send(command)))
 		elif group_command is not None:
 			if group_command == "recall_max_level":
 				command = dali.gear.general.RecallMaxLevel(Group(group_address))
@@ -1108,10 +1085,10 @@ class DALIChannel(object):
 			elif group_command == "identify_device":
 				command = dali.gear.general.IdentifyDevice(Group(group_address))
 			else:
-				raise Exception("Invalid DALI broadcast command (and/or required argument was not provided): %d" % group_command)
-			self.dali_driver.logger = logger
-			self.dali_driver.debug = True
-			print('Response: {}'.format(self.dali_driver.send(command)))
+				raise Exception("Invalid lighting broadcast command (and/or required argument was not provided): %d" % group_command)
+			self.light_driver.logger = logger
+			self.light_driver.debug = True
+			print('Response: {}'.format(self.light_driver.send(command)))
 		raise gen.Return(self.full())
 
 
@@ -1967,13 +1944,9 @@ class AnalogInput():
 				self.mode = mode
 				if self.mode == "Voltage":
 					self.unit_name = unit_names[VOLT]
-					#self.vfactor = (self.vfactor * 10) / 3
-					#self.vfactorx = (self.vfactorx * 10) / 3
 					yield self.arm.neuron.client.write_register(self.regmode, 0, unit=self.arm.modbus_address)
 				elif self.mode == "Current":
 					self.unit_name = unit_names[AMPERE]
-					#self.vfactor = (self.vfactor / 10) * 3
-					#self.vfactorx = (self.vfactorx / 10) * 3
 					yield self.arm.neuron.client.write_register(self.regmode, 1, unit=self.arm.modbus_address)
 				self.reg_shift = 2 if self.mode == "Voltage" else 0
 				if self.regcal >= 0:
@@ -1984,7 +1957,7 @@ class AnalogInput():
 					self.vfactor = self.arm.volt_ref / 4095 * (1 / 10000.0)
 					self.vfactorx = self.arm.volt_refx / 4095 * (1 / 10000.0)	
 					self.voffset = 0
-				if self.is_voltage():
+				if self.mode == "Voltage":
 					self.vfactor *= 3
 					self.vfactorx *= 3
 				else:
