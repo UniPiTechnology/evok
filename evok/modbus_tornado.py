@@ -4,19 +4,11 @@ Implementation of a Tornado Modbus Server
 
 """
 from binascii import b2a_hex
-from tornado import ioloop
-from tornado import iostream
-from tornado import options
-from tornado import tcpserver
-from tornado import gen
-
-
+from tornado import ioloop, tcpserver, gen
 from pymodbus.constants import Defaults
 from pymodbus.factory import ServerDecoder
 from pymodbus.datastore import ModbusServerContext, ModbusSlaveContext, ModbusSequentialDataBlock
-from pymodbus.device import ModbusControlBlock
-from pymodbus.device import ModbusAccessControl
-from pymodbus.device import ModbusDeviceIdentification
+from pymodbus.device import ModbusControlBlock, ModbusAccessControl, ModbusDeviceIdentification
 from pymodbus.transaction import ModbusSocketFramer
 from pymodbus.interfaces import IModbusFramer
 from pymodbus.pdu import ModbusExceptions as merror
@@ -185,7 +177,6 @@ def main():
 
     """ Server launcher """
     from optparse import OptionParser
-    from pymodbus.datastore import ModbusServerContext
 
     parser = OptionParser()
     parser.add_option("-D", "--debug",
@@ -197,7 +188,7 @@ def main():
     if opt.debug:
         try:
             _logger.setLevel(logging.DEBUG)
-        except Exception, e:
+        except Exception:
             print "Logging is not supported on this system"
 
     # Create store context

@@ -1,6 +1,3 @@
-
-import socket
-
 from pymodbus.factory import ClientDecoder
 from pymodbus.transaction import ModbusSocketFramer
 from pymodbus.transaction import FifoTransactionManager

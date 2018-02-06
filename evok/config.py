@@ -1,14 +1,11 @@
 import os
 import multiprocessing
-import re
 import struct
 import ConfigParser
 import neuron
 from tornado import gen
 from log import *
 from devices import *
-import yaml
-from _ctypes import sizeof
 from neuron import WiFiAdapter
 
 try:
@@ -32,11 +29,11 @@ globals = {
 def read_eprom_config():
 	try:
 		with open('/sys/class/i2c-dev/i2c-1/device/1-0050/eeprom','r') as f:
-			bytes=f.read(256)
-			if bytes[224:226] == '\xfa\x55':
-				if ord(bytes[226]) == 1 and ord(bytes[227]) == 1:
+			ee_bytes=f.read(256)
+			if ee_bytes[224:226] == '\xfa\x55':
+				if ord(ee_bytes[226]) == 1 and ord(ee_bytes[227]) == 1:
 					globals['version'] = "UniPi 1.1"
-				elif ord(bytes[226]) == 11 and ord(bytes[227]) == 1:
+				elif ord(ee_bytes[226]) == 11 and ord(ee_bytes[227]) == 1:
 					globals['version'] = "UniPi Lite 1.1"
 				else:
 					globals['version'] = "UniPi 1.0"
@@ -44,27 +41,27 @@ def read_eprom_config():
 				#AIs coeff
 				if globals['version'] in ("UniPi 1.1", "UniPi 1.0"):
 					globals['devices'] = { 'ai': {
-											  '1': struct.unpack('!f', bytes[240:244])[0],
-											  '2': struct.unpack('!f', bytes[244:248])[0],
+											  '1': struct.unpack('!f', ee_bytes[240:244])[0],
+											  '2': struct.unpack('!f', ee_bytes[244:248])[0],
 										 }}
 				else:
 					globals['devices'] = { 'ai': {
 											  '1': 0,
 											  '2': 0,
 										 }}
-				globals['serial'] = struct.unpack('i', bytes[228:232])[0]
+				globals['serial'] = struct.unpack('i', ee_bytes[228:232])[0]
 				logger.debug("eprom: UniPi version %s, serial: %d", globals['version'], globals['serial'])
-	except Exception, E:
+	except Exception:
 		pass
 	try:
 		with open('/sys/class/i2c-dev/i2c-1/device/1-0057/eeprom','r') as f:
-			bytes=f.read(128)
-			if bytes[96:98] == '\xfa\x55':
-				globals['version2'] = "%d.%d" % (ord(bytes[99]), ord(bytes[98]))
-				globals['model'] = "%s" % (bytes[106:110],)
-				globals['serial'] = struct.unpack('i', bytes[100:104])[0]
+			ee_bytes=f.read(128)
+			if ee_bytes[96:98] == '\xfa\x55':
+				globals['version2'] = "%d.%d" % (ord(ee_bytes[99]), ord(ee_bytes[98]))
+				globals['model'] = "%s" % (ee_bytes[106:110],)
+				globals['serial'] = struct.unpack('i', ee_bytes[100:104])[0]
 				logger.info("eprom: UniPi Neuron %s version: %s serial: 0x%x", globals["model"], globals['version2'],globals["serial"])
-	except Exception, E:
+	except Exception:
 		pass
 	
 class HWDict():
@@ -76,7 +73,7 @@ class HWDict():
 					with open(d_path + filen, 'r') as yfile:	
 						self.definitions += [yaml.load(yfile)]
 						logger.info("YAML Definition loaded: %s, type: %s, definition count %d", filen, len(self.definitions[len(self.definitions)-1]),  len(self.definitions) - 1)
-				except Exception, E:
+				except Exception:
 					pass	
 
 class HWDefinition():

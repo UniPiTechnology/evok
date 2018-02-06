@@ -3,7 +3,15 @@ type: L40
 modbus_register_blocks:
     - board_index : 1
       start_reg   : 0
-      count       : 21
+      count       : 2
+      frequency   : 1
+    - board_index : 1
+      start_reg   : 2
+      count       : 3
+      frequency   : 10
+    - board_index : 1
+      start_reg   : 5
+      count       : 16
       frequency   : 1
     - board_index : 1
       start_reg   : 1000

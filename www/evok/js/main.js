@@ -1167,7 +1167,7 @@ function saveAllButtonHandler(event) {
 	    	crossDomain: true,
 	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + "/rest/wd/" + value + '/',
 	        type: 'POST',
-	        data: {"reset": 1, "nv_save": 1},
+	        data: {"nv_save": 1},
 	        success: function (data) {
 	        },
 	        error: function (data) {
@@ -1321,11 +1321,11 @@ function configFormSubmitHandler(event) {
 	        			}
 	        		}
 	        	} else {
-	        		alert("Operation Failed With The Following Error: " + data.errors["__all__"]);
+	        		alert("Operation failed with the following error: " + data.errors["__all__"]);
 	        	}
 	        },
 	        error: function (data) {
-	        	alert("Operation Failed With The Following Error: " + data.message);
+	        	alert("Operation failed with the following error: " + data.message);
 	        }
 	    });
 	}
@@ -1380,7 +1380,7 @@ function webSocketRegister() {
 		};
     }
     else {
-        alert("WebSocket NOT supported by your Browser!");
+        alert("YOUR BROWSER DOES NOT HAVE WEBSOCKET SUPPORT!");
         use_polling = true;
     }
 }

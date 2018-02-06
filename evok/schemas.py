@@ -1130,7 +1130,7 @@ all_get_out_schema = {
 				        "dev": {
 				            "type": "string",
 				            "enum": [
-				                "dali_channel"
+				                "light_channel"
 				            ]
 				        },
 				        "circuit": {
@@ -1355,7 +1355,7 @@ relay_post_out_schema = {
 
 relay_post_out_example = {"result": 1, "success": True}
 
-dali_channel_get_out_schema = {
+light_channel_get_out_schema = {
 	"$schema": "http://json-schema.org/draft-04/schema#",
 	"title": "Neuron_Instruction",
 	"type": "object",
@@ -1363,7 +1363,7 @@ dali_channel_get_out_schema = {
 		"dev": {
 			"type": "string",
 			"enum": [
-				"dali_channel"
+				"light_channel"
 			]
 		},
 		"circuit": {
@@ -1444,12 +1444,12 @@ dali_channel_get_out_schema = {
 	]
 }
 
-dali_channel_get_out_example = {"scan_types": ["assigned","unassigned"], "broadcast_commands": ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off", 
+light_channel_get_out_example = {"scan_types": ["assigned","unassigned"], "broadcast_commands": ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off", 
 								   "turn_on_and_step_up", "DAPC", "reset", "identify_device", "DTR0", "DTR1", "DTR2"],
 							    "group_commands": ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off", 
-							   "turn_on_and_step_up", "DAPC", "reset", "identify_device"], "circuit": "2_01", "dev": "dali_channel", "glob_dev_id": 1}
+							   "turn_on_and_step_up", "DAPC", "reset", "identify_device"], "circuit": "2_01", "dev": "light_channel", "glob_dev_id": 1}
 
-dali_channel_post_inp_schema = {
+light_channel_post_inp_schema = {
 	"$schema": "http://json-schema.org/draft-04/schema#",
 	"title": "Neuron_Instruction",
 	"type": "object",
@@ -1484,9 +1484,9 @@ dali_channel_post_inp_schema = {
 	}
 }
 
-dali_channel_post_inp_example = {"alias": "abc"}
+light_channel_post_inp_example = {"alias": "abc"}
 
-dali_channel_post_out_schema = {
+light_channel_post_out_schema = {
 	"$schema": "http://json-schema.org/draft-04/schema#",
 	"title": "Neuron_Instruction",
 	"type": "object",
@@ -1498,7 +1498,7 @@ dali_channel_post_out_schema = {
 	"required": ["success"]
 }
 
-dali_channel_post_out_example = {"result": 1, "success": True}
+light_channel_post_out_example = {"result": 1, "success": True}
 
 
 ao_get_out_schema = {

@@ -149,8 +149,8 @@ LED = 18
 WATCHDOG = 19
 REGISTER = 20
 WIFI = 21
-DALI_CHANNEL = 22
-DALI_DEVICE = 23
+LIGHT_CHANNEL = 22
+LIGHT_DEVICE = 23
 
 
 
@@ -178,8 +178,8 @@ devtype_names = (
 	'watchdog',
 	'register',
 	'wifi',
-	'dali_channel',
-	'dali_device'
+	'light_channel',
+	'light_device'
 )
 
 devtype_altnames = {

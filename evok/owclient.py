@@ -8,7 +8,6 @@ from tornado.ioloop import IOLoop
 import devents
 import devices
 from log import *
-from evok import use_legacy_api
 
 MAX_LOSTINTERVAL = 300  # 5minut
 
