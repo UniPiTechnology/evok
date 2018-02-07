@@ -14,7 +14,7 @@ try:
 except:
 	pass
 
-globals = {
+up_globals = {
 	'version': "1.0",
 	'devices': {
 		'ai': {
@@ -32,35 +32,35 @@ def read_eprom_config():
 			ee_bytes=f.read(256)
 			if ee_bytes[224:226] == '\xfa\x55':
 				if ord(ee_bytes[226]) == 1 and ord(ee_bytes[227]) == 1:
-					globals['version'] = "UniPi 1.1"
+					up_globals['version'] = "UniPi 1.1"
 				elif ord(ee_bytes[226]) == 11 and ord(ee_bytes[227]) == 1:
-					globals['version'] = "UniPi Lite 1.1"
+					up_globals['version'] = "UniPi Lite 1.1"
 				else:
-					globals['version'] = "UniPi 1.0"
-				globals['version1'] = globals['version']
+					up_globals['version'] = "UniPi 1.0"
+				up_globals['version1'] = globals['version']
 				#AIs coeff
-				if globals['version'] in ("UniPi 1.1", "UniPi 1.0"):
-					globals['devices'] = { 'ai': {
+				if up_globals['version'] in ("UniPi 1.1", "UniPi 1.0"):
+					up_globals['devices'] = { 'ai': {
 											  '1': struct.unpack('!f', ee_bytes[240:244])[0],
 											  '2': struct.unpack('!f', ee_bytes[244:248])[0],
 										 }}
 				else:
-					globals['devices'] = { 'ai': {
+					up_globals['devices'] = { 'ai': {
 											  '1': 0,
 											  '2': 0,
 										 }}
-				globals['serial'] = struct.unpack('i', ee_bytes[228:232])[0]
-				logger.debug("eprom: UniPi version %s, serial: %d", globals['version'], globals['serial'])
+				up_globals['serial'] = struct.unpack('i', ee_bytes[228:232])[0]
+				logger.debug("eprom: UniPi version %s, serial: %d", up_globals['version'], up_globals['serial'])
 	except Exception:
 		pass
 	try:
 		with open('/sys/class/i2c-dev/i2c-1/device/1-0057/eeprom','r') as f:
 			ee_bytes=f.read(128)
 			if ee_bytes[96:98] == '\xfa\x55':
-				globals['version2'] = "%d.%d" % (ord(ee_bytes[99]), ord(ee_bytes[98]))
-				globals['model'] = "%s" % (ee_bytes[106:110],)
-				globals['serial'] = struct.unpack('i', ee_bytes[100:104])[0]
-				logger.info("eprom: UniPi Neuron %s version: %s serial: 0x%x", globals["model"], globals['version2'],globals["serial"])
+				up_globals['version2'] = "%d.%d" % (ord(ee_bytes[99]), ord(ee_bytes[98]))
+				up_globals['model'] = "%s" % (ee_bytes[106:110],)
+				up_globals['serial'] = struct.unpack('i', ee_bytes[100:104])[0]
+				logger.info("eprom: UniPi Neuron %s version: %s serial: 0x%x", up_globals["model"], up_globals['version2'],up_globals["serial"])
 	except Exception:
 		pass
 	
@@ -290,7 +290,7 @@ def create_devices(Config, hw_dict):
 				bits = Config.getintdef(section, "bits", 14)
 				gain = Config.getintdef(section, "gain", 1)
 				if circuit in ('1', '2'):
-					correction = Config.getfloatdef(section, "correction", globals['devices']['ai'][circuit])
+					correction = Config.getfloatdef(section, "correction", up_globals['devices']['ai'][circuit])
 				else:
 					correction = Config.getfloatdef(section, "correction", 5.564920867)
 				mcai = Devices.by_int(ADCHIP, chip)
