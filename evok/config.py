@@ -37,7 +37,7 @@ def read_eprom_config():
 					up_globals['version'] = "UniPi Lite 1.1"
 				else:
 					up_globals['version'] = "UniPi 1.0"
-				up_globals['version1'] = globals['version']
+				up_globals['version1'] = up_globals['version']
 				#AIs coeff
 				if up_globals['version'] in ("UniPi 1.1", "UniPi 1.0"):
 					up_globals['devices'] = { 'ai': {
