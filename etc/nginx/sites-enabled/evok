@@ -1,6 +1,6 @@
 
 server {
-	listen 88 default_server;
+	listen 80 default_server;
 	server_name  _;
 
 	#ssl on;
@@ -22,21 +22,25 @@ server {
 		proxy_set_header Connection "upgrade";
 		proxy_buffering off;
 		proxy_cache off;
-		#send_timeout 120;
 		proxy_read_timeout 180;
-		#proxy_set_header X-Real-IP $remote_addr;
 	}
 
 	location /rest {
 		proxy_pass http://localhost:8080;
 		proxy_set_header Host      $host:$server_port;
-		#proxy_set_header X-Real-IP $remote_addr;
 	}
 	
 	location /json {
 		proxy_pass http://localhost:8080;
 		proxy_set_header Host      $host:$server_port;
-		#proxy_set_header X-Real-IP $remote_addr;
+	}
+	location /bulk {
+		proxy_pass http://localhost:8080;
+		proxy_set_header Host	$host:$server_port;
+	}
+	location /rpc {
+		proxy_pass http://localhost:8080;
+		proxy_set_header Host	$host:$server_port;
 	}
 	
 }
