@@ -198,7 +198,7 @@ class WsHandler(websocket.WebSocketHandler):
 				devices = []
 				try:
 					for single_dev in message["devices"]:
-						if str(single_dev) in devtype_names:
+						if (str(single_dev) in devtype_names) or (str(single_dev) in devtype_altnames):
 							devices += [single_dev]
 					if len(devices) > 0 or len(message["devices"]) == 0:
 						self.filter = devices
