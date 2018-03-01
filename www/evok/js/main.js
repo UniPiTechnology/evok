@@ -392,7 +392,7 @@ function populateConfigForm(form, device, circuit, data) {
 	case "register": {
 		break;
 	}
-	case "dali_channel": {
+	case "light_channel": {
 		break;
 	}
 	default: {
@@ -468,8 +468,8 @@ function getConfigurationFormTitle(device) {
 	case "register": {
 		return "Modbus Register Configuration";
 	}
-	case "dali_channel": {
-		return "DALI Channel Configuration";
+	case "light_channel": {
+		return "Lighting Channel Configuration";
 	}
 	default: {
 		return "Unknown Device Type Configuration";
@@ -547,8 +547,8 @@ function getDeviceCategoryName(device) {
 	case "do": {
 		return "Digital Outputs";
 	}
-	case "dali_channel": {
-		return "DALI Channels";
+	case "light_channel": {
+		return "Lighting Bus Channels";
 	}
 	default: {
 		return "Unknown Device Type";
@@ -711,8 +711,8 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 		device_properties["wifi_eth0_masq"] = msg.eth0_masq;
 		break;
 	}
-	case "dali_channel": {
-		device_properties["device_name"] = "DALI Channel " + circuit_display_name;
+	case "light_channel": {
+		device_properties["device_name"] = "light Channel " + circuit_display_name;
 		device_properties["broadcast_commands"] = msg.broadcast_commands;
 		break;
 	}
@@ -852,7 +852,7 @@ function syncDevice(msg) {
         	main_el.textContent = device_properties["wifi_ap_state"];
         	break;
         }
-        case "dali_channel": {
+        case "light_channel": {
             main_el = document.createElement("input");
             main_el.className = "out";
             main_el.min = 0;
@@ -878,7 +878,7 @@ function syncDevice(msg) {
 
         //Create the div structure
         div.appendChild(label);
-        if (device == "ao" || device == "dali_channel") { 
+        if (device == "ao" || device == "light_channel") { 
         	div.appendChild(main_el);
         } else {
         	div.appendChild(right_div); 
@@ -973,15 +973,15 @@ function syncDevice(msg) {
             $('#system_list').listview('refresh');
         	break;
         }
-        case "dali_channel": {
+        case "light_channel": {
         	var divider = document.getElementById("unipi_digital_divider");
-        	$("#unipi_dali_channel_divider").css("display", "block");
+        	$("#unipi_light_channel_divider").css("display", "block");
             var list = document.getElementById("outputs_list");
             list.insertBefore(li, divider);
             $('#' + main_el.id).slider();
         	$('#outputs_list').listview('refresh');
             $('#' + main_el.id).bind("slidestop", function (event, ui) {
-                makePostRequest('dali_channel/' + circuit, 'broadcast_command=DAPC&broadcast_argument=' + $(this).val());
+                makePostRequest('light_channel/' + circuit, 'broadcast_command=DAPC&broadcast_argument=' + $(this).val());
             });
             $("#" + device_signature + "_value").val(0).slider("refresh");
         	break;        	
@@ -1062,7 +1062,7 @@ function syncDevice(msg) {
         	main_el.innerHTML = device_properties["wifi_ap_state"];
         	break;
         }
-        case "dali_channel": {
+        case "light_channel": {
         	//main_el.innerHTML = "Channel " + circuit;
         	break;
         }       
