@@ -481,15 +481,17 @@ class UartBoard(object):
 						elif m_feature['type'] == 'AI' and m_feature['major_group'] == board_id:
 							while counter < max_count:
 								board_val_reg = m_feature['val_reg']
+								tolerances = m_feature['tolerances']
 								if m_feature.has_key('cal_reg'):
 									_ai = AnalogInput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, regcal=m_feature['cal_reg'],
-													  dev_id=self.dev_id, major_group=0, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
+													  regmode=m_feature['mode_reg'], dev_id=self.dev_id, major_group=0, tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
 								elif 'SecondaryAI' in m_feature['modes']:
 									_ai = AnalogInput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter * 2, regmode=m_feature['mode_reg'],
-													 dev_id=self.dev_id, major_group=0, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
+													 dev_id=self.dev_id, major_group=0, tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
 								else:
 									_ai = AnalogInput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter * 2, dev_id=self.dev_id,
-													  major_group=0, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
+													  major_group=0, modes=m_feature['modes'], regmode=m_feature['mode_reg'], tolerances=tolerances,
+													  legacy_mode=self.legacy_mode)
 								if self.neuron.datadeps.has_key(board_val_reg + counter):
 									self.neuron.datadeps[board_val_reg + counter]+=[_ai]
 								else:
