@@ -7,7 +7,8 @@ server {
 	#ssl_certificate      /etc/nginx/democert.pem;
 	#ssl_certificate_key  /etc/nginx/democert.key;
 
-	access_log  /var/log/evok.access.log;
+	#access_log  /var/log/evok.access.log;
+	access_log  off;
 	root /var/www/evok;
 
 	location / {
