@@ -420,7 +420,7 @@ function populateConfigForm(form, device, circuit, data) {
 		print_button = $("<input>", {"type": "submit", "value": "Print Log", "id":"unipi_config_form_print_button"});
 		form.append([print_button]);
 	}
-	$("#unipi_config_form").on("submit", (event) => configFormSubmitHandler(event));
+	$("#unipi_config_form").on("submit", function(event) {configFormSubmitHandler(event);});
 	form.trigger('create');
 	circuit_text_field.parent().hide();
 	circuit_field_label.hide();
@@ -590,7 +590,7 @@ function populateConfigTab(device, circuit, circuit_display_name, msg) {
 	config_el.textContent = circuit_display_name;
 	config_el.href = "#" + device;
 	config_el_div.appendChild(config_el);
-	$(config_el).on("click", (event) => configButtonHandler(event));
+	$(config_el).on("click", function(event) {configButtonHandler(event);});
     document.getElementById("unipi_" + translated_device + "_config_div_grid").appendChild(config_el_div);
 }
 
@@ -1112,7 +1112,10 @@ function updateValues() {
 
 function configButtonHandler(event) {
 	var $this = $(this);
-	var device = event.currentTarget.href.substr(event.currentTarget.origin.length + 2, (event.currentTarget.href.length));
+	var device = event.currentTarget.href.substr(
+			(event.currentTarget.href.length - (event.currentTarget.hash.length - 1)), 
+			(event.currentTarget.href.length)
+		);
 	var circuit = event.currentTarget.id.substr(30 + device.length, (event.currentTarget.id.length));
 	event.preventDefault();
     var circuit_display_name = circuit.replace(/\_/g, ' ');
@@ -1157,7 +1160,7 @@ function configButtonRestFailureCallback(data) {
 
 
 $(document).ready(function(){
-	$("#unipi_save_all_button").on("click", (event) => saveAllButtonHandler(event));
+	$("#unipi_save_all_button").on("click", function(event) {saveAllButtonHandler(event);});
 });
 
 function saveAllButtonHandler(event) {
