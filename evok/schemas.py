@@ -1961,7 +1961,7 @@ di_post_inp_schema = {
 		},
 		"counter_mode": {
 			"type": "string",
-			"enum": ["disabled"]
+			"enum": ["disabled", "Disabled", "Enabled", "rising", "falling"]
 		},
 		"debounce": {"type": "number"}
 	},
