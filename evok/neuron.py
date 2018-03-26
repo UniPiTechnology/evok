@@ -302,11 +302,12 @@ class UartNeuron(object):
 			self.do_scanning = False
 
 	def full(self):
-		ret = {'dev': 'neuron', 'circuit': self.circuit,
-			    'version_registers': self.versions, 
+		ret = {'dev': 'neuron', 
+                'circuit': self.circuit,
 			    'model': self.device_name, 
 			    'uart_circuit': self.neuron_uart_circuit, 
-			    'uart_port': self.port}
+			    'uart_port': self.port,
+                'glob_dev_id': self.dev_id}
 		if self.alias != '':
 			ret['alias'] = self.alias
 		return ret
