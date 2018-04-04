@@ -79,7 +79,8 @@ and look through/paste the output of the script.
 
 To uninstall EVOK please run the uninstallation script which is located in the `/opt/evok/` folder.
 
-    sudo ./uninstall-evok.sh
+    sudo su
+    bash uninstall-evok.sh
 
 Note that after uninstalling Evok you have to reboot your device to ensure all the files and settings are gone. 
 
