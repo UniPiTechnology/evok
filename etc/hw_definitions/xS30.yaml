@@ -20,8 +20,9 @@ modbus_features:
       val_reg     : 1
       counter_reg : 35
       deboun_reg  : 1026
+      start_index : 16
     - type        : DI
-      count       : 18
+      count       : 16
       major_group : 1
       modes       :
         - Simple
@@ -30,6 +31,7 @@ modbus_features:
       val_reg     : 0
       counter_reg : 3
       deboun_reg  : 1010
+      start_index : 0
     - type        : UART
       major_group : 1
       parity_modes :
