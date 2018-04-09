@@ -7,58 +7,7 @@ owire_get_out_schema = {
 	"$schema": "http://json-schema.org/draft-04/schema#",
 	"title": "Neuron_Instruction",
 	"type": "object",
-	"properties": {
-		"dev": {
-			"type": "string",
-			"enum": [
-				"sensor",
-				"temp",
-				"1wdevice"
-			]
-		},
-		"circuit": {
-			"type": "string"
-		},
-		"address": {
-			"type": "string"
-		},
-		"value": {},
-		"humidity": {
-			"type": "number",
-			"minimum": 0,
-			"maximum": 100
-		},
-		"vdd": {
-			"type": "number"
-		},
-		"vad": {
-			"type": "number"
-		},
-		"vis": {
-			"type": "number"
-		},
-		"temp": {
-			"type": "number"
-		},
-		"lost": {
-			"type": "boolean"
-		},
-		"time": {
-			"type": "number"
-		},
-		"interval": {
-			"type": "number"
-		},
-		"typ": {
-			"type": "string"
-		}
-	},
-	"required": [
-		"dev",
-		"circuit",
-		"address",
-		"typ"
-	]
+	"properties": {}
 }
 
 owire_get_out_example = {"dev": "temp", "circuit": "1_01", "address": "abcdefgh", "typ": "DS9999"}
@@ -935,52 +884,12 @@ all_get_out_schema = {
 							"enum": [
 								"sensor",
 								"temp",
-								"1wdevice"
+								"1wdevice",
+                                "ds2408",
+                                "owbus"
 							]
-						},
-						"circuit": {
-							"type": "string"
-						},
-						"address": {
-							"type": "string"
-						},
-						"value": {},
-						"humidity": {
-							"type": "number",
-							"minimum": 0,
-							"maximum": 100
-						},
-						"vdd": {
-							"type": "number"
-						},
-						"vad": {
-							"type": "number"
-						},
-						"vis": {
-							"type": "number"
-						},
-						"temp": {
-							"type": "number"
-						},
-						"lost": {
-							"type": "boolean"
-						},
-						"time": {
-							"type": "number"
-						},
-						"interval": {
-							"type": "number"
-						},
-						"typ": {
-							"type": "string"
 						}
-					},
-					"required": [
-						"dev",
-						"circuit",
-						"address",
-						"typ"
-					]
+                    }
 				},
 				{
 				    "type": "object",
