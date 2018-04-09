@@ -180,7 +180,7 @@ modbus_features:
       deboun_reg  : 1239
     - type        : DI
       count       : 14
-      major_group : 2
+      major_group : 3
       modes       :
         - Simple
       min_v       : 5
