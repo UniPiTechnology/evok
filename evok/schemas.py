@@ -120,7 +120,7 @@ uart_get_out_schema = {
             "minimum": 0
         },
         "sw_address": {
-            "type": "string"
+            "type": "number"
         },
         "alias": {
             "type": "string"
@@ -205,7 +205,7 @@ uart_post_inp_schema = {
 			]
 		},
         "sw_address": {
-            "type": "string"
+            "type": "number"
         },
 		"alias": {
 			"type": "string"
@@ -982,7 +982,7 @@ all_get_out_schema = {
 				            "minimum": 0
 				        },
                         "sw_address": {
-                            "type": "string"
+                            "type": "number"
                         },
 				        "alias": {
 				            "type": "string"

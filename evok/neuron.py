@@ -519,7 +519,7 @@ class UartBoard(object):
                                 address_reg = m_feature['address_reg']
                                 _uart = Uart("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, dev_id=self.dev_id,
                                              major_group=0, parity_modes=m_feature['parity_modes'], speed_modes=m_feature['speed_modes'],
-                                             stopb_modes=m_feature['stopb_modes'], adress_reg=address_reg, legacy_mode=self.legacy_mode)
+                                             stopb_modes=m_feature['stopb_modes'], address_reg=address_reg, legacy_mode=self.legacy_mode)
                                 Devices.register_device(UART, _uart)
                                 counter+=1
 
@@ -1455,11 +1455,11 @@ class Uart():
         parity_mode_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, unit=self.arm.modbus_address)[0]) & self.parity_mask
         speed_mode_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, unit=self.arm.modbus_address)[0]) & self.speed_mask
         stopb_mode_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, unit=self.arm.modbus_address)[0]) & self.stopb_mask
-        if adress_reg != -1:
-            address_val = self.arm.neuron.modbus_cache_map.get_register(1, self.address_reg, unit=self.arm.modbus_address)[0]
+        if self.address_reg != -1:
+            self.address_val = self.arm.neuron.modbus_cache_map.get_register(1, self.address_reg, unit=self.arm.modbus_address)[0]
             self.addressvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.address_reg, unit=self.arm.modbus_address)[0]
         else:
-            address_val = 0
+            self.address_val = 0
             self.addressvalue = None
             
         if parity_mode_val == 0x00000300:
@@ -1568,7 +1568,7 @@ class Uart():
             self.arm.neuron.client.write_register(self.valreg, val, unit=self.arm.modbus_address)    
             self.stopb_mode = stopb_mode
         
-        if sw_address is not None and address_val != 0:
+        if sw_address is not None and self.address_val != 0:
             self.arm.neuron.client.write_register(self.address_reg, sw_address, unit=self.arm.modbus_address)
         
         if alias is not None:
