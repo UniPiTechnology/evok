@@ -77,6 +77,7 @@ modbus_features:
         - One
         - Two
       conf_reg    : 1023
+      address_reg : 1024
     - type        : WD
       major_group : 1
       count       : 1
