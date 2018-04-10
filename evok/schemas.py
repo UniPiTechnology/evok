@@ -119,6 +119,9 @@ uart_get_out_schema = {
             "type": "number",
             "minimum": 0
         },
+        "address": {
+            "type": "string"
+        },
         "alias": {
             "type": "string"
         }
@@ -201,6 +204,9 @@ uart_post_inp_schema = {
 				"Two"
 			]
 		},
+        "address": {
+            "type": "string"
+        },
 		"alias": {
 			"type": "string"
 		}
@@ -975,6 +981,9 @@ all_get_out_schema = {
 				            "type": "number",
 				            "minimum": 0
 				        },
+                        "address": {
+                            "type": "string"
+                        },
 				        "alias": {
 				            "type": "string"
 				        }

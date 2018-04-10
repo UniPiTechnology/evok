@@ -51,6 +51,7 @@ modbus_features:
         - Two
       count       : 1
       conf_reg    : 1034
+      address_reg : 1035
     - type        : LED
       major_group : 1
       count       : 4

@@ -54,6 +54,7 @@ modbus_features:
         - One
         - Two
       conf_reg    : 1031
+      address_reg : 1032
     - type        : LED
       major_group : 1
       count       : 4
