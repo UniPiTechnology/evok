@@ -1509,7 +1509,7 @@ class Uart():
                'speed_mode': self.speed_mode,
                'stopb_modes': self.stopb_modes, 
                'stopb_mode': self.stopb_mode,
-               'address': self.address_val,
+               'sw_address': self.address_val,
                'glob_dev_id': self.dev_id}
         if self.alias != '':
             ret['alias'] = self.alias
@@ -1521,7 +1521,7 @@ class Uart():
                 'conf_value': self.conf}
 
     @gen.coroutine
-    def set(self, conf_value=None, parity_mode=None, speed_mode=None, stopb_mode=None, address=None, alias=None):
+    def set(self, conf_value=None, parity_mode=None, speed_mode=None, stopb_mode=None, sw_address=None, alias=None):
         val = self.regvalue()
         if conf_value is not None:
             self.arm.neuron.client.write_register(self.valreg, conf_value, unit=self.arm.modbus_address)
@@ -1568,8 +1568,8 @@ class Uart():
             self.arm.neuron.client.write_register(self.valreg, val, unit=self.arm.modbus_address)    
             self.stopb_mode = stopb_mode
         
-        if address is not None and address_val != 0:
-            self.arm.neuron.client.write_register(self.address_reg, address, unit=self.arm.modbus_address)
+        if sw_address is not None and address_val != 0:
+            self.arm.neuron.client.write_register(self.address_reg, sw_address, unit=self.arm.modbus_address)
         
         if alias is not None:
             if Devices.add_alias(alias, self, file_update=True):
