@@ -190,6 +190,8 @@ class WsHandler(websocket.WebSocketHandler):
 			if cmd == "all":
 				result = []
 				devices = [INPUT, RELAY, AI, AO, SENSOR]
+				if not (len(self.filter) == 1 and self.filter[0] == "default"):
+					devices = self.filter
 				for dev in devices:
 					result += map(lambda dev: dev.full(), Devices.by_int(dev))
 				self.write_message(json.dumps(result))
@@ -1485,7 +1487,7 @@ class JSONBulkHandler(APIHandler):
 						result['group_assignments'] += [map(methodcaller('full'), all_devs)]
 					else:
 						result['group_assignments'] = [map(methodcaller('full'), all_devs)]
-			if 	'individual_assignments' in js_dict:
+			if	 'individual_assignments' in js_dict:
 				for single_command in js_dict['individual_assignments']:
 					outp = Devices.by_name(single_command['device_type'], circuit=single_command['device_circuit'])
 					outp = outp.set(**(single_command['assigned_values']))
