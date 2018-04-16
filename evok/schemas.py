@@ -422,17 +422,7 @@ all_get_out_schema = {
 							"minimum": 0,
 							"maximum": 65535
 						},
-						"counter_mode": {
-							"type": "string",
-							"description": "\"rising\",\"disabled\" and \"falling\" applies only to the UniPi 1.1",
-							"enum": [
-								"Disabled",
-								"Enabled",
-								"rising",
-								"falling",
-								"disabled"
-							]
-						},
+						"counter_mode": {},
 						"counter_modes": {
 							"type": "array",
 							"description": "\"rising\",\"disabled\" and \"falling\" applies only to the UniPi 1.1",
@@ -603,8 +593,10 @@ all_get_out_schema = {
 							"enum": [
 								"Voltage",
 								"Current",
-								"Resistance"
-							]
+								"Resistance",
+                                "Simple"
+							],
+                            "description": "Simple is only for the UniPi 1.1"
 						},
 						"modes": {
 							"type": "array",
@@ -613,8 +605,10 @@ all_get_out_schema = {
 								"enum": [
 									"Voltage",
 									"Current",
-									"Resistance"
-								]
+									"Resistance",
+                                    "Simple"
+								],
+                                "description": "Simple is only for the UniPi 1.1"
 							}
 						},
 						"range": {
@@ -1560,8 +1554,10 @@ ai_get_out_schema = {
 			"enum": [
 				"Voltage",
 				"Current",
-				"Resistance"
-			]
+				"Resistance",
+                "Simple"
+			],
+            "description": "Simple is only valid for the UniPi 1.1"
 		},
 		"modes": {
 			"type": "array",
@@ -1570,8 +1566,10 @@ ai_get_out_schema = {
 				"enum": [
 					"Voltage",
 					"Current",
-					"Resistance"
-				]
+					"Resistance",
+                    "Simple"
+				],
+                "description": "Simple is only valid for the UniPi 1.1"
 			}
 		},
 		"range": {
@@ -1635,8 +1633,10 @@ ai_post_inp_schema = {
 			"enum": [
 				"Voltage",
 				"Current",
-				"Resistance"
-			]
+				"Resistance",
+                "Simple"
+			],
+            "description": "Simple is only valid for the UniPi 1.1"
 		},
 		"range": {
 			"type": "string",
@@ -1775,17 +1775,7 @@ di_get_out_schema = {
 			"minimum": 0,
 			"maximum": 65535
 		},
-		"counter_mode": {
-			"type": "string",
-			"description": "\"rising\",\"disabled\" and \"falling\" applies only to the UniPi 1.1",
-			"enum": [
-				"Disabled",
-				"Enabled",
-				"rising",
-				"falling",
-				"disabled"
-			]
-		},
+		"counter_mode": {},
 		"counter_modes": {
 			"type": "array",
 			"description": "\"rising\",\"disabled\" and \"falling\" applies only to the UniPi 1.1",
@@ -1877,10 +1867,7 @@ di_post_inp_schema = {
 		"counter": {
 			"type": "number"
 		},
-		"counter_mode": {
-			"type": "string",
-			"enum": ["disabled", "Disabled", "Enabled", "rising", "falling"]
-		},
+		"counter_mode": {},
 		"debounce": {"type": "number"}
 	},
 }
