@@ -119,19 +119,19 @@ class Handler(userBasicHelper, JSONRPCHandler):
 	###### OwBus (1wire bus) ######
 	def owbus_get(self, circuit):
 		ow = Devices.by_int(OWBUS, str(circuit))
-		return ow.scan_interval
+		return ow.bus_driver.scan_interval
 
 	def owbus_set(self, circuit, scan_interval):
 		ow = Devices.by_int(OWBUS, str(circuit))
-		return ow.set(scan_interval=scan_interval)
+		return ow.bus_driver.set(scan_interval=scan_interval)
 
 	def owbus_scan(self, circuit):
 		ow = Devices.by_int(OWBUS, str(circuit))
-		return ow.set(do_scan=True)
+		return ow.bus_driver.set(do_scan=True)
 
 	def owbus_list(self, circuit):
 		ow = Devices.by_int(OWBUS, str(circuit))
-		return ow.list()
+		return ow.bus_driver.list()
 
 	###### Sensors (1wire thermo,humidity) ######
 	def sensor_set(self, circuit, interval):
