@@ -596,7 +596,7 @@ all_get_out_schema = {
 								"Resistance",
                                 "Simple"
 							],
-                            "description": "Simple is only for the UniPi 1.1"
+                            "description": "Simple is valid only for the UniPi 1.1"
 						},
 						"modes": {
 							"type": "array",
@@ -608,7 +608,7 @@ all_get_out_schema = {
 									"Resistance",
                                     "Simple"
 								],
-                                "description": "Simple is only for the UniPi 1.1"
+                                "description": "Simple is valid only for the UniPi 1.1"
 							}
 						},
 						"range": {
