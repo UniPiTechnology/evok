@@ -26,9 +26,9 @@ In order to install EVOK on Neuron you will need an SD card with a standard ***R
 To install EVOK itself first connect to your Neuron using SSH (there is a large number of clients you can use, for windows we recommend using [PUTTY]). The default username for Raspbian is "pi" and the default password is "raspberry". After you connect to your Neuron execute the following commands:
 
     sudo su
-    wget https://github.com/UniPiTechnology/evok/archive/v2.0.4.zip
-    unzip v2.0.4.zip
-    cd evok-2.0.4
+    wget https://github.com/UniPiTechnology/evok/archive/v2.0.5.zip
+    unzip v2.0.5.zip
+    cd evok-2.0.5
     bash install-evok.sh
 
 The installation script should take care of everything else, but be aware there may be some issues with limited and/or broken functionality. Please report any bugs you find on the [github repository].
@@ -97,7 +97,7 @@ Apache License, Version 2.0
 ----
 Raspberry Pi is a trademark of the Raspberry Pi Foundation
 
-[api-docs.io]:https://evok-4.api-docs.io/1.04/
+[api-docs.io]:https://evok-6.api-docs.io/1.05
 [PUTTY]:http://www.putty.org/
 [github repository]:https://github.com/UniPiTechnology/evok
 [OpenSource image]:https://files.unipi.technology/s/public?path=%2FSoftware%2FOpen-Source%20Images
