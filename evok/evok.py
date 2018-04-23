@@ -168,6 +168,8 @@ class WsHandler(websocket.WebSocketHandler):
 			if len(self.filter) == 1 and self.filter[0] == "default":
 				self.write_message(json.dumps(device.full()))
 			else:
+				if 'dev' in dev_all:
+					dev_all = [dev_all]
 				for single_dev in dev_all:
 					if single_dev['dev'] in self.filter:
 						outp += [single_dev]
@@ -190,10 +192,12 @@ class WsHandler(websocket.WebSocketHandler):
 			if cmd == "all":
 				result = []
 				devices = [INPUT, RELAY, AI, AO, SENSOR]
-				if not (len(self.filter) == 1 and self.filter[0] == "default"):
-					devices = self.filter
-				for dev in devices:
-					result += map(lambda dev: dev.full(), Devices.by_int(dev))
+				if (len(self.filter) == 1 and self.filter[0] == "default"):
+					for dev in devices:
+						result += map(lambda dev: dev.full(), Devices.by_int(dev))
+				else:
+					for dev in range(0,24):
+						result += map(lambda dev: dev.full(), Devices.by_int(dev))				   
 				self.write_message(json.dumps(result))
 			#set device state
 			elif cmd == "filter":
