@@ -43,4 +43,3 @@ def register_config_cb(callback):
     else:
         config = _config
 
-
