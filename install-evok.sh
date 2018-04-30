@@ -550,7 +550,7 @@ echo '#########################################################################'
 echo ' '
 read -p 'API Port to use: >' internal_port_number
 echo ' '
-sed -i -e "s/listen 88/listen ${external_port_number}/" /etc/nginx/sites-enabled/evok
+sed -i -e "s/listen 80/listen ${external_port_number}/" /etc/nginx/sites-enabled/evok
 sed -i -e "s/localhost:8080/localhost:${internal_port_number}/" /etc/nginx/sites-enabled/evok
 echo ' '
 echo '###################################################'
