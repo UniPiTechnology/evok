@@ -279,7 +279,7 @@ class UartNeuron(object):
                 self.versions = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             else:
                 self.versions = self.versions.registers
-            board = UartBoard(self.Config, self.circuit, self.modbus_address, self, self.versions, dev_id=self.dev_id)
+            board = UartBoard(self.Config, self.circuit, self.modbus_address, self, self.versions, dev_id=self.dev_id, direct_access=self.direct_access)
             yield board.parse_definition(self.hw_dict, 1)
             self.boards.append(board)
             yield config.add_aliases(alias_dict)
