@@ -9,7 +9,7 @@ SHORTHASH=`git log --pretty=format:'%h' -n 1`
 REVCOUNT=`git log --oneline | wc -l`
 LATESTTAG=`git describe --tags --abbrev=0`
 
-VERSION="$REPONAME Branch:[$BRANCH] Release:$LATESTTAG PrecedingRevision:$REVCOUNT($SHORTHASH)"
+VERSION="Repository:$REPONAME ActiveBranch:[$BRANCH] `if [ -n \"$LATESTTAG\" ]; then echo \"PrecedingRelease:$LATESTTAG\"; fi` PrecedingRevision:$REVCOUNT($SHORTHASH)"
 echo $VERSION > $FILENAME
 git update-index --no-assume-unchanged $FILENAME
 git add $FILENAME
