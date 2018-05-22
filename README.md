@@ -37,7 +37,7 @@ The installation script should take care of everything else, but be aware there 
 
 Access to GPIOs is done using the fantastic [PIGPIO] library. Make sure to install it first before use.
 
-_**Legacy Evok**_ also requires a few other python libraries that are not installed on Raspbian by default:
+_**Legacy EVOK**_ also requires a few other python libraries that are not installed on Raspbian by default:
 * python-ow
 * [tornado]
 * [toro]
