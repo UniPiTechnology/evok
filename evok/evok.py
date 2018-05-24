@@ -1205,9 +1205,12 @@ class RemoteCMDHandler(UserCookieHelper, tornado.web.RequestHandler): # ToDo CHE
             yield call_shell_subprocess('echo -e "%s\\n%s" | passwd root' % (status, status))
         self.finish()
 
-class ConfigHandler(UserCookieHelper, tornado.web.RequestHandler): # ToDo CHECK
+class ConfigHandler(UserCookieHelper, tornado.web.RequestHandler):
     def initialize(self):
         enable_cors(self)
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
 
     @tornado.web.authenticated
     def get(self):
@@ -1232,6 +1235,21 @@ class ConfigHandler(UserCookieHelper, tornado.web.RequestHandler): # ToDo CHECK
         yield call_shell_subprocess('service evok restart')
         self.finish()
 
+
+class VersionHandler(UserCookieHelper, APIHandler):
+    self.version = 'Unspecified'
+        
+    def initialize(self):
+        enable_cors(self)
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        with open('version.txt', 'r') as f:
+            self.version = f.read(255)
+
+    def get(self):
+        self.write(self.version)
+        self.finish()
 
 @gen.coroutine
 def call_shell_subprocess(cmd, stdin_data=None, stdin_async=False):
@@ -1678,6 +1696,7 @@ def main():
         (r"/json/sensor/?([^/]+)/?([^/]+)?/?", RestOWireHandler),
         (r"/json/light_channel/?([^/]+)/?([^/]+)?/?", RestLightChannelHandler),
         (r"/json/1wdevice/?([^/]+)/?([^/]+)?/?", RestOWireHandler),
+        (r"/version/?", VersionHandler),
         (r"/ws/?", WsHandler)
     ]
 
