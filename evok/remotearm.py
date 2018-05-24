@@ -35,10 +35,7 @@ def i2u(val):
     if val >= 0: return val
     return (val + 0x10000)
 
-
-
 class RemoteArm:
-
     def  __init__(self, host, unit = 1, baud = 19200, timeout = 1):
         if (host.startswith('/')):
             self.pymc=pySerial(method='rtu', port=host, baudrate=baud, timeout=timeout)
@@ -51,7 +48,6 @@ class RemoteArm:
 
     def close(self):
         self.pymc.close()
-
 
     def write_regs(self, reg, values, unit = -1):
         try:

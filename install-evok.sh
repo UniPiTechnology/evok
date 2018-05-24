@@ -166,6 +166,7 @@ install_unipi_1() {
 	
 	# Copy evok
 	cp -r evok/ /opt/
+	cp version.txt /opt/evok/
 	mkdir -p /var/www/evok && cp -r www/* /var/www/
 	mkdir -p /var/evok && cp -r var/* /var/evok/
 	mkdir -p /opt && cp -r opt/* /opt/
@@ -298,6 +299,7 @@ install_unipi_lite_1() {
 	
 	# Copy evok
 	cp -r evok/ /opt/
+	cp version.txt /opt/evok/
 	mkdir -p /var/www/evok && cp -r www/* /var/www/
 	mkdir -p /var/evok && cp -r var/* /var/evok/
 	mkdir -p /opt && cp -r opt/* /opt/
@@ -432,6 +434,7 @@ install_unipi_neuron() {
 	
 	# Copy evok
 	cp -r evok/ /opt/
+	cp version.txt /opt/evok/
 	mkdir -p /var/www/evok && cp -r www/* /var/www/
 	mkdir -p /var/evok && cp -r var/* /var/evok/
 	mkdir -p /opt && cp -r opt/* /opt/
