@@ -1237,7 +1237,7 @@ class ConfigHandler(UserCookieHelper, tornado.web.RequestHandler):
 
 
 class VersionHandler(UserCookieHelper, APIHandler):
-    self.version = 'Unspecified'
+    version = 'Unspecified'
         
     def initialize(self):
         enable_cors(self)
