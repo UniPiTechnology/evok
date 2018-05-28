@@ -791,11 +791,11 @@ class Board(object):
             logger.info("NO NEURON EEPROM DATA DETECTED, EXITING")
             logger.info("PLEASE USE A FRESH EVOK IMAGE, OR ENABLE I2C, I2C-DEV AND THE EEPROM OVERLAY")
             exit(-1);
-        for defin in hw_dict.definitions:
-            if defin and defin['type'] in config.up_globals['model']:
-                yield self.initialise_cache(defin)
-                for m_feature in defin['modbus_features']:
-                    self.parse_feature(m_feature, board_id)
+        defin = hw_dict.neuron_definition
+        if defin and defin['type'] in config.up_globals['model']:
+            yield self.initialise_cache(defin)
+            for m_feature in defin['modbus_features']:
+                self.parse_feature(m_feature, board_id)
 
     def get(self): 
         return self.full()
