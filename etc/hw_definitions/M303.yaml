@@ -1,5 +1,5 @@
 ---
-type: M20
+type: M303
 modbus_register_blocks:
     - board_index : 1
       start_reg   : 0
@@ -19,11 +19,11 @@ modbus_register_blocks:
       frequency   : 5
     - board_index : 2
       start_reg   : 100
-      count       : 35
+      count       : 63
       frequency   : 1
     - board_index : 2
       start_reg   : 1100
-      count       : 29
+      count       : 40
       frequency   : 5
 modbus_features:
     - type        : AO
@@ -130,26 +130,21 @@ modbus_features:
       major_group : 2
       modes       :
         - Simple
-        - DirectSwitch
-      ds_modes    :
-        - Simple
-        - Inverted
-        - Toggle
       min_v       : 5
       max_v       : 24
       val_reg     : 100
       counter_reg : 103
-      direct_reg  : 1126
       deboun_reg  : 1110
-      polar_reg   : 1127
-      toggle_reg  : 1128
-    - type        : RO
-      major_group : 2
+    - type        : DI
       count       : 14
-      val_reg     : 101
-      val_coil    : 100
+      major_group : 2
       modes       :
         - Simple
+      min_v       : 5
+      max_v       : 24
+      val_reg     : 101
+      counter_reg : 135
+      deboun_reg  : 1110
     - type        : WD
       count       : 1
       major_group : 2
@@ -159,9 +154,9 @@ modbus_features:
       reset_coil  : 1102
     - type        : REGISTER
       major_group : 2
-      count       : 35
+      count       : 63
       start_reg   : 100
     - type        : REGISTER
       major_group : 2
-      count       : 29
+      count       : 40
       start_reg   : 1100

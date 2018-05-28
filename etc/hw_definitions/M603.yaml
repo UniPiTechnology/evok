@@ -1,5 +1,5 @@
 ---
-type: S10
+type: M603
 modbus_register_blocks:
     - board_index : 1
       start_reg   : 0
@@ -17,6 +17,10 @@ modbus_register_blocks:
       start_reg   : 1000
       count       : 32
       frequency   : 5
+    - board_index : 2
+      start_reg   : 100
+      count       : 21
+      frequency   : 1
 modbus_features:
     - type        : AO
       count       : 1
@@ -113,3 +117,13 @@ modbus_features:
       major_group : 1
       count       : 21
       start_reg   : 0
+    - type        : LIGHT_CHANNEL
+      major_group : 2
+      count       : 4
+      status_reg  : 0
+      read_reg    : 1
+      write_reg   : 13
+    - type        : REGISTER
+      major_group : 2
+      count       : 21
+      start_reg   : 100

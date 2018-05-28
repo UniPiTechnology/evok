@@ -1,5 +1,5 @@
 ---
-type: M40
+type: M403
 modbus_register_blocks:
     - board_index : 1
       start_reg   : 0

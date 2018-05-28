@@ -1,5 +1,5 @@
 ---
-type: M60
+type: M103
 modbus_register_blocks:
     - board_index : 1
       start_reg   : 0
@@ -19,8 +19,12 @@ modbus_register_blocks:
       frequency   : 5
     - board_index : 2
       start_reg   : 100
-      count       : 21
+      count       : 19
       frequency   : 1
+    - board_index : 2
+      start_reg   : 1100
+      count       : 21
+      frequency   : 5
 modbus_features:
     - type        : AO
       count       : 1
@@ -117,13 +121,47 @@ modbus_features:
       major_group : 1
       count       : 21
       start_reg   : 0
-    - type        : LIGHT_CHANNEL
+    - type        : REGISTER
+      major_group : 1
+      count       : 32
+      start_reg   : 1000
+    - type        : DI
+      count       : 8
       major_group : 2
-      count       : 4
-      status_reg  : 0
-      read_reg    : 1
-      write_reg   : 13
+      modes       :
+        - Simple
+        - DirectSwitch
+      ds_modes    :
+        - Simple
+        - Inverted
+        - Toggle
+      min_v       : 5
+      max_v       : 24
+      val_reg     : 100
+      counter_reg : 103
+      direct_reg  : 1118
+      deboun_reg  : 1110
+      polar_reg   : 1119
+      toggle_reg  : 1120
+    - type        : RO
+      major_group : 2
+      count       : 8
+      val_reg     : 101
+      val_coil    : 100
+      modes       :
+        - Simple
+    - type        : WD
+      count       : 1
+      major_group : 2
+      val_reg     : 102
+      timeout_reg : 1108
+      nv_sav_coil : 1103
+      reset_coil  : 1102
+    - type        : REGISTER
+      major_group : 2
+      count       : 19
+      start_reg   : 100
     - type        : REGISTER
       major_group : 2
       count       : 21
-      start_reg   : 100
+      start_reg   : 1100

@@ -1,5 +1,5 @@
 ---
-type: L40
+type: S103
 modbus_register_blocks:
     - board_index : 1
       start_reg   : 0
@@ -16,22 +16,6 @@ modbus_register_blocks:
     - board_index : 1
       start_reg   : 1000
       count       : 32
-      frequency   : 5
-    - board_index : 2
-      start_reg   : 100
-      count       : 3
-      frequency   : 1
-    - board_index : 2
-      start_reg   : 1100
-      count       : 10
-      frequency   : 5
-    - board_index : 3
-      start_reg   : 200
-      count       : 3
-      frequency   : 1
-    - board_index : 3
-      start_reg   : 1200
-      count       : 10
       frequency   : 5
 modbus_features:
     - type        : AO
@@ -129,65 +113,3 @@ modbus_features:
       major_group : 1
       count       : 21
       start_reg   : 0
-    - type        : REGISTER
-      major_group : 1
-      count       : 32
-      start_reg   : 1000
-    - type        : RO
-      major_group : 2
-      count       : 16
-      val_reg     : 100
-      val_coil    : 100
-      modes       :
-        - Simple
-    - type        : RO
-      major_group : 2
-      count       : 12
-      val_reg     : 101
-      val_coil    : 116
-      modes       :
-        - Simple
-    - type        : WD
-      count       : 1
-      major_group : 2
-      val_reg     : 102
-      timeout_reg : 1108
-      nv_sav_coil : 1103
-      reset_coil  : 1102
-    - type        : REGISTER
-      major_group : 2
-      count       : 3
-      start_reg   : 100
-    - type        : REGISTER
-      major_group : 2
-      count       : 10
-      start_reg   : 1100
-    - type        : RO
-      major_group : 3
-      count       : 16
-      val_reg     : 200
-      val_coil    : 200
-      modes       :
-        - Simple
-    - type        : RO
-      major_group : 3
-      count       : 12
-      val_reg     : 201
-      val_coil    : 216
-      modes       :
-        - Simple
-    - type        : WD
-      major_group : 3
-      count       : 1
-      val_reg     : 202
-      timeout_reg : 1208
-      nv_sav_coil : 1203
-      reset_coil  : 1202
-    - type        : REGISTER
-      major_group : 3
-      count       : 10
-      start_reg   : 1200
-    - type        : REGISTER
-      major_group : 3
-      count       : 3
-      start_reg   : 200
