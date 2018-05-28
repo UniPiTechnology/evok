@@ -321,12 +321,12 @@ def create_devices(Config, hw_dict):
                 from neuron import UartNeuron
                 dev_counter += 1
                 modbus_uart_port = Config.getstringdef(section, "modbus_uart_port", "/dev/ttyNS0")
-                scanfreq = Config.getfloatdef(section, "scan_frequency", 1)
+                scanfreq = Config.getfloatdef(section, "scan_frequency", 10)
                 scan_enabled = Config.getbooldef(section, "scan_enabled", True)
                 uart_baud_rate = Config.getintdef(section, "baud_rate", 19200)
                 uart_parity = Config.getstringdef(section, "parity", 'N')
                 uart_stopbits = Config.getintdef(section, "stop_bits", 1)
-                uart_address = Config.getintdef(section, "address", 15)
+                uart_address = Config.getintdef(section, "address", 1)
                 device_name = Config.getstringdef(section, "device_name", "unspecified")
                 allow_register_access = Config.getbooldef(section, "allow_register_access", False)
                 neuron_uart_circuit = Config.getstringdef(section, "neuron_uart_circuit", "None")
