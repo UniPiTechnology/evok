@@ -53,8 +53,8 @@ Config.read(config_path)
 wh = None
 cors = False
 corsdomains = '*'
-use_output_schema = Config.getbooldef('MAIN','regenerate_api_docs',False)
-use_legacy_api = not(Config.getbooldef('MAIN','use_experimental_api',False))
+use_output_schema = Config.getbooldef('MAIN','use_schema_verification',False)
+unsafe_configuration_handlers = Config.getbooldef('MAIN','allow_unsafe_configuration_handlers',False)
 
 import rpc_handler
 import neuron
@@ -1669,8 +1669,6 @@ def main():
     
     app_routes = [
         (r"/rpc/?", rpc_handler.Handler),
-        (r"/config/?", ConfigHandler),
-        (r"/config/cmd/?", RemoteCMDHandler),
         (r"/rest/all/?", RestLoadAllHandler),
         (r"/rest/([^/]+)/([^/]+)/?([^/]+)?/?", LegacyRestHandler),
         (r"/bulk/?", JSONBulkHandler),
@@ -1699,6 +1697,10 @@ def main():
         (r"/version/?", VersionHandler),
         (r"/ws/?", WsHandler)
     ]
+    
+    if allow_unsafe_configuration_handlers:
+        app_routes.append((r"/config/?", ConfigHandler))
+        app_routes.append((r"/config/cmd/?", RemoteCMDHandler)) 
 
     app = tornado.web.Application(
         handlers=app_routes
