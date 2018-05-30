@@ -714,12 +714,9 @@ class Board(object):
             if m_feature.has_key('cal_reg'):
                 _ai = AnalogInput("%s_%02d" % (self.circuit, len(Devices.by_int(AI, major_group=m_feature['major_group'])) + 1), self, board_val_reg + counter, regcal=m_feature['cal_reg'], regmode=m_feature['mode_reg'],
                                   dev_id=self.dev_id, major_group=m_feature['major_group'], tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
-            elif 'SecondaryAI' in m_feature['modes']:
+            else:
                 _ai = AnalogInput("%s_%02d" % (self.circuit, len(Devices.by_int(AI, major_group=m_feature['major_group'])) + 1), self, board_val_reg + counter * 2, regmode=m_feature['mode_reg'] + counter,
                                  dev_id=self.dev_id, major_group=m_feature['major_group'], tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
-            else:
-                _ai = AnalogInput("%s_%02d" % (self.circuit, len(Devices.by_int(AI, major_group=m_feature['major_group'])) + 1), self, board_val_reg + counter * 2, dev_id=self.dev_id,
-                                  major_group=m_feature['major_group'], regmode=m_feature['mode_reg'], tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
             if self.neuron.datadeps.has_key(board_val_reg + counter):
                 self.neuron.datadeps[board_val_reg + counter]+=[_ai]
             else:

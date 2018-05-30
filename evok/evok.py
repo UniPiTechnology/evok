@@ -54,7 +54,7 @@ wh = None
 cors = False
 corsdomains = '*'
 use_output_schema = Config.getbooldef('MAIN','use_schema_verification',False)
-unsafe_configuration_handlers = Config.getbooldef('MAIN','allow_unsafe_configuration_handlers',False)
+allow_unsafe_configuration_handlers = Config.getbooldef('MAIN','allow_unsafe_configuration_handlers',False)
 
 import rpc_handler
 import neuron
