@@ -28,7 +28,7 @@ To install EVOK itself first connect to your Neuron using SSH (there is a large 
     sudo su
     wget https://github.com/UniPiTechnology/evok/archive/v.2.0.6a.zip
     unzip v.2.0.6a.zip
-    cd evok-2.0.6a
+    cd evok-v.2.0.6a
     bash install-evok.sh
 
 The installation script should take care of everything else, but be aware there may be some issues with limited and/or broken functionality. Please report any bugs you find on the [github repository].
