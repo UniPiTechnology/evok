@@ -132,7 +132,7 @@ class WhHandler():
         outp = []
         for single_dev in dev_all:
             if single_dev['dev'] in self.allowed_types:
-                outp += single_dev
+                outp += [single_dev]
         try:
             if len(outp) > 0:
                 if not self.complex_events:
