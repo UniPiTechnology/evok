@@ -18,6 +18,7 @@ import modbusclient_rs485
 from devices import *
 from log import *
 import config 
+import time
 
 from modbusclient_rs485 import AsyncErrorResponse
 import subprocess
@@ -28,6 +29,7 @@ class ENoBoard(Exception):
     pass
 
 class ModbusCacheMap(object):
+    last_comm_time = 0
     def __init__(self, modbus_reg_map, neuron):
         self.modbus_reg_map = modbus_reg_map
         self.neuron = neuron
@@ -59,6 +61,7 @@ class ModbusCacheMap(object):
                 try:
                     val = yield self.neuron.client.read_input_registers(m_reg_group['start_reg'], m_reg_group['count'], unit=unit)
                     if not isinstance(val, AsyncErrorResponse) and not isinstance(val, ModbusIOException) and not isinstance(val, ExceptionResponse):
+                        self.last_comm_time = time.time()
                         for index in range(m_reg_group['count']):
                             if (m_reg_group['start_reg'] + index) in self.neuron.datadeps and self.registered[(m_reg_group['start_reg'] + index)] != val.registers[index]:
                                 for ddep in self.neuron.datadeps[m_reg_group['start_reg'] + index]:
@@ -194,9 +197,12 @@ class Neuron(object):
                 'sn': config.up_globals['serial'], 
                 'ver2': config.up_globals['version2'],
                 'board_count': len(self.boards),
-                'glob_dev_id': self.dev_id}
+                'glob_dev_id': self.dev_id,
+                'last_comm': 0x7fffffff}
         if self.alias != '':
-            ret['alias': self.alias]
+            ret['alias'] = self.alias
+        if self.modbus_cache_map is not None:
+            ret['last_comm'] = time.time() - self.modbus_cache_map.last_comm_time
         return ret
     
     def get(self): 
@@ -307,9 +313,12 @@ class UartNeuron(object):
                 'model': self.device_name, 
                 'uart_circuit': self.neuron_uart_circuit, 
                 'uart_port': self.port,
-                'glob_dev_id': self.dev_id}
+                'glob_dev_id': self.dev_id,
+                'last_comm': 0x7fffffff}
         if self.alias != '':
             ret['alias'] = self.alias
+        if self.modbus_cache_map is not None:
+            ret['last_comm'] = time.time() - self.modbus_cache_map.last_comm_time
         return ret
     
     def get(self): 
