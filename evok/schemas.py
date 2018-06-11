@@ -291,7 +291,8 @@ neuron_get_out_schema = {
             },
             "alias": {
                 "type": "string"
-            }
+            },
+            "last_comm": {}
         },
         "required": [
             "dev",
@@ -836,7 +837,8 @@ all_get_out_schema = {
                         },
                         "alias": {
                             "type": "string"
-                        }
+                        },
+                        "last_comm": {}
                     },
                     "required": [
                         "dev",
