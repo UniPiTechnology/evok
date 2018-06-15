@@ -565,11 +565,12 @@ class UartBoard(object):
         self.volt_refx = 33000
         self.volt_ref = 3.3
         for defin in hw_dict.definitions:
-            yield self.initialise_cache(defin);
-            for m_feature in defin['modbus_features']:
-                self.parse_feature(m_feature, board_id)
+            if defin and (self.neuron.device_name == defin['type']):
+                yield self.initialise_cache(defin);
+                for m_feature in defin['modbus_features']:
+                    self.parse_feature(m_feature, board_id)
 
-    def get(self): 
+    def get(self):
         return self.full()
 
 class Board(object):
