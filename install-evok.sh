@@ -179,16 +179,16 @@ install_unipi_1() {
 	
 	# Copy default config file and init scipts
 	if [ -f /etc/evok.conf ]; then
-	echo '#####################################################'
-		echo '## The "/etc/evok-neuron.conf" file already exists ##'
-		echo '#####################################################'
+        echo '#####################################################'
+        echo '## The "/etc/evok-neuron.conf" file already exists ##'
+        echo '#####################################################'
 		if ask "Do you want to overwrite your /etc/evok.conf file?"; then
 			cp etc/evok-unipi1.1.conf /etc/evok.conf
 		else
-		echo '#####################################################################'
-			echo '## Your current config file was not overwritten.                   ##'
-				echo '## Please do a diff between your new and previous config file.     ##'
-		echo '#####################################################################'
+        echo '#####################################################################'
+        echo '## Your current config file was not overwritten.                   ##'
+        echo '## Please do a diff between your new and previous config file.     ##'
+        echo '#####################################################################'
 		fi
 	else
 		cp etc/evok-unipi1.1.conf /etc/evok.conf
@@ -495,7 +495,7 @@ install_unipi_neuron() {
 		reboot
 	else
 		echo '#######################################################################'
-		echo '## Remember to reboot your Raspberry Pi in order to start using Evok ##'
+		echo '## Remember to reboot your Raspberry Pi in order to start using EVOK ##'
 		echo '#######################################################################'
 	fi
 		echo ' '
@@ -509,7 +509,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 echo '########################'
-echo '## Installing evok... ##'
+echo '## Installing EVOK... ##'
 echo '########################'
 cp -r boot/overlays /boot/
 
@@ -571,21 +571,21 @@ select option in "${options[@]}"; do
 	case "$REPLY" in
 		1)
 			echo '################################################################################'
-			echo '## Installing Evok for UniPi Neuron series including Neuron TCP Modbus Server ##'
+			echo '## Installing EVOK for UniPi Neuron series including Neuron TCP Modbus Server ##'
 			echo '################################################################################'
 			install_unipi_neuron
 			break
 			;;
 		2)
 			echo '########################################'
-			echo '## Installing Evok for UniPi Lite 1.x ##'
+			echo '## Installing EVOK for UniPi Lite 1.x ##'
 			echo '########################################'
 			install_unipi_lite_1
 			break
 			;;
 		3)
 			echo '###################################'
-			echo '## Installing Evok for UniPi 1.x ##'
+			echo '## Installing EVOK for UniPi 1.x ##'
 			echo '###################################'
 			install_unipi_1
 			break

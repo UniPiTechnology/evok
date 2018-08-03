@@ -508,7 +508,7 @@ class UartBoard(object):
                                  dev_id=self.dev_id, major_group=0, tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
             else:
                 _ai = AnalogInput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter * 2, dev_id=self.dev_id,
-                                  major_group=0, modes=m_feature['modes'], regmode=m_feature['mode_reg'], tolerances=tolerances,
+                                  major_group=0, modes=m_feature['modes'], regmode=m_feature['mode_reg'] + counter, tolerances=tolerances,
                                   legacy_mode=self.legacy_mode)
             if self.neuron.datadeps.has_key(board_val_reg + counter):
                 self.neuron.datadeps[board_val_reg + counter]+=[_ai]
