@@ -1,0 +1,8 @@
+The Debian Package evok
+----------------------------
+
+Comments regarding the Package
+
+This package was created to simplify the previous installation process for EVOK, and should not be installed at the same time
+
+ -- Tomas Knot <into@unipi.technology> Thu, 19 Jul 2018 11:52:26 +0200

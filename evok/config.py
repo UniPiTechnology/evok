@@ -63,6 +63,17 @@ def read_eprom_config():
                 logger.info("eprom: UniPi Neuron %s version: %s serial: 0x%x", up_globals["model"], up_globals['version2'],up_globals["serial"])
     except Exception:
         pass
+    try:
+        with open('/sys/class/i2c-dev/i2c-0/device/1-0057/eeprom','r') as f:
+            ee_bytes=f.read(128)
+            if ee_bytes[96:98] == '\xfa\x55':
+                up_globals['version2'] = "%d.%d" % (ord(ee_bytes[99]), ord(ee_bytes[98]))
+                up_globals['model'] = "%s" % (ee_bytes[106:110],)
+                up_globals['serial'] = struct.unpack('i', ee_bytes[100:104])[0]
+                logger.info("eprom: UniPi Neuron %s version: %s serial: 0x%x", up_globals["model"], up_globals['version2'],up_globals["serial"])
+    except Exception:
+        pass
+
     
 class HWDict():
     def __init__(self, d_path):
