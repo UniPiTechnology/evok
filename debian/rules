@@ -7,6 +7,8 @@
 # see FEATURE AREAS in dpkg-buildflags(1)
 #export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
+export DH_VIRTUALENV_INSTALL_ROOT=/opt
+
 # see ENVIRONMENT in dpkg-buildflags(1)
 # package maintainers to append CFLAGS
 #export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
