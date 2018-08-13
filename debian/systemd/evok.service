@@ -2,6 +2,7 @@
 Description=EVOK ModBus/WebSocket/RPC Server
 Before=nginx.service
 Conflicts=mervisrt.service
+Conflicts=mervisconfigtool.service
 After=neurontcp.service
 After=unipitcp.service
 After=pigpio.service
