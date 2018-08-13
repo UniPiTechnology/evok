@@ -508,6 +508,12 @@ if [ "$EUID" -ne 0 ]; then
 	exit
 fi
 
+if [ -f /opt/evok ]; then
+    echo "EVOK already installed!!!"
+	echo "This script should only be used with a clean image"
+    exit 0
+fi
+
 echo '########################'
 echo '## Installing EVOK... ##'
 echo '########################'
