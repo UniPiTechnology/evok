@@ -1,7 +1,9 @@
 [Unit]
 Description=Evok Modbus/Websocket/Rpc Server
-Requires=neurontcp.service
+#Requires=neurontcp.service
 After=neurontcp.service
+After=unipitcp.service
+After=pigpio.service
 
 [Service]
 Type=simple
