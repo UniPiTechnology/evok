@@ -4,4 +4,4 @@ debian/systemd/evok.service lib/systemd/system
 debian/etc/evok.conf etc
 etc/hw_definitions/* etc/hw_definitions
 debian/etc/nginx/sites-enabled/evok etc/nginx/sites-enabled
-var/evok/evok-alias.yaml var/evok
+var/evok-alias.yaml var/evok
