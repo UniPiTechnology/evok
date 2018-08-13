@@ -1,8 +1,7 @@
 [Unit]
 Description=Evok Modbus/Websocket/Rpc Server
-Requires=pigpio.service
 Requires=neurontcp.service
-
+After=neurontcp.service
 
 [Service]
 Type=simple
@@ -14,11 +13,7 @@ SyslogIdentifier=evok
 StandardOutput=null
 WorkingDirectory=/opt/evok
 
-#User=evok
-#Group=evok
-
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
-#Alias=evok.service
