@@ -1,1 +1,2 @@
 /usr/lib/python2.7/dist-packages/ow  /opt/evok/lib/python2.7/site-packages/ow
+/etc/nginx/sites-available/evok /etc/evok-nginx.conf

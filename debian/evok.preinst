@@ -25,6 +25,9 @@ case "$1" in
 		if test -f /etc/nginx/sites-enabled/evok; then
 			rm /etc/nginx/sites-enabled/evok
 		fi
+		if test -f /etc/nginx/sites-available/evok; then
+			rm /etc/nginx/sites-available/evok
+		fi
     ;;
     upgrade)
 	;;
