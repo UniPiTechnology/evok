@@ -22,6 +22,9 @@ case "$1" in
 			rm /etc/systemd/system/evok.service
 			rm -r -f /opt/evok
 		fi
+		if test -f /etc/nginx/sites-enabled/evok; then
+			rm /etc/nginx/sites-enabled/evok
+		fi
     ;;
     upgrade)
 	;;
