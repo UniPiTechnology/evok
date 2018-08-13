@@ -1,3 +1,4 @@
 #! /usr/bin/dh-exec
 
 debian/systemd/evok.service lib/systemd/system
+etc/hw_definitions/* etc/hw_definitions
