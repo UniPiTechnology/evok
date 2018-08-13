@@ -1,13 +1,18 @@
 [Unit]
-Description=Evok Modbus/Websocket/Rpc Server
-#Requires=neurontcp.service
+Description=EVOK ModBus/WebSocket/RPC Server
+Before=nginx.service
+Conflicts=mervisrt.service
 After=neurontcp.service
 After=unipitcp.service
 After=pigpio.service
 
 [Service]
 Type=simple
+ExecStartPre=cp /etc/nginx/sites-available/evok /etc/nginx/sites-enabled/
+ExecStartPre=mv /etc/nginx/sites-enabled/mervis /etc/nginx/sites-available/
 ExecStart=/opt/evok/bin/python /opt/evok/lib/python2.7/site-packages/evok/evok.py
+ExecStopPost=mv /etc/nginx/sites-enabled/evok /etc/nginx/sites-available/
+ExecStopPost=cp /etc/nginx/sites-available/mervis /etc/nginx/sites-enabled/
 StartLimitIntervalSec=300
 TimeoutStopSec=3
 SyslogLevel=debug
