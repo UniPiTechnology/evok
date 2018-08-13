@@ -5,3 +5,5 @@ debian/etc/evok.conf etc
 etc/hw_definitions/* etc/hw_definitions
 debian/etc/nginx/sites-enabled/evok etc/nginx/sites-enabled
 var/evok-alias.yaml var/evok
+version.txt opt/evok
+www/evok/* var/www/evok
