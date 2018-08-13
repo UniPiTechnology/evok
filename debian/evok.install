@@ -1,7 +1,7 @@
 #! /usr/bin/dh-exec
 
 debian/systemd/evok.service lib/systemd/system
-debian/etc/evok.conf etc
+debian/etc/${DEB_HOST_MULTIARCH}/evok.conf etc
 etc/hw_definitions/* etc/hw_definitions
 debian/etc/nginx/sites-enabled/evok etc/nginx/sites-available
 var/evok-alias.yaml var/evok
