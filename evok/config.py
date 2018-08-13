@@ -64,7 +64,7 @@ def read_eprom_config():
     except Exception:
         pass
     try:
-        with open('/sys/class/i2c-dev/i2c-0/device/1-0057/eeprom','r') as f:
+        with open('/sys/class/i2c-dev/i2c-0/device/0-0057/eeprom','r') as f:
             ee_bytes=f.read(128)
             if ee_bytes[96:98] == '\xfa\x55':
                 up_globals['version2'] = "%d.%d" % (ord(ee_bytes[99]), ord(ee_bytes[98]))
