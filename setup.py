@@ -15,7 +15,9 @@ setup(
     author_email='knot@unipi.technology',
     url='https://github.com/UniPiTechnology/evok',
     packages=[
-        'evok'
+        'evok',
+		'tornadorpc_evok',
+		'UnipiDali'
     ],
     classifiers=[
 		'Development Status :: 5 - Production/Stable',

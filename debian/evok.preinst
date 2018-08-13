@@ -20,6 +20,7 @@ case "$1" in
 			deb-systemd-helper --quiet disable evok.service
 			deb-systemd-helper --quiet stop evok.service
 			rm /etc/systemd/system/evok.service
+			rm -r -f /opt/evok
 		fi
     ;;
     upgrade)
