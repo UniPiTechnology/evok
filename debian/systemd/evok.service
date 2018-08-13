@@ -8,11 +8,13 @@ After=pigpio.service
 
 [Service]
 Type=simple
-ExecStartPre=cp /etc/nginx/sites-available/evok /etc/nginx/sites-enabled/
-ExecStartPre=mv /etc/nginx/sites-enabled/mervis /etc/nginx/sites-available/
+ExecStartPre=-/bin/cp -f /etc/nginx/sites-available/evok /etc/nginx/sites-enabled/
+ExecStartPre=-/bin/mv -f /etc/nginx/sites-enabled/mervis /etc/nginx/sites-available/
+ExecStartPre=-/bin/rm -f /etc/nginx/sites-enabled/mervis
 ExecStart=/opt/evok/bin/python /opt/evok/lib/python2.7/site-packages/evok/evok.py
-ExecStopPost=mv /etc/nginx/sites-enabled/evok /etc/nginx/sites-available/
-ExecStopPost=cp /etc/nginx/sites-available/mervis /etc/nginx/sites-enabled/
+ExecStopPost=-/bin/mv -f /etc/nginx/sites-enabled/evok /etc/nginx/sites-available/
+ExecStopPost=-/bin/cp -f /etc/nginx/sites-available/mervis /etc/nginx/sites-enabled/
+ExecStartPre=-/bin/rm -f /etc/nginx/sites-enabled/evok
 StartLimitIntervalSec=300
 TimeoutStopSec=3
 SyslogLevel=debug
