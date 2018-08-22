@@ -33,6 +33,20 @@ To install EVOK itself first connect to your Neuron using SSH (there is a large 
 
 The installation script should take care of everything else, but be aware there may be some issues with limited and/or broken functionality. Please report any bugs you find on the [github repository].
 
+## Installing EVOK on AXON PLCs
+
+EVOK is installed slightly differently on Axon PLCs than on Neuron PLCs. The Axon installation process is based entirely around premade images, all that's required is to login to the PLC via SSH and run the following commands:
+
+    sudo su
+    apt-get update
+    apt-get upgrade
+    apt-get install unipi-modbus-tools
+    apt-get install evok
+    systemctl enable evok
+    reboot
+
+It is possible that some (or all) of the above steps will already have been finished previously; in that case simply continue on with the next steps. Performing all the steps will ensure you have the latest version of the software installed.
+
 ## Installation process for the legacy version
 
 Access to GPIOs is done using the fantastic [PIGPIO] library. Make sure to install it first before use.
