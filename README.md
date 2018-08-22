@@ -35,7 +35,7 @@ The installation script should take care of everything else, but be aware there 
 
 ## Installing EVOK on AXON PLCs
 
-EVOK is installed slightly differently on Axon PLCs than on Neuron PLCs. The Axon installation process is based entirely around premade images, all that's required is to login to the PLC via SSH and run the following commands:
+EVOK is installed slightly differently on Axon PLCs than on Neuron PLCs. The Axon installation process is based entirely around premade packages, all that's required is to login to the PLC via SSH and run the following commands:
 
     sudo su
     apt-get update
