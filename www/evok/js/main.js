@@ -1032,9 +1032,13 @@ function syncDevice(msg) {
             if (msg.counter_mode != "Disabled") {
                 var counter_el = document.getElementById(device_signature + "_counter");
                 //counter_el.innerHTML = counter;
-             }
-             main_el.innerHTML = (device_properties["value"] == 1) ? "On" : "Off";        	
-             break;
+            }
+            if ("bitvalue" in device_properties) {
+            	main_el.innerHTML = (device_properties["bitvalue"] == 1) ? "On" : "Off";
+            } else {
+            	main_el.innerHTML = (device_properties["value"] == 1) ? "On" : "Off";        	
+            }
+            break;
         }
         case "1wdevice": {
         	if (device_properties["typ"] == "DS2438") {
