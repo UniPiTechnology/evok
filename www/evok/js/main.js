@@ -654,6 +654,9 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 	case "input": {
 		device_properties["device_name"] = "Input " + circuit_display_name;
         device_properties["counter"] = msg.counter;
+        if ("bitvalue" in msg) {
+        	device_properties["bitvalue"] = msg.bitvalue;
+        }
 		break;
 	}
 	case "uart": {
@@ -811,9 +814,16 @@ function syncDevice(msg) {
 
             main_el = document.createElement("h1");
             var state = "Off";
-            if (device_properties["value"] == 1) {
-                state = "On;"
+            if ("bitvalue" in device_properties) {
+            	if (device_properties["bitvalue"] == 1) {
+            		state = "On";
+            	}
+            } else {
+                if (device_properties["value"] == 1) {
+                    state = "On";
+                }            	
             }
+
             main_el.textContent = state + device_properties["unit"];
         	break;
         }
