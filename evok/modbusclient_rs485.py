@@ -298,6 +298,19 @@ class AsyncModbusGeneratorClient(AsyncModbusSerialClient):
         finally:
             self.sem.release()
         raise gen.Return(fut_result.result())
+    
+    @gen.coroutine
+    def read_holding_registers(self, address, count=1, **kwargs):
+        fut_result = Future()
+        request = ReadHoldingRegistersRequest(address, count, **kwargs)
+        yield self.sem.acquire()
+        try:
+            res = self.execute(request)
+            res.addCallback(fut_result.set_result)
+            yield fut_result
+        finally:
+            self.sem.release()
+        raise gen.Return(fut_result.result())
 
     @gen.coroutine
     def write_coil(self, address, value, **kwargs):
