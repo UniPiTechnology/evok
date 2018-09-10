@@ -111,7 +111,7 @@ Apache License, Version 2.0
 ----
 Raspberry Pi is a trademark of the Raspberry Pi Foundation
 
-[api-docs.io]:https://evok-7.api-docs.io/1.06
+[api-docs.io]:https://evok-8.api-docs.io/1.07/
 [PUTTY]:http://www.putty.org/
 [github repository]:https://github.com/UniPiTechnology/evok
 [OpenSource image]:https://files.unipi.technology/s/public?path=%2FSoftware%2FOpen-Source%20Images
