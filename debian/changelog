@@ -1,3 +1,9 @@
+evok (2.0.7b) unstable; urgency=medium
+
+  * Added separation between input and holding registers.
+
+ -- Tomas Knot <knot@unipi.technology>  Mon, 10 Sep 2018 11:37:08 +0200
+
 evok (2.0.7a) unstable; urgency=medium
 
   * Initial Release.
