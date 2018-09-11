@@ -19,7 +19,26 @@ EVOK also supports sending notifications via webhook.
 
 ### For more information see our documentation at [api-docs.io].
 
-## Installation process for the 2.0 EVOK version  
+## Installation process for the 2.0 EVOK version on Neuron
+
+In order to install EVOK on Neuron you will need an SD card with a standard ***Raspbian Jessie*** or ***Raspbian Stretch*** image. It is also necessary to enable SSH on the image by creating an empty file named "ssh" in the boot partition of your SD card (the partition should be visible on all systems which support FAT16, which includes Windows, Linux and OSX among others).
+
+To install EVOK itself first connect to your Neuron using SSH (there is a large number of clients you can use, for windows we recommend using [PUTTY]). The default username for Raspbian is "pi" and the default password is "raspberry". After you connect to your Neuron execute the following commands:
+
+    sudo su
+    echo "deb https://repo.unipi.technology/debian stretch main" >> /etc/apt/sources.list
+    apt-get update
+    apt-get upgrade
+    apt-get install unipi-common
+    apt-get install neuron-kernel
+    apt-get install unipi-modbus-tools
+    apt-get install evok
+    systemctl enable evok
+    reboot
+    
+It is possible that some (or all) of the above steps will already have been finished previously; in that case simply continue on with the next steps. Performing all the steps will ensure you have the latest version of the software installed.
+
+## Legacy installation process using a shell script
 
 In order to install EVOK on Neuron you will need an SD card with a standard ***Raspbian Jessie*** or ***Raspbian Stretch*** image. It is also necessary to enable SSH on the image by creating an empty file named "ssh" in the boot partition of your SD card (the partition should be visible on all systems which support FAT16, which includes Windows, Linux and OSX among others).
 
@@ -35,7 +54,7 @@ The installation script should take care of everything else, but be aware there 
 
 ## Installing EVOK on AXON PLCs
 
-EVOK is installed slightly differently on Axon PLCs than on Neuron PLCs. The Axon installation process is based entirely around premade packages, all that's required is to login to the PLC via SSH and run the following commands:
+EVOK is installed slightly differently on Axon PLCs than on Neuron PLCs. The Axon installation process is based entirely around premade packages which are already enabled on the device, all that's required is to login to the PLC via SSH (there is a large number of clients you can use, for windows we recommend using [PUTTY]). The default username for Axon PLCs is "unipi" and the default password is "unipi.technology". After you connect to your Axon PLC execute the following commands:
 
     sudo su
     apt-get update
