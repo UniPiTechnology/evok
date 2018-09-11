@@ -19,7 +19,9 @@ EVOK also supports sending notifications via webhook.
 
 ### For more information see our documentation at [api-docs.io].
 
-## Installation process for the 2.0 EVOK version on Neuron
+## Installation process for the latest (2.X.X) EVOK version on Neuron
+
+*Warning: if you have previously used the shell script install method noted below you will need to use a clean image!*
 
 In order to install EVOK on Neuron you will need an SD card with a standard ***Raspbian Jessie*** or ***Raspbian Stretch*** image. It is also necessary to enable SSH on the image by creating an empty file named "ssh" in the boot partition of your SD card (the partition should be visible on all systems which support FAT16, which includes Windows, Linux and OSX among others).
 
@@ -38,7 +40,14 @@ To install EVOK itself first connect to your Neuron using SSH (there is a large 
     
 It is possible that some (or all) of the above steps will already have been finished previously; in that case simply continue on with the next steps. Performing all the steps will ensure you have the latest version of the software installed.
 
-## Legacy installation process using a shell script
+You can use the following commands to update your EVOK package distribution to a new version:
+
+    sudo su
+    apt-get update
+    apt-get upgrade
+    reboot
+
+## Legacy installation process using a shell script (REQUIRED FOR UNIPI 1.1!)
 
 In order to install EVOK on Neuron you will need an SD card with a standard ***Raspbian Jessie*** or ***Raspbian Stretch*** image. It is also necessary to enable SSH on the image by creating an empty file named "ssh" in the boot partition of your SD card (the partition should be visible on all systems which support FAT16, which includes Windows, Linux and OSX among others).
 
@@ -66,11 +75,18 @@ EVOK is installed slightly differently on Axon PLCs than on Neuron PLCs. The Axo
 
 It is possible that some (or all) of the above steps will already have been finished previously; in that case simply continue on with the next steps. Performing all the steps will ensure you have the latest version of the software installed.
 
-## Installation process for the legacy version
+You can use the following commands to update your EVOK package distribution to a new version:
+
+    sudo su
+    apt-get update
+    apt-get upgrade
+    reboot
+
+## Installation process for Evok v.1.X.X
 
 Access to GPIOs is done using the fantastic [PIGPIO] library. Make sure to install it first before use.
 
-_**Legacy EVOK**_ also requires a few other python libraries that are not installed on Raspbian by default:
+_**EVOK v.1.X.X**_ also requires a few other python libraries that are not installed on Raspbian by default:
 * python-ow
 * [tornado]
 * [toro]
