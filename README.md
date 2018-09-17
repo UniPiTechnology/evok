@@ -32,9 +32,6 @@ To install EVOK itself first connect to your Neuron using SSH (there is a large 
     wget https://repo.unipi.technology/debian/unipi_pub.gpg -O - | apt-key add
     apt-get update
     apt-get upgrade
-    apt-get install unipi-common
-    apt-get install neuron-kernel
-    apt-get install unipi-modbus-tools
     apt-get install evok
     systemctl enable evok
     reboot
