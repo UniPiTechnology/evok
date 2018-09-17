@@ -25,13 +25,17 @@ EVOK also supports sending notifications via webhook.
 
 In order to install EVOK on Neuron you will need an SD card with a standard ***Raspbian Jessie*** or ***Raspbian Stretch*** image. It is also necessary to enable SSH on the image by creating an empty file named "ssh" in the boot partition of your SD card (the partition should be visible on all systems which support FAT16, which includes Windows, Linux and OSX among others).
 
-To install EVOK itself first connect to your Neuron using SSH (there is a large number of clients you can use, for windows we recommend using [PUTTY]). The default username for Raspbian is "pi" and the default password is "raspberry". After you connect to your Neuron execute the following commands:
+To install EVOK itself first connect to your Neuron using SSH (there is a large number of clients you can use, for windows we recommend using [PUTTY]). The default username for Raspbian is "pi" and the default password is "raspberry". After you connect to your Neuron execute the following commands: 
+
+**NOTE: The installation process will overwrite default server configuration for NGINX**
 
     sudo su
     echo "deb https://repo.unipi.technology/debian stretch main" >> /etc/apt/sources.list
     wget https://repo.unipi.technology/debian/unipi_pub.gpg -O - | apt-key add
     apt-get update
     apt-get upgrade
+    apt-get install nginx
+    rm -f /etc/nginx/sites-enabled/default
     apt-get install unipi-modbus-tools
     apt-get install evok
     systemctl enable evok
