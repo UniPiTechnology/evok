@@ -32,6 +32,7 @@ To install EVOK itself first connect to your Neuron using SSH (there is a large 
     wget https://repo.unipi.technology/debian/unipi_pub.gpg -O - | apt-key add
     apt-get update
     apt-get upgrade
+    apt-get install unipi-modbus-tools
     apt-get install evok
     systemctl enable evok
     reboot
@@ -43,6 +44,7 @@ You can use the following commands to update your EVOK package distribution to a
     sudo su
     apt-get update
     apt-get upgrade
+    apt-get install unipi-modbus-tools
     reboot
 
 ## Legacy installation process using a shell script (REQUIRED FOR UNIPI 1.1!)
