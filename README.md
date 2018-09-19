@@ -34,6 +34,9 @@ To install EVOK itself first connect to your Neuron using SSH (there is a large 
     wget https://repo.unipi.technology/debian/unipi_pub.gpg -O - | apt-key add
     apt-get update
     apt-get upgrade
+    reboot
+    
+    sudo su
     apt-get install nginx
     rm -f /etc/nginx/sites-enabled/default
     apt-get install unipi-modbus-tools
@@ -48,6 +51,9 @@ You can use the following commands to update your EVOK package distribution to a
     sudo su
     apt-get update
     apt-get upgrade
+    reboot
+    
+    sudo su
     apt-get install unipi-modbus-tools
     reboot
 
@@ -72,6 +78,9 @@ EVOK is installed slightly differently on Axon PLCs than on Neuron PLCs. The Axo
     sudo su
     apt-get update
     apt-get upgrade
+    reboot
+    
+    sudo su
     apt-get install unipi-modbus-tools
     apt-get install evok
     systemctl enable evok
@@ -127,6 +136,8 @@ command and then run it manually as root user
     sudo python /opt/evok/evok.py
 
 and look through/paste the output of the script.
+
+_**NOTE: Running EVOK manually is not possible if using the .deb package installation system; the log file should be used instead**_
 
 ## Uninstallation
 
