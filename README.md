@@ -141,6 +141,14 @@ _**NOTE: Running EVOK manually is not possible if using the .deb package install
 
 ## Uninstallation
 
+### Debian package installation
+To uninstall EVOK please remove the evok package using the following apt command
+
+    sudo su
+    apt-get remove evok
+    reboot
+
+### Script installation
 To uninstall EVOK please run the uninstallation script which is located in the `/opt/evok/` folder.
 
     sudo su
