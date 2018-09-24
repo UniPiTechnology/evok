@@ -30,7 +30,7 @@ To install EVOK itself first connect to your Neuron using SSH (there is a large 
 *NOTE: The installation process will overwrite default server configuration for NGINX*
 
     sudo su
-    echo "deb https://repo.unipi.technology/debian stretch main" >> /etc/apt/sources.list
+    echo "deb https://repo.unipi.technology/debian stretch main" >> /etc/apt/sources.list.d/unipi-list
     wget https://repo.unipi.technology/debian/unipi_pub.gpg -O - | apt-key add
     apt-get update
     apt-get upgrade
@@ -49,12 +49,8 @@ It is possible that some (or all) of the above steps will already have been fini
 You can use the following commands to update your EVOK package distribution to a new version:
 
     sudo su
-    apt-get update
-    apt-get upgrade
-    reboot
-    
-    sudo su
     apt-get install unipi-modbus-tools
+    apt-get install evok
     reboot
 
 ## Legacy installation process using a shell script (REQUIRED FOR UNIPI 1.1!)
@@ -91,8 +87,8 @@ It is possible that some (or all) of the above steps will already have been fini
 You can use the following commands to update your EVOK package distribution to a new version:
 
     sudo su
-    apt-get update
-    apt-get upgrade
+    apt-get install unipi-modbus-tools
+    apt-get install evok
     reboot
 
 ## Installation process for Evok v.1.X.X
@@ -127,17 +123,40 @@ The EVOK API can be accessed in several different ways, including SOAP, REST, Bu
 
 ## Debugging
 
-When reporting a bug or posting questions to [our forum] please set proper logging levels in /etc/evok.conf, restart your device and check the log file (/var/log/evok.log). For more detailed log information you can also run evok by hand. To do that you need to first stop the service by executing the
+When reporting a bug or posting questions to [our forum] please set proper logging levels in /etc/evok.conf, restart your device and check the log file (/var/log/evok.log). For more detailed log information you can also run evok by hand. To do that you need to first stop the service by executing the following commands (section split according to installation method):
+
+_**NOTE: Running EVOK manually is more difficult if using the .deb package installation system; it may be simpler to use the log file instead, unless the information it provides is not sufficient**_
+
+### Debian package installation
+
+First execute the command below:
+
+    sudo systemctl stop evok
+    
+and then run evok manually as root user by executing the following commands:
+
+    sudo su
+    /bin/cp -f /etc/nginx/sites-available/evok /etc/nginx/sites-enabled/
+    /bin/mv -f /etc/nginx/sites-enabled/mervis /etc/nginx/sites-available/
+    /bin/rm -f /etc/nginx/sites-enabled/mervis
+    /bin/ln -sf /etc/nginx/sites-enabled/evok /etc/evok-nginx.conf
+    cd /opt/evok
+    systemctl restart nginx
+    /opt/evok/bin/python /opt/evok/lib/python2.7/site-packages/evok/evok.py
+    
+You can then look through/paste the output of the script.
+
+### Script installation
+
+First execute the command below:
 
     sudo systemctl stop evok
 
-command and then run it manually as root user 
+and then run evok manually as root user by executing the following commnad:
     
     sudo python /opt/evok/evok.py
 
-and look through/paste the output of the script.
-
-_**NOTE: Running EVOK manually is not possible if using the .deb package installation system; the log file should be used instead**_
+You can then look through/paste the output of the script.
 
 ## Uninstallation
 
