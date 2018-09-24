@@ -30,7 +30,7 @@ To install EVOK itself first connect to your Neuron using SSH (there is a large 
 *NOTE: The installation process will overwrite default server configuration for NGINX*
 
     sudo su
-    echo "deb https://repo.unipi.technology/debian stretch main" >> /etc/apt/sources.list.d/unipi-list
+    echo "deb https://repo.unipi.technology/debian stretch main" >> /etc/apt/sources.list.d/unipi.list
     wget https://repo.unipi.technology/debian/unipi_pub.gpg -O - | apt-key add
     apt-get update
     apt-get upgrade
