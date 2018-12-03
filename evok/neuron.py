@@ -1023,7 +1023,10 @@ class Relay(object):
                 self.alias = alias
 
         if timeout is None:
-            raise gen.Return(self.full())
+            if (value is not None) and self.forced_changes:
+                raise gen.Return(self.full(forced_value=parsed_value))
+            else:
+                raise gen.Return(self.full())
 
 
         def timercallback():
