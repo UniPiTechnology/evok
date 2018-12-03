@@ -902,9 +902,9 @@ class Relay(object):
                 self.pwm_duty = 0
         else:
             self.mode = 'Simple'
+        self.forced_changes = arm.neuron.Config.getbooldef("MAIN", "force_immediate_state_changes", False)
 
-
-    def full(self):
+    def full(self, forced_value=None):
         ret =  {'dev': 'relay', 
                 'relay_type': 'physical', 
                 'circuit': self.circuit, 
@@ -920,6 +920,8 @@ class Relay(object):
                 ret['pwm_duty'] = self.pwm_duty
         if self.alias != '':
             ret['alias'] = self.alias
+        if forced_value is not None:
+            ret['value'] = forced_value
         return ret
                         
     def simple(self):
@@ -1013,7 +1015,8 @@ class Relay(object):
             value = int(value)
             if not (timeout is None):
                 timeout = float(timeout)
-            self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.modbus_address)
+            parsed_value = 1 if value else 0
+            self.arm.neuron.client.write_coil(self.coil, parsed_value, unit=self.arm.modbus_address)
 
         if alias is not None:
             if Devices.add_alias(alias, self, file_update=True):
@@ -1030,7 +1033,10 @@ class Relay(object):
         self.pending_id = IOLoop.instance().add_timeout(
             datetime.timedelta(seconds=float(timeout)), timercallback)
 
-        raise gen.Return(self.full())
+        if (value is not None) and self.forced_changes:
+            raise gen.Return(self.full(forced_value=parsed_value))
+        else:
+            raise gen.Return(self.full())
 
     def get(self): 
         return self.full()
