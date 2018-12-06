@@ -106,6 +106,9 @@ class OWBusDevice():
         self.bus_driver = bus_driver
         self.circuit = bus_driver.circuit
         
+    def full(self):
+        return None
+        
 class OWSensorDevice():
     def __init__(self, sensor_dev, dev_id):
         self.dev_id = dev_id
@@ -120,13 +123,19 @@ class I2CBusDevice():
         self.dev_id = dev_id
         self.bus_driver = bus_driver
         self.circuit = bus_driver.circuit
+
+    def full(self):
+        return None
     
 class GPIOBusDevice():
     def __init__(self, bus_driver, dev_id):
         self.dev_id = dev_id
         self.bus_driver = bus_driver
         self.circuit = bus_driver.circuit
-    
+
+    def full(self):
+        return None
+
 class EvokConfig(ConfigParser.RawConfigParser):
 
     def __init__(self):

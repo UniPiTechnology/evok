@@ -120,7 +120,7 @@ class DeviceList(dict):
         try:
             with open("/var/evok/evok-alias.yaml", 'w+') as yfile:
                 out_dict = {"version": 1.0, "aliases":[]}
-                for    single_alias in self.alias_dict:
+                for single_alias in self.alias_dict:
                     out_dict["aliases"] += [{"circuit": self.alias_dict[single_alias].circuit, "dev_type": self.alias_dict[single_alias].devtype, "name": single_alias}]
                 yfile.write(yaml.dump(out_dict))
         except Exception, E:
