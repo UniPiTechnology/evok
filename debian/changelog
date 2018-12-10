@@ -1,4 +1,4 @@
-evok (2.0.7c) unstable; urgency=medium
+evok (2.0.7d) unstable; urgency=medium
 
   * Added an option to turn off filtering for function -all- websocket calls
 
