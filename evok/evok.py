@@ -217,7 +217,9 @@ class WsHandler(websocket.WebSocketHandler):
                         if (str(single_dev) in devtype_names) or (str(single_dev) in devtype_altnames):
                             devices += [single_dev]
                     if len(devices) > 0 or len(message["devices"]) == 0:
-                        self.filter = devices
+                        self.filter = devices 
+                    if len(devices) > 0 and message["devices"][0] == "default":
+                        self.filter = ["default"]
                     else:
                         raise Exception("Invalid 'devices' argument: %s" % str(message["devices"]))
                 except Exception,E:
