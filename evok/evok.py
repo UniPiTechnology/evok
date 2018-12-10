@@ -192,7 +192,7 @@ class WsHandler(websocket.WebSocketHandler):
             if cmd == "all":
                 result = []
                 devices = [INPUT, RELAY, AI, AO, SENSOR]
-                if Config.getbooldef("MAIN", "websocket_all_filtered", True):
+                if Config.getbooldef("MAIN", "websocket_all_filtered", False):
                     if (len(self.filter) == 1 and self.filter[0] == "default"):
                         for dev in devices:
                             result += map(lambda dev: dev.full(), Devices.by_int(dev))
