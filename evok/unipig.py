@@ -854,8 +854,8 @@ class DS2408_pio(object):
         self.ds2408.register_pio(self)
 
     def full(self):
-        pass
-
+        return None
+    
     def simple(self):
         pass
 
