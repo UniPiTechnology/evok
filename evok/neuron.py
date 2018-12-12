@@ -185,6 +185,7 @@ class Neuron(object):
         self.modbus_address = 0
         self.do_scanning = False
         self.is_scanning = False
+        self.scanning_error_triggered = False
         if scan_freq == 0:
             self.scan_interval = 0
         else:
@@ -266,9 +267,13 @@ class Neuron(object):
     def scan_boards(self):
         if self.client.connected:
             try:
-                yield self.modbus_cache_map.do_scan()
+                if self.modbus_cache_map is not None:
+                    yield self.modbus_cache_map.do_scan()
             except Exception, E:
-                logger.exception(str(E))
+                if not self.scanning_error_triggered:
+                    logger.exception(str(E))
+                self.scanning_error_triggered = True
+            self.scanning_error_triggered = False
         if self.do_scanning and (self.scan_interval != 0):
             self.loop.call_later(self.scan_interval, self.scan_boards)
             self.is_scanning = True
@@ -292,6 +297,7 @@ class UartNeuron(object):
         self.Config = Config
         self.do_scanning = False
         self.is_scanning = False
+        self.scanning_error_triggered = False
         self.major_group = major_group
         self.baud_rate = baud_rate
         self.parity = parity
@@ -385,8 +391,11 @@ class UartNeuron(object):
         try:
             if self.modbus_cache_map is not None:
                 yield self.modbus_cache_map.do_scan(unit=self.modbus_address)
+                self.scanning_error_triggered = False
         except Exception, E:
-            logger.debug(str(E))
+            if not self.scanning_error_triggered:
+                logger.debug(str(E))
+            self.scanning_error_triggered = True
         if self.do_scanning and (self.scan_interval != 0):
             self.loop.call_later(self.scan_interval, self.scan_boards)
             self.is_scanning = True
