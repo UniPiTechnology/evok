@@ -15,7 +15,7 @@ except:
     pass
 
 up_globals = {
-    'version': "1.0",
+    'version': "UniPi 1.0",
     'devices': {
         'ai': {
             '1': 5.564920867,
