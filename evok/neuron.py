@@ -765,6 +765,7 @@ class Board(object):
         counter = 0
         while counter < max_count:
             board_val_reg = m_feature['val_reg']
+            res_val_reg = m_feature['res_val_reg']
             if m_feature.has_key('cal_reg'):
                 _ao = AnalogOutput("%s_%02d" % (self.circuit, len(Devices.by_int(AO, major_group=m_feature['major_group'])) + 1), self, board_val_reg + counter, regcal=m_feature['cal_reg'],
                                    regmode=m_feature['mode_reg'], reg_res=m_feature['res_val_reg'], modes=m_feature['modes'],
@@ -776,6 +777,10 @@ class Board(object):
                 self.neuron.datadeps[board_val_reg + counter]+=[_ao]
             else:
                 self.neuron.datadeps[board_val_reg + counter] = [_ao]
+            if self.neuron.datadeps.has_key(res_val_reg + counter):
+                self.neuron.datadeps[res_val_reg + counter]+=[_ao]
+            else:
+                self.neuron.datadeps[res_val_reg + counter] = [_ao]
             Devices.register_device(AO, _ao)
             counter+=1        
             
