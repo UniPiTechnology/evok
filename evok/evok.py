@@ -702,7 +702,7 @@ class RestWatchdogHandler(UserCookieHelper, APIHandler):
         @tornado.web.authenticated
         @schema.validate()
         def get(self, circuit, prop):
-            device = Devices.by_name("led", circuit)
+            device = Devices.by_name("watchdog", circuit)
             if prop:
                 if prop[0] in ('_'): raise Exception('Invalid property name')
                 result = {prop: getattr(device, prop)}
@@ -713,7 +713,7 @@ class RestWatchdogHandler(UserCookieHelper, APIHandler):
         @tornado.web.authenticated
         @schema.validate(output_schema=schemas.wd_get_out_schema, output_example=schemas.wd_get_out_example)
         def get(self, circuit, prop):
-            device = Devices.by_name("led", circuit)
+            device = Devices.by_name("watchdog", circuit)
             if prop:
                 if prop[0] in ('_'): raise Exception('Invalid property name')
                 result = {prop: getattr(device, prop)}
@@ -729,7 +729,7 @@ class RestWatchdogHandler(UserCookieHelper, APIHandler):
         @tornado.gen.coroutine
         def post(self, circuit, prop):
             try:
-                device = Devices.by_name("led", circuit)
+                device = Devices.by_name("watchdog", circuit)
                 js_dict = json.loads(self.request.body)
                 result = device.set(**js_dict)
                 if is_future(result):
@@ -745,7 +745,7 @@ class RestWatchdogHandler(UserCookieHelper, APIHandler):
         @tornado.gen.coroutine
         def post(self, circuit, prop):
             try:
-                device = Devices.by_name("led", circuit)
+                device = Devices.by_name("watchdog", circuit)
                 js_dict = json.loads(self.request.body)
                 result = device.set(**js_dict)
                 if is_future(result):
