@@ -1905,9 +1905,9 @@ class AnalogOutput():
     def res_value(self):
         try:
             if self.circuit == '1_01':
-                return self.regresvalue() / 10
+                return float(self.regresvalue()) / 10.0
             else:
-                return self.regvalue() * 0.0025
+                return float(self.regvalue()) * 0.0025
         except:
             return 0
 
