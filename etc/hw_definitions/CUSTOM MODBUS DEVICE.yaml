@@ -20,8 +20,8 @@ modbus_features:
     - type        : REGISTER
       major_group : 1
       count       : 10
-      val_reg     : 0
+      start_reg     : 0
     - type        : REGISTER
       major_group : 1
       count       : 16
-      val_reg     : 500
+      start_reg     : 500
