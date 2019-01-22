@@ -60,9 +60,9 @@ In order to install EVOK on your device you will need an SD card with a standard
 To install EVOK itself first connect to your device using SSH (there is a large number of clients you can use, for windows we recommend using [PUTTY]). The default username for Raspbian is "pi" and the default password is "raspberry". After you connect to your device execute the following commands:
 
     sudo su
-    wget https://github.com/UniPiTechnology/evok/archive/v.2.0.7f.zip
-    unzip v.2.0.7f.zip
-    cd evok-v.2.0.7f
+    wget https://github.com/UniPiTechnology/evok/archive/v.2.0.7g.zip
+    unzip v.2.0.7g.zip
+    cd evok-v.2.0.7g
     bash install-evok.sh
 
 The installation script should take care of everything else, but be aware there may be some issues with limited and/or broken functionality. Please report any bugs you find on the [github repository].
