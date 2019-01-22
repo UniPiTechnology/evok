@@ -1,3 +1,11 @@
+evok (2.0.7e) unstable; urgency=medium
+
+  * Added the ability to listen for analog input events to the websocket filter
+  * Fixed setting watchdog via the JSON endpoint
+  * Simplified default NGINX configuration
+
+ -- Tomas Knot <knot@unipi.technology>  Mon, 22 Jan 2018 10:54:08 +0200
+
 evok (2.0.7d) unstable; urgency=medium
 
   * Added an option to turn off filtering for function -all- websocket calls
