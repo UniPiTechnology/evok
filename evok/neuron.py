@@ -923,7 +923,11 @@ class Relay(object):
             self.pwm_duty_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.pwmdutyreg, unit=self.arm.modbus_address))[0]
             self.pwm_cycle_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.pwmcyclereg, unit=self.arm.modbus_address))[0]
             self.pwm_prescale_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.pwmprescalereg, unit=self.arm.modbus_address))[0]
-            self.pwm_freq = self.pwm_cycle_val * self.pwm_prescale_val
+            if self.pwm_cycle_val == 0:
+                self.pwm_cycle_val = 1
+            if self.pwm_prescale_val == 0:
+                self.pwm_prescale_val = 1
+            self.pwm_freq = 48000000 / self.pwm_cycle_val * self.pwm_prescale_val
             if (self.pwm_duty_val > 1):
                 self.mode = 'PWM'
                 self.pwm_duty = self.pwm_cycle_val / self.pwm_duty_val
