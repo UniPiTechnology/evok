@@ -81,7 +81,7 @@ class ModbusCacheMap(object):
                             for index in range(m_reg_group['count']):
                                 if (m_reg_group['start_reg'] + index) in self.neuron.datadeps and self.registered_input[(m_reg_group['start_reg'] + index)] != val.registers[index]:
                                     for ddep in self.neuron.datadeps[m_reg_group['start_reg'] + index]:
-                                        if (not ((isinstance(ddep, Input) or isinstance(ddep, ULED)))) or ddep.value_delta(val.registers[index]):
+                                        if (not ((isinstance(ddep, Input) or isinstance(ddep, ULED) or isinstace(ddep, Relay)))) or ddep.value_delta(val.registers[index]):
                                             changeset += [ddep]
                                 self.registered_input[(m_reg_group['start_reg'] + index)] = val.registers[index]
                                 self.frequency[m_reg_group['start_reg']] = 1                        
@@ -89,7 +89,7 @@ class ModbusCacheMap(object):
                             for index in range(m_reg_group['count']):
                                 if (m_reg_group['start_reg'] + index) in self.neuron.datadeps and self.registered[(m_reg_group['start_reg'] + index)] != val.registers[index]:
                                     for ddep in self.neuron.datadeps[m_reg_group['start_reg'] + index]:
-                                        if (not ((isinstance(ddep, Input) or isinstance(ddep, ULED)))) or ddep.value_delta(val.registers[index]):
+                                        if (not ((isinstance(ddep, Input) or isinstance(ddep, ULED) or isinstace(ddep, Relay)))) or ddep.value_delta(val.registers[index]):
                                             changeset += [ddep]
                                 self.registered[(m_reg_group['start_reg'] + index)] = val.registers[index]
                                 self.frequency[m_reg_group['start_reg']] = 1
@@ -519,9 +519,9 @@ class UartBoard(object):
             _led = ULED("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg, 0x1 << (counter % 16), m_feature['val_coil'] + counter,
                         dev_id=self.dev_id, major_group=0, legacy_mode=self.legacy_mode)
             if self.neuron.datadeps.has_key(board_val_reg + counter):
-                self.neuron.datadeps[board_val_reg + counter]+=[_led]
+                self.neuron.datadeps[board_val_reg] += [_led]
             else:
-                self.neuron.datadeps[board_val_reg + counter] = [_led]
+                self.neuron.datadeps[board_val_reg] = [_led]
             Devices.register_device(LED, _led)
             counter+=1                
             
@@ -1025,6 +1025,7 @@ class Relay(object):
                 self.pwm_duty_val = float(self.pwm_cycle_val) * float(float(self.pwm_duty) / 100.0)
             else:
                 self.pwm_duty_val = 0
+                self.arm.neuron.client.write_register(self.pwmdutyreg, self.pwm_duty_val, unit=self.arm.modbus_address)
             
             other_devs = Devices.by_int(RELAY, major_group=self.major_group)
             for other_dev in other_devs:
