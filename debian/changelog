@@ -1,3 +1,11 @@
+evok (2.0.7i) unstable; urgency=medium
+
+  * Fixed WebSocket notification for relays and RS485 extension LEDs
+  * Fixed PWM frequency computation not being correctly reapplied when restarting EVOK
+  * Allowed setting PWM duty cycle to 0; this will turn off PWM mode after restart due to the hardware not being able to distinguish between a duty cycle of 0 and PWM turned off. See our ModBus map for details of the underlying implementation.
+
+ -- Tomas Knot <knot@unipi.technology>  Wed, 20 Feb 2018 19:41:12 +0200
+
 evok (2.0.7h) unstable; urgency=medium
 
   * Fixed WebSocket notification for secondary analog inputs
