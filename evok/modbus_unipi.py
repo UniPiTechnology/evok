@@ -1,5 +1,3 @@
-
-
 from pymodbus.datastore import ModbusServerContext
 from pymodbus.datastore import ModbusSlaveContext
 from pymodbus.datastore import ModbusSequentialDataBlock
