@@ -81,7 +81,7 @@ class ModbusCacheMap(object):
                             for index in range(m_reg_group['count']):
                                 if (m_reg_group['start_reg'] + index) in self.neuron.datadeps and self.registered_input[(m_reg_group['start_reg'] + index)] != val.registers[index]:
                                     for ddep in self.neuron.datadeps[m_reg_group['start_reg'] + index]:
-                                        if (not ((isinstance(ddep, Input) or isinstance(ddep, ULED) or isinstace(ddep, Relay)))) or ddep.value_delta(val.registers[index]):
+                                        if (not ((isinstance(ddep, Input) or isinstance(ddep, ULED)))) or ddep.value_delta(val.registers[index]):
                                             changeset += [ddep]
                                 self.registered_input[(m_reg_group['start_reg'] + index)] = val.registers[index]
                                 self.frequency[m_reg_group['start_reg']] = 1                        
@@ -89,7 +89,7 @@ class ModbusCacheMap(object):
                             for index in range(m_reg_group['count']):
                                 if (m_reg_group['start_reg'] + index) in self.neuron.datadeps and self.registered[(m_reg_group['start_reg'] + index)] != val.registers[index]:
                                     for ddep in self.neuron.datadeps[m_reg_group['start_reg'] + index]:
-                                        if (not ((isinstance(ddep, Input) or isinstance(ddep, ULED) or isinstace(ddep, Relay)))) or ddep.value_delta(val.registers[index]):
+                                        if (not ((isinstance(ddep, Input) or isinstance(ddep, ULED) or isinstance(ddep, Relay)))) or ddep.value_delta(val.registers[index]):
                                             changeset += [ddep]
                                 self.registered[(m_reg_group['start_reg'] + index)] = val.registers[index]
                                 self.frequency[m_reg_group['start_reg']] = 1
@@ -1005,7 +1005,7 @@ class Relay(object):
             else:
                 self.mode = mode
         
-        if self.mode == 'PWM' and pwm_freq is not None:
+        if self.mode == 'PWM' and pwm_freq is not None and pwm_freq >= 0.01:
             self.pwm_freq = pwm_freq;
             self.pwm_delay_val = 48000000 / float(pwm_freq)
             if ((int(self.pwm_delay_val) % 50000) == 0) and ((self.pwm_delay_val / 50000) < 65535):

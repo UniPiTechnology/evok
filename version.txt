@@ -1,1 +1,1 @@
-Repository:evok ActiveBranch:[master] PrecedingRelease:v.2.0.7h PrecedingRevision:386(1c3ea1a) LatestCommit:Tue Feb 26 14:01:22 CEST 2019
+Repository:evok ActiveBranch:[master] PrecedingRelease:v.2.0.7h PrecedingRevision:387(78abc17) LatestCommit:Tue Feb 26 18:49:55 CEST 2019
