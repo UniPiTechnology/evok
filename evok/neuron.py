@@ -988,6 +988,9 @@ class Relay(object):
         yield self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, unit=self.arm.modbus_address)
         raise gen.Return(1 if value else 0)
 
+    def value_delta(self, new_val):
+        return (self.regvalue() ^ new_val) & self.bitmask
+
     @gen.coroutine
     def set(self, value=None, timeout=None, mode=None, pwm_freq=None, pwm_duty=None, alias=None):
         """ Sets new on/off status. Disable pending timeouts
