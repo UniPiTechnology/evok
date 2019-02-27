@@ -995,6 +995,9 @@ class Relay(object):
     def set(self, value=None, timeout=None, mode=None, pwm_freq=None, pwm_duty=None, alias=None):
         """ Sets new on/off status. Disable pending timeouts
         """
+        if pwm_duty is not None and self.mode == 'PWM' and float(pwm_duty) <= 0.01:
+            mode = 'Simple'
+        
         if mode is not None and mode in self.modes:
             if self.mode == 'PWM' and mode != self.mode:
                 self.pwm_duty = 0
@@ -1005,7 +1008,7 @@ class Relay(object):
             else:
                 self.mode = mode
         
-        if self.mode == 'PWM' and pwm_freq is not None and pwm_freq >= 0.01:
+        if self.mode == 'PWM' and pwm_freq is not None and float(pwm_freq) >= 0.01:
             self.pwm_freq = pwm_freq;
             self.pwm_delay_val = 48000000 / float(pwm_freq)
             if ((int(self.pwm_delay_val) % 50000) == 0) and ((self.pwm_delay_val / 50000) < 65535):
