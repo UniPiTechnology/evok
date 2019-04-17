@@ -192,12 +192,22 @@ class WsHandler(websocket.WebSocketHandler):
             if cmd == "all":
                 result = []
                 devices = [INPUT, RELAY, AI, AO, SENSOR]
-                if (len(self.filter) == 1 and self.filter[0] == "default"):
-                    for dev in devices:
-                        result += map(lambda dev: dev.full(), Devices.by_int(dev))
+                if Config.getbooldef("MAIN", "websocket_all_filtered", False):
+                    if (len(self.filter) == 1 and self.filter[0] == "default"):
+                        for dev in devices:
+                            result += map(lambda dev: dev.full(), Devices.by_int(dev))
+                    else:
+                        for dev in range(0,24):
+                            added_results = map(lambda dev: dev.full() if dev.full() is not None else '', Devices.by_int(dev))
+                            for added_result in added_results:
+                                if added_result != '' and added_result['dev'] in self.filter:
+                                    result.append(added_result)
                 else:
                     for dev in range(0,24):
-                        result += map(lambda dev: dev.full(), Devices.by_int(dev))                   
+                        added_results = map(lambda dev: dev.full() if dev.full() is not None else '', Devices.by_int(dev))
+                        for added_result in added_results:
+                            if added_result != '':
+                                result.append(added_result)
                 self.write_message(json.dumps(result))
             #set device state
             elif cmd == "filter":
@@ -207,7 +217,9 @@ class WsHandler(websocket.WebSocketHandler):
                         if (str(single_dev) in devtype_names) or (str(single_dev) in devtype_altnames):
                             devices += [single_dev]
                     if len(devices) > 0 or len(message["devices"]) == 0:
-                        self.filter = devices
+                        self.filter = devices 
+                        if message["devices"][0] == "default":
+                            self.filter = ["default"]
                     else:
                         raise Exception("Invalid 'devices' argument: %s" % str(message["devices"]))
                 except Exception,E:
@@ -690,7 +702,7 @@ class RestWatchdogHandler(UserCookieHelper, APIHandler):
         @tornado.web.authenticated
         @schema.validate()
         def get(self, circuit, prop):
-            device = Devices.by_name("led", circuit)
+            device = Devices.by_name("watchdog", circuit)
             if prop:
                 if prop[0] in ('_'): raise Exception('Invalid property name')
                 result = {prop: getattr(device, prop)}
@@ -701,7 +713,7 @@ class RestWatchdogHandler(UserCookieHelper, APIHandler):
         @tornado.web.authenticated
         @schema.validate(output_schema=schemas.wd_get_out_schema, output_example=schemas.wd_get_out_example)
         def get(self, circuit, prop):
-            device = Devices.by_name("led", circuit)
+            device = Devices.by_name("watchdog", circuit)
             if prop:
                 if prop[0] in ('_'): raise Exception('Invalid property name')
                 result = {prop: getattr(device, prop)}
@@ -717,7 +729,7 @@ class RestWatchdogHandler(UserCookieHelper, APIHandler):
         @tornado.gen.coroutine
         def post(self, circuit, prop):
             try:
-                device = Devices.by_name("led", circuit)
+                device = Devices.by_name("watchdog", circuit)
                 js_dict = json.loads(self.request.body)
                 result = device.set(**js_dict)
                 if is_future(result):
@@ -733,7 +745,7 @@ class RestWatchdogHandler(UserCookieHelper, APIHandler):
         @tornado.gen.coroutine
         def post(self, circuit, prop):
             try:
-                device = Devices.by_name("led", circuit)
+                device = Devices.by_name("watchdog", circuit)
                 js_dict = json.loads(self.request.body)
                 result = device.set(**js_dict)
                 if is_future(result):

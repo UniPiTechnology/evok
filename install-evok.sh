@@ -428,8 +428,6 @@ install_unipi_neuron() {
 		sed -i -e 's/#authoritative/authoritative/' /etc/dhcp/dhcpd.conf
 		sed -i -e 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
 		sed -i -e 's/wifi_control_enabled = False/wifi_control_enabled = True/' etc/evok-neuron.conf
-	else
-		ifconfig wlan0 down
 	fi
 	
 	# Copy evok

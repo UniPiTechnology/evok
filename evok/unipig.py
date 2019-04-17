@@ -133,9 +133,9 @@ class UnipiMcp(object):
     def set_masked_value(self, mask, value):
 
         if value:
-            return self.set_bitmap(mask, 0xff)
+            yield self.set_bitmap(mask, 0xff)
         else:
-            return self.set_bitmap(mask, 0x0)
+            yield self.set_bitmap(mask, 0x0)
 
 
     @gen.coroutine
@@ -854,8 +854,8 @@ class DS2408_pio(object):
         self.ds2408.register_pio(self)
 
     def full(self):
-        pass
-
+        return None
+    
     def simple(self):
         pass
 

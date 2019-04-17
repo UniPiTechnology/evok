@@ -130,7 +130,6 @@ class SyncUnipiDALIDriver(UnipiDALIDriver, SyncDALIDriver):
 
 
     def send(self, command, timeout=None):
-
         registers = self.construct(command)
         self.backend.write_regs(self._sendreg, registers)
         if command.is_config: # ToDo in firmware
