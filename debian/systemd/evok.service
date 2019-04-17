@@ -6,6 +6,7 @@ Conflicts=mervisconfigtool.service
 After=neurontcp.service
 After=unipitcp.service
 After=pigpio.service
+StartLimitIntervalSec=300
 
 [Service]
 Type=simple
@@ -18,7 +19,6 @@ ExecStopPost=-/bin/rm -f /etc/evok-nginx.conf
 ExecStopPost=-/bin/mv -f /etc/nginx/sites-enabled/evok /etc/nginx/sites-available/
 ExecStopPost=-/bin/cp -f /etc/nginx/sites-available/mervis /etc/nginx/sites-enabled/
 ExecStopPost=-/bin/rm -f /etc/nginx/sites-enabled/evok
-StartLimitIntervalSec=300
 TimeoutStopSec=3
 SyslogLevel=debug
 SyslogIdentifier=evok
