@@ -249,6 +249,7 @@ class AsyncModbusSerialClient(ModbusSerialClient):
         if self.timer:
             self.ioloop.remove_timeout(self.timer)
             self.timer = None
+        self._last_frame_end = time.time()    
         self.framer.resetFrame()
         if reply is not None:
             tid = reply.transaction_id
