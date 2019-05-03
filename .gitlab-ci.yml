@@ -4,15 +4,15 @@
 image: $CI_REGISTRY/docker/bob-the-builder:latest
 
 # even when the image will be prepared, it is good to put the build
-# dependencies here for documentation purposes
+# dependencies here for documentation purposes and making the dependencies
+# more up to date, since the packages can receive updates from the moment
+# when the builder image has been generated
 before_script:
         - apt update
         - apt install -y dh-virtualenv dpkg-dev dh-exec build-essential fakeroot git
-          # one-liner for generating Debian changelog from last 10 commit messages
-        - git log -10 --date="format:%Y%m%d%H%M%S" --pretty="evok (%ad) unstable; urgency=medium%n%n  * %s%n%n -- %an <%ae>  %aD %n" > debian/changelog 
 
-# there is only one pipeline stage and the result will be compiled code for
-# two architectures: armhf and arm64
+# there is only one pipeline stage and the result will be Debian packages build
+# for two architectures: armhf and arm64
 
 # builds package upon each commit to the test branch
 # the version is taken from the commit date and time in format YYMMDDHHMMSS
