@@ -58,7 +58,7 @@ build_from_tagged_master_on_rpi:
         only:
                 - tags
         except:
-                - /^(!ci-test)$/
+                - /^(!master)$/
         tags:
                 - armhf
         script:
@@ -80,7 +80,7 @@ build_from_tagged_master_on_nanopi:
         only:
                 - tags
         except:
-                - /^(!ci-test)$/
+                - /^(!master)$/
         tags:
                 - arm64
         script:
