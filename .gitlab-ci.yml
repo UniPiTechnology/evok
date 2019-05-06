@@ -58,10 +58,16 @@ build_from_tagged_master_on_rpi:
         only:
                 - tags
         except:
-                - /^(!master)$/
+                - /^(!ci-test)$/
         tags:
                 - armhf
         script:
+                # last five commits, formatted to the Debian changelog format, the version is the commit hash
+                - git log -5 --no-walk --tags --date="format:%Y%m%d%H%M%S" --pretty="evok (%H) unstable; urgency=medium%n%n  * %s%n%n -- %an <%ae>  %aD %n" > debian/changelog
+                # generate list of all tagged commits
+                - git show-ref --tags | awk -F "[ /]" '{print $1 " " $4}' > commit_and_tags
+                # replace the commit hashes in the generated changelog with the tag name
+                - while read n k; do sed -i "s/$n/$k/g" debian/changelog; done < commit_and_tags
                 - dpkg-buildpackage -us -uc
                 - mkdir build
                 - mv ../evok_`git log -1  --date="format:%Y%m%d%H%M%S" --pretty="%ad"`* build/
@@ -74,10 +80,16 @@ build_from_tagged_master_on_nanopi:
         only:
                 - tags
         except:
-                - /^(!master)$/
+                - /^(!ci-test)$/
         tags:
                 - arm64
         script:
+                # last five commits, formatted to the Debian changelog format, the version is the commit hash
+                - git log -5 --no-walk --tags --date="format:%Y%m%d%H%M%S" --pretty="evok (%H) unstable; urgency=medium%n%n  * %s%n%n -- %an <%ae>  %aD %n" > debian/changelog
+                # generate list of all tagged commits
+                - git show-ref --tags | awk -F "[ /]" '{print $1 " " $4}' > commit_and_tags
+                # replace the commit hashes in the generated changelog with the tag name
+                - while read n k; do sed -i "s/$n/$k/g" debian/changelog; done < commit_and_tags
                 - dpkg-buildpackage -us -uc
                 - mkdir build
                 - mv ../evok_`git log -1  --date="format:%Y%m%d%H%M%S" --pretty="%ad"`* build/
