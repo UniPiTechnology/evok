@@ -89,7 +89,7 @@ class ModbusCacheMap(object):
                             for index in range(m_reg_group['count']):
                                 if (m_reg_group['start_reg'] + index) in self.neuron.datadeps and self.registered[(m_reg_group['start_reg'] + index)] != val.registers[index]:
                                     for ddep in self.neuron.datadeps[m_reg_group['start_reg'] + index]:
-                                        if (not ((isinstance(ddep, Input) or isinstance(ddep, ULED) or isinstance(ddep, Relay)))) or ddep.value_delta(val.registers[index]):
+                                        if (not ((isinstance(ddep, Input) or isinstance(ddep, ULED) or isinstance(ddep, Relay) or isinstance(ddep, Watchdog)))) or ddep.value_delta(val.registers[index]):
                                             changeset += [ddep]
                                 self.registered[(m_reg_group['start_reg'] + index)] = val.registers[index]
                                 self.frequency[m_reg_group['start_reg']] = 1
@@ -995,6 +995,10 @@ class Relay(object):
     def set(self, value=None, timeout=None, mode=None, pwm_freq=None, pwm_duty=None, alias=None):
         """ Sets new on/off status. Disable pending timeouts
         """
+        if self.pending_id:
+            IOLoop.instance().remove_timeout(self.pending_id)
+            self.pending_id = None
+                    
         if pwm_duty is not None and self.mode == 'PWM' and float(pwm_duty) <= 0.01:
             mode = 'Simple'
         
@@ -1072,7 +1076,7 @@ class Relay(object):
 
         def timercallback():
             self.pending_id = None
-            self.arm.write_bit(self.coil, 0 if value else 1, unit=self.arm.modbus_address)
+            self.arm.neuron.client.write_coil(self.coil, 0 if value else 1, unit=self.arm.modbus_address)
 
         self.pending_id = IOLoop.instance().add_timeout(
             datetime.timedelta(seconds=float(timeout)), timercallback)
@@ -1332,6 +1336,9 @@ class Watchdog(object):
         return {'dev': 'wd', 
                 'circuit': self.circuit, 
                 'value': self.regvalue()}
+
+    def value_delta(self, new_val):
+        return (self.regvalue() ^ new_val) & 0x03 #Only the two lowest bits contains watchdog status
 
     @property
     def value(self):
