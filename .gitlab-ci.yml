@@ -50,53 +50,53 @@ build_from_test_on_nanopi:
 
 # deploy the packages to the repository
 deploy_package_from_test:
-        stage: deploy_packages
-        only:
-                - test
-        except:
-                - tags
-        script:
-                - /ci-scripts/generate-new-tag-for-test.sh
-                - /ci-scripts/deploy-packages.sh
+    stage: deploy_packages
+    only:
+        - test
+    except:
+        - tags
+    script:
+        - /ci-scripts/generate-new-tag-for-test.sh
+        - /ci-scripts/deploy-packages.sh
 
 # build upon each pushed tag to the master branch
 # the version is taken from the tag name
 build_from_tagged_master_on_rpi:
-        stage: build_package
-        only:
-                - tags
-        except:
-                - /-test-/
-        tags:
-                - armhf
-        script:
-                - /ci-scripts/build-package-for-master.sh
-        artifacts:
-                paths:
-                        - build/*deb
-                        - debian/changelog
+    stage: build_package
+    only:
+        - tags
+    except:
+        - /-test-/
+    tags:
+        - armhf
+    script:
+        - /ci-scripts/build-package-for-master.sh
+    artifacts:
+        paths:
+            - build/*deb
+            - debian/changelog
 
 build_from_tagged_master_on_nanopi:
-        stage: build_package
-        only:
-                - tags
-        except:
-                - /-test-/
-        tags:
-                - arm64
-        script:
-                - /ci-scripts/build-package-for-master.sh
-        artifacts:
-                paths:
-                        - build/*
-                        - debian/changelog
+    stage: build_package
+    only:
+        - tags
+    except:
+        - /-test-/
+    tags:
+        - arm64
+    script:
+        - /ci-scripts/build-package-for-master.sh
+    artifacts:
+        paths:
+            - build/*
+            - debian/changelog
 
 # deploy the packages to the repository
-deploy_package_from_test:
-        stage: deploy_packages
-        only:
-                - tags
-        except:
-                - /-test-/
-        script:
-                - /ci-scripts/deploy-packages.sh
+deploy_package_from_tagged_master:
+    stage: deploy_packages
+    only:
+        - tags
+    except:
+        - /-test-/
+    script:
+        - /ci-scripts/deploy-packages.sh
