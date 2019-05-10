@@ -8,45 +8,45 @@ image: $CI_REGISTRY/docker/bob-the-builder:latest
 # more up to date, since the packages can receive updates from the moment
 # when the builder image has been generated
 before_script:
-        - apt update
-        - apt install -y dh-virtualenv dpkg-dev dh-exec build-essential fakeroot git
+    - apt update
+    - apt install -y dh-virtualenv dpkg-dev dh-exec build-essential fakeroot git
 
-# stages
 stages:
-	- build_package
-	- deploy_packages
+    - build_package
+    - deploy_packages
+
 
 # builds package upon each commit to the test branch
 # the version is taken from the commit date and time in format YYMMDDHHMMSS
 build_from_test_on_rpi:
-	stage: build_package
-        only:
-                - test
-	except:
-		- tags
-        tags:
-                - armhf
-        script:
-                - /ci-scripts/build-package-for-test.sh
-        artifacts:
-                paths:
-                        - build/*deb
-                        - debian/changelog
+    stage: build_package
+    only:
+        - test
+    except:
+        - tags
+    tags:
+        - armhf
+    script:
+        - /ci-scripts/build-package-for-test.sh
+    artifacts:
+        paths:
+            - build/*deb
+            - debian/changelog
 
 build_from_test_on_nanopi:
-	stage: build_package
-        only:
-                - test
-	except:
-		- tags
-        tags:
-                - arm64
-        script:
-                - /ci-scripts/build-package-for-test.sh
-        artifacts:
-                paths:
-                        - build/*deb
-                        - debian/changelog
+    stage: build_package
+    only:
+        - test
+    except:
+        - tags
+    tags:
+        - arm64
+    script:
+        - /ci-scripts/build-package-for-test.sh
+    artifacts:
+        paths:
+            - build/*deb
+            - debian/changelog
 
 # deploy the packages to the repository
 deploy_package_from_test:
@@ -62,6 +62,7 @@ deploy_package_from_test:
 # build upon each pushed tag to the master branch
 # the version is taken from the tag name
 build_from_tagged_master_on_rpi:
+        stage: build_package
         only:
                 - tags
         except:
@@ -76,6 +77,7 @@ build_from_tagged_master_on_rpi:
                         - debian/changelog
 
 build_from_tagged_master_on_nanopi:
+        stage: build_package
         only:
                 - tags
         except:
@@ -98,4 +100,3 @@ deploy_package_from_test:
                 - /-test-/
         script:
                 - /ci-scripts/deploy-packages.sh
-
