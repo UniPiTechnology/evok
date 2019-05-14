@@ -27,7 +27,7 @@ build_from_test_on_rpi:
     tags:
         - armhf
     script:
-        - /ci-scripts/build-package-for-test.sh
+        - /ci-scripts/build-package-for-test.sh evok
     artifacts:
         paths:
             - build/*deb
@@ -42,7 +42,7 @@ build_from_test_on_nanopi:
     tags:
         - arm64
     script:
-        - /ci-scripts/build-package-for-test.sh
+        - /ci-scripts/build-package-for-test.sh evok
     artifacts:
         paths:
             - build/*deb
@@ -56,8 +56,8 @@ deploy_package_from_test:
     except:
         - tags
     script:
-        - /ci-scripts/generate-new-tag-for-test.sh
-        - /ci-scripts/deploy-packages.sh
+        - /ci-scripts/push-tags.sh
+        - /ci-scripts/deploy-testing_packages.sh
 
 # build upon each pushed tag to the master branch
 # the version is taken from the tag name
@@ -70,7 +70,7 @@ build_from_tagged_master_on_rpi:
     tags:
         - armhf
     script:
-        - /ci-scripts/build-package-for-master.sh
+        - /ci-scripts/build-package-for-master.sh evok
     artifacts:
         paths:
             - build/*deb
@@ -85,7 +85,7 @@ build_from_tagged_master_on_nanopi:
     tags:
         - arm64
     script:
-        - /ci-scripts/build-package-for-master.sh
+        - /ci-scripts/build-package-for-master.sh evok
     artifacts:
         paths:
             - build/*
@@ -99,4 +99,4 @@ deploy_package_from_tagged_master:
     except:
         - /-test-/
     script:
-        - /ci-scripts/deploy-packages.sh
+        - /ci-scripts/deploy-master-packages.sh
