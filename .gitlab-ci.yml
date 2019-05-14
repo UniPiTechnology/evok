@@ -66,7 +66,7 @@ build_from_tagged_master_on_rpi:
     only:
         - tags
     except:
-        - /-test-/
+        - /\.test\./
     tags:
         - armhf
     script:
@@ -81,7 +81,7 @@ build_from_tagged_master_on_nanopi:
     only:
         - tags
     except:
-        - /-test-/
+        - /\.test\./
     tags:
         - arm64
     script:
@@ -97,6 +97,6 @@ deploy_package_from_tagged_master:
     only:
         - tags
     except:
-        - /-test-/
+        - /\.test\./
     script:
         - /ci-scripts/deploy-master-packages.sh
