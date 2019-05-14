@@ -57,7 +57,7 @@ deploy_package_from_test:
         - tags
     script:
         - /ci-scripts/push-tags.sh
-        - /ci-scripts/deploy-testing_packages.sh
+        - /ci-scripts/deploy-testing-packages.sh
 
 # build upon each pushed tag to the master branch
 # the version is taken from the tag name
