@@ -26,7 +26,7 @@ class myhome():
         self.toggle_relay = 0
         self.di_relay_dict = {'1':'allon','2':'alloff','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8'}
 
-        self.ws = websocket.WebSocketApp("ws://192.168.1.102/ws",
+        self.ws = websocket.WebSocketApp("ws://localhost/ws",
                             on_message = lambda ws,msg: self.on_message(ws, msg),
                             on_error   = lambda ws,msg: self.on_error(ws, msg),
                             on_close   = lambda ws:     self.on_close(ws),
