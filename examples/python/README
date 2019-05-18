@@ -1,0 +1,7 @@
+ 3 Basic Examples of interacting with the evok api 
+ Using push buttons to activate relay or lights
+ First Example : Switch a relay
+ Second Example : Include All On All OFF
+ Third Example : Include Long press button
+ 
+ These are very basic example but could get you started for a simple home control
