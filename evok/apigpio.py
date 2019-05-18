@@ -8,6 +8,7 @@ from tornado.iostream import IOStream, PipeIOStream
 from tornado import gen
 from tornado.ioloop import IOLoop
 import fcntl
+from log import *
 
 pipe_name_i = '/dev/pigpio'
 pipe_name_o = '/dev/pigout'
@@ -32,6 +33,7 @@ class _PigBus(object, pigpio.pi):
                  ):
 
         # super(PigBus,self).__init__(self,host, port)
+        self.alias = ""
         self.circuit = circuit
         pigpio.pi.__init__(self, host, port)
         self.iolock = toro.Lock()
@@ -103,6 +105,7 @@ class I2cBus(_PigBus):
         super(I2cBus, self).__init__(circuit, host, port)
         # _PigBus.__init__(self, circuit, host, port)
         self.busid = busid
+        self.alias = ""
 
     def full(self):
         return {'dev': 'i2cbus', 'circuit': self.circuit, 'busid': self.busid}
@@ -114,6 +117,7 @@ class GpioBus(_PigBus):
                  port=os.getenv("PIGPIO_PORT", 8888)
                  ):
         super(GpioBus, self).__init__(circuit, host, port)
+        self.alias = ""
         self.inputs = {}
         self.notify_mask = 0
         self.notify_pig = self.notify_open()
@@ -128,12 +132,12 @@ class GpioBus(_PigBus):
         try:
             os.close(self.notify_handle)
         except Exception, E:
-            print str(E)
+            logger.debug(str(E))
             pass
         try:
             self.notify_close(self.notify_pig)
         except Exception, E:
-            print str(E)
+            logger.debug(str(E))
             pass
             # pigpio.pi.stop(self)
 
@@ -149,7 +153,7 @@ class GpioBus(_PigBus):
             try:
                 inp._cb_set_value(self.bank1 & inp.mask, 0, 0)
             except Exception, E:
-                print str(E)
+                logger.debug(str(E))
 
         self.notify_begin(self.notify_pig, self.notify_mask)  # | 1<<18)
         # print "%0x" % self.notify_mask
@@ -179,8 +183,6 @@ class GpioBus(_PigBus):
             try:
                 inp._cb_set_value(level & inp.mask, tick, seq)
             except Exception, E:
-                print str(E)
+                logger.debug(str(E))
         self.bank1 = level
         return
-
-

@@ -174,7 +174,7 @@ class BaseRPCHandler(RequestHandler):
             self._RPC_.traceback()
             self._error = self._RPC_.faults.parse_error()
 
-    #@tornado.web.asynchronous
+    @tornado.web.asynchronous
     @gen.coroutine
     def post(self):
         # Dispatches request methods

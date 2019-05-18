@@ -1,0 +1,13 @@
+# Defaults for unipi-modbus-tools initscript
+# sourced by /etc/init.d/unipi-modbus-tools
+# installed at /etc/default/unipi-modbus-tools by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+# try to update firmware in Neuron boards on start of neuron_tcp_daemon
+FIRMWARE_UPDATE=1
+
+# Additional options that are passed to the Daemon.
+DAEMON_OPTS=""

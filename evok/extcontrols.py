@@ -1,6 +1,5 @@
 from collections import deque
-import time
-
+from log import *
 import devices
 
 # Controls = {}
@@ -68,7 +67,7 @@ class Control(object):
                 else:
                     setattr(self, name, lambda: getattr(obj, prop))
             except Exception, E:
-                print str(E)
+                logger.debug(str(E))
                 #TODO doplnit vyhledani Controls
                 raise Exception('Cannot eval function')
         else:
@@ -98,7 +97,7 @@ class Control(object):
                 if not callable(fun):
                     raise Exception('Output must be function')
             except Exception, E:
-                print str(E)
+                logger.debug(str(E))
                 #TODO doplnit vyhledani Controls
                 raise Exception('Cannot eval function')
         else:

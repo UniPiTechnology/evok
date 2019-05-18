@@ -1,6 +1,3 @@
-
-import socket
-
 from pymodbus.factory import ClientDecoder
 from pymodbus.transaction import ModbusSocketFramer
 from pymodbus.transaction import FifoTransactionManager
@@ -21,9 +18,7 @@ from tornado.tcpclient import TCPClient
 #---------------------------------------------------------------------------#
 # Logging
 #---------------------------------------------------------------------------#
-import logging
-_logger = logging.getLogger(__name__)
-
+from log import *
 
 
 class ModbusClientProtocol():
@@ -74,7 +69,8 @@ class ModbusClientProtocol():
             if future:
                 future.set_result(reply)
                 #handler.callback(reply)
-            else: _logger.debug("Unrequested message: " + str(reply))
+            else:
+                logger.debug("Unrequested message: %s", str(reply))
 
 
     @gen.coroutine
@@ -98,10 +94,22 @@ class ModbusClientProtocol():
         request = ReadInputRegistersRequest(address, count, **kwargs)
         res = yield self.execute(request)
         raise gen.Return(res)
+    
+    @gen.coroutine
+    def read_holding_registers(self, address, count=1, **kwargs):
+        request = ReadHoldingRegistersRequest(address, count, **kwargs)
+        res = yield self.execute(request)
+        raise gen.Return(res)
 
     @gen.coroutine
     def write_coil(self, address, value, **kwargs):
         request = WriteSingleCoilRequest(address, value, **kwargs)
+        res = yield self.execute(request)
+        raise gen.Return(res)
+
+    @gen.coroutine
+    def read_coils(self, address, count=1, **kwargs):
+        request = ReadCoilsRequest(address, count=1, **kwargs)
         res = yield self.execute(request)
         raise gen.Return(res)
 
@@ -113,23 +121,27 @@ class ModbusClientProtocol():
 
 
 @gen.coroutine
-def StartClient(client, host='127.0.0.1', port=502, callback=None):
+def StartClient(client, host='127.0.0.1', port=502, callback=None, callback_args=None):
     ''' Connect to tcp host and, join to client.transport, wait for reply data
         Reconnect on close
     ''' 
+    logger.info("SPI client started")
     while True:
         try:
             stream = yield TCPClient().connect(host, port)
             client.setTransport(stream)
             future = stream.read_until_close(streaming_callback = client.dataReceived)
             if callback:
-                yield callback()
+                if callback_args is not None:
+                    yield callback(callback_args)
+                else:
+                    yield callback()
             yield future
         except StreamClosedError:
             pass
         except Exception, E:
-            print str(E)
-            stream.close() 
+            logger.exception(str(E))
+            stream.close()
         finally:
             client.setTransport(None)
 
@@ -138,4 +150,3 @@ def StartClient(client, host='127.0.0.1', port=502, callback=None):
     StartClient(client)    
 
 '''
-

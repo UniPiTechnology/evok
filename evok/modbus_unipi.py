@@ -1,5 +1,3 @@
-
-
 from pymodbus.datastore import ModbusServerContext
 from pymodbus.datastore import ModbusSlaveContext
 from pymodbus.datastore import ModbusSequentialDataBlock
@@ -9,9 +7,7 @@ from pymodbus.device import ModbusDeviceIdentification
 #---------------------------------------------------------------------------#
 # Logging
 #---------------------------------------------------------------------------#
-import logging
-_logger = logging.getLogger(__name__)
-
+from log import *
 
 #---------------------------------------------------------------------------#
 # Data type transformations
@@ -43,9 +39,9 @@ def float_to_1000(value):
 #---------------------------------------------------------------------------#
 # Device handlers
 #
-#	sync (device, bitdatastore, registerdatastore)
-#	set_bit (register_address, value, device)
-#	set_reg (register_address, value, device)
+#    sync (device, bitdatastore, registerdatastore)
+#    set_bit (register_address, value, device)
+#    set_reg (register_address, value, device)
 #---------------------------------------------------------------------------#
 
 class Devset(set):
@@ -121,10 +117,9 @@ class RelayHandle(DevHandle):
             relay.mcp.__newmask |= relay._mask
             if relay.__modbus_mask & value:
                 relay.mcp.__newbitmap |= relay._mask
-                 
         for mcp in mcps:
             mcp.set_bitmap(mcp.__newmask, mcp.__newbitmap)
- 
+
 class InputHandle(DevHandle):
     """ :counter_regoffset - position of first counter in register_data_block
     """
@@ -174,7 +169,7 @@ class InputHandle(DevHandle):
             value = device.__highvalue | value
             device.set(counter = value)
             device.__highvalue = None
- 
+
 class AoHandle(DevHandle):
 
     def __init__(self, max_cnt, bitoffset, regoffset):
@@ -343,14 +338,13 @@ class UnipiContext(ModbusServerContext):
             self.status_callback(device)
         except (EForeigner, KeyError):
             pass
-        except Exception, e:
-            print str(e)
+        except Exception, E:
+            logger.debug(str(E))
             pass
 
     def status_callback(self, device):
         try:
-          device._modbus_handle.sync(device, self.bits, self.regs)
-
+            device._modbus_handle.sync(device, self.bits, self.regs)
         except AttributeError:
             pass
         except Exception,e :
@@ -366,8 +360,6 @@ class UnipiContextGpio(UnipiContext):
     'input' : (InputHandle(14,     1,      2,      3),),
     }
 
-
-
 identity = ModbusDeviceIdentification()
 identity.VendorName  = 'Unipi Technology'
 identity.ProductCode = 'Evok'
@@ -375,4 +367,3 @@ identity.VendorUrl   = 'http://unipi.technology'
 identity.ProductName = 'Evok Modbus/TCP Server on Tornado'
 identity.ModelName   = 'Evok Modbus'
 identity.MajorMinorRevision = '1.1'
-

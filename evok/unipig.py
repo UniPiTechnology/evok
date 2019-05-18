@@ -1,5 +1,6 @@
-#!/usr/bin/python
-
+''''
+    Code specific to UniPi 1.1 devices
+'''
 
 import struct
 import time
@@ -10,23 +11,26 @@ from math import isnan, floor
 from tornado import gen
 from tornado.ioloop import IOLoop
 import pigpio
-import devents
 from devices import *
 import config
-
+from log import *
 
 class Eprom(object):
-    def __init__(self, i2cbus, circuit, address=0x50, size=256):
+    def __init__(self, i2cbus, circuit, address=0x50, size=256, major_group=1, dev_id=0):
         # running with blocking
+        self.alias = ""
+        self.devtype = EE
+        self.dev_id = dev_id
         self.circuit = circuit
         self.i2cbus = i2cbus
         self.size = size
+        self.major_group = major_group
         self.i2c = i2cbus.i2c_open(i2cbus.busid, address, 0)
         atexit.register(self.stop)
         self.__init_board_version()
 
     def full(self):
-        return {'dev': 'ee', 'circuit': self.circuit}
+        return {'dev': 'ee', 'circuit': self.circuit, 'glob_dev_id': self.dev_id}
 
     def stop(self):
         self.i2cbus.i2c_close(self.i2c)
@@ -35,10 +39,10 @@ class Eprom(object):
         prefix = self.i2cbus.i2c_read_byte_data(self.i2c, 0xe2)
         suffix = self.i2cbus.i2c_read_byte_data(self.i2c, 0xe3)
         if prefix == 1 and suffix == 1:
-            config.globals['version'] = "1.1"
+            config.up_globals['version'] = "1.1"
         else:
-            config.globals['version'] = "1.0"
-        print "UniPi version:" + config.globals['version']
+            config.up_globals['version'] = "1.0"
+        # print "UniPi version:" + config.up_globals['version']
 
     @gen.coroutine
     def write_byte(self, index, value):
@@ -74,10 +78,14 @@ MCP23008_OLAT = 0x0A  # latch output status
 
 
 class UnipiMcp(object):
-    def __init__(self, i2cbus, circuit, address=0x20):
+    def __init__(self, i2cbus, circuit, address=0x20, major_group=1, dev_id=0):
+        self.alias = ""
+        self.devtype = MCP
+        self.dev_id = dev_id
         # running with blocking
         self.circuit = circuit
         self.i2cbus = i2cbus
+        self.major_group = major_group
         self.i2c = i2cbus.i2c_open(i2cbus.busid, address, 0)
         atexit.register(self.stop)
         i2cbus.i2c_write_byte_data(self.i2c, MCP23008_IODIR, 0x00)  # all output !
@@ -89,7 +97,7 @@ class UnipiMcp(object):
         self.i2cbus.i2c_close(self.i2c)
 
     def full(self):
-        return {'dev': 'mcp', 'circuit': self.circuit}
+        return {'dev': 'mcp', 'circuit': self.circuit, 'glob_dev_id': self.dev_id}
 
     def register_relay(self, relay):
         if not (relay in self.relays):
@@ -132,7 +140,6 @@ class UnipiMcp(object):
 
     @gen.coroutine
     def set_bitmap(self, mask, bitmap):
-
         byte_val = (self.value & ~mask) | (bitmap & mask)
         with (yield self.i2cbus.iolock.acquire()):
             #write byte
@@ -159,8 +166,12 @@ _lastt = 0
 class Relay(object):
     pending_id = 0
 
-    def __init__(self, circuit, mcp, pin):
+    def __init__(self, circuit, mcp, pin, major_group=1, dev_id=0):
+        self.alias = ""
+        self.devtype = RELAY
+        self.dev_id = dev_id
         self.circuit = circuit
+        self.major_group = major_group
         self.mcp = mcp
         self.pin = pin
         self._mask = 1 << pin
@@ -168,7 +179,7 @@ class Relay(object):
         #self.logger.debug("Relay %d initialized on MCP", self.circuit)
 
     def full(self):
-        return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value, 'pending': self.pending_id != 0}
+        return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value, 'pending': self.pending_id != 0, 'glob_dev_id': self.dev_id}
 
     def simple(self):
         return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value}
@@ -240,11 +251,14 @@ class UnipiMCP342x(object):
         MCP342[128] single/multi channel A/D convertor
     """
 
-    def __init__(self, i2cbus, circuit, address=0x68):
+    def __init__(self, i2cbus, circuit, address=0x68, major_group=1, dev_id=0):
         # running with blocking
         #self.__config = 0x1c | channel  # continuos operation, 18bit, gain=1
+        self.alias = ""
         self.circuit = circuit
+        self.major_group = major_group
         self.i2cbus = i2cbus
+        self.dev_id = dev_id
         self.i2c = i2cbus.i2c_open(i2cbus.busid, address, 0)
         atexit.register(self.stop)
         self.channels = []
@@ -257,13 +271,12 @@ class UnipiMCP342x(object):
         self.i2cbus.i2c_close(self.i2c)
 
     def full(self):
-        return {'dev': 'adchip', 'circuit': self.circuit}
+        return {'dev': 'adchip', 'circuit': self.circuit, 'glob_dev_id': self.dev_id}
 
     def switch_to_async(self, mainLoop):
         mainLoop.add_callback(self.measure_loop, mainLoop)
 
     def calc_mode(self, channel, bits, gain, continuous):
-        mode = 0
         if not (channel in range(4)): raise Exception("Bad channel number")
         mode = channel << 5
         mode = mode | (bool(continuous) << 4) | ((not bool(continuous)) << 7)  # from one-shoot must be bit7 set
@@ -306,7 +319,7 @@ class UnipiMCP342x(object):
 
     @gen.coroutine
     def measure_loop(self, mainloop):
-        print("Entering measure loop")
+        # print("Entering measure loop")
         #mainloop = IOLoop.instance()
         try:
             next = None
@@ -346,7 +359,7 @@ class UnipiMCP342x(object):
                     yield gen.Task(mainloop.call_later, 1)
 
         except Exception, E:
-            print("%s" % str(E))
+            logger.debug("%s", str(E))
 
 
     @gen.coroutine
@@ -369,10 +382,10 @@ class UnipiMCP342x(object):
 
         status = data[readlen - 1]
         if status & 0x80:
-            print("Converting in progress")
+            # print("Converting in progress")
             return  # converting in progress
         if (self.lastmeasure._mode & 0x7f) != (status & 0x7f):
-            print("Status unexpected")
+            # print("Status unexpected")
             return  # something is bad
 
         value = 0
@@ -388,8 +401,12 @@ class UnipiMCP342x(object):
 
 class AnalogInput():
     def __init__(self, circuit, mcp, channel, bits=18, gain=1, continuous=False, interval=5.0, correction=5.0, rom=None,
-                 corr_addr=None):
+                 corr_addr=None, major_group=1, dev_id=0):
+        self.alias = ""
+        self.devtype = AI
+        self.dev_id = dev_id
         self.circuit = circuit
+        self.major_group = major_group
         self.mcp = mcp
         self.channel = channel
         self.conf = False
@@ -429,7 +446,8 @@ class AnalogInput():
 
     def full(self):
         return {'dev': 'ai', 'circuit': self.circuit, 'value': self.value,
-                'time': self.mtime, 'interval': self.interval, 'bits': self.bits, 'gain': self.gain}
+                'time': self.mtime, 'interval': self.interval, 'bits': self.bits, 'gain': self.gain,
+                'glob_dev_id': self.dev_id, 'mode': "Simple", "modes": ["Simple"]}
 
     def simple(self):
         return {'dev': 'ai', 'circuit': self.circuit, 'value': self.value}
@@ -492,7 +510,10 @@ class UnipiPCA9685(object):
     __CLOCK_FREQ        = 25000000.0
 
 
-    def __init__(self, i2cbus, circuit, address, frequency=400):
+    def __init__(self, i2cbus, circuit, address, frequency=400, dev_id=0):
+        self.alias = ""
+        self.devtype = I2CBUS
+        self.dev_id = dev_id
         self.circuit = circuit
         self.i2cbus = i2cbus
         self.i2c = i2cbus.i2c_open(i2cbus.busid, address, 0)
@@ -506,7 +527,7 @@ class UnipiPCA9685(object):
             off = int(self.i2cbus.i2c_read_byte_data(self.i2c, self.__LED0_OFF_H + self.__LED_MULTIPLIER * channel) << 8)
             off += int(self.i2cbus.i2c_read_byte_data(self.i2c, self.__LED0_OFF_L + self.__LED_MULTIPLIER * channel))
             self.channels.append((on, off))
-            print "Channel: " + str(channel) + " - " + str(self.channels[channel])
+            # print "Channel: " + str(channel) + " - " + str(self.channels[channel])
 
         #set open-drain structure
         i2cbus.i2c_write_byte_data(self.i2c, self.__MODE2, self.__OUTDRV)
@@ -530,7 +551,7 @@ class UnipiPCA9685(object):
         # freq = freq if freq >= 40 else 40
         prescale = int(floor((self.__CLOCK_FREQ / 4096 / freq) - 1 + 0.5))
         prescale = prescale if prescale >= 3 else 3 #hw forces min value of prescale value to 3
-        print "Setting PWM frequency on PCA9685 %d to %d with prescale %d" % (self.circuit, freq, prescale)
+        # print "Setting PWM frequency on PCA9685 %d to %d with prescale %d" % (self.circuit, freq, prescale)
         old_mode = self.i2cbus.i2c_read_byte_data(self.i2c, self.__MODE1) #backup old mode
         new_mode = (old_mode & 0x7F) | self.__SLEEP #sleep mode
         self.i2cbus.i2c_write_byte_data(self.i2c, self.__MODE1, new_mode) #set SLEEP bit on register MODE1
@@ -564,7 +585,7 @@ class UnipiPCA9685(object):
         with (yield self.i2cbus.iolock.acquire()):
             byte_val = on & 0xFF
             extents = [struct.pack("I", byte_val)]
-            result = yield self.i2cbus.apigpio_command_ext(
+            yield self.i2cbus.apigpio_command_ext(
                 pigpio._PI_CMD_I2CWB,
                 self.i2c, self.__LED0_ON_L + self.__LED_MULTIPLIER*channel, 4, extents)
             result = yield self.i2cbus.apigpio_command(
@@ -602,7 +623,7 @@ class UnipiPCA9685(object):
         self.i2cbus.i2c_close(self.i2c)
 
     def full(self):
-        return {'dev': 'pca9685', 'circuit': self.circuit}
+        return {'dev': 'pca9685', 'circuit': self.circuit, 'glob_dev_id': self.dev_id}
 
     def register_output(self, output):
         if not (output in self.channels):
@@ -610,15 +631,19 @@ class UnipiPCA9685(object):
 
 
 class AnalogOutputPCA():
-    def __init__(self, circuit, pca, channel):
+    def __init__(self, circuit, pca, channel, major_group=1, dev_id=0):
+        self.alias = ""
+        self.devtype = AO
+        self.dev_id = dev_id
         self.circuit = circuit
         self.pca = pca
         self.channel = channel
+        self.major_group = major_group
         self.value = 0
         self.value = self.pca.channels[self.channel][1]/409.5
 
     def full(self):
-        return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value, 'frequency': self.pca.frequency}
+        return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value, 'frequency': self.pca.frequency, 'glob_dev_id': self.dev_id}
 
     def simple(self):
         return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value}
@@ -644,9 +669,13 @@ class AnalogOutputPCA():
 #
 #################################################################
 class AnalogOutputGPIO():
-    def __init__(self, gpiobus, circuit, pin=18, frequency=400, value=0):
+    def __init__(self, gpiobus, circuit, pin=18, frequency=400, major_group=1, value=0, dev_id=0):
+        self.alias = ""
+        self.devtype = AO
+        self.dev_id = dev_id
         self.bus = gpiobus
         self.circuit = circuit
+        self.major_group = major_group
         self.pin = pin
         self.frequency = frequency
         self.value = value
@@ -655,7 +684,7 @@ class AnalogOutputGPIO():
         gpiobus.set_PWM_dutycycle(pin, self.__calc_value(value))
 
     def full(self):
-        return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value, 'frequency': self.frequency}
+        return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value, 'frequency': self.frequency, 'glob_dev_id': self.dev_id}
 
     def simple(self):
         return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value}
@@ -665,7 +694,7 @@ class AnalogOutputGPIO():
             value = 10.0
         elif value < 0:
             value = 0.0
-        if config.globals['version'] == "1.0":
+        if config.up_globals['version'] == "UniPi 1.0":
             return int(round((10 - value) * 100))
         else:
             return int(round(value * 100))
@@ -682,7 +711,7 @@ class AnalogOutputGPIO():
     def set(self, value=None, frequency=None):
         result = None
         if not (frequency is None) and (frequency != self.frequency):
-            print int(frequency)
+            # print int(frequency)
             result = pigpio._u2i((yield self.bus.apigpio_command(pigpio._PI_CMD_PFS, self.pin, int(frequency))))
             self.frequency = frequency
             if not (value is None):
@@ -704,12 +733,16 @@ class AnalogOutputGPIO():
 #################################################################
 
 class Input():
-    def __init__(self, gpiobus, circuit, pin, debounce=None, counter_mode='disabled'):
+    def __init__(self, gpiobus, circuit, pin, debounce=None, major_group=1, counter_mode='disabled', dev_id=0):
+        self.alias = ""
+        self.devtype = INPUT
+        self.dev_id = dev_id
         self.bus = gpiobus
         self.circuit = circuit
+        self.major_group = major_group
         self.pin = pin
         self.mask = 1 << pin
-        self._debounce = 0 if not debounce else debounce / 1000.0  # milisecs
+        self._debounce = 0 if not debounce else debounce / 1000.0  # millisecs
         self.value = None
         self.__value = None
         self.pending = None
@@ -719,7 +752,7 @@ class Input():
             self.counter_mode = counter_mode
         else:
             self.counter_mode = 'disabled'
-            print 'DI%s: counter_mode must be one of: rising, falling or disabled. Counting is disabled!' % self.circuit
+            logger.debug('DI%s: counter_mode must be one of: rising, falling or disabled. Counting is disabled!', self.circuit)
         gpiobus.set_pull_up_down(pin, pigpio.PUD_UP)
         gpiobus.register_input(self)
 
@@ -735,7 +768,8 @@ class Input():
         return {'dev': 'input', 'circuit': self.circuit, 'value': self.value,
                 'bitvalue' : self.__value, 
                 'time': self.tick, 'debounce': self.debounce,
-                'counter_mode': self.counter_mode == 'rising' or self.counter_mode == 'falling'}
+                'counter_mode': self.counter_mode == 'rising' or self.counter_mode == 'falling',
+                'glob_dev_id': self.dev_id}
 
     def simple(self):
         return {'dev': 'input', 'circuit': self.circuit, 'value': self.value,
@@ -779,7 +813,9 @@ class Input():
         devents.status(self)
 
     #@gen.coroutine
-    def set(self, debounce=None, counter=None):
+    def set(self, debounce=None, counter=None, counter_mode=None):
+        if (counter_mode is not None and counter_mode != self.counter_mode and counter_mode in ["rising", "falling", "disabled"]):
+            self.counter_mode = counter_mode
         if not (debounce is None):
             if not debounce:
                 self._debounce = 0
@@ -790,6 +826,7 @@ class Input():
             if self.counter_mode != 'disabled':
                 self.value = counter
                 devents.status(self)
+
 
     def get(self):
         """ Returns ( value, debounce )
@@ -805,16 +842,20 @@ class Input():
 
 
 class DS2408_pio(object):
-    def __init__(self, circuit, ds2408, pin):
+    def __init__(self, circuit, ds2408, pin, major_group=1, dev_id=0):
+        self.alias = ""
+        self.devtype = SENSOR
         self.circuit = circuit
+        self.dev_id = dev_id
+        self.major_group = major_group
         self.ds2408 = ds2408
         self.pin = pin
         self.value = None
         self.ds2408.register_pio(self)
 
     def full(self):
-        pass
-
+        return None
+    
     def simple(self):
         pass
 
@@ -841,7 +882,7 @@ class DS2408_pio(object):
 class DS2408_input(DS2408_pio):
     def full(self):
         return {'dev': 'input', 'circuit': self.circuit, 'value': self.value,
-                'time': 0, 'debounce': 0}
+                'time': 0, 'debounce': 0, 'glob_dev_id': self.dev_id}
 
     def simple(self):
         return {'dev': 'input', 'circuit': self.circuit, 'value': self.value}
@@ -850,7 +891,7 @@ class DS2408_relay(DS2408_pio):
     pending_id = 0
 
     def full(self):
-        return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value, 'pending': self.pending_id != 0}
+        return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value, 'pending': self.pending_id != 0, 'glob_dev_id': self.dev_id}
 
     def simple(self):
         return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value}

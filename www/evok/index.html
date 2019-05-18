@@ -8,7 +8,6 @@
 <!--[if (gte IE 9)|!(IE)]><!-->
 <html lang="en"> <!--<![endif]-->
 <head>
-
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>UniPi</title>
@@ -17,7 +16,7 @@
 
     <!-- Favicons
     ================================================== -->
-    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="shortcut icon" href="favicon.ico">
 
     <!-- CSS
     ================================================== -->
@@ -27,31 +26,11 @@
     ================================================== -->
     <script rel="javascript" type="text/javascript" src="js/jquery/jquery-2.1.1.min.js"></script>
     <script rel="javascript" type="text/javascript" src="js/jquery/jquery.mobile-1.4.5.min.js"></script>
-    <script rel="javascript" type="text/javascript" src="js/jquery/jquery.tmpl.js"></script>
-    <script rel="javascript" type="text/javascript" src="js/wsbase.js"></script>
-    <script rel="javascript" type="text/javascript" src="js/pages.js"></script>
-    <script rel="javascript" type="text/javascript" src="js/config.js"></script>
+    <script rel="javascript" type="text/javascript" src="js/main.js"></script>
     <script type="text/javascript">
-        //inject templates to the document
-        $.get("templates/templates.tmpl.html", function(templates) {
-            $("body").append(templates);
-        });
         $(document).ready(function() {
-            WebSocketRegister();
-            update_values();
-
-            //hacky way to check ssh passord
-            setInterval(function () {
-                CheckNewSshPassword();
-            }, 100);
-        });
-        $(document).on("pagecreate", "#page-settings", function () {
-            $("#template-device-edit-page").tmpl(pages_descr).appendTo("#pages-container");
-            get_config();
-        });
-        $(document).on("pagebeforecreate", "#page-system", function () {
-            $("#template-system-page").tmpl(syspages_descr).appendTo("#div_services_container");
-            get_config();
+            webSocketRegister();
+            updateValues();
         });
     </script>
 
@@ -73,8 +52,8 @@
 <!-- OVERVIEW page -->
 <div data-role="page" id="page-overview">
     <div data-role="header"  class="cmax8" data-id="pageHeader" data-position="fixed">
-        <h2>UniPi control panel</h2>
-        <a href="#popupMenu" data-rel="popup" class="ui-btn-right ui-btn ui-icon-gear ui-btn-icon-left">Settings</a>
+        <h2>UniPi Control Panel</h2>
+		<img src="/js/jquery/images/spinner.svg" class="ui-btn-right" id="unipi_loading_spinner" style="max-height: 80%;visibility: hidden;"/>
     </div>
     <div data-role="main" class="ui-content cmax8">
       <div data-role="tabs" >
@@ -82,209 +61,61 @@
             <ul>
                 <li><a href="#inputs" data-theme="a" data-ajax="false" class="ui-btn-active">Inputs</a></li>
                 <li><a href="#outputs" data-theme="a" data-ajax="false">Outputs</a></li>
+                <li><a href="#system" data-theme="a" data-ajax="false">System</a></li>
+                <li><a href="#configs" data-theme="a" data-ajax="false">Configuration</a></li>
             </ul>
         </div>
-        <div id="inputs">
-                <ul data-role="listview" id="inputs_list"  data-count-theme="b" data-inset="true" data-split-icon="gear">
-                    <li data-role="list-divider" data-theme="a" id="unipi_input_divider">Digital</li>
-                    <li><a href='#'>Input 1_0 <span class="ui-li-count" style="margin-right:6em"> 102 </span><span class="ui-li-count"> On </span></a>
-                        <a href="#popupBasic" data-theme="a" data-rel="popup" data-position-to="window" data-transition="pop">Configure input</a></li>
-                    <li data-role="list-divider" data-theme="a" id="unipi_ai_divider">Analog</li>
-                    <li data-role="list-divider" data-theme="a" id="unipi_temp_divider">1Wire Sensors/Devices</li>
-                </ul>
+        <div id="inputs" class="ui-content" data-inset="true">
+            <ul data-role="listview" id="inputs_list" data-count-theme="b" data-inset="true" data-split-icon="gear">
+                <li data-role="list-divider" data-theme="a" id="unipi_input_divider">Digital</li>
+                <li data-role="list-divider" data-theme="a" id="unipi_ai_divider">Analog</li>
+                <li data-role="list-divider" data-theme="a" id="unipi_temp_divider">1Wire Sensors/Devices</li>
+            </ul>
         </div>
         <!-- /inputs -->
 
         <div id="outputs" class="ui-content" data-inset="true">
-                <ul data-role="listview" id="outputs_list" data-count-theme="b" data-inset="true" data-split-icon="gear">
-                    <li data-role="list-divider" data-theme="a" id="unipi_relay_divider">Digital</li>
-                    <li class="ui-field-contain"><a href="#" class="ui-field-contain" style="padding:1em"><label sxtyle="display:inline" for="flip2">Relay 1_0</label><input type="checkbox" data-role="flipswitch" name="flip2" id="flip2"></a>
-                      <a href="#popupBasic" data-theme="a" data-rel="popup" data-position-to="window" data-transition="pop">Configure input</a></li>
-                    <li data-role="list-divider" data-theme="a" id="unipi_ao_divider">Analog</li>
-                    <li class="ui-field-contain"><a href="#" class="ui-field-contain" style="padding:1em"><label  for="slider2">Analog output 1-00</label><input type="range" name="slider2" id="slider2" value="0" min="0" max="100" data-highlight="true"></a>
-                      <a href="#popupBasic" data-theme="a" data-rel="popup" data-position-to="window" data-transition="pop">Configure input</a></li>
-                </ul>
+            <ul data-role="listview" id="outputs_list" data-count-theme="b" data-inset="true" data-split-icon="gear">
+				<li data-role="list-divider" data-theme="a" id="unipi_light_channel_divider" style="display: none;">DALI Channels</li>
+                <li data-role="list-divider" data-theme="a" id="unipi_digital_divider">Digital</li>
+                <li data-role="list-divider" data-theme="a" id="unipi_relay_divider">Relays</li>
+				<li data-role="list-divider" data-theme="a" id="unipi_led_divider">LEDs</li>
+                <li data-role="list-divider" data-theme="a" id="unipi_ao_divider">Analog</li>
+            </ul>
         </div>
         <!-- /outputs -->
+        
+        <div id="system" class="ui-content" data-inset="true">
+            <ul data-role="listview" id="system_list" data-count-theme="b" data-inset="true" data-split-icon="gear">
+                <li data-role="list-divider" data-theme="a" id="unipi_neuron_divider">Devices</li>
+                <li data-role="list-divider" data-theme="a" id="unipi_uart_divider">UART</li>
+                <li data-role="list-divider" data-theme="a" id="unipi_watchdog_divider">Watchdog</li>
+            	<li data-role="list-divider" data-theme="a" id="unipi_wifi_divider">WiFi Adapters</li>
+        	</ul>
+        </div>
+        <!-- /system -->
+        
+        <div id="configs" class="ui-content" data-inset="true">
+        	<div id="unipi_save_all_button_div">
+        		<button class="ui-btn ui-corner-all" id="unipi_save_all_button">Save current state to Flash</button>
+        	</div>
+        </div>
+        <!-- /configs -->
+        
         <!-- /content -->
       </div>
       <!-- /tabs -->
     </div>
-        <div style="padding:10px 20px;"></div>
- 
-<div data-role="popup" id="popupBasic" data-theme="a" class="ui-corner-all"
-     style="padding-left:1em; padding-right:1em; max-width:300px">
-    <form>
-            <h3>Input configuration</h3>
-<label for="slider-10">Debounce [ms]:</label>
-<input type="range" name="slider-10" id="slider-10" min="0" max="100" step=".1" value="5">
-<fieldset data-role="controlgroup" data-mini="false" data-type="vertical">
-<legend>Direct switch:</legend>
-<input type="radio" name="radio-choice-1" id="radio-choice-1" value="choice-1" checked="checked">
-<label for="radio-choice-1">Disabled</label>
-<input type="radio" name="radio-choice-1" id="radio-choice-2" value="choice-2">
-<label for="radio-choice-2">Positive</label>
-<input type="radio" name="radio-choice-1" id="radio-choice-3" value="choice-3">
-<label for="radio-choice-3">Negative</label>
-<input type="radio" name="radio-choice-1" id="radio-choice-4" value="choice-4">
-<label for="radio-choice-4">Toggle</label>
-</fieldset>
-<button type="submit" class="ui-btn ui-corner-all ui-shadow ui-btn-b ui-btn-icon-left ui-icon-check">Commit</button>
-    </form>
-</div>
-
-    <div data-role="footer" data-position="fixed" data-tap-toggle="false" class="jqm-footer">
-        <h1>UniPi.technology</h1>
-    </div>
-    <!-- /footer -->
-
-<!-- Settings menu -->
-<div data-role="popup" id="popupMenu" data-theme="b">
-<ul data-role="listview" data-inset="true" style="min-width:210px;">
-<li><a href="#page-settings">Evok config</a></li>
-<li><a href="#page-system">System settings</a></li>
-<li><a href="#page-login">Login</a></li>
-<li><a href="#">Logout</a></li>
-</ul>
-</div>
-
-</div>
-
-<!-- LOGIN page -->
-<div data-role="page" id="page-login" data-quicklinks="true" data-dialog="true">
-    <div data-role="header" data-id="pageHeader" data-position="fixed" class="cmax8">
-        <h2>Login</h2>
-    </div>
-    <div class="ui-content" role="main">
-        <!--
-        <label for="usename">Username</label>
-        <input type="text" name="usename" id="usename" value="">
-        -->
-        <label for="password">Password</label>
-        <input type="password" name="password" id="password" value="">
-        <!--
-        <fieldset data-role="controlgroup">
-            <input type="checkbox" name="chck-rememberme" id="chck-rememberme" checked="">
-            <label for="chck-rememberme">Remember me</label>
-        </fieldset>
-        -->
-        <a href="#dlg-invalid-credentials" data-rel="popup" data-transition="pop" data-position-to="window" id="btn-submit" class="ui-btn ui-btn-b ui-corner-all mc-top-margin-1-5">Submit</a>
-    </div>
-    <!-- /tabs -->
-    <div data-role="footer" data-position="fixed" data-tap-toggle="false" class="jqm-footer">
-        <h1>UniPi.technology</h1>
-    </div>
-    <!-- /footer -->
-</div>
-<!-- /login page -->
-
-<!-- SETTINGS page -->
-<div data-role="page" id="page-settings">
-    <div data-role="header" data-id="pageHeader" data-position="fixed" class="cmax8">
-        <a href="#page-overview" data-theme="a" class="ui-btn-left ui-btn ui-icon-back ui-btn-icon-left">Back</a>
-        <h2>UniPi Evok config</h2>
-    </div>
-    <div role="main" class="ui-content cmax8">
-        <div id="div_config" class="ui-content">
-                <div id="div_devices_apply_container" class="ui-grid-a">
-                    <div class="ui-grid-a">
-	                    <div class="ui-block-a"><button onclick="window.location.href='#page-add-new-device';" class="ui-btn ui-icon-plus ui-btn-icon-left ui-corner-all" type="button" data-theme="a">Add new</button></div>
-	                    <div class="ui-block-b"><button id="btn-apply-config" onclick="uploadConfig(); return false;" class="ui-btn ui-icon-check ui-btn-icon-left ui-corner-all" type="button" data-theme="b">Apply config</button></div>
-                    </div>
-                </div>
-                <div id="div_devices_container"></div>
-        </div>
-        <!-- /div_config -->
+    <div data-role="popup" id="unipi_config_form_div">
+    	<form id="unipi_config_form">
+    		<div style="padding:20px 20px;" class="" id="unipi_config_form_inner_div">
+    		</div>
+    	</form>
     </div>
     <div data-role="footer" data-position="fixed" data-tap-toggle="false" class="jqm-footer">
         <h1>UniPi.technology</h1>
     </div>
     <!-- /footer -->
 </div>
-
-<!-- SYSTEM page -->
-<div data-role="page" id="page-system">
-    <div data-role="header" data-id="pageHeader" data-position="fixed" class="cmax8">
-        <a href="#page-overview" data-theme="a" class="ui-btn-left ui-btn ui-icon-back ui-btn-icon-left">Back</a>
-        <h2>UniPi system settings</h2>
-    </div>
-    <div role="main" class="ui-content cmax8 ui-overlay-a">
-        <div id="div_services_container" data-role="collapsibleset" data-theme="a" data-content-theme="a">
-                        <div data-role="collapsible">
-                            <h3>SSH</h3>
-                            <div class="ui-grid-a">
-                                <div class="ui-block-a">
-                                <label for="ssh-enabled">Service SSH enabled</label>
-                                <select name="ssh-enabled" id="ssh-enabled" data-role="slider" data-mini="true">
-                                   <option value="off">No</option>
-                                   <option value="on" selected="">Yes</option>
-                                </select>
-                                </div>
-                                <div class="ui-block-a">
-                                    <label for="edit_ssh_password">Set new root password</label>
-                                    <input type="password" id="edit_ssh_password" value=""/>
-                                    <label for="edit_retype_ssh_password">Retype password</label>
-                                    <input type="password" id="edit_retype_ssh_password" value=""/>
-                                </div>
-                                <div class="ui-block-a"><button onclick="setNewPassword();" id="ssh_password_save_btn" class="ui-btn ui-icon-forbidden ui-btn-icon-left ui-corner-all" type="button" data-theme="a">Set password</button></div>
-                            </div>
-                        </div>
-                        <div data-role="collapsible">
-                            <h3>Wired network</h3>
-                            <div class="ui-grid-a">
-<div class="ui-block-a"><select name="select-custom-1" id="select-custom-1" data-native-menu="false">
-        <option value="1">DHCP</option>
-        <option value="2">Static</option>
-        <option value="3">Disabled</option>
-</select></div>
-                               <div class="ui-block-a">
-                                    <label for="eth0-ipaddress">IPv4 address</label>
-                                    <input type="text" pattern="[0-9]{1,3}\.[0-9]{1,3}" id="eth0-ipaddress" value=""/>
-                                    <label for="eth0-netmask">Network mask</label>
-                                    <input type="number" id="eth0-netmask" value=""/>
-                                </div>
-                                <div class="ui-block-a"><button onclick="setNewPassword();" id="ssh_password_save_btn" class="ui-btn ui-icon-forbidden ui-btn-icon-left ui-corner-all" type="button" data-theme="a">Save</button></div>
-                            </div>
-                        </div>
-                </div>
-            <!-- /div_services -->
-    </div>
-    <div data-role="footer" data-position="fixed" data-tap-toggle="false" class="jqm-footer">
-        <h1>UniPi.technology</h1>
-    </div>
-    <!-- /footer -->
-</div>
-
-<!-- Add new device page -->
-<div data-role="page" id="page-add-new-device" data-quicklinks="true" data-dialog="true">
-    <div data-role="header" data-id="pageHeader" data-position="fixed">
-        <h2>Add new device</h2>
-    </div>
-    <div class="ui-content">
-        <ul data-role="listview" data-filter="true" data-filter-placeholder="Search devices" data-inset="true">
-            <li><a href="#page-edit-device-gpiobus">GPIO bus</a></li>
-            <li><a href="#page-edit-device-owbus">1Wire bus</a></li>
-            <li><a href="#page-edit-device-i2cbus">I2C bus</a></li>
-            <li><a href="#page-edit-device-eprom">EEprom</a></li>
-            <li><a href="#page-edit-device-mcp">MCP23008/23017</a></li>
-            <li><a href="#page-edit-device-aichip">AI chip MCP342x</a></li>
-            <li><a href="#page-edit-device-pca9685">AO/PWM chip PCA9688</a></li>
-            <li><a href="#page-edit-device-1wdevice">1Wire device</a></li>
-            <li><a href="#page-edit-device-relay">Relay</a></li>
-            <li><a href="#page-edit-device-1wrelay">1Wire relay</a></li>
-            <li><a href="#page-edit-device-ao">Analog Output</a></li>
-            <li><a href="#page-edit-device-di">Digital Input</a></li>
-            <li><a href="#page-edit-device-1winput">1Wire Digital Input</a></li>
-        </ul>
-    </div>
-    <!-- /tabs -->
-    <div data-role="footer" data-position="fixed" data-tap-toggle="false" class="jqm-footer">
-        <h1>UniPi.technology</h1>
-    </div>
-    <!-- /footer -->
-</div>
-<!-- /add new device page -->
-
-
 </body>
 </html>

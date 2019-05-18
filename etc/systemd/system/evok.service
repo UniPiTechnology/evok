@@ -2,14 +2,15 @@
 Description=Evok Modbus/Websocket/Rpc Server
 Requires=pigpio.service
 Requires=neurontcp.service
+StartLimitIntervalSec=300
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python /opt/evok/evok.py --path1=/etc/evok.conf --path2=/etc/evok-neuron.conf
+ExecStart=/usr/bin/python /opt/evok/evok.py
 TimeoutStopSec=3
 SyslogLevel=debug
 SyslogIdentifier=evok
-
+StandardOutput=null
 WorkingDirectory=/opt/evok
 
 #User=evok
@@ -19,4 +20,4 @@ Restart=always
 
 [Install]
 WantedBy=multi-user.target
-Alias=evok.service
+#Alias=evok.service

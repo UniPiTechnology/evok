@@ -5,6 +5,7 @@ import tornado.ioloop
 
 from tornadorpc_evok.json import JSONRPCHandler
 import tornadorpc_evok as tornadorpc
+from tornado import gen
 
 import time
 import datetime
@@ -34,8 +35,8 @@ class userBasicHelper():
         auth_decoded = base64.decodestring(auth_header[6:])
         username, password = auth_decoded.split(':', 2)
 
-        print (username, password)
-        print self._passwords
+        # print (username, password)
+        # print self._passwords
         if (username == 'rpc' and password in self._passwords):
             return True
         else:
@@ -59,7 +60,6 @@ class Handler(userBasicHelper, JSONRPCHandler):
     def input_set(self, circuit, debounce):
         inp = Devices.by_int(INPUT, str(circuit))
         return inp.set(debounce=debounce)
-
 
     ###### Relay ######
     def relay_get(self, circuit):
@@ -119,19 +119,19 @@ class Handler(userBasicHelper, JSONRPCHandler):
     ###### OwBus (1wire bus) ######
     def owbus_get(self, circuit):
         ow = Devices.by_int(OWBUS, str(circuit))
-        return ow.scan_interval
+        return ow.bus_driver.scan_interval
 
     def owbus_set(self, circuit, scan_interval):
         ow = Devices.by_int(OWBUS, str(circuit))
-        return ow.set(scan_interval=scan_interval)
+        return ow.bus_driver.set(scan_interval=scan_interval)
 
     def owbus_scan(self, circuit):
         ow = Devices.by_int(OWBUS, str(circuit))
-        return ow.set(do_scan=True)
+        return ow.bus_driver.set(do_scan=True)
 
     def owbus_list(self, circuit):
         ow = Devices.by_int(OWBUS, str(circuit))
-        return ow.list()
+        return ow.bus_driver.list()
 
     ###### Sensors (1wire thermo,humidity) ######
     def sensor_set(self, circuit, interval):
@@ -169,6 +169,4 @@ class Handler(userBasicHelper, JSONRPCHandler):
     def ee_write_byte(self, circuit, index, value):
         ee = Devices.by_int(EE, str(circuit))
         result = yield ee.write_byte(index, value)
-
-
-
+        raise gen.Return(result)

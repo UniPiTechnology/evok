@@ -1,0 +1,9 @@
+pymodbus==1.4.0
+tornado==4.5.3
+toro
+jsonrpclib
+pyyaml
+tornado_json
+tornado-webservices
+pyusb
+python-dali

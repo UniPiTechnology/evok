@@ -1,19 +1,13 @@
-# import logging
-#import threading
 import multiprocessing
 import os
 import time
 import ow
-#import math
-#import datetime
 import signal
-import apigpio
-#import string
-
+import string
 from tornado.ioloop import IOLoop
-
 import devents
 import devices
+from log import *
 
 MAX_LOSTINTERVAL = 300  # 5minut
 
@@ -22,19 +16,21 @@ OWCMD_SCAN = 2
 OWCMD_SCAN_INTERVAL = 3
 OWCMD_DEFAULT_INTERVAL = 4
 OWCMD_SET_PIO = 5
-SUPPORTED_DEVICES = ["DS18S20", "DS18B20", "DS2438", "DS2408"]
+SUPPORTED_DEVICES = ["DS18S20", "DS18B20", "DS2438", "DS2408", "DS2413"]
 
 import fcntl
-
 
 def set_non_blocking(fd):
     flags = fcntl.fcntl(fd, fcntl.F_GETFL)
     fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
 class MySensor(object):
-    def __init__(self, addr, typ, bus, interval=None, dynamic=True, circuit=None, is_static=False):
+    def __init__(self, addr, typ, bus, interval=None, dynamic=True, circuit=None, major_group=1, is_static=False):
+        self.alias = ""
+        self.devtype = devices.SENSOR
         self.type = typ
         self.circuit = circuit if circuit != None else addr
+        self.major_group = major_group
         self.address = addr
         self.interval = bus.interval if interval is None else interval  # seconds
         self.is_dynamic_interval = dynamic  # dynamically change interval #TODO
@@ -45,7 +41,7 @@ class MySensor(object):
         self.readtime = 0
         self.sens = None
         if is_static:
-            self.__bus = bus  #can't pickle, must be reset/set  by pickeling/unpicklgin
+            self.__bus = bus  #can't pickle, must be reset/set by pickling/un-pickling
         bus.register_sensor(self)
 
     def get_value(self):
@@ -107,44 +103,70 @@ class MySensor(object):
         self.lostinterval = self.interval
 
 class DS18B20(MySensor):  # thermometer
-
     def full(self):
-        return {'dev': 'temp', 'circuit': self.circuit, 'address': self.address,
-                'value': self.value, 'lost': self.lost, 'time': self.time, 'interval': self.interval, 'typ': self.type}
+        return {'dev': 'temp', 
+                'circuit': self.circuit, 
+                'address': self.address,
+                'value': self.value, 
+                'lost': self.lost, 
+                'time': self.time, 
+                'interval': self.interval, 
+                'typ': self.type}
+        
 
     def simple(self):
-        return {'dev': 'temp', 'circuit': self.circuit, 'value': self.value, 'lost': self.lost, 'typ': self.type}
+        return {'dev': 'temp', 
+                'circuit': self.circuit, 
+                'value': self.value, 
+                'lost': self.lost, 
+                'typ': self.type}
 
     def read_val_from_sens(self, sens):
         new_val = float(sens.temperature)
         if not (new_val == 85.0 and abs(new_val - self.value) > 2):
             self.value = round(float(sens.temperature) * 2, 1) / 2  # 4 bits for frac part of number
         else:
-            print "PoR detected! 85C"
+            logger.debug("PoR detected! 85C")
 
-# class DS2438(MySensor):  # vdd + vad + thermometer
-#
-#     def full(self):
-#         if not (type(self.value) is tuple):
-#             self.value = (None, None, None)
-#         return {'dev': 'ds2438', 'circuit': self.circuit, 'vdd': self.value[0], 'vad': self.value[1],
-#                 'temp': self.value[2], 'lost': self.lost, 'time': self.time, 'interval': self.interval,
-#                   'typ': self.type}
-#
-#     def simple(self):
-#         if not (type(self.value) is tuple):
-#             self.value = (None, None, None)
-#         return {'dev': 'ds2438', 'circuit': self.circuit, 'vdd': self.value[0], 'vad': self.value[1],
-#                 'temp': self.value[2], 'lost': self.lost, 'typ': self.type}
-#
-#     def read_val_from_sens(self, sens):
-#         self.value = (sens.VDD, sens.VAD, sens.temperature)
+class DS2438(MySensor):  # vdd + vad + thermometer
+
+    def full(self):
+        if not (type(self.value) is tuple):
+            self.value = (None, None, None)
+        return {'dev': 'temp', 
+                'circuit': self.circuit, 
+                'humidity': (((((float(self.value[1]) / float(self.value[0])) - 0.16)) / 0.0062) / (1.0546 - 0.00216 * float(self.value[2]))),
+                'vdd': self.value[0], 
+                'vad': self.value[1],
+                'temp': self.value[2], 
+                'vis': self.value[3],
+                'lost': self.lost, 
+                'time': self.time, 
+                'interval': self.interval,
+                'typ': self.type}
+
+    def simple(self):
+        if not (type(self.value) is tuple):
+            self.value = (None, None, None)
+        return {'dev': 'temp', 
+                'circuit': self.circuit, 
+                'vdd': self.value[0], 
+                'vad': self.value[1],
+                'temp': self.value[2],
+                'vis': self.value[3],
+                'lost': self.lost, 
+                'typ': self.type}
+
+    def read_val_from_sens(self, sens):
+        self.value = (sens.VDD, sens.VAD, sens.temperature, sens.vis)
+
 
 class DS2408(MySensor):
-    def __init__(self, addr, typ, bus, interval=None, is_dynamic_interval=True, circuit=None, is_static=False):
+    def __init__(self, addr, typ, bus, interval=None, is_dynamic_interval=True, circuit=None, major_group=1, is_static=False):
         self.type = typ
         self.circuit = circuit if circuit != None else addr
         self.address = addr
+        self.major_group = major_group
         self.interval = bus.interval if interval is None else interval  # seconds
         self.is_dynamic_interval = is_dynamic_interval  # dynamically change interval #TODO
         self.last_value = None
@@ -165,7 +187,11 @@ class DS2408(MySensor):
         self.value = pios_values
 
     def full(self):
-        return {'dev': '1wdevice', 'circuit': self.circuit, 'address': self.address, 'value': None, 'typ': self.type}
+        return {'dev': '1wdevice', 
+                'circuit': self.circuit, 
+                'address': self.address, 
+                'value': None, 
+                'typ': self.type}        
 
     def simple(self):
         return self.full()
@@ -176,7 +202,7 @@ class DS2408(MySensor):
     def set_pio(self, pio, value):
         if self.type == 'DS2408':
             setattr(self.sens, 'PIO_'+repr(pio), str(value))
-        elif self.type == 'DS2406':
+        elif self.type == 'DS2406' or self.type == 'DS2413':
             pio_alpha = dict(zip(range(0, 26), string.ascii_uppercase))
             setattr(self.sens, 'PIO_'+pio_alpha[pio], str(value))
 
@@ -207,26 +233,28 @@ class DS2408(MySensor):
                             pio.set_value(value[pio.pin])
 
 
-def MySensorFabric(address, typ, bus, interval=None, dynamic=True, circuit=None, is_static=False):
+def MySensorFabric(address, typ, bus, interval=None, dynamic=True, circuit=None, major_group = 1, is_static=False):
     if (typ == 'DS18B20') or (typ == 'DS18S20'):
         return DS18B20(address, typ, bus, interval=interval, circuit=circuit)
-    # elif (typ == 'DS2438'):
-    #     return DS2438(address, typ, bus, interval=interval, circuit=circuit)
-    elif (typ == 'DS2408') or (typ == 'DS2406'):
+    elif (typ == 'DS2438'):
+        return DS2438(address, typ, bus, interval=interval, circuit=circuit)
+    elif (typ == 'DS2408') or (typ == 'DS2406') or (typ == 'DS2413'):
         return DS2408(address, typ, bus, interval=interval, circuit=circuit, is_static=is_static)
     else:
-        print "Unsupported 1wire device %s (%s) detected" % (typ, address)
+        logger.debug("Unsupported 1wire device %s (%s) detected", typ, address)
         return None
 
 
 class OwBusDriver(multiprocessing.Process):
-    def __init__(self, circuit, taskPipe, resultPipe, interval=60, scan_interval=300, bus='--i2c=/dev/i2c-1:ALL'):
+    def __init__(self, circuit, taskPipe, resultPipe, interval=60, scan_interval=300, major_group=1, bus='--i2c=/dev/i2c-1:ALL'):
         multiprocessing.Process.__init__(self)
+        self.devtype = devices.OWBUS
         self.circuit = circuit
         self.taskQ = taskPipe[0]
         self.taskWr = taskPipe[1]
         self.resultRd = resultPipe[0]
         self.resultQ = resultPipe[1]
+        self.major_group = major_group
         self.scan_interval = scan_interval
         self.interval = interval
         self.scanned = set()
@@ -235,12 +263,11 @@ class OwBusDriver(multiprocessing.Process):
         self.register_in_caller = lambda x: None  # pro registraci, zatim prazdna funkce
         # ow.init(bus)
 
-    #        self.logger = logging.getLogger(Globals.APP_NAME)
-    #        self.logger.debug("owclient initialized")
-
 
     def full(self):
-        return {'dev': 'owbus', 'circuit': self.circuit, 'bus': self.bus}
+        return {'dev': 'owbus', 
+                'circuit': self.circuit, 
+                'bus': self.bus}
 
     def list(self):
         list = dict()
@@ -287,7 +314,7 @@ class OwBusDriver(multiprocessing.Process):
             self.register_in_caller(obj)
             obj.__bus = self
             #Devices.register_device(5,obj)
-            print "New sensor " + str(obj.type) + " - " +str(obj.circuit)
+            logger.debug("New sensor %s - %s", str(obj.type),str(obj.circuit))
         elif type(obj) is tuple:
             # obj[0] - circuit/address of sensor
             # obj[1] - Boolean(True) -> Lost
@@ -296,12 +323,9 @@ class OwBusDriver(multiprocessing.Process):
             circuit = obj[0]
             mysensor = next(x for x in self.mysensors if x.circuit == circuit)
             if mysensor: mysensor._set_value(obj[1])
-            #print "Temperature %s is %s" % (obj[0],obj[1])
-
 
     # ####################################w.init(b#
     # this part is running used in subprocess
-
     def do_scan(self):
         """ Initiate 1wire bus scanning, 
             check existence in self.scanned
@@ -313,7 +337,7 @@ class OwBusDriver(multiprocessing.Process):
                 try:
                     # find sensor in list self.mysenors by address
                     mysensor = next(x for x in self.mysensors if x.address == address)
-                    #print "Sensor found " + str(mysensor.circuit)
+                    logger.info("Sensor found " + str(mysensor.circuit))
                 except Exception:
                     #if not found, create new one
                     mysensor = MySensorFabric(address, sens.type, self, interval=15)
@@ -327,7 +351,6 @@ class OwBusDriver(multiprocessing.Process):
 
     def do_command(self, cmd):
         command, circuit, value = cmd
-        #print "cmd %s" % command
         if command == OWCMD_INTERVAL:
             mysensor = next(x for x in self.mysensors if x.circuit == circuit)
             if mysensor:
@@ -350,15 +373,8 @@ class OwBusDriver(multiprocessing.Process):
             Peridocally scan 1wire sensors, else sleep
         """
         signal.signal(signal.SIGINT, signal.SIG_IGN)
-        # apigpio.mainprog = 0
-        # for i in range(25):
-        # try:
-        # if not (i in (0,1,2,self.taskQ.fileno(), self.resultQ.fileno())):
-        #         os.close(i)
-        #   except Exception, E:
-        #     print str(E)
         ow.init(self.bus)
-        print "Entering 1wire loop"
+        logger.debug("Entering 1wire loop")
         self.do_scan()
         while len(self.mysensors) == 0:
             if self.taskQ.poll(20):
@@ -370,8 +386,7 @@ class OwBusDriver(multiprocessing.Process):
         scan_time = time.time() + self.scan_interval
         mysensor = min(self.mysensors, key=lambda x: x.time)
         while True:
-            t1 = time.time()
-            #if t1 <= scan_time: 
+            t1 = time.time() 
             if t1 >= scan_time:
                 self.do_scan()
                 t1 = time.time()
@@ -395,4 +410,3 @@ class OwBusDriver(multiprocessing.Process):
                     #commands from master
                     cmd = self.taskQ.recv()
                     self.do_command(cmd)
-

@@ -1,12 +1,14 @@
 import devents
+import yaml
+import re
+from log import *
 
 """
-   Structured list/dict of all devices in system
+   Structured dict/dict of all devices in the system
    
 """
-
-
 class DeviceList(dict):
+    alias_dict = {}
     def __init__(self, altnames):
         super(DeviceList, self).__init__()
         self._arr = []
@@ -22,32 +24,68 @@ class DeviceList(dict):
         except KeyError:
             return super(DeviceList, self).__getitem__(self.altnames[key])
 
-    def by_int(self, devtypeid, circuit=None):
+    def remove_item(self, key, value):
+        del (self[devtype_names[key]])[value.circuit]
+
+    def remove_global_device(self, glob_dev_id):
+        for devtype_name in devtype_names:
+            to_delete = []
+            for dev_name in self[devtype_name]:
+                if ((self[devtype_name])[dev_name]).dev_id == glob_dev_id:
+                    to_delete += [(self[devtype_name])[dev_name]]
+            for value in to_delete:
+                del (self[devtype_name])[value.circuit]
+                
+
+
+    def by_int(self, devtypeid, circuit=None, major_group=None):
         devdict = self._arr[devtypeid]
         if circuit is None:
-            return devdict.values()
+            if major_group is not None:
+                outp = []
+                if len(devdict.values()) > 1:
+                    for single_dev in devdict.values():    
+                        if single_dev.major_group == major_group:
+                            outp += [single_dev]
+                    return outp
+                elif len(devdict.values()) > 0:
+                    single_dev = devdict.values()[0]
+                    if single_dev.major_group == major_group:
+                        return devdict.values()
+                    else:
+                        return []
+                else:
+                    return []
+            else:
+                return devdict.values()
         try:
             return devdict[circuit]
         except KeyError:
-            raise Exception('Invalid device circuit number %s' % str(circuit))
+            if self.alias_dict.has_key(circuit):
+                return self.alias_dict[circuit] 
+            else:
+                raise Exception('Invalid device circuit number %s' % str(circuit))
 
     def by_name(self, devtype, circuit=None):
         try:
             devdict = self[devtype]
         except KeyError:
-            raise Exception('Invalid device type %s' % str(devtype))
+            devdict = self[self.altnames[devtype]]
         if circuit is None:
             return devdict.values()
         try:
             return devdict[circuit]
         except KeyError:
-            raise Exception('Invalid device circuit number %s' % str(circuit))
+            if self.alias_dict.has_key(circuit):
+                return self.alias_dict[circuit] 
+            else:
+                raise Exception('Invalid device circuit number %s' % str(circuit))
 
     def register_device(self, devtype, device):
         """ can be called with devtype = INTEGER or NAME
         """
         if devtype is None:
-            raise Exception('Devicetype must contain INTEGER OR NAME')
+            raise Exception('Device type must contain INTEGER or NAME')
         if type(devtype) is int:
             devdict = self._arr[devtype]
         else:
@@ -55,6 +93,38 @@ class DeviceList(dict):
         devdict[str(device.circuit)] = device
         devents.config(device)
 
+    def add_alias(self, alias_key, device, file_update=False):
+        if (not (alias_key.startswith("al_")) or (len(re.findall(r"[A-Za-z0-9\-\._]*", alias_key)) > 2)):
+            if (alias_key == ''):
+                if device.alias in self.alias_dict:
+                    del self.alias_dict[device.alias]
+                if file_update:
+                    self.save_alias_dict()
+                return True
+            else:
+                raise Exception("Invalid alias %s" % alias_key)
+                return False
+        if not alias_key in self.alias_dict:
+            if device.alias in self.alias_dict:
+                del self.alias_dict[device.alias]
+            self.alias_dict[alias_key] = device
+            if file_update:
+                self.save_alias_dict()
+            return True
+        else:
+            if (alias_key != device.alias):
+                raise Exception("Duplicate alias %s" % alias_key)
+            return False
+        
+    def save_alias_dict(self):
+        try:
+            with open("/var/evok/evok-alias.yaml", 'w+') as yfile:
+                out_dict = {"version": 1.0, "aliases":[]}
+                for single_alias in self.alias_dict:
+                    out_dict["aliases"] += [{"circuit": self.alias_dict[single_alias].circuit, "dev_type": self.alias_dict[single_alias].devtype, "name": single_alias}]
+                yfile.write(yaml.dump(out_dict))
+        except Exception, E:
+            logger.exception(str(E))
 
 # # define device types constants
 RELAY = 0
@@ -74,6 +144,15 @@ UNIPI2 = 13
 UART = 14
 NEURON = 15
 BOARD = 16
+OUTPUT = 17
+LED = 18
+WATCHDOG = 19
+REGISTER = 20
+WIFI = 21
+LIGHT_CHANNEL = 22
+LIGHT_DEVICE = 23
+
+
 
 ## corresponding device types names !! ORDER IS IMPORTANT
 devtype_names = (
@@ -94,16 +173,51 @@ devtype_names = (
     'uart',
     'neuron',
     'board',
+    'misc_output',
+    'led',
+    'watchdog',
+    'register',
+    'wifi',
+    'light_channel',
+    'light_device'
 )
 
 devtype_altnames = {
     'di': 'input',
+    'output': 'relay',
+    'do': 'relay',
     'analoginput': 'ai',
     'analogoutput': 'ao',
-    'eprom': 'ee'}
+    'eprom': 'ee',
+    'wd': 'watchdog',
+    'rs485': 'uart',
+    'temp': 'sensor'
+    }
 
-## 
+
 Devices = DeviceList(devtype_altnames)
 for n in devtype_names:
     Devices[n] = {}
 
+#define units
+NONE = 0
+CELSIUS = 1
+VOLT = 2
+AMPERE = 3
+OHM = 4
+
+unit_names = [
+    '',
+    'C',
+    'V',
+    'mA',
+    'Ohm',
+]
+
+unit_altnames = {
+    '': '',
+    'C': 'Celsius',
+    'V': 'Volt',
+    'mA': 'miliampere',
+    'Ohm': 'ohm'
+}
