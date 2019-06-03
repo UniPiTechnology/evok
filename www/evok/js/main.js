@@ -27,7 +27,7 @@ var wd_device_cache = [];
 
 function compare(a,b) {
 	  if (a.circuit < b.circuit) {
-		    return -1;	  
+		    return -1;
 	  }
 	  if (a.circuit > b.circuit) {
 		    return 1;
@@ -575,12 +575,12 @@ function populateConfigTab(device, circuit, circuit_display_name, msg) {
         config_div_label.textContent = getDeviceCategoryName(translated_device);
         config_div_grid = document.createElement("div");
         config_div_grid.id = "unipi_" + translated_device + "_config_div_grid";
-        config_div_grid.className = "ui-grid-d ui-responsive"; 
+        config_div_grid.className = "ui-grid-d ui-responsive";
         config_div.appendChild(config_div_label);
         config_div.appendChild(config_div_grid);
         document.getElementById("configs").appendChild(config_div);
 	}
-    
+
 	config_el_div = document.createElement("div");
 	config_el_div.id = "unipi_" + device + "_" + msg.circuit + "_config_div";
 	config_el_div.className = getNextUiBlockPosition(translated_device);
@@ -595,7 +595,7 @@ function populateConfigTab(device, circuit, circuit_display_name, msg) {
 }
 
 function getDeviceDisplayName() {
-	
+
 }
 
 function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
@@ -689,7 +689,7 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 	        	device_properties["value"] = parseFloat(msg.temp).toFixed(1);
 	        	device_properties["humidity"] = msg.humidity.toFixed(1);
 	        	device_properties["unit"] = "°C";
-	        }   	
+	        }
 		} else {
 			device_properties["device_name"] = "Sensor " + device_properties["typ"] + " - " + circuit_display_name;
 	        if (msg.value == null) {
@@ -740,7 +740,7 @@ function syncDevice(msg) {
 		decoded_alias = decoded_alias.replace(/_/g," ");
 		circuit_display_name = decoded_alias;
 	}
-	
+
     // Dictionary for parsed message values; initialised with default fallback values
     var device_properties = extractDeviceProperties(device, circuit, circuit_display_name, msg);
 
@@ -749,13 +749,13 @@ function syncDevice(msg) {
         li.id = device_signature + "_li";
 
         populateConfigTab(device, circuit, circuit_display_name, msg);
-        
+
         var div = document.createElement("div");
         div.className = "ui-field-contain";
-        
+
         var right_div = document.createElement("div");
         right_div.style = "float: right;"
-        
+
         switch (device) {
         case "relay": {}
         case "led": {
@@ -778,7 +778,7 @@ function syncDevice(msg) {
             main_el.step = 0.1;
             if (device_properties["unit"] == "V") {
             	main_el.max = 10;
-            } else if (device_properties["unit"] == "mA") { 
+            } else if (device_properties["unit"] == "mA") {
                 main_el.max = 20;
             }
             resistance_value_label = $("<h1>", {"className": "ul-li-aside"});
@@ -794,7 +794,7 @@ function syncDevice(msg) {
         case "1wdevice": {
             main_el = document.createElement("h1");
             main_el.textContent = "" + device_properties["humidity"] + "%Hum " + device_properties["value"] + device_properties["unit"];
-            main_el.className = "ui-li-aside";    
+            main_el.className = "ui-li-aside";
             break;
         }
         case "input": {
@@ -806,10 +806,10 @@ function syncDevice(msg) {
 
             cfg_el = document.createElement("a");
             cfg_el.className = "ui-icon-gear ui-btn-icon-notext ui-corner-all";
-            cfg_el.href = "#popupBasic"; 
-            cfg_el.setAttribute("data-rel","popup"); 
+            cfg_el.href = "#popupBasic";
+            cfg_el.setAttribute("data-rel","popup");
             cfg_el.setAttribute("data-position-to","window");
-            cfg_el.setAttribute("data-transition","pop"); 
+            cfg_el.setAttribute("data-transition","pop");
             cfg_el.id = device_signature + "_cfg";
 
             main_el = document.createElement("h1");
@@ -821,7 +821,7 @@ function syncDevice(msg) {
             } else {
                 if (device_properties["value"] == 1) {
                     state = "On";
-                }            	
+                }
             }
 
             main_el.textContent = state + device_properties["unit"];
@@ -888,10 +888,10 @@ function syncDevice(msg) {
 
         //Create the div structure
         div.appendChild(label);
-        if (device == "ao" || device == "light_channel") { 
+        if (device == "ao" || device == "light_channel") {
         	div.appendChild(main_el);
         } else {
-        	div.appendChild(right_div); 
+        	div.appendChild(right_div);
         	right_div.appendChild(main_el);
         }
         li.appendChild(div);
@@ -923,14 +923,14 @@ function syncDevice(msg) {
             $('#outputs_list').listview('refresh');
             $('#' + main_el.id).bind("change", function (event, ui) {
                 makePostRequest('led/' + circuit, 'value=' + $(this).val());
-            });  
-        	break;        	
+            });
+        	break;
         }
         case "relay": {
             var divider = document.getElementById("unipi_led_divider");
         	if (("relay_type" in msg) && msg.relay_type == "digital") {
         		divider = document.getElementById("unipi_relay_divider");
-        	} 
+        	}
             var list = document.getElementById("outputs_list");
             list.insertBefore(li, divider);
             $('#' + main_el.id).flipswitch();
@@ -938,45 +938,45 @@ function syncDevice(msg) {
             $('#' + main_el.id).bind("change", function (event, ui) {
             	$.postJSON('relay/' + circuit, {value: $(this).val})
             });
-        	break;       	
+        	break;
         }
         case "input": {
             var divider = document.getElementById("unipi_ai_divider");
             var list = document.getElementById("inputs_list");
             list.insertBefore(li, divider);
             $('#inputs_list').listview('refresh');
-        	break;        	
+        	break;
         }
         case "temp": {
             $('#inputs_list').append(li);
             $('#inputs_list').listview('refresh');
-        	break;       	
+        	break;
         }
         case "1wdevice": {
             $('#inputs_list').append(li);
-            $('#inputs_list').listview('refresh');  
-        	break;        	
+            $('#inputs_list').listview('refresh');
+        	break;
         }
         case "neuron": {
             var divider = document.getElementById("unipi_uart_divider");
             var list = document.getElementById("system_list");
             list.insertBefore(li, divider);
             $('#system_list').listview('refresh');
-        	break;        	
+        	break;
         }
         case "uart": {
             var divider = document.getElementById("unipi_watchdog_divider");
             var list = document.getElementById("system_list");
             list.insertBefore(li, divider);
-            $('#system_list').listview('refresh'); 
-        	break;        	
+            $('#system_list').listview('refresh');
+        	break;
         }
         case "wd": {
         	var divider = document.getElementById("unipi_wifi_divider");
             var list = document.getElementById("system_list");
             list.insertBefore(li, divider);
         	$('#system_list').listview('refresh');
-        	break;        	
+        	break;
         }
         case "wifi": {
         	$('#system_list').append(li);
@@ -994,10 +994,10 @@ function syncDevice(msg) {
                 makePostRequest('light_channel/' + circuit, 'broadcast_command=DAPC&broadcast_argument=' + $(this).val());
             });
             $("#" + device_signature + "_value").val(0).slider("refresh");
-        	break;        	
+        	break;
         }
         }
-    // Device representation already exists 
+    // Device representation already exists
     } else if (device != 'register') {
         var main_el = document.getElementById(device_signature + "_value");
         var label = document.getElementById(device_signature + "_label");
@@ -1036,13 +1036,13 @@ function syncDevice(msg) {
             if ("bitvalue" in device_properties) {
             	main_el.innerHTML = (device_properties["bitvalue"] == 1) ? "On" : "Off";
             } else {
-            	main_el.innerHTML = (device_properties["value"] == 1) ? "On" : "Off";        	
+            	main_el.innerHTML = (device_properties["value"] == 1) ? "On" : "Off";
             }
             break;
         }
         case "1wdevice": {
         	if (device_properties["typ"] == "DS2438") {
-            	main_el.innerHTML = "" + device_properties["humidity"] + "%Hum " + device_properties["value"] + device_properties["unit"];            		
+            	main_el.innerHTML = "" + device_properties["humidity"] + "%Hum " + device_properties["value"] + device_properties["unit"];
         	}
         	break;
         }
@@ -1051,7 +1051,7 @@ function syncDevice(msg) {
             	main_el.innerHTML = "S/N: " + device_properties["neuron_sn"];
             } else {
             	main_el.innerHTML = "";
-            }        	
+            }
             break;
         }
         case "uart": {
@@ -1069,7 +1069,7 @@ function syncDevice(msg) {
             	main_el.innerHTML = enabled_text + " [Not Triggered]";
             } else {
             	main_el.innerHTML = enabled_text + " [Triggered]";
-            }        	
+            }
             break;
         }
         case "wifi": {
@@ -1079,13 +1079,13 @@ function syncDevice(msg) {
         case "light_channel": {
         	//main_el.innerHTML = "Channel " + circuit;
         	break;
-        }       
+        }
         default: {
-            main_el.innerHTML = device_properties["value"] + device_properties["unit"];        	
+            main_el.innerHTML = device_properties["value"] + device_properties["unit"];
             break;
         }
         }
-    } 
+    }
 }
 
 function updateValues() {
@@ -1120,14 +1120,14 @@ function updateValues() {
 	        error: function (data) {
 				$("#unipi_loading_spinner").css('visibility', 'visible');
 	        }
-	    });    	
+	    });
     }
 }
 
 function configButtonHandler(event) {
 	var $this = $(this);
 	var device = event.currentTarget.href.substr(
-			(event.currentTarget.href.length - (event.currentTarget.hash.length - 1)), 
+			(event.currentTarget.href.length - (event.currentTarget.hash.length - 1)),
 			(event.currentTarget.href.length)
 		);
 	var circuit = event.currentTarget.id.substr(30 + device.length, (event.currentTarget.id.length));
@@ -1149,7 +1149,7 @@ function configButtonHandler(event) {
 	$("#unipi_config_form_inner_div").append(config_circuit_header);
     $.ajax({
     	crossDomain: true,
-    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + '/rest/' + device + '/' + circuit + '/',
+    	url: location.protocol + '//' + $(location).attr('hostname') + ':' + api_port + '/rest/' + device + '/' + circuit + '/',
         dataType: 'json',
         success: function (data) {
             configButtonRestSuccessCallback(data);
@@ -1182,7 +1182,7 @@ function saveAllButtonHandler(event) {
 	$.each(wd_device_cache, function(index, value) {
 		$.ajax({
 	    	crossDomain: true,
-	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + "/rest/wd/" + value + '/',
+	    	url: location.protocol + '//' + $(location).attr('hostname') + ':' + api_port + "/rest/wd/" + value + '/',
 	        type: 'POST',
 	        data: {"nv_save": 1},
 	        success: function (data) {
@@ -1192,7 +1192,7 @@ function saveAllButtonHandler(event) {
 	        }
 	    });
 	});
-	
+
 }
 
 function createConfigPostRequestDict(arg_fields) {
@@ -1294,7 +1294,7 @@ function configFormSubmitHandler(event) {
 		$("#unipi_config_form_div").popup("close");
 		$.ajax({
 	    	crossDomain: true,
-	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + "/rest/neuron/" + circuit + '/',
+	    	url: location.protocol + '//' + $(location).attr('hostname') + ':' + api_port + "/rest/neuron/" + circuit + '/',
 	        type: 'POST',
 	        data: {"print_log": 1},
 	        success: function (data) {
@@ -1318,7 +1318,7 @@ function configFormSubmitHandler(event) {
 		var post_request_dict = createConfigPostRequestDict(event.originalEvent.target.elements);
 		$.ajax({
 	    	crossDomain: true,
-	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + "/rest/" + device + "/" + circuit + '/',
+	    	url: location.protocol + '//' + $(location).attr('hostname') + ':' + api_port + "/rest/" + device + "/" + circuit + '/',
 	        type: 'POST',
 	        data: post_request_dict,
 	        success: function (data) {
@@ -1357,15 +1357,15 @@ function webSocketRegister() {
         uri = ((loc.protocol === "https:") ? "wss://" : "ws://") + loc.hostname + ':' + api_port;
 
         ws = new WebSocket(uri + "/ws");
-        
+
         if (!ws) {
             setTimeout(webSocketRegister, 1000);
             return;
         }
-        
+
         window.onbeforeunload = function () {
             ws.onclose = function () {
-            }; 
+            };
             ws.close()
         };
 
@@ -1391,7 +1391,7 @@ function webSocketRegister() {
             setTimeout(webSocketRegister, 1000);
             ws = null;
         };
-		
+
 		ws.onerror = function () {
 			$("#unipi_loading_spinner").css('visibility', 'visible');
 		};
@@ -1406,7 +1406,7 @@ function makePostRequest(action, params) {
 	 if (legacy_api) {
 		$.ajax({
 	    	crossDomain: true,
-	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + '/rest/' + action,
+	    	url: location.protocol + '//' + $(location).attr('hostname') + ':' + api_port + '/rest/' + action,
 	        type: 'POST',
 	        data: params,
 	        success: function (data) {
@@ -1419,7 +1419,7 @@ function makePostRequest(action, params) {
 
 		$.ajax({
 	    	crossDomain: true,
-	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + '/rest/' + action,
+	    	url: location.protocol + '//' + $(location).attr('hostname') + ':' + api_port + '/rest/' + action,
 	    	dataType: "application/json",
 	        type: 'POST',
 	        data: JSON.stringify(params),
