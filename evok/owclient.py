@@ -134,8 +134,8 @@ class DS2438(MySensor):  # vdd + vad + thermometer
         if not (type(self.value) is tuple):
             self.value = (None, None, None)
         return {'dev': '1wdevice', 
-                'circuit': self.circuit, 
-                'humidity': (((((float(self.value[1]) / float(self.value[0])) - 0.16)) / 0.0062) / (1.0546 - 0.00216 * float(self.value[2]))),
+                'circuit': self.circuit,
+                'humidity': (((((float(self.value[1]) / float(self.value[0])) - 0.1515)) / 0.00636) / (1.0546 - 0.00216 * float(self.value[2]))),
                 'vdd': self.value[0], 
                 'vad': self.value[1],
                 'temp': self.value[2], 
