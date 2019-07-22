@@ -680,7 +680,7 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 	case "temp": {}
 	case "1wdevice": {
 		if (device_properties["typ"] == "DS2438") {
-			device_properties["device_name"] = "" + device_properties["typ"] + " - " + circuit_display_name;
+			device_properties["device_name"] = "Sensor " + "BB-OW-RHT" + " - " + circuit_display_name;
 	        if (msg.temp == null) {
 	        	device_properties["value"] = "N/A";
 	        	device_properties["humidity"] = "N/A";
@@ -688,7 +688,7 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 	        else {
 	        	device_properties["value"] = parseFloat(msg.temp).toFixed(1);
 	        	device_properties["humidity"] = msg.humidity.toFixed(1);
-	        	device_properties["unit"] = "Â°C";
+	        	device_properties["unit"] = "°C";
 	        }   	
 		} else {
 			device_properties["device_name"] = "Sensor " + device_properties["typ"] + " - " + circuit_display_name;
@@ -697,7 +697,7 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 	        }
 	        else {
 	        	device_properties["value"] = msg.value.toFixed(1);
-	        	device_properties["unit"] = "Â°C";
+	        	device_properties["unit"] = "°C";
 	        }
 		}
 		break;
@@ -787,14 +787,14 @@ function syncDevice(msg) {
         }
         case "temp": {
             main_el = document.createElement("h1");
-        	main_el.textContent = device_properties["value"] + device_properties["unit"];
-            main_el.className = "ui-li-aside";
+        	main_el.textContent = device_properties["value"] + " " + device_properties["unit"];
+            //main_el.className = "ui-li-aside";
             break;
         }
         case "1wdevice": {
             main_el = document.createElement("h1");
-            main_el.textContent = "" + device_properties["humidity"] + "%Hum " + device_properties["value"] + device_properties["unit"];
-            main_el.className = "ui-li-aside";    
+            main_el.textContent = "" + device_properties["humidity"] + " %<br>" + device_properties["value"] + " " +device_properties["unit"];
+            //main_el.className = "ui-li-aside";    
             break;
         }
         case "input": {
@@ -872,7 +872,7 @@ function syncDevice(msg) {
         }
         default: {
             main_el = document.createElement("h1");
-            main_el.textContent = device_properties["value"] + device_properties["unit"];
+            main_el.textContent = device_properties["value"] + " " + device_properties["unit"];
             break;
         }
         }
@@ -1042,7 +1042,7 @@ function syncDevice(msg) {
         }
         case "1wdevice": {
         	if (device_properties["typ"] == "DS2438") {
-            	main_el.innerHTML = "" + device_properties["humidity"] + "%Hum " + device_properties["value"] + device_properties["unit"];            		
+            	main_el.innerHTML = "" + device_properties["humidity"] + " %<br>" + device_properties["value"] + " " + device_properties["unit"];            		
         	}
         	break;
         }
@@ -1081,7 +1081,7 @@ function syncDevice(msg) {
         	break;
         }       
         default: {
-            main_el.innerHTML = device_properties["value"] + device_properties["unit"];        	
+            main_el.innerHTML = device_properties["value"] + " " + device_properties["unit"];        	
             break;
         }
         }
@@ -1430,3 +1430,4 @@ function makePostRequest(action, params) {
 	    });
 	}
 }
+
