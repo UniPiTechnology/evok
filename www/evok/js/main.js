@@ -680,7 +680,7 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 	case "temp": {}
 	case "1wdevice": {
 		if (device_properties["typ"] == "DS2438") {
-			device_properties["device_name"] = "Sensor " + "BB-OW-RHT" + " - " + circuit_display_name;
+			device_properties["device_name"] = "Sensor " + "1W-TH-IB" + " - " + circuit_display_name;
 	        if (msg.temp == null) {
 	        	device_properties["value"] = "N/A";
 	        	device_properties["humidity"] = "N/A";
@@ -688,7 +688,7 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 	        else {
 	        	device_properties["value"] = parseFloat(msg.temp).toFixed(1);
 	        	device_properties["humidity"] = msg.humidity.toFixed(1);
-	        	device_properties["unit"] = "°C";
+	        	device_properties["unit"] = "&deg;C";
 	        }   	
 		} else {
 			device_properties["device_name"] = "Sensor " + device_properties["typ"] + " - " + circuit_display_name;
@@ -697,7 +697,7 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 	        }
 	        else {
 	        	device_properties["value"] = msg.value.toFixed(1);
-	        	device_properties["unit"] = "°C";
+	        	device_properties["unit"] = "&deg;C";
 	        }
 		}
 		break;
