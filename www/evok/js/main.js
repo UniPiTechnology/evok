@@ -680,7 +680,7 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 	case "temp": {}
 	case "1wdevice": {
 		if (device_properties["typ"] == "DS2438") {
-			device_properties["device_name"] = "Sensor " + "1W-TH-IB" + " - " + circuit_display_name;
+			device_properties["device_name"] = "Sensor " + "1W-TH" + " - " + circuit_display_name;
 	        if (msg.temp == null) {
 	        	device_properties["value"] = "N/A";
 	        	device_properties["humidity"] = "N/A";
