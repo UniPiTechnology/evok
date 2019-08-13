@@ -1,3 +1,6 @@
+variables:
+    TEMPLATE_DEB_NAME: "evok"
+
 before_script:
     - apt update
     - apt install -y dh-virtualenv dpkg-dev dh-exec build-essential fakeroot git
