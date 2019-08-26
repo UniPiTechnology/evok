@@ -43,5 +43,7 @@ deploy-release:
 
 mirror-to-github:
     extends: .condition_for_test
+    image: $CI_REGISTRY/docker/bob-the-builder/$STABLE_CODENAME:latest
+    stage: deploy_package
     script:
       - .gitlab-ci-scripts/mirror_to_GitHub.sh
