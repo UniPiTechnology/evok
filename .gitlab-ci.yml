@@ -40,3 +40,8 @@ deploy-test:
 
 deploy-release:
     extends: .deploy_master
+
+mirror-to-github:
+    extends: .condition_for_test
+    script:
+      - .gitlab-ci-scripts/mirror_to_GitHub.sh
