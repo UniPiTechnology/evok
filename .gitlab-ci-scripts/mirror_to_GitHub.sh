@@ -15,6 +15,8 @@ ssh-add ~/.ssh/github_ssh_key
 ssh-keyscan -H "github.com" >> ~/.ssh/known_hosts
 #git push --mirror git@github.com:martyy665/ekvok.git
 
+git checkout master
+
 git push git@github.com:martyy665/ekvok.git master
 
 if [[ ! -z "${CI_COMMIT_TAG}" ]]; then
