@@ -1,5 +1,6 @@
 variables:
     TEMPLATE_DEB_NAME: "evok"
+    DISABLE_SHELLCHECK: "0"
 
 before_script:
     - apt update
