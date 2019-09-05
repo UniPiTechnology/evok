@@ -28,7 +28,7 @@ up_globals = {
 
 def read_eprom_config():
     try:
-        with open('/sys/class/i2c-dev/i2c-1/device/1-0050/eeprom','r') as f:
+        with open('/sys/bus/i2c/devices/1-0050/eeprom','r') as f:
             ee_bytes=f.read(256)
             if ee_bytes[224:226] == '\xfa\x55':
                 if ord(ee_bytes[226]) == 1 and ord(ee_bytes[227]) == 1:
@@ -54,7 +54,7 @@ def read_eprom_config():
     except Exception:
         pass
     try:
-        with open('/sys/class/i2c-dev/i2c-1/device/1-0057/eeprom','r') as f:
+        with open('/sys/bus/i2c/devices/1-0057/eeprom','r') as f:
             ee_bytes=f.read(128)
             if ee_bytes[96:98] == '\xfa\x55':
                 up_globals['version2'] = "%d.%d" % (ord(ee_bytes[99]), ord(ee_bytes[98]))
@@ -64,7 +64,7 @@ def read_eprom_config():
     except Exception:
         pass
     try:
-        with open('/sys/class/i2c-dev/i2c-0/device/0-0057/eeprom','r') as f:
+        with open('/sys/bus/i2c/devices/0-0057/eeprom','r') as f:
             ee_bytes=f.read(128)
             if ee_bytes[96:98] == '\xfa\x55':
                 up_globals['version2'] = "%d.%d" % (ord(ee_bytes[99]), ord(ee_bytes[98]))

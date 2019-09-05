@@ -523,7 +523,7 @@ cp -r etc/modprobe.d /etc/
 cp -r etc/opt /etc/
 
 apt-get update
-apt-get install -y python-ow python-pip make python-dev nginx vim
+apt-get install -y python-ow python-pip make python-dev nginx vim python3-distutils
 pip install pymodbus==1.4.0
 pip install tornado==4.5.3
 pip install toro jsonrpclib pyyaml tornado_json tornado-webservices pyusb python-dali
@@ -552,7 +552,7 @@ echo ' '
 echo '#########################################################################'
 echo '## Please select which port you wish the internal API to use           ##'
 echo '## (use 8080 if you do not know what this means, can be changed in     ##'
-echo '## "/etc/evok.conf" later)                                             ##'
+echo '## "/etc/evok.conf" and /etc/nginx/sites-enabled/evok later)           ##'
 echo '#########################################################################'
 echo ' '
 read -p 'API Port to use: >' internal_port_number

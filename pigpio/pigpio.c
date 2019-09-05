@@ -58,6 +58,7 @@ For more information, please refer to <http://unlicense.org/>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <sys/select.h>
+#include <sys/sysmacros.h>
 
 #include "pigpio.h"
 
