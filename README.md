@@ -91,30 +91,6 @@ You can use the following commands to update your EVOK package distribution to a
     apt-get install evok
     reboot
 
-## Installation process for Evok v.1.X.X
-
-Access to GPIOs is done using the fantastic [PIGPIO] library. Make sure to install it first before use.
-
-_**EVOK v.1.X.X**_ also requires a few other python libraries that are not installed on Raspbian by default:
-* python-ow
-* [tornado]
-* [toro]
-* modified version of [tornardorpc] available in this repo tornadorpc_evok
-* [jsonrpclib]
-
-Download the latest release from our repository via wget (alternatively you can clone the repository using git):
-
-    wget https://github.com/UniPiTechnology/evok/archive/v.1.0.2.tar.gz
-    tar -zxvf v.1.0.2.tar.gz && mv evok-* evok  
-
-Please note that the folder that you downloaded the package into is not used later and can be safely deleted after the installation. Configuration files are installed directly into /etc/, /opt/ and /boot/
-
-Run the installation script using the following instructions
-
-    cd evok
-    chmod +x install-evok.sh uninstall-evok.sh
-    sudo ./install-evok.sh
-
 # Instructions for use
 
 The EVOK API can be accessed in several different ways, including SOAP, REST, Bulk JSON, JSON, WebSocket et al.
