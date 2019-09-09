@@ -16,7 +16,7 @@ ask() {
 		fi
 		
 		# Ask the question
-		read -p "$1 [$prompt] " REPLY
+		read -pr "$1 [$prompt] " REPLY
 		
 		# Default?
 		if [ -z "$REPLY" ]; then
@@ -33,14 +33,14 @@ ask() {
 }
 
 kernelget() {
-	kver=$(uname -r|cut -d\- -f1|tr -d '+'| tr -d '[A-Z][a-z]')
+	kver=$(uname -r|cut -d '-' -f1|tr -d '+'| tr -d '[:alpha:]')
 	# Echo "Verze '$1 $kver'"
-	if [[ $1 == $kver ]]
+	if [[ "$1" == "$kver" ]]
 	then
 		return 1
 	fi
 	local IFS=.
-	local i ver1=($1) ver2=($kver)
+	local i ver1=("$1") ver2=("$kver")
 	# Fill empty fields in ver1 with zeros
 	for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
 	do
@@ -72,7 +72,7 @@ enable_ic2() {
 		echo '## Using kernel newer than 3.18.5 ##'
 		echo '####################################'
 		if ! grep -q 'device_tree_param=i2c1=on' /boot/config.txt ;then
-			echo -e "$(cat /boot/config.txt) \n\n#Enable i2c bus 1\ndevice_tree_param=i2c1=on\ndtoverlay=i2c-rtc,mcp7941x\ndtoverlay=unipiee\ndtoverlay=neuronee\n" > /boot/config.txt
+			echo -e "$(cat /boot/config.txt) \\n\\n#Enable i2c bus 1\\ndevice_tree_param=i2c1=on\\ndtoverlay=i2c-rtc,mcp7941x\\ndtoverlay=unipiee\\ndtoverlay=neuronee\\n" > /boot/config.txt
 		fi
 	else # Comment out blacklisted i2c on kernel < 3.18.5
 		echo '####################################'
@@ -132,11 +132,11 @@ install_unipi_1() {
 	if [ "$(pidof pigpiod)" ]
 	then
 		service pigpiod stop
-		kill $(pidof pigpiod)
+		kill "$(pidof pigpiod)"
 	fi
 	
 	# Install pigpio
-	cd pigpio
+	cd pigpio || exit
 	make -j4
 	make install
 	cd ..
@@ -265,11 +265,11 @@ install_unipi_lite_1() {
 	if [ "$(pidof pigpiod)" ]
 	then
 		service pigpiod stop
-		kill $(pidof pigpiod)
+		kill "$(pidof pigpiod)"
 	fi
 
 	# Install pigpio
-	cd pigpio
+	cd pigpio || exit
 	make -j4
 	make install
 	cd ..
@@ -405,8 +405,8 @@ install_unipi_neuron() {
 	# Install neuron_tcp_server 1.0.1
 	wget https://github.com/UniPiTechnology/neuron-tcp-modbus-overlay/archive/v1.0.1.zip
 	unzip v1.0.1.zip
-	cd neuron-tcp-modbus-overlay-1.0.1
-	yes n | bash $PWD/install.sh
+	cd neuron-tcp-modbus-overlay-1.0.1 || exit
+	yes n | bash "$PWD"/install.sh
 	cd ..
 	
 	# Copy tornadorpc
@@ -547,7 +547,7 @@ echo '## disable NGINX by deleting the /etc/nginx/sites-enabled/evok file    ##'
 echo '#########################################################################'
 echo '#########################################################################'
 echo ' '
-read -p 'Website Port to use: >' external_port_number
+read -pr 'Website Port to use: >' external_port_number
 echo ' '
 echo '#########################################################################'
 echo '## Please select which port you wish the internal API to use           ##'
@@ -555,7 +555,7 @@ echo '## (use 8080 if you do not know what this means, can be changed in     ##'
 echo '## "/etc/evok.conf" and /etc/nginx/sites-enabled/evok later)           ##'
 echo '#########################################################################'
 echo ' '
-read -p 'API Port to use: >' internal_port_number
+read -pr 'API Port to use: >' internal_port_number
 echo ' '
 sed -i -e "s/listen 80/listen ${external_port_number}/" /etc/nginx/sites-enabled/evok
 sed -i -e "s/localhost:8080/localhost:${internal_port_number}/" /etc/nginx/sites-enabled/evok
@@ -571,7 +571,7 @@ options=(
 	"UniPi 1.x"
 )
 echo ''
-select option in "${options[@]}"; do
+select REPLY in "${options[@]}"; do
 	case "$REPLY" in
 		1)
 			echo '################################################################################'

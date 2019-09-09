@@ -16,7 +16,7 @@ ask() {
         fi
 
         # Ask the question
-        read -p "$1 [$prompt] " REPLY
+        read -pr "$1 [$prompt] " REPLY
 
         # Default?
         if [ -z "$REPLY" ]; then
