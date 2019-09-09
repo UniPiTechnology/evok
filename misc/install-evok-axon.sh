@@ -27,7 +27,7 @@ ask() {
 		fi
 		
 		# Ask the question
-		read -pr "$1 [$prompt] " REPLY
+		read -r -p "$1 [$prompt] " REPLY
 		
 		# Default?
 		if [ -z "$REPLY" ]; then
@@ -51,7 +51,9 @@ kernelget() {
 		return 1
 	fi
 	local IFS=.
-	local i ver1=("$1") ver2=("$kver")
+	local i ver1 ver2
+	read -r -a ver1 <<< "$1"
+	read -r -a ver2 <<< "$kver"
 	# Fill empty fields in ver1 with zeros
 	for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
 	do
@@ -554,7 +556,7 @@ echo '## disable NGINX by deleting the /etc/nginx/sites-enabled/evok file    ##'
 echo '#########################################################################'
 echo '#########################################################################'
 echo ' '
-read -pr 'Website Port to use: >' external_port_number
+read -r -p 'Website Port to use: >' external_port_number
 echo ' '
 echo '#########################################################################'
 echo '## Please select which port you wish the internal API to use           ##'
@@ -562,7 +564,7 @@ echo '## (use 8080 if you do not know what this means, can be changed in     ##'
 echo '## "/etc/evok.conf" later)                                             ##'
 echo '#########################################################################'
 echo ' '
-read -pr 'API Port to use: >' internal_port_number
+read -r -p 'API Port to use: >' internal_port_number
 echo ' '
 sed -i -e "s/listen 80/listen ${external_port_number}/" /etc/nginx/sites-enabled/evok
 sed -i -e "s/localhost:8080/localhost:${internal_port_number}/" /etc/nginx/sites-enabled/evok
@@ -578,23 +580,23 @@ options=(
 	"UniPi 1.x"
 )
 echo ''
-select REPLY in "${options[@]}"; do
-	case "$REPLY" in
-		1)
+select platform in "${options[@]}"; do
+	case "$platform" in
+		"UniPi Neuron")
 			echo '################################################################################'
 			echo '## Installing EVOK for UniPi Neuron series including Neuron TCP Modbus Server ##'
 			echo '################################################################################'
 			install_unipi_neuron
 			break
 			;;
-		2)
+		"UniPi Lite 1.x")
 			echo '########################################'
 			echo '## Installing EVOK for UniPi Lite 1.x ##'
 			echo '########################################'
 			install_unipi_lite_1
 			break
 			;;
-		3)
+		"UniPi 1.x")
 			echo '###################################'
 			echo '## Installing EVOK for UniPi 1.x ##'
 			echo '###################################'

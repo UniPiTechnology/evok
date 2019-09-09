@@ -1,4 +1,4 @@
-![alt text](https://github.com/UniPiTechnology/evok/raw/master/www/evok/js/jquery/images/unipi-logo-vertical-cmyk.svg?sanitize=true "UniPi logo")
+![unipi logo](https://github.com/UniPiTechnology/evok/raw/master/www/evok/js/jquery/images/unipi-logo-short-cmyk.svg?sanitize=true "UniPi logo")
 
 # EVOK - the UniPi API
 
