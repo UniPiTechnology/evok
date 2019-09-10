@@ -13,26 +13,38 @@ include:
 ##############################################################
 
 build-newstable:nano:
+    before_script:
+      - .gitlab-ci-scripts/update_version_consts.sh 
     extends: .build_for_newstable
     tags: ['arm64']
 
 build-newstable:rpi:
+    before_script:
+      - .gitlab-ci-scripts/update_version_consts.sh 
     extends: .build_for_newstable
     tags: ['armhf']
 
 build-stable:nano:
+    before_script:
+      - .gitlab-ci-scripts/update_version_consts.sh 
     extends: .build_for_stable
     tags: ['arm64']
 
 build-stable:rpi:
+    before_script:
+      - .gitlab-ci-scripts/update_version_consts.sh 
     extends: .build_for_stable
     tags: ['armhf']
 
 build-oldstable:nano:
+    before_script:
+      - .gitlab-ci-scripts/update_version_consts.sh 
     extends: .build_for_oldstable
     tags: ['arm64']
 
 build-oldstable:rpi:
+    before_script:
+      - .gitlab-ci-scripts/update_version_consts.sh 
     extends: .build_for_oldstable
     tags: ['armhf']
 
