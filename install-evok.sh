@@ -134,7 +134,8 @@ install_unipi_1() {
 	
 	if [ "$(pidof pigpiod)" ]
 	then
-		service pigpiod stop
+		echo "Stopping pigpio service..."
+		service pigpio stop
 		kill "$(pidof pigpiod)"
 	fi
 	
@@ -244,7 +245,9 @@ install_unipi_1() {
 		echo '## Remember to reboot your Raspberry Pi in    ##'
 		echo '## order to start using Evok                  ##'
 		echo '################################################'
-		service pigpiod start
+		echo "Starting pigpio service..."
+		service pigpio start
+		echo "Starting evok service..."
 		service evok start
 	fi
 	echo ' '
@@ -267,7 +270,8 @@ install_unipi_lite_1() {
 	
 	if [ "$(pidof pigpiod)" ]
 	then
-		service pigpiod stop
+		echo "Stopping pigpio service..."
+		service pigpio stop
 		kill "$(pidof pigpiod)"
 	fi
 
@@ -377,7 +381,9 @@ install_unipi_lite_1() {
 		echo '## Remember to reboot your Raspberry Pi in    ##'
 		echo '## order to start using Evok                  ##'
 		echo '################################################'
-		service pigpiod start
+		echo "Starting pigpio service..."
+		service pigpio start
+		echo "Starting evok service..."
 		service evok start
 	fi
 	echo ' '
