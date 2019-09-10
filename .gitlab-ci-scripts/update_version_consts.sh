@@ -3,7 +3,7 @@
 if [[ ! -z "${CI_COMMIT_TAG}" ]]; then
   EVOK_VERSION=${CI_COMMIT_TAG}
 else
-  EVOK_VERSION=`/ci-scripts/generate-new-tag-for-test.sh`
+  EVOK_VERSION=$(/ci-scripts/generate-new-tag-for-test.sh)
 fi
 
 #Pip package metainfo file
