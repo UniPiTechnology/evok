@@ -32,6 +32,15 @@ ask() {
 	done
 }
 
+
+package_available() {
+	if apt-cache -q show "${1}" >/dev/null 2>&1; then
+		return 0
+	else
+		return 1
+	fi
+}
+
 kernelget() {
 	kver=$(uname -r|cut -d '-' -f1|tr -d '+'| tr -d '[:alpha:]')
 	#kver=$(uname -r|cut -d\- -f1|tr -d '+'| tr -d '[A-Z][a-z]')
@@ -92,7 +101,8 @@ enable_ic2() {
 		echo '############################'
 		if ! grep -q 'i2c-dev' /etc/modules ;then
 			echo -e '\ni2c-dev' >> /etc/modules
-		fi	
+		fi
+		depmod
 		modprobe i2c-dev
 	else
 		echo '######################'
@@ -532,7 +542,8 @@ cp -r etc/modprobe.d /etc/
 cp -r etc/opt /etc/
 
 apt-get update
-apt-get install -y python-ow python-pip make python-dev nginx vim python3-distutils
+apt-get install -y python-ow python-pip make python-dev nginx vim
+package_available python3-distutils && apt-get install -y python3-distutils
 pip install pymodbus==1.4.0
 pip install tornado==4.5.3
 pip install toro jsonrpclib pyyaml tornado_json tornado-webservices pyusb python-dali
