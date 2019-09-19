@@ -17,9 +17,11 @@ ssh-keyscan -H "github.com" >> ~/.ssh/known_hosts
 
 git checkout test
 
-git push git@github.com:martyy665/ekvok.git test
+git add .
+git commit --amend --no-edit
+
+git push --mirror git@github.com:martyy665/ekvok.git
 
 if [[ ! -z "${CI_COMMIT_TAG}" ]]; then
   git push git@github.com:martyy665/ekvok.git "${CI_COMMIT_TAG}"
 fi
-
