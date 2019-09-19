@@ -62,3 +62,6 @@ mirror-to-github:
     stage: deploy_package
     script:
       - .gitlab-ci-scripts/mirror_to_GitHub.sh
+    variables:
+        GIT_STRATEGY: none
+
