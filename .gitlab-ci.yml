@@ -55,6 +55,8 @@ deploy-release:
     extends: .deploy_master
 
 mirror-to-github:
+    before_script:
+      - .gitlab-ci-scripts/update_version_consts.sh
     extends: .condition_for_test
     image: $CI_REGISTRY/docker/bob-the-builder/$STABLE_CODENAME:latest
     stage: deploy_package
