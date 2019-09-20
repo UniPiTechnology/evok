@@ -63,5 +63,5 @@ mirror-to-github:
     script:
       - .gitlab-ci-scripts/mirror_to_GitHub.sh
     variables:
-        GIT_STRATEGY: none
+        GIT_STRATEGY: clone
         GIT_CHECKOUT: "true"
