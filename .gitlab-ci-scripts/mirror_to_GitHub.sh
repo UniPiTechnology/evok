@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [[ ! -z "${CI_COMMIT_TAG}" ]]; then
+  EVOK_VERSION=${CI_COMMIT_TAG}
+else
+  EVOK_VERSION=$(/ci-scripts/generate-new-tag-for-test.sh)
+fi
+
 #Filter
 echo "Current GIT status before filtering:"
 git status
@@ -18,6 +24,11 @@ ssh-add ~/.ssh/github_ssh_key
 ssh-keyscan -H "github.com" >> ~/.ssh/known_hosts
 #git push --mirror git@github.com:martyy665/ekvok.git
 
+
+
+
+echo "Tagging..."
+git tag ${EVOK_VERSION}
 
 echo "Mirroring..."
 git push --mirror git@github.com:martyy665/ekvok.git
