@@ -22,4 +22,8 @@ git add README.md
 git add setup.py
 git commit --amend --no-edit
 
+#File version.txt for displaying version on http://<ip address>:<port>/version
+
+echo ${EVOK_VERSION} > version.txt
+
 #version.txt file is edited by .git hooks
