@@ -166,8 +166,9 @@ Raspberry Pi is a trademark of the Raspberry Pi Foundation
 [github repository]:https://github.com/UniPiTechnology/evok
 [OpenSource image]:https://files.unipi.technology/s/public?path=%2FSoftware%2FOpen-Source%20Images
 [IndieGogo]:https://www.indiegogo.com/projects/unipi-the-universal-raspberry-pi-add-on-board
-[NEURON]:http://www.unipi.technology
-[UniPi 1.1]:https://www.unipi.technology/products/unipi-1-1-19?categoryId=1&categorySlug=unipi-1-1
+[NEURON]:https://www.unipi.technology/products/unipi-neuron-3?categoryId=2
+[UniPi 1.1]:https://www.unipi.technology/products/unipi-1-1-1-1-lite-19?categoryId=1
+[Axon]:https://www.unipi.technology/products/unipi-axon-135?categoryId=13
 [PIGPIO]:http://abyz.co.uk/rpi/pigpio/
 [tornado]:https://pypi.python.org/pypi/tornado/
 [toro]:https://pypi.python.org/pypi/toro/
