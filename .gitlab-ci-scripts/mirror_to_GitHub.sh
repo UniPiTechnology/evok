@@ -1,6 +1,9 @@
 #!/bin/bash
 
 #Filter
+echo "Current GIT status before filtering:"
+git status
+
 echo "Filtering unnecessary files..."
 git filter-branch -f --index-filter 'git rm -r --cached --ignore-unmatch .project .gitlab-ci.yml .pydevproject .gitlab-ci-scripts' HEAD
 
