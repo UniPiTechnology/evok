@@ -399,124 +399,6 @@ install_unipi_lite_1() {
 	echo ' '
 }
 
-install_unipi_neuron() {
-	if kernelget 4.9.0 ;then
-		echo '############################'
-		echo '# Using device tree kernel #'
-		echo '############################'
-	else
-		echo '######################'
-		echo '# Using older kernel #'
-		echo '######################'
-		# Load UniPi2 EEPROM
-		if ! grep -q 'unipi2_eprom' /etc/modules ;then
-			echo "unipi2_eprom" >> /etc/modules
-		fi
-		
-		# Load UniPi2 RTC
-		if ! grep -q 'unipi_rtc' /etc/modules ;then
-			echo "unipi_rtc" >> /etc/modules
-		fi
-		
-	fi
-	
-	
-	# Install neuron_tcp_server 1.0.1
-	wget https://github.com/UniPiTechnology/neuron-tcp-modbus-overlay/archive/v1.0.1.zip
-	unzip v1.0.1.zip
-	cd neuron-tcp-modbus-overlay-1.0.1 || exit
-	yes n | bash "$PWD"/install.sh
-	cd ..
-	
-	# Copy tornadorpc
-	cp -r tornadorpc_evok /usr/local/lib/python2.7/dist-packages/
-	
-	# Setup wifi
-	echo "############################################################################"
-	echo "## !!! POTENTIALLY DANGEROUS: Do you wish to install WiFi AP support? !!! ##"
-	echo "## !!! DO NOT USE WITH CUSTOM NETWORK CONFIGURATION                   !!! ##"
-	echo "## !!! USE ONLY WITH PLAIN RASPBIAN STRETCH                           !!! ##"
-	echo "############################################################################"
-	echo ' '
-	if ask "(Install WiFi?)"; then
-		apt-get install -y hostapd dnsmasq iproute2
-		systemctl disable hostapd dnsmasq
-		systemctl stop hostapd dnsmasq
-		sed -i -e 's/option domain-name/#option domain-name/' /etc/dhcp/dhcpd.conf
-		sed -i -e 's/option domain-name-servers/#option domain-name-servers/' /etc/dhcp/dhcpd.conf
-		sed -i -e 's/#authoritative/authoritative/' /etc/dhcp/dhcpd.conf
-		sed -i -e 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
-		sed -i -e 's/wifi_control_enabled = False/wifi_control_enabled = True/' etc/evok-neuron.conf
-	fi
-	
-	# Copy evok
-	cp -r evok/ /opt/
-	cp version.txt /opt/evok/
-	mkdir -p /var/www/evok && cp -r www/* /var/www/
-	mkdir -p /var/evok && cp -r var/* /var/evok/
-	mkdir -p /opt && cp -r opt/* /opt/
-	cp -r opt/unipiap/systemd/* /etc/systemd/system/
-	systemctl daemon-reload
-	systemctl disable unipiap
-	systemctl disable unipidns
-	chmod -R a+rx /var/www
-	chmod -R a+rx /var/evok
-	
-	# Copy default config file and init scipts
-	if [ -f /etc/evok-neuron.conf ]; then
-		echo '#####################################################'
-			echo '## The "/etc/evok-neuron.conf" file already exists ##'
-			echo '#####################################################'
-		if ask "Do you want to overwrite your /etc/evok-neuron.conf file?"; then
-			cp etc/evok-neuron.conf /etc/evok.conf
-		else
-			echo '#####################################################################'
-			echo '## Your current config file was not overwritten.                   ##'
-			echo '## Please do a diff between your new and previous config file.     ##'
-			echo '#####################################################################'
-		fi
-	else
-		cp etc/evok-neuron.conf /etc/evok.conf
-	fi
-	
-	chmod +x /opt/evok/evok.py
-	
-	manager=$(cat /proc/1/comm)
-	if [ "$manager" == "systemd" ]; then
-		sed -i '/Requires=pigpio.service/s/^/#/g' etc/systemd/system/evok.service
-		cp etc/systemd/system/evok.service /etc/systemd/system/
-		systemctl daemon-reload
-		systemctl enable evok
-	else
-		cp etc/init.d/evok /etc/init.d/
-		chmod +x /etc/init.d/evok
-		update-rc.d evok defaults
-	fi
-	
-	sed -i -e "s/port = 8080/port = ${internal_port_number}/" /etc/evok.conf
-	
-	# Backup uninstallation script
-	cp uninstall-evok.sh /opt/evok/
-	echo '##############################################################'
-	echo '## Evok installed sucessfully.                              ##'
-	echo '## Info:                                                    ##'
-	echo '## 1. If you are running Apache or other daemon at port 80, ##'
-	echo '## you must set either evok or apache port to be different  ##'
-	echo '## from each other.                                         ##'
-	echo "## 2. Run 'service evok start/restart/stop' to control the  ##"
-	echo '## daemon.                                                  ##'
-	echo '## (3. To uninstall evok run /opt/evok/uninstall-evok.sh)   ##'
-	echo '##############################################################'
-	echo ' '
-	if ask "Is it OK to reboot now?"; then
-		reboot
-	else
-		echo '#######################################################################'
-		echo '## Remember to reboot your Raspberry Pi in order to start using EVOK ##'
-		echo '#######################################################################'
-	fi
-		echo ' '
-}
 
 if [ "$EUID" -ne 0 ]; then
 	echo '####################################'
@@ -580,13 +462,14 @@ echo ' '
 sed -i -e "s/listen 80/listen ${external_port_number}/" /etc/nginx/sites-enabled/evok
 sed -i -e "s/localhost:8080/localhost:${internal_port_number}/" /etc/nginx/sites-enabled/evok
 echo ' '
-echo '###################################################'
-echo '## Please choose the type of your UniPi product: ##'
-echo '###################################################'
+echo '#################################################################'
+echo '######### Please choose the type of your UniPi product: #########'
+echo '#################################################################'
+echo '## For other controllers, install EVOK via APT package system. ##'
+echo '#################################################################'
 echo ' ' 
 PS3="Your model: >"
 options=(
-	"UniPi Neuron"
 	"UniPi Lite 1.x"
 	"UniPi 1.x"
 )
@@ -594,13 +477,6 @@ echo ''
 select platform in "${options[@]}"; do
 
 	case "$platform" in
-		"UniPi Neuron")
-			echo '################################################################################'
-			echo '## Installing EVOK for UniPi Neuron series including Neuron TCP Modbus Server ##'
-			echo '################################################################################'
-			install_unipi_neuron
-			break
-			;;
 		"UniPi Lite 1.x")
 			echo '########################################'
 			echo '## Installing EVOK for UniPi Lite 1.x ##'
