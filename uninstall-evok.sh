@@ -16,7 +16,7 @@ ask() {
         fi
 
         # Ask the question
-        read -p "$1 [$prompt] " REPLY
+        read -r -p "$1 [$prompt] " REPLY
 
         # Default?
         if [ -z "$REPLY" ]; then
@@ -46,9 +46,9 @@ uninstall_pigpio() {
 
 uninstall() {
     service evok stop
-    service pigpiod stop
+    service pigpio stop
     pip uninstall -y tornado toro jsonrpclib
-    apt-get remove -y python-ow
+    apt-get remove -y python-ow python3-distutils
     uninstall_pigpio
     rm -rf /usr/local/lib/python2.7/dist-packages/tornadorpc_evok
     rm -rf /opt/evok
@@ -66,7 +66,7 @@ if [ "$EUID" -ne 0 ]
   exit
 fi
 
-echo "Warning, the following packages will be removed: evok, pigpiod, python-ow, tornado, toro, jsonrpclib, tornadorpc-evok"
+echo "Warning, the following packages will be removed: evok, pigpiod, python-ow, tornado, toro, jsonrpclib, tornadorpc-evok python3-distutils"
 if ask "Are you sure you want to continue?"; then
     uninstall
 else
