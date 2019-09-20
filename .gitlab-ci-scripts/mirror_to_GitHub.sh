@@ -6,14 +6,20 @@ else
   EVOK_VERSION=$(/ci-scripts/generate-new-tag-for-test.sh)
 fi
 
-#Filter
+BRANCH=$(git branch | grep "\\*" | cut -d ' ' -f2)
+echo "Current branch is ${BRANCH}"
+
 echo "Current GIT status before filtering:"
 git status
 
+#Filter files
 echo "Filtering unnecessary files..."
-git filter-branch -f --index-filter 'git rm -r --cached --ignore-unmatch .project .gitlab-ci.yml .pydevproject .gitlab-ci-scripts' HEAD
+git filter-branch -f --index-filter 'git rm -r --cached --ignore-unmatch .project .gitlab-ci.yml .pydevproject .gitlab-ci-scripts' HEAD || exit 1
 
-#Push
+#Filter tags containing test string
+echo "Filtering tags for testing branch..."
+git tag | grep "test" | xargs -n 1 -I% git tag -d % || exit 1
+
 [[ -d ~/.ssh ]] || mkdir ~/.ssh
 
 echo "$GITHUB_SSH_KEY" | tr -d '\r' > ~/.ssh/github_ssh_key
@@ -22,18 +28,14 @@ eval "$(ssh-agent -s)"
 ssh-add ~/.ssh/github_ssh_key
 
 ssh-keyscan -H "github.com" >> ~/.ssh/known_hosts
-#git push --mirror git@github.com:martyy665/ekvok.git
-
-
-
 
 echo "Tagging..."
-git tag ${EVOK_VERSION}
+git tag "${EVOK_VERSION}"
 
 echo "Mirroring..."
-git push --mirror git@github.com:martyy665/ekvok.git
+git push --mirror git@github.com:UniPiTechnology/evok
 
 echo "Pushing tag"
 if [[ ! -z "${CI_COMMIT_TAG}" ]]; then
-  git push git@github.com:martyy665/ekvok.git "${CI_COMMIT_TAG}"
+  git push git@github.com:UniPiTechnology/evok "${CI_COMMIT_TAG}"
 fi
