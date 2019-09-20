@@ -1,8 +1,8 @@
-![alt text](https://github.com/UniPiTechnology/evok/raw/master/www/evok/js/jquery/images/Uni_pi_logo_new.svg?sanitize=true "UniPi logo")
+![unipi logo](https://github.com/UniPiTechnology/evok/raw/master/www/evok/js/jquery/images/unipi-logo-short-cmyk.svg?sanitize=true "UniPi logo")
 
 # EVOK - the UniPi API
 
-EVOK is the primary Web API for [NEURON] and [UniPi 1.1] devices. It provides a RESTful interface over HTTP, a JSON-RPC interface, a WebSocket interface a SOAP interface and a bulk JSON interface to UniPi devices.
+EVOK is the primary Web-services API for [NEURON], [AXON] and [UniPi 1.1] devices. It provides a RESTful interface over HTTP, a JSON-RPC interface, a WebSocket interface a SOAP interface and a bulk JSON interface to UniPi devices.
 
 Evok is still in active development, so any testing, feedback and contributions are very much welcome and appreciated.
 
@@ -19,11 +19,11 @@ EVOK also supports sending notifications via webhook.
 
 ### For more information see our documentation at [api-docs.io].
 
-## Installation process for the latest (2.X.X) EVOK version on Neuron
+## Installation process for the latest (2.X.X) EVOK version on Neuron family controllers
 
 *Warning: if you have previously used the shell script install method noted below you will need to use a clean image!*
 
-In order to install EVOK on Neuron you will need an SD card with a standard ***Raspbian Jessie*** or ***Raspbian Stretch*** image. It is also necessary to enable SSH on the image by creating an empty file named "ssh" in the boot partition of your SD card (the partition should be visible on all systems which support FAT16, which includes Windows, Linux and OSX among others).
+In order to install EVOK on Neuron you will need an SD card with a standard ***Raspbian Stretch*** or ***Raspbian Buster*** image. It is also necessary to enable SSH on the image by creating an empty file named "ssh" in the boot partition of your SD card (the partition should be visible on all systems which support FAT16, which includes Windows, Linux and OSX among others).
 
 To install EVOK itself first connect to your Neuron using SSH (there is a large number of clients you can use, for windows we recommend using [PUTTY]). The default username for Raspbian is "pi" and the default password is "raspberry". After you connect to your Neuron execute the following commands: 
 
@@ -39,7 +39,6 @@ To install EVOK itself first connect to your Neuron using SSH (there is a large 
     sudo su
     apt-get install nginx
     rm -f /etc/nginx/sites-enabled/default
-    apt-get install unipi-modbus-tools
     apt-get install evok
     systemctl enable evok
     reboot
@@ -77,7 +76,6 @@ EVOK is installed slightly differently on Axon PLCs than on Neuron PLCs. The Axo
     reboot
     
     sudo su
-    apt-get install unipi-modbus-tools
     apt-get install evok
     systemctl enable evok
     reboot
@@ -87,33 +85,8 @@ It is possible that some (or all) of the above steps will already have been fini
 You can use the following commands to update your EVOK package distribution to a new version:
 
     sudo su
-    apt-get install unipi-modbus-tools
     apt-get install evok
     reboot
-
-## Installation process for Evok v.1.X.X
-
-Access to GPIOs is done using the fantastic [PIGPIO] library. Make sure to install it first before use.
-
-_**EVOK v.1.X.X**_ also requires a few other python libraries that are not installed on Raspbian by default:
-* python-ow
-* [tornado]
-* [toro]
-* modified version of [tornardorpc] available in this repo tornadorpc_evok
-* [jsonrpclib]
-
-Download the latest release from our repository via wget (alternatively you can clone the repository using git):
-
-    wget https://github.com/UniPiTechnology/evok/archive/v.1.0.2.tar.gz
-    tar -zxvf v.1.0.2.tar.gz && mv evok-* evok  
-
-Please note that the folder that you downloaded the package into is not used later and can be safely deleted after the installation. Configuration files are installed directly into /etc/, /opt/ and /boot/
-
-Run the installation script using the following instructions
-
-    cd evok
-    chmod +x install-evok.sh uninstall-evok.sh
-    sudo ./install-evok.sh
 
 # Instructions for use
 
@@ -193,8 +166,9 @@ Raspberry Pi is a trademark of the Raspberry Pi Foundation
 [github repository]:https://github.com/UniPiTechnology/evok
 [OpenSource image]:https://files.unipi.technology/s/public?path=%2FSoftware%2FOpen-Source%20Images
 [IndieGogo]:https://www.indiegogo.com/projects/unipi-the-universal-raspberry-pi-add-on-board
-[NEURON]:http://www.unipi.technology
-[UniPi 1.1]:https://www.unipi.technology/products/unipi-1-1-19?categoryId=1&categorySlug=unipi-1-1
+[NEURON]:https://www.unipi.technology/products/unipi-neuron-3?categoryId=2
+[UniPi 1.1]:https://www.unipi.technology/products/unipi-1-1-1-1-lite-19?categoryId=1
+[Axon]:https://www.unipi.technology/products/unipi-axon-135?categoryId=13
 [PIGPIO]:http://abyz.co.uk/rpi/pigpio/
 [tornado]:https://pypi.python.org/pypi/tornado/
 [toro]:https://pypi.python.org/pypi/toro/
