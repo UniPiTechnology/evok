@@ -793,7 +793,7 @@ function syncDevice(msg) {
         }
         case "1wdevice": {
             main_el = document.createElement("h1");
-            main_el.textContent = "" + device_properties["humidity"] + " %<br>" + device_properties["value"] + " " +device_properties["unit"];
+            main_el.innerHTML = "" + device_properties["humidity"] + " %<br>" + device_properties["value"] + " " +device_properties["unit"];
             //main_el.className = "ui-li-aside";    
             break;
         }
