@@ -75,7 +75,7 @@ deploy-release:
 
 mirror-to-github:
     before_script:
-      - .gitlab-ci-scripts/update_version_consts.sh
+      - .gitlab-ci-scripts/update_version_consts.sh WITH_COMMIT 
     extends: .condition_for_tagged
     image: $CI_REGISTRY/docker/bob-the-builder/$STABLE_CODENAME:latest
     stage: deploy_package
