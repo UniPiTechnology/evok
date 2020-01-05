@@ -1,28 +1,22 @@
 #############################################################################################################################
-#   Example 5: Basic websocket application to interact with evok api                                                        # 
-#            Extension of the third  example websocket3                                                                     #        
-#             Adding a book to trigger different action on multiple presses of each button separtly                         #
-#                e.g. The first time, the first light switches on , the next time the second light goes on etc.             #
-#                                                                                                                           #
+#   Example 5: Basic websocket application to interact with evok api
+#		Fully Function Basic websocket application to interact with the evok api 
+#               This is a how the lights are switched in our house in real live 
+#
+#			Every Input can have a short_press_action and a long_press_action 
+#			inside those two actions you can use 
 #                                                                                                                           #    
-#                I created for this basic example 3 commands you can use : - singletoggle (toggle one relay on or off)      #
-#                                                                          - groupoff ( switch a group off relays off)      #
-#                                                                          - groupon (switch a group off relay on)          #
+#                				  3 commands  : - singletoggle (toggle one relay on or off)   		    #
+#                                                               - groupoff ( switch a group off relays off)                 #
+#                                                               - groupon (switch a group off relay on)                     #
 #                                                                                                                           #
 #                The groupon and groupoff function can be used for only 1 relay e.g. (1,) (don t forget the ","))           #                                                               
 #                                                                                                                           #
-#                In this example I also set long_press_action to groupoff. So you can control every light in serie          # 
-#                If you have 3 lights and only want the middle one to be on, first time press long so the first light       #
-#                switches on and off and press short and your second light is all_on                                        #
+                                                                                                                            #
 #                                                                                                                           #
 #                                                                                                                           #
 #                                                                                                                           #
-#                                                                                                                           #
-#                from the previous examples we also have allon (which turns all relays on) and alloff                       #
-#                                                                                                                           #
-#                                                                                                                           #
-#                                                                                                                           #
-#                                                                                                                           #
+#                												            #
 #                                                                                                                           #
 #Long Press Button Event:                                                                                                   #
 #                       I implemented this on the client side                                                               #
