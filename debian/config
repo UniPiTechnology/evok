@@ -1,0 +1,129 @@
+#!/bin/sh
+
+set -e
+
+# Post-inst maintainer script of Evok package
+# See Readme of the package for info about licensing.
+# Maintainer: martyy <triska@unipi.technology>
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+db_settitle evok/title
+
+# -----------------------------------------------------------------------------
+# ---- Issue No. 1 - default Nginx server on TCP port 80 conflict
+# -----------------------------------------------------------------------------
+
+DEFAULT_MERVIS_SITE="/etc/nginx/sites-enabled/mervis"
+DEFAULT_EVOK_SITE="/etc/nginx/sites-enabled/evok"
+NGINX_ENABLED_DIR="/etc/nginx/sites-enabled/"
+NGINX_ENABLED_FILES=/etc/nginx/sites-enabled/*
+
+detect_nginx_conflict() {
+
+    db_reset evok/nginx_conflict_files
+
+    if [ -d "$NGINX_ENABLED_DIR" ]; then # Nginx is probably already installed
+        for C_FILE in $NGINX_ENABLED_FILES; do
+
+            # Skip the confile of myself
+            if [ "$C_FILE" = "$DEFAULT_EVOK_SITE" ]; then
+                echo "Preskakuju sam sebe " >&2
+                continue
+            fi
+
+            if [ "$C_FILE" = "$DEFAULT_MERVIS_SITE" ]; then
+                echo "Preskakuju Mervise " >&2
+                continue
+            fi
+
+            # Look for an uncommented listen statement in each file
+            if grep -qxe "[[:space:]]\+listen 80.*" $C_FILE; then
+                # Store path of the conflict file to the db
+		db_set evok/nginx_conflict_files $C_FILE
+                # echo "mam ho tam" >&2
+                return 0 #return 0 # Positive result -> conflict was found
+            fi
+        done
+    fi
+
+    return 1 # Negative result -> no conflict found
+}
+
+validate_port_number() {
+    if [ "$1" -lt "65535" ] 2>/dev/null  && [ "$1" -gt "1" ] 2>/dev/null; then
+        return 1 # Je to OK
+    else
+        return 0
+    fi
+}
+
+EVOK_STARTED=false
+
+# Evok has to be started because some of files analysed in this script are generated dymanically
+if [ -f "/lib/systemd/system/evok.service" ]; then
+
+    #echo "mam ho tam 1" >&2
+    #systemctl daemon-reload
+    #echo "mam ho tam 2" >&2
+    #deb-systemd-invoke start evok.service >/dev/null || true
+    #echo "mam ho tam 3" >&2
+    EVOK_STARTED=true
+fi
+
+if detect_nginx_conflict; then
+
+    db_get evok/nginx_conflict_files
+    db_subst evok/http_conflict "site" "$RET"
+    db_input high evok/http_conflict || true
+    db_go || true
+    db_get evok/http_conflict || true
+
+    case "$RET" in
+      *replace*)
+          db_input high evok/http_conflict_makesure || true
+          db_go || true
+          ;;
+      *another*)
+          while true; do
+              db_input high evok/control_website_port || true
+              db_go || true
+              db_get evok/control_website_port || true
+              validate_port_number "$RET" || break
+              db_input high evok/err_invalidport # Toto jede :-)
+          done
+          ;;
+      *)
+          ;;
+    esac
+fi
+
+# -------------------------------------------------------------------------------
+# ---- Issue No. 2 - DS2482 Kernel module is loaded -> owfs cannot works properly
+# -------------------------------------------------------------------------------
+
+OVERLAY_CONFIG_FILE="/boot/config.txt"
+#OVERLAY_CONFIG_FILE="/boot/boot.scr" # MOCK Value for AXON - MUST BE COMMENTED
+KERNEL_MODULE_NAME="ds2482"
+
+detect_ow_kernelmodule() { #To by melo jet - a asi i jede
+    if [ -f "$OVERLAY_CONFIG_FILE" ]; then # The issue is Neuron-related only
+        if lsmod | grep -q "$KERNEL_MODULE_NAME"; then
+            return 0 # Positive reply -> conflict is present
+        fi
+    fi
+# lsmod ale jen na Axonu ====
+    return 1
+# disable it in postinst
+
+}
+
+if detect_ow_kernelmodule; then
+    db_input high evok/kernel_ow_conflict_resolve || true
+    db_go || true
+else
+    db_set evok/kernel_ow_conflict_resolve false
+fi
+
+exit
