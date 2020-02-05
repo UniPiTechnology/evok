@@ -1,0 +1,73 @@
+---
+type: xS11
+modbus_register_blocks:
+    - board_index : 1
+      start_reg   : 0
+      count       : 32
+      frequency   : 1
+    - board_index : 1
+      start_reg   : 1000
+      count       : 33
+      frequency   : 10
+modbus_features: 
+    - type        : RO
+      count       : 13
+      major_group : 1
+      modes       :
+        - Simple
+      val_reg     : 1
+      val_coil    : 0
+    - type        : DI
+      count       : 12
+      major_group : 1
+      modes       :
+        - Simple
+        - DirectSwitch
+      ds_modes    :
+        - Simple
+        - Inverted
+        - Toggle
+      min_v       : 5
+      max_v       : 24
+      val_reg     : 0
+      counter_reg : 3
+      direct_reg  : 1026
+      deboun_reg  : 1010
+      polar_reg   : 1027
+      toggle_reg  : 1028
+    - type        : UART
+      count       : 1
+      major_group : 1
+      parity_modes :
+        - None
+        - Odd
+        - Even
+      speed_modes :
+        - 2400bps
+        - 4800bps
+        - 9600bps
+        - 19200bps
+        - 38400bps
+        - 57600bps
+        - 115200bps
+      stopb_modes :
+        - One
+        - Two
+      conf_reg    : 1031
+      address_reg : 1032
+    - type        : LED
+      major_group : 1
+      count       : 3
+      val_coil    : 25
+      val_reg     : 31
+    - type        : WD
+      major_group : 1
+      count       : 1
+      val_reg     : 2
+      timeout_reg : 1008
+      nv_sav_coil : 1003
+      reset_coil  : 1002
+    - type        : REGISTER
+      major_group : 1
+      count       : 40
+      start_reg   : 0
