@@ -1,0 +1,95 @@
+---
+type: xS51
+modbus_register_blocks:
+    - board_index : 1
+      start_reg   : 0
+      count       : 27
+      frequency   : 1
+    - board_index : 1
+      start_reg   : 1000
+      count       : 25
+      frequency   : 10
+modbus_features: 
+    - type        : RO
+      count       : 5
+      major_group : 1
+      modes       :
+        - Simple
+      val_reg     : 1
+      val_coil    : 0
+    - type        : DI
+      count       : 4
+      major_group : 1
+      modes       :
+        - Simple
+        - DirectSwitch
+      ds_modes    :
+        - Simple
+        - Inverted
+        - Toggle
+      min_v       : 5
+      max_v       : 24
+      val_reg     : 0
+      counter_reg : 15
+      direct_reg  : 1016
+      deboun_reg  : 1010
+      polar_reg   : 1017
+      toggle_reg  : 1018
+    - type        : AO
+      count       : 4
+      major_group : 1
+      modes       :
+        - Voltage
+      min_v       : 0
+      max_v       : 10
+      val_reg     : 2
+      mode_reg    : 1019
+    - type        : AI
+      count       : 4
+      major_group : 1
+      modes       :
+        - Voltage
+        - Current
+        - Resistance
+      tolerances  : 500series
+      min_v       : 0
+      max_v       : 10
+      min_c       : 0
+      max_c       : 0.020
+      val_reg     : 6
+      mode_reg    : 1019
+    - type        : UART
+      count       : 1
+      major_group : 1
+      parity_modes :
+        - None
+        - Odd
+        - Even
+      speed_modes :
+        - 2400bps
+        - 4800bps
+        - 9600bps
+        - 19200bps
+        - 38400bps
+        - 57600bps
+        - 115200bps
+      stopb_modes :
+        - One
+        - Two
+      conf_reg    : 1023
+      address_reg : 1024
+    - type        : WD
+      major_group : 1
+      count       : 1
+      val_reg     : 14
+      timeout_reg : 1008
+      nv_sav_coil : 1003
+      reset_coil  : 1002
+    - type        : REGISTER
+      major_group : 1
+      count       : 27
+      start_reg   : 0
+    - type        : REGISTER
+      major_group : 1
+      count       : 25
+      start_reg   : 1000
