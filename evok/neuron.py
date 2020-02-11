@@ -919,23 +919,25 @@ class Relay(object):
         self.valreg = reg
         self.bitmask = mask
         self.regvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1,self.valreg, unit=self.arm.modbus_address)[0]
-        if self.pwmdutyreg > 0:
+        if self.pwmdutyreg >= 0: # This instance supports PWM mode
             self.pwm_duty_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.pwmdutyreg, unit=self.arm.modbus_address))[0]
-            self.pwm_cycle_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.pwmcyclereg, unit=self.arm.modbus_address))[0]
+            self.pwm_cycle_val = ((self.arm.neuron.modbus_cache_map.get_register(1, self.pwmcyclereg, unit=self.arm.modbus_address))[0] + 1)
             self.pwm_prescale_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.pwmprescalereg, unit=self.arm.modbus_address))[0]
-            if self.pwm_cycle_val == 0:
-                self.pwm_cycle_val = 1
-            if self.pwm_prescale_val == 0:
-                self.pwm_prescale_val = 1
-            self.pwm_freq = 48000000 / (self.pwm_cycle_val * self.pwm_prescale_val)
-            if (self.pwm_duty_val > 1):
-                self.mode = 'PWM'
-                self.pwm_duty = self.pwm_cycle_val / self.pwm_duty_val
+            if (self.pwm_cycle_val > 0) and (self.pwm_prescale_val > 0):
+                self.pwm_freq = 48000000 / (self.pwm_cycle_val * self.pwm_prescale_val)
             else:
-                self.mode = 'Simple'
+                self.pwm_freq = 0
+            if (self.pwm_duty_val == 0):
                 self.pwm_duty = 0
-        else:
+                self.mode = 'Simple'  # Mode field is for backward compatibility, will be deprecated soon
+            else:
+                logger.info("Pocitam z {} {}".format(self.pwm_cycle_val, self.pwm_duty_val))
+                self.pwm_duty = (100 / (float(self.pwm_cycle_val) / float(self.pwm_duty_val)))
+                self.pwm_duty = round(self.pwm_duty ,1) if self.pwm_duty % 1 else int(self.pwm_duty)
+                self.mode = 'PWM'  # Mode field is for backward compatibility, will be deprecated soon
+        else: # This RELAY instance does not support PWM mode (no pwmdutyreg given)
             self.mode = 'Simple'
+
         self.forced_changes = arm.neuron.Config.getbooldef("MAIN", "force_immediate_state_changes", False)
 
     def full(self, forced_value=None):
@@ -949,9 +951,8 @@ class Relay(object):
                 'glob_dev_id': self.dev_id}
         if self.digital_only:
             ret['relay_type'] = 'digital'
-            if self.mode == 'PWM':
-                ret['pwm_freq'] = self.pwm_freq
-                ret['pwm_duty'] = self.pwm_duty
+            ret['pwm_freq'] = self.pwm_freq
+            ret['pwm_duty'] = self.pwm_duty
         if self.alias != '':
             ret['alias'] = self.alias
         if forced_value is not None:
@@ -998,21 +999,13 @@ class Relay(object):
         if self.pending_id:
             IOLoop.instance().remove_timeout(self.pending_id)
             self.pending_id = None
-                    
-        if pwm_duty is not None and self.mode == 'PWM' and float(pwm_duty) <= 0.01:
-            mode = 'Simple'
-        
-        if mode is not None and mode in self.modes:
-            if self.mode == 'PWM' and mode != self.mode:
-                self.pwm_duty = 0
-                self.pwm_duty_val = 0
-                self.arm.neuron.client.write_register(self.pwmdutyreg, 0, unit=self.arm.modbus_address)
-            if mode == 'PWM' and mode != self.mode:
-                self.mode = mode
-            else:
-                self.mode = mode
-        
-        if self.mode == 'PWM' and pwm_freq is not None and float(pwm_freq) >= 0.01:
+
+        #if pwm_duty is not None and self.mode == 'PWM' and float(pwm_duty) <= 0.01:
+        #    mode = 'Simple'
+        # New system - mode field will no longer be used
+
+        # Set PWM Freq
+        if (pwm_freq is not None) and (float(pwm_freq) > 0):
             self.pwm_freq = pwm_freq;
             self.pwm_delay_val = 48000000 / float(pwm_freq)
             if ((int(self.pwm_delay_val) % 50000) == 0) and ((self.pwm_delay_val / 50000) < 65535):
@@ -1030,14 +1023,14 @@ class Relay(object):
             else:
                 self.pwm_prescale_val = sqrt(self.pwm_delay_val)
                 self.pwm_cycle_val = self.pwm_prescale_val
-            
+
             if self.pwm_duty > 0:
                 self.pwm_duty_val = float(self.pwm_cycle_val) * float(float(self.pwm_duty) / 100.0)
-            else:
-                self.pwm_duty_val = 0
-                self.arm.neuron.client.write_register(self.pwmdutyreg, self.pwm_duty_val, unit=self.arm.modbus_address)
-            
-            other_devs = Devices.by_int(RELAY, major_group=self.major_group)
+            #else:
+            #    self.pwm_duty_val = 0
+            #    self.arm.neuron.client.write_register(self.pwmdutyreg, self.pwm_duty_val, unit=self.arm.modbus_address)
+
+            other_devs = Devices.by_int(RELAY, major_group=self.major_group)  # All PWM outs in the same group share this registers
             for other_dev in other_devs:
                 if other_dev.pwm_duty > 0:
                     other_dev.pwm_freq = self.pwm_freq
@@ -1045,23 +1038,39 @@ class Relay(object):
                     other_dev.pwm_cycle_val = self.pwm_cycle_val
                     other_dev.pwm_prescale_val = self.pwm_prescale_val
                     yield other_dev.set(pwm_duty=other_dev.pwm_duty)
-            
-            self.arm.neuron.client.write_register(self.pwmcyclereg, self.pwm_cycle_val, unit=self.arm.modbus_address)
+
+            self.arm.neuron.client.write_register(self.pwmcyclereg, self.pwm_cycle_val - 1, unit=self.arm.modbus_address)
             self.arm.neuron.client.write_register(self.pwmprescalereg, self.pwm_prescale_val, unit=self.arm.modbus_address)
             self.arm.neuron.client.write_register(self.pwmdutyreg, self.pwm_duty_val, unit=self.arm.modbus_address)
-        
-        if self.mode == 'PWM' and pwm_duty is not None and float(pwm_duty) > 0.0 and float(pwm_duty) < 100.1:
-            self.pwm_duty = pwm_duty
-            self.pwm_duty_val = float(self.pwm_cycle_val) * float(float(self.pwm_duty) / 100.0)
-            
-            self.arm.neuron.client.write_register(self.pwmdutyreg, self.pwm_duty_val, unit=self.arm.modbus_address)
-        
+
+        # Set Binary value
         if value is not None:
-            value = int(value)
+
+            parsed_value = 1 if int(value) else 0
+
+            if pwm_duty is not None:
+                if (pwm_duty == 100 and parsed_value == 1) or (pwm_duty == 0 and parsed_value == 0): # No conflict in this case
+                    pass
+                else:
+                    raise Exception('Set value conflict: Cannot set both value and pwm_duty at once.')
+
             if not (timeout is None):
                 timeout = float(timeout)
-            parsed_value = 1 if value else 0
+
+            self.mode = 'Simple'
             self.arm.neuron.client.write_coil(self.coil, parsed_value, unit=self.arm.modbus_address)
+            if self.pwm_duty != 0:
+                self.pwm_duty = 0
+                self.arm.neuron.client.write_register(self.pwmdutyreg, self.pwm_duty, unit=self.arm.modbus_address) # Turn off PWM
+
+        # Set PWM Duty
+        elif pwm_duty is not None and float(pwm_duty) >= 0.0 and float(pwm_duty) <= 100.0:
+            self.pwm_duty = pwm_duty
+            self.pwm_duty_val = float(self.pwm_cycle_val) * float(float(self.pwm_duty) / 100.0)
+            if self.value != 0:
+                self.arm.neuron.client.write_coil(self.coil, 0, unit=self.arm.modbus_address)
+            self.arm.neuron.client.write_register(self.pwmdutyreg, self.pwm_duty_val, unit=self.arm.modbus_address)
+            self.mode = 'PWM'
 
         if alias is not None:
             if Devices.add_alias(alias, self, file_update=True):
@@ -1072,7 +1081,6 @@ class Relay(object):
                 raise gen.Return(self.full(forced_value=parsed_value))
             else:
                 raise gen.Return(self.full())
-
 
         def timercallback():
             self.pending_id = None
