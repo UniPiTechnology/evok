@@ -69,24 +69,24 @@ class UserCookieHelper():
 class SoapProperty(complextypes.ComplexType):
     property_name = str
     property_value = str
-    
+
 class SoapPropertyList(complextypes.ComplexType):
     device_type = str
     device_circuit = str
     property_item = [SoapProperty]
-    
+
 class SoapQueryInput(complextypes.ComplexType):
     device_type = str
     device_circuit = str
-    
+
 class SoapQueryInputList(complextypes.ComplexType):
     single_query = [SoapQueryInput]
 
 class SoapCommandInputList(complextypes.ComplexType):
-    single_command = [SoapPropertyList]    
-    
+    single_command = [SoapPropertyList]
+
 class SoapOutputList(complextypes.ComplexType):
-    single_output = [SoapPropertyList]    
+    single_output = [SoapPropertyList]
 
 def enable_cors(handler):
     if cors:
@@ -126,7 +126,7 @@ class WhHandler():
             registered_ws["all"] = set()
 
         registered_ws["all"].add(self)
-    
+
     def on_event(self, device):
         dev_all = device.full()
         outp = []
@@ -144,7 +144,7 @@ class WhHandler():
 
 
 class WsHandler(websocket.WebSocketHandler):
-    
+
     def check_origin(self, origin):
         # fix issue when Node-RED removes the 'prefix://'
         parsed_origin = urlparse(origin)
@@ -152,7 +152,7 @@ class WsHandler(websocket.WebSocketHandler):
         origin = origin.lower()
         #return origin == host or origin_origin == host
         return True
-        
+
     def open(self):
         self.filter = ["default"]
         logger.debug("New WebSocket client connected")
@@ -161,7 +161,7 @@ class WsHandler(websocket.WebSocketHandler):
 
         registered_ws["all"].add(self)
 
-    def on_event(self, device):            
+    def on_event(self, device):
         dev_all = device.full()
         outp = []
         try:
@@ -217,7 +217,7 @@ class WsHandler(websocket.WebSocketHandler):
                         if (str(single_dev) in devtype_names) or (str(single_dev) in devtype_altnames):
                             devices += [single_dev]
                     if len(devices) > 0 or len(message["devices"]) == 0:
-                        self.filter = devices 
+                        self.filter = devices
                         if message["devices"][0] == "default":
                             self.filter = ["default"]
                     else:
@@ -327,8 +327,8 @@ class LegacyRestHandler(UserCookieHelper, tornado.web.RequestHandler):
             self.write(json.dumps({'success': False, 'errors': {'__all__': str(E)}}))
         self.set_header('Content-Type', 'application/json')
         self.finish()
-    
-    
+
+
     def options(self):
         self.set_status(204)
         self.finish()
@@ -398,8 +398,8 @@ class RestLightChannelHandler(UserCookieHelper, APIHandler):
             except Return,E:
                 raise E
             except Exception,E:
-                raise Return({'errors': str(E)})        
-    
+                raise Return({'errors': str(E)})
+
     def options(self):
         self.set_status(204)
         self.finish()
@@ -469,8 +469,8 @@ class RestOWireHandler(UserCookieHelper, APIHandler):
             except Return,E:
                 raise E
             except Exception,E:
-                raise Return({'errors': str(E)})        
-    
+                raise Return({'errors': str(E)})
+
     def options(self):
         self.set_status(204)
         self.finish()
@@ -540,8 +540,8 @@ class RestUARTHandler(UserCookieHelper, APIHandler):
             except Return,E:
                 raise E
             except Exception,E:
-                raise Return({'errors': str(E)})        
-    
+                raise Return({'errors': str(E)})
+
     def options(self):
         self.set_status(204)
         self.finish()
@@ -611,8 +611,8 @@ class RestNeuronHandler(UserCookieHelper, APIHandler):
             except Return,E:
                 raise E
             except Exception,E:
-                raise Return({'errors': str(E)})        
-    
+                raise Return({'errors': str(E)})
+
     def options(self):
         self.set_status(204)
         self.finish()
@@ -682,8 +682,8 @@ class RestLEDHandler(UserCookieHelper, APIHandler):
             except Return,E:
                 raise E
             except Exception,E:
-                raise Return({'errors': str(E)})        
-    
+                raise Return({'errors': str(E)})
+
     def options(self):
         self.set_status(204)
         self.finish()
@@ -740,7 +740,7 @@ class RestWatchdogHandler(UserCookieHelper, APIHandler):
             except Exception,E:
                 raise Return({'errors': str(E)})
     else:
-        @schema.validate(output_schema=schemas.wd_post_out_schema, output_example=schemas.wd_post_out_example, 
+        @schema.validate(output_schema=schemas.wd_post_out_schema, output_example=schemas.wd_post_out_example,
                          input_schema=schemas.wd_post_inp_schema, input_example=schemas.wd_post_inp_example)
         @tornado.gen.coroutine
         def post(self, circuit, prop):
@@ -754,8 +754,8 @@ class RestWatchdogHandler(UserCookieHelper, APIHandler):
             except Return,E:
                 raise E
             except Exception,E:
-                raise Return({'errors': str(E)})        
-    
+                raise Return({'errors': str(E)})
+
     def options(self):
         self.set_status(204)
         self.finish()
@@ -827,8 +827,8 @@ class RestRegisterHandler(UserCookieHelper, APIHandler):
             except Return,E:
                 raise E
             except Exception,E:
-                raise Return({'errors': str(E)})        
-    
+                raise Return({'errors': str(E)})
+
     def options(self):
         self.set_status(204)
         self.finish()
@@ -836,7 +836,7 @@ class RestRegisterHandler(UserCookieHelper, APIHandler):
 
 class RestDIHandler(UserCookieHelper, APIHandler):
     post_out_example = {"result": 1, "success": True}
-        
+
     def initialize(self):
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
@@ -889,7 +889,7 @@ class RestDIHandler(UserCookieHelper, APIHandler):
             except Exception,E:
                 raise Return({'errors': str(E)})
     else:
-        @schema.validate(output_schema=schemas.di_post_out_schema, output_example=schemas.di_post_out_example, 
+        @schema.validate(output_schema=schemas.di_post_out_schema, output_example=schemas.di_post_out_example,
                          input_schema=schemas.di_post_inp_schema, input_example=schemas.di_post_inp_example)
         @tornado.gen.coroutine
         def post(self, circuit, prop):
@@ -903,9 +903,84 @@ class RestDIHandler(UserCookieHelper, APIHandler):
             except Return,E:
                 raise E
             except Exception,E:
-                raise Return({'errors': str(E)})        
-    
+                raise Return({'errors': str(E)})
+
     def options(self):
+        self.set_status(204)
+        self.finish()
+
+
+class RestOwbusHandler(UserCookieHelper, APIHandler):
+    def initialize(self):
+        enable_cors(self)
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
+    # usage: GET /rest/DEVICE/CIRCUIT
+    #        or
+    #        GET /rest/DEVICE/CIRCUIT/PROPERTY
+
+    if not use_output_schema:
+        @tornado.web.authenticated
+        @schema.validate()
+        def get(self, circuit, prop):
+            device = Devices.by_name("owbus", circuit)
+            if prop:
+                if prop[0] in ('_'): raise Exception('Invalid property name')
+                result = {prop: getattr(device, prop)}
+            else:
+                result = device.full()
+            return result
+    else:
+        @tornado.web.authenticated
+        @schema.validate(output_schema=schemas.owbus_get_out_schema, output_example=schemas.owbus_get_out_example)
+        def get(self, circuit, prop):
+            device = Devices.by_name("owbus", circuit)
+            if prop:
+                if prop[0] in ('_'): raise Exception('Invalid property name')
+                result = {prop: getattr(device, prop)}
+            else:
+                result = device.full()
+            return result
+
+    # usage: POST /rest/DEVICE/CIRCUIT
+    #          post-data: prop1=value1&prop2=value2...
+    if not use_output_schema:
+        @schema.validate()
+        @tornado.gen.coroutine
+        def post(self, circuit, prop):
+            try:
+                device = Devices.by_name("owbus", circuit)
+                print(device)
+                js_dict = json.loads(self.request.body)
+                result = device.bus_driver.set(**js_dict)
+                if is_future(result):
+                    result = yield result
+                raise Return({'result': result})
+            except Return,E:
+                raise E
+            except Exception,E:
+                raise Return({'errors': str(E)})
+    else:
+        @schema.validate(input_schema=schemas.owbus_post_inp_schema, input_example=schemas.owbus_post_inp_example,
+                         output_schema=schemas.owbus_post_out_schema, output_example=schemas.owbus_post_out_example)
+        @tornado.gen.coroutine
+        def post(self, circuit, prop):
+            try:
+                device = Devices.by_name("owbus", circuit)
+                js_dict = json.loads(self.request.body)
+                result = device.bus_driver.set(**js_dict)
+                if is_future(result):
+                    result = yield result
+                raise Return({'result': result})
+            except Return,E:
+                raise E
+            except Exception,E:
+                raise Return({'errors': str(E)})
+
+    def options(self):
+        # no body
         self.set_status(204)
         self.finish()
 
@@ -975,8 +1050,8 @@ class RestDOHandler(UserCookieHelper, APIHandler):
             except Return,E:
                 raise E
             except Exception,E:
-                raise Return({'errors': str(E)})    
-    
+                raise Return({'errors': str(E)})
+
     def options(self):
         # no body
         self.set_status(204)
@@ -992,7 +1067,7 @@ class RestWiFiHandler(UserCookieHelper, APIHandler):
     # usage: GET /rest/DEVICE/CIRCUIT
     #        or
     #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    if not use_output_schema:    
+    if not use_output_schema:
         @tornado.web.authenticated
         @schema.validate()
         def get(self, circuit, prop):
@@ -1013,7 +1088,7 @@ class RestWiFiHandler(UserCookieHelper, APIHandler):
                 result = {prop: getattr(device, prop)}
             else:
                 result = device.full()
-            return result        
+            return result
 
 
     # usage: POST /rest/DEVICE/CIRCUIT
@@ -1034,7 +1109,7 @@ class RestWiFiHandler(UserCookieHelper, APIHandler):
             except Exception,E:
                 raise Return({'errors': str(E)})
     else:
-        @schema.validate(output_schema=schemas.wifi_post_out_schema, output_example=schemas.wifi_post_out_example, 
+        @schema.validate(output_schema=schemas.wifi_post_out_schema, output_example=schemas.wifi_post_out_example,
                          input_schema=schemas.wifi_post_inp_schema, input_example=schemas.wifi_post_inp_example)
         @tornado.gen.coroutine
         def post(self, circuit, prop):
@@ -1049,7 +1124,7 @@ class RestWiFiHandler(UserCookieHelper, APIHandler):
                 raise E
             except Exception,E:
                 raise Return({'errors': str(E)})
-    
+
     def options(self):
         self.set_status(204)
         self.finish()
@@ -1064,7 +1139,7 @@ class RestAIHandler(UserCookieHelper, APIHandler):
     # usage: GET /rest/DEVICE/CIRCUIT
     #        or
     #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    if not use_output_schema:    
+    if not use_output_schema:
         @tornado.web.authenticated
         @schema.validate()
         def get(self, circuit, prop):
@@ -1085,7 +1160,7 @@ class RestAIHandler(UserCookieHelper, APIHandler):
                 result = {prop: getattr(device, prop)}
             else:
                 result = device.full()
-            return result        
+            return result
 
 
     # usage: POST /rest/DEVICE/CIRCUIT
@@ -1106,7 +1181,7 @@ class RestAIHandler(UserCookieHelper, APIHandler):
             except Exception,E:
                 raise Return({'errors': str(E)})
     else:
-        @schema.validate(output_schema=schemas.ai_post_out_schema, output_example=schemas.ai_post_out_example, 
+        @schema.validate(output_schema=schemas.ai_post_out_schema, output_example=schemas.ai_post_out_example,
                          input_schema=schemas.ai_post_inp_schema, input_example=schemas.ai_post_inp_example)
         @tornado.gen.coroutine
         def post(self, circuit, prop):
@@ -1121,12 +1196,12 @@ class RestAIHandler(UserCookieHelper, APIHandler):
                 raise E
             except Exception,E:
                 raise Return({'errors': str(E)})
-    
-    
+
+
     def options(self):
         self.set_status(204)
         self.finish()
-        
+
 class RestAOHandler(UserCookieHelper, APIHandler):
     def initialize(self):
         enable_cors(self)
@@ -1158,7 +1233,7 @@ class RestAOHandler(UserCookieHelper, APIHandler):
                 result = {prop: getattr(device, prop)}
             else:
                 result = device.full()
-            return result        
+            return result
 
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
@@ -1193,13 +1268,11 @@ class RestAOHandler(UserCookieHelper, APIHandler):
                 raise E
             except Exception,E:
                 raise Return({'errors': str(E)})
-        
-    
+
     def options(self):
         # no body
         self.set_status(204)
         self.finish()
-        
 
 class RemoteCMDHandler(UserCookieHelper, tornado.web.RequestHandler): # ToDo CHECK
     def initialize(self):
@@ -1250,7 +1323,7 @@ class ConfigHandler(UserCookieHelper, tornado.web.RequestHandler):
 
 class VersionHandler(UserCookieHelper, APIHandler):
     version = 'Unspecified'
-        
+
     def initialize(self):
         enable_cors(self)
         self.set_header("Access-Control-Allow-Origin", "*")
@@ -1333,12 +1406,12 @@ class JSONLoadAllHandler(UserCookieHelper, APIHandler):
             result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
             result += map(lambda dev: dev.full(), Devices.by_int(LIGHT_CHANNEL))
             return result
-    
+
     def options(self):
         # no body
         self.set_status(204)
         self.finish()
-        
+
 class RestLoadAllHandler(UserCookieHelper, APIHandler):
     def initialize(self):
         enable_cors(self)
@@ -1360,15 +1433,16 @@ class RestLoadAllHandler(UserCookieHelper, APIHandler):
         result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
         result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
         result += map(lambda dev: dev.full(), Devices.by_int(LIGHT_CHANNEL))
+        result += map(lambda dev: dev.full(), Devices.by_int(OWBUS))
         self.write(json.dumps(result))
         self.set_header('Content-Type', 'application/json')
         self.finish()
-    
+
     def options(self):
         # no body
         self.set_status(204)
-        self.finish()        
-    
+        self.finish()
+
 class JSONBulkHandler(APIHandler):
     def initialize(self):
         #enable_cors(self)
@@ -1376,17 +1450,17 @@ class JSONBulkHandler(APIHandler):
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
         self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-    
+
     def options(self):
         # no body
         self.set_status(204)
         self.finish()
-        
+
     if use_output_schema:
         @schema.validate(
         #    input_schema=schemas.json_post_inp_schema,
         #    input_example=schemas.json_post_inp_example,
-            output_schema=schemas.json_post_out_schema, 
+            output_schema=schemas.json_post_out_schema,
             output_example=schemas.json_post_out_example
         )
         @tornado.gen.coroutine
@@ -1399,19 +1473,19 @@ class JSONBulkHandler(APIHandler):
                 for device_type in single_query['device_types']:
                     all_devs += Devices.by_name(device_type)
                 if 'group' in single_query:
-                    all_devs_filtered = [] 
+                    all_devs_filtered = []
                     for single_dev in all_devs:
                         if hasattr(single_dev, 'arm') and single_dev.arm.major_group == single_query['group']:
                             all_devs_filtered += single_dev
                     all_devs = all_devs_filtered
                 if 'device_circuits' in single_query:
-                    all_devs_filtered = [] 
+                    all_devs_filtered = []
                     for single_dev in all_devs:
                         if single_dev.circuit in single_query['device_circuits']:
                             all_devs_filtered += single_dev
                     all_devs = all_devs_filtered
                 if 'global_device_id' in single_query:
-                    all_devs_filtered = [] 
+                    all_devs_filtered = []
                     for single_dev in all_devs:
                         if single_dev.dev_id == single_query['global_device_id']:
                             all_devs_filtered += single_dev
@@ -1423,19 +1497,19 @@ class JSONBulkHandler(APIHandler):
             for single_command in js_dict['group_assignments']:
                 all_devs = Devices.by_name(single_command['device_type'])
                 if 'group' in single_command:
-                    all_devs_filtered = [] 
+                    all_devs_filtered = []
                     for single_dev in all_devs:
                         if single_dev.arm.major_group == single_command['group']:
                             all_devs_filtered += single_dev
                     all_devs = all_devs_filtered
                 if 'device_circuits' in single_command:
-                    all_devs_filtered = [] 
+                    all_devs_filtered = []
                     for single_dev in all_devs:
                         if single_dev.circuit in single_command['device_circuits']:
                             all_devs_filtered += single_dev
                     all_devs = all_devs_filtered
                 if 'global_device_id' in single_command:
-                    all_devs_filtered = [] 
+                    all_devs_filtered = []
                     for single_dev in all_devs:
                         if single_dev.dev_id == single_command['global_device_id']:
                             all_devs_filtered += single_dev
@@ -1447,7 +1521,7 @@ class JSONBulkHandler(APIHandler):
                 if 'group_assignments' in result:
                     result['group_assignments'] += [map(methodcaller('full'), all_devs)]
                 else:
-                    result['group_assignments'] = [map(methodcaller('full'), all_devs)]    
+                    result['group_assignments'] = [map(methodcaller('full'), all_devs)]
             for single_command in js_dict['individual_assignments']:
                 outp = Devices.by_name(single_command['device_type'], circuit=single_command['device_circuit'])
                 outp = outp.set(**(single_command['assigned_values']))
@@ -1456,7 +1530,7 @@ class JSONBulkHandler(APIHandler):
                 if 'individual_assignments' in result:
                     result['individual_assignments'] += [outp]
                 else:
-                    result['individual_assignments'] = [outp]        
+                    result['individual_assignments'] = [outp]
             raise gen.Return(result)
     else:
         @schema.validate()
@@ -1471,19 +1545,19 @@ class JSONBulkHandler(APIHandler):
                     for device_type in single_query['device_types']:
                         all_devs += Devices.by_name(device_type)
                     if 'group' in single_query:
-                        all_devs_filtered = [] 
+                        all_devs_filtered = []
                         for single_dev in all_devs:
                             if single_dev.arm.major_group == single_query['group']:
                                 all_devs_filtered += single_dev
                         all_devs = all_devs_filtered
                     if 'device_circuits' in single_query:
-                        all_devs_filtered = [] 
+                        all_devs_filtered = []
                         for single_dev in all_devs:
                             if single_dev.circuit in single_query['device_circuits']:
                                 all_devs_filtered += single_dev
                         all_devs = all_devs_filtered
                     if 'global_device_id' in single_query:
-                        all_devs_filtered = [] 
+                        all_devs_filtered = []
                         for single_dev in all_devs:
                             if single_dev.dev_id == single_query['global_device_id']:
                                 all_devs_filtered += single_dev
@@ -1496,19 +1570,19 @@ class JSONBulkHandler(APIHandler):
                 for single_command in js_dict['group_assignments']:
                     all_devs = Devices.by_name(single_command['device_type'])
                     if 'group' in single_command:
-                        all_devs_filtered = [] 
+                        all_devs_filtered = []
                         for single_dev in all_devs:
                             if single_dev.arm.major_group == single_command['group']:
                                 all_devs_filtered += single_dev
                         all_devs = all_devs_filtered
                     if 'device_circuits' in single_command:
-                        all_devs_filtered = [] 
+                        all_devs_filtered = []
                         for single_dev in all_devs:
                             if single_dev.circuit in single_command['device_circuits']:
                                 all_devs_filtered += single_dev
                         all_devs = all_devs_filtered
                     if 'global_device_id' in single_command:
-                        all_devs_filtered = [] 
+                        all_devs_filtered = []
                         for single_dev in all_devs:
                             if single_dev.dev_id == single_command['global_device_id']:
                                 all_devs_filtered += single_dev
@@ -1530,7 +1604,7 @@ class JSONBulkHandler(APIHandler):
                     if 'individual_assignments' in result:
                         result['individual_assignments'] += [outp]
                     else:
-                        result['individual_assignments'] = [outp]        
+                        result['individual_assignments'] = [outp]
             raise gen.Return(result)
 
 
@@ -1629,10 +1703,10 @@ def gener_status_cb(mainloop, modbus_context):
 def gener_config_cb(mainloop, modbus_context):
     def config_cb_modbus(device, *kwargs):
         modbus_context.config_callback(device)
-        
+
     def config_cb(device, *kwargs):
         pass
-    
+
     if modbus_context:
         return config_cb_modbus
     return config_cb
@@ -1649,7 +1723,7 @@ def main():
     tornado.options.parse_command_line()
 
     config.read_eprom_config()
-    
+
     #tornado.httpclient.AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
     log_file = Config.getstringdef("MAIN", "log_file", "/var/log/evok.log")
     log_level = Config.getstringdef("MAIN", "log_level", "INFO").upper()
@@ -1678,7 +1752,7 @@ def main():
 
     if options.as_dict()['modbus_port'] != -1:
         modbus_port = options.as_dict()['modbus_port'] # use command-line option instead of config option
-    
+
     app_routes = [
         (r"/rpc/?", rpc_handler.Handler),
         (r"/rest/all/?", RestLoadAllHandler),
@@ -1706,13 +1780,14 @@ def main():
         (r"/json/sensor/?([^/]+)/?([^/]+)?/?", RestOWireHandler),
         (r"/json/light_channel/?([^/]+)/?([^/]+)?/?", RestLightChannelHandler),
         (r"/json/1wdevice/?([^/]+)/?([^/]+)?/?", RestOWireHandler),
+        (r"/json/owbus/?([^/]+)/?([^/]+)?/?", RestOwbusHandler),
         (r"/version/?", VersionHandler),
         (r"/ws/?", WsHandler)
     ]
-    
+
     if allow_unsafe_configuration_handlers:
         app_routes.append((r"/config/?", ConfigHandler))
-        app_routes.append((r"/config/cmd/?", RemoteCMDHandler)) 
+        app_routes.append((r"/config/cmd/?", RemoteCMDHandler))
 
     app = tornado.web.Application(
         handlers=app_routes
@@ -1729,7 +1804,7 @@ def main():
     httpServer = tornado.httpserver.HTTPServer(app)
     httpServer.listen(port)
     logger.info("HTTP server listening on port: %d", port)
-    
+
     if modbus_port > 0: # used for UniPi 1.x
         from modbus_tornado import ModbusServer, ModbusApplication
         import modbus_unipi
@@ -1745,7 +1820,7 @@ def main():
     if Config.getbooldef("MAIN", "soap_server_enabled", False):
         soap_services = [
             ('UniPiQueryService', UniPiQueryService),
-            ('UniPiCommandService', UniPiCommandService)        
+            ('UniPiCommandService', UniPiCommandService)
         ]
         soap_app = webservices.WebService(soap_services)
         soap_server = tornado.httpserver.HTTPServer(soap_app)
@@ -1759,7 +1834,7 @@ def main():
         wh_complex = Config.getbooldef("MAIN", "webhook_complex_events", False)
         wh = WhHandler(Config.getstringdef("MAIN", "webhook_address", "http://127.0.0.1:80/index.html"), wh_types, wh_complex)
         wh.open()
-    
+
 
     mainLoop = tornado.ioloop.IOLoop.instance()
 
@@ -1787,7 +1862,7 @@ def main():
 
     for device in Devices.by_int(ADCHIP):
         device.switch_to_async(mainLoop)
-    
+
     for neuron in Devices.by_int(NEURON):
         neuron.switch_to_async(mainLoop, alias_dict)
         if neuron.scan_enabled:
