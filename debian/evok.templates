@@ -8,8 +8,8 @@ Description: A list of nginx conflict confiles
 
 Template: evok/kernel_ow_conflict_resolve
 Type: boolean
-Default: false
-Description: Do you want to disable the module loading after startup (by update devicetree overlays)? If you choose <No>, one-wire in Evok probably won't be working. Reboot is neede after this operation.
+Default: true
+Description: Do you want to disable the module loading after startup (by update devicetree overlays)? If you choose <No>, one-wire in Evok probably won't be working. Reboot is needed after this operation.
  You have kernel module for one-wire driver DS2482 loaded, so owfs (needed by Evok) cannot be used.
 
 Template: evok/http_conflict
