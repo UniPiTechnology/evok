@@ -60,7 +60,7 @@ if ! [ -z "$CONFLICT_CONFILE" ]; then # If a conflict has occurred
     esac
 
     #rm -f "/etc/nginx/sites-enabled/evok"
-    #echo "Restarting nginx..." >&2
+    echo "Restarting nginx..." >&2
     systemctl restart nginx
 
 fi
@@ -86,12 +86,5 @@ if "$RET"; then # OK
         make disable-1wmaster
     fi
 fi
-
-
-
-
-
-
-
 
 exit 0

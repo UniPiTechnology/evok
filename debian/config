@@ -29,12 +29,10 @@ detect_nginx_conflict() {
 
             # Skip the confile of myself
             if [ "$C_FILE" = "$DEFAULT_EVOK_SITE" ]; then
-                echo "Preskakuju sam sebe " >&2
                 continue
             fi
-
+            # Skip Mervis (conflict resolved via systemd service)
             if [ "$C_FILE" = "$DEFAULT_MERVIS_SITE" ]; then
-                echo "Preskakuju Mervise " >&2
                 continue
             fi
 
@@ -42,7 +40,6 @@ detect_nginx_conflict() {
             if grep -qxe "[[:space:]]\+listen 80.*" $C_FILE; then
                 # Store path of the conflict file to the db
 		db_set evok/nginx_conflict_files $C_FILE
-                # echo "mam ho tam" >&2
                 return 0 #return 0 # Positive result -> conflict was found
             fi
         done
@@ -107,13 +104,12 @@ OVERLAY_CONFIG_FILE="/boot/config.txt"
 #OVERLAY_CONFIG_FILE="/boot/boot.scr" # MOCK Value for AXON - MUST BE COMMENTED
 KERNEL_MODULE_NAME="ds2482"
 
-detect_ow_kernelmodule() { #To by melo jet - a asi i jede
+detect_ow_kernelmodule() {
     if [ -f "$OVERLAY_CONFIG_FILE" ]; then # The issue is Neuron-related only
         if lsmod | grep -q "$KERNEL_MODULE_NAME"; then
             return 0 # Positive reply -> conflict is present
         fi
     fi
-# lsmod ale jen na Axonu ====
     return 1
 # disable it in postinst
 
