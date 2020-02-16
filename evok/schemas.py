@@ -2142,9 +2142,6 @@ owbus_post_out_schema = {
                             }
         }
     }
-#    "required": [
-#        "result"
-#    ]
 }
 
-owbus_post_out_example = {"result": {"bus": "/dev/i2c-0 --w1", "interval": 300.0, "dev": "owbus", "scan_interval": 0.0, "reset_bus": false, "circuit": "1", "do_scan": false}}
+owbus_post_out_example = {"result": {"bus": "/dev/i2c-0", "interval": 300.0, "dev": "owbus", "scan_interval": 0.0, "reset_bus": False, "circuit": "1", "do_scan": False}}
