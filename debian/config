@@ -61,11 +61,6 @@ EVOK_STARTED=false
 # Evok has to be started because some of files analysed in this script are generated dymanically
 if [ -f "/lib/systemd/system/evok.service" ]; then
 
-    #echo "mam ho tam 1" >&2
-    #systemctl daemon-reload
-    #echo "mam ho tam 2" >&2
-    #deb-systemd-invoke start evok.service >/dev/null || true
-    #echo "mam ho tam 3" >&2
     EVOK_STARTED=true
 fi
 
@@ -101,18 +96,24 @@ fi
 # -------------------------------------------------------------------------------
 
 OVERLAY_CONFIG_FILE="/boot/config.txt"
-#OVERLAY_CONFIG_FILE="/boot/boot.scr" # MOCK Value for AXON - MUST BE COMMENTED
+AXON_BOOTCONFIG_FILE="/boot/boot.scr" # MOCK Value for AXON - MUST BE COMMENTED
 KERNEL_MODULE_NAME="ds2482"
 
+# The module is disabled (unloaded) in postinst script
+
 detect_ow_kernelmodule() {
-    if [ -f "$OVERLAY_CONFIG_FILE" ]; then # The issue is Neuron-related only
+    if [ -f "$OVERLAY_CONFIG_FILE" ]; then # Neuron PLC
+        if lsmod | grep -q "$KERNEL_MODULE_NAME"; then
+            return 0 # Positive reply -> conflict is present
+        fi
+
+    elif [ -f "$AXON_BOOTCONFIG_FILE" ]; then # Axon PLC
         if lsmod | grep -q "$KERNEL_MODULE_NAME"; then
             return 0 # Positive reply -> conflict is present
         fi
     fi
-    return 1
-# disable it in postinst
 
+    return 1
 }
 
 if detect_ow_kernelmodule; then
