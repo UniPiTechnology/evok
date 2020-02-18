@@ -340,7 +340,7 @@ class OwBusDriver(multiprocessing.Process):
             #        - (value,value..)
             circuit = obj[0]
             mysensor = next(x for x in self.mysensors if x.circuit == circuit)
-           
+
             if len(obj) == 3 and mysensor: # Interval is also updated
                 mysensor._set_interval(obj[2])
             elif mysensor:
@@ -349,7 +349,7 @@ class OwBusDriver(multiprocessing.Process):
 
     # ####################################w.init(b#
     # this part is running used in subprocess
-    def do_scan(self):
+    def do_scan(self, invoked_async = False):
         """ Initiate 1wire bus scanning,
             check existence in self.scanned
             join sens with mysensor
@@ -358,11 +358,11 @@ class OwBusDriver(multiprocessing.Process):
         self.cycle_cnt += 1
         for sens in ow.Sensor("/uncached").sensors(): # For every sensor connected to the bus
 
-            tmp_buf.add(sens)
-            if not (sens in self.scanned):
+            tmp_buf.add(sens.address)
+            if not (sens.address in self.scanned): # The sensor is scanned for a first time
                 address = sens.address
                 try:
-                    # find sensor in list self.mysenors by address
+                    # find sensor in list self.mysenors by address - statically added in the config file
                     mysensor = next(x for x in self.mysensors if x.address == address)
                     logger.info("Sensor found " + str(mysensor.circuit))
                 except Exception:
@@ -374,14 +374,17 @@ class OwBusDriver(multiprocessing.Process):
                 #mysensor = self.find_mysensor(sens)
                 if mysensor:
                     mysensor.sens = sens
-                    self.scanned.add(sens)
+                    self.scanned.add(sens.address)
 
+            elif invoked_async is True: # Reset planned scan time if invoked async
+                mysensor = next(x for x in self.mysensors if x.address == str(sens.address))
+                if (mysensor) and (mysensor.lost is True):
+                    mysensor.time = 0
 
         tmp_all = tmp_buf | self.scanned # Create union with all the sensors - both active and inactive
         inactives = (tmp_all - tmp_buf) # Get incative ones as difference
         for sens in inactives: # All inactive sensors set as "lost"
-            mysensor = next(x for x in self.mysensors if x.address == str(sens.address))
-
+            mysensor = next(x for x in self.mysensors if x.address == sens)
             if not mysensor.lost:
                 mysensor.set_lost()
                 self.resultQ.send((mysensor.circuit, mysensor.lost))
@@ -414,7 +417,7 @@ class OwBusDriver(multiprocessing.Process):
                             self.resultQ.send((mysensor.circuit, mysensor.value, value))
 
         elif command == OWCMD_SCAN:
-            self.do_scan()
+            self.do_scan(invoked_async=True)
         elif command == OWCMD_SCAN_INTERVAL:
             self.scan_interval = value
         elif command == OWCMD_DEFAULT_INTERVAL:
