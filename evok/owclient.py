@@ -279,7 +279,7 @@ class OwBusDriver(multiprocessing.Process):
                 'scan_interval': self.scan_interval,
                 'interval': self.interval,
                 'do_scan' : False,
-                'reset_bus' : False}
+                'do_reset' : False}
 
     def list(self):
         list = dict()
@@ -297,7 +297,7 @@ class OwBusDriver(multiprocessing.Process):
         mainLoop.add_handler(self.resultRd, self.check_resultq, IOLoop.READ)
 
 
-    def set(self, scan_interval=None, do_scan=False, interval=None, circuit=None, reset_bus=None):
+    def set(self, scan_interval=None, do_scan=False, interval=None, circuit=None, do_reset=None):
         chg = False
 
         if do_reset is not None:
