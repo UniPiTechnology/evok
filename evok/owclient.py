@@ -395,6 +395,9 @@ class OwBusDriver(multiprocessing.Process):
             with ModbusClient('127.0.0.1') as client: # Send request to local unipi-tcp in simple sync mode
                 ret = client.write_coil(1001, True, unit=1)
                 ret = client.write_coil(1001, False, unit=1)
+            ow.finish()
+            time.sleep(0.05)
+            ow.init(self.bus)
         except (ConnectionException):
             pass
 
