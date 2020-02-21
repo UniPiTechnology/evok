@@ -297,7 +297,7 @@ class OwBusDriver(multiprocessing.Process):
         mainLoop.add_handler(self.resultRd, self.check_resultq, IOLoop.READ)
 
 
-    def set(self, scan_interval=None, do_scan=False, interval=None, circuit=None, do_reset=None):
+    def set(self, scan_interval=None, do_scan=False, interval=None, circuit=None, reset_bus=None):
         chg = False
 
         if do_reset is not None:
