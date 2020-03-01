@@ -1358,9 +1358,9 @@ light_channel_get_out_schema = {
     ]
 }
 
-light_channel_get_out_example = {"scan_types": ["assigned","unassigned"], "broadcast_commands": ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off", 
+light_channel_get_out_example = {"scan_types": ["assigned","unassigned"], "broadcast_commands": ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off",
                                    "turn_on_and_step_up", "DAPC", "reset", "identify_device", "DTR0", "DTR1", "DTR2"],
-                                "group_commands": ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off", 
+                                "group_commands": ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off",
                                "turn_on_and_step_up", "DAPC", "reset", "identify_device"], "circuit": "2_01", "dev": "light_channel", "glob_dev_id": 1}
 
 light_channel_post_inp_schema = {
@@ -1954,8 +1954,8 @@ register_post_out_schema = {
 }
 
 register_post_out_example = {"result": {}}
-        
-        
+
+
 wd_get_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
@@ -2054,3 +2054,94 @@ wd_post_out_schema = {
 }
 
 wd_post_out_example = {"result": {}}
+
+
+owbus_get_out_schema = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Neuron_Instruction",
+    "type": "object",
+    "properties": {
+        "dev": {
+            "type": "string",
+            "enum": [
+                "owbus"
+            ]
+        },
+        "circuit": {
+            "type": "string"
+        },
+        "bus": {
+            "type": "string",
+        },
+        "interval": {
+            "type": "number",
+            "minimum": 0
+        },
+        "scan_interval": {
+            "type": "number",
+            "minimum": 0
+        },
+        "do_scan": {
+            "type": "boolean",
+        }
+    },
+    "required": [
+        "dev",
+        "circuit",
+        "bus",
+        "interval",
+        "scan_interval",
+        "do_scan"
+    ]
+}
+
+owbus_get_out_example = {
+                      "bus": "/dev/i2c-0",
+                      "interval": 3.0,
+                      "scan_interval": 120.0,
+                      "dev": "owbus",
+                      "circuit": 1,
+                      "do_scan": False
+}
+
+owbus_post_inp_schema = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Neuron_Instruction",
+    "type": "object",
+    "properties": {
+        "do_scan": {
+            "type": "boolean"
+        },
+        "do_reset": {
+            "type": "boolean"
+        },
+        "interval": {
+            "type": "number"
+        },
+        "scan_interval": {
+            "type": "number"
+        },
+        "circuit": {
+            "type": "string"
+        }
+    }
+}
+
+owbus_post_inp_example = {"do_reset": True, "do_scan": True}
+
+owbus_post_out_schema = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Neuron_Instruction",
+    "type": "object",
+    "properties": {
+        "result": { "type": "object",
+            "properties" : {"bus" : {"type": "string"},
+                              "interval" : {"type": "number"},
+                             "scan_interval" : {"type": "number"},
+                             "do_scan" : {"type": "boolean"}
+                            }
+        }
+    }
+}
+
+owbus_post_out_example = {"result": {"bus": "/dev/i2c-0", "interval": 300.0, "dev": "owbus", "scan_interval": 0.0, "reset_bus": False, "circuit": "1", "do_scan": False}}
