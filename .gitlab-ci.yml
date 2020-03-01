@@ -78,6 +78,7 @@ mirror-to-github:
     extends: .condition_for_tagged
     image: $CI_REGISTRY/docker/bob-the-builder/$STABLE_CODENAME:latest
     stage: deploy_package
+    when: manual
     script:
       - .gitlab-ci-scripts/mirror_to_GitHub.sh
     variables:
