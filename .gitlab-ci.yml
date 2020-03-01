@@ -21,7 +21,6 @@ build-newstable:nano:
         GIT_STRATEGY: clone
         GIT_CHECKOUT: "true"
 
-
 build-newstable:rpi:
     before_script:
       - .gitlab-ci-scripts/update_version_consts.sh 
@@ -79,6 +78,7 @@ mirror-to-github:
     extends: .condition_for_tagged
     image: $CI_REGISTRY/docker/bob-the-builder/$STABLE_CODENAME:latest
     stage: deploy_package
+    when: manual
     script:
       - .gitlab-ci-scripts/mirror_to_GitHub.sh
     variables:

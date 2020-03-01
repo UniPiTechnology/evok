@@ -787,7 +787,7 @@ function syncDevice(msg) {
         }
         case "temp": {
             main_el = document.createElement("h1");
-        	main_el.textContent = device_properties["value"] + " " + device_properties["unit"];
+        	main_el.innerHTML  = device_properties["value"] + " " + device_properties["unit"];
             //main_el.className = "ui-li-aside";
             break;
         }
