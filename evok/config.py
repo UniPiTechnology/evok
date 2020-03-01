@@ -74,7 +74,7 @@ def read_eprom_config():
     except Exception:
         pass
 
-    
+
 class HWDict():
     def __init__(self, d_path):
         self.definitions = []
@@ -107,8 +107,8 @@ class OWBusDevice():
         self.circuit = bus_driver.circuit
         
     def full(self):
-        return None
-        
+        return self.bus_driver.full()
+
 class OWSensorDevice():
     def __init__(self, sensor_dev, dev_id):
         self.dev_id = dev_id
@@ -343,7 +343,7 @@ def create_devices(Config, hw_dict):
                 scan_enabled = Config.getbooldef(section, "scan_enabled", True)
                 allow_register_access = Config.getbooldef(section, "allow_register_access", False)
                 circuit = Config.getintdef(section, "global_id", 2)
-                neuron = Neuron(circuit, Config, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict, direct_access=allow_register_access, 
+                neuron = Neuron(circuit, Config, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict, direct_access=allow_register_access,
                                 dev_id=dev_counter)
                 Devices.register_device(NEURON, neuron)
             elif devclass == 'EXTENSION':
@@ -360,7 +360,7 @@ def create_devices(Config, hw_dict):
                 allow_register_access = Config.getbooldef(section, "allow_register_access", False)
                 neuron_uart_circuit = Config.getstringdef(section, "neuron_uart_circuit", "None")
                 circuit = Config.getintdef(section, "global_id", 2)
-                neuron = UartNeuron(circuit, Config, modbus_uart_port, scanfreq, scan_enabled, hw_dict, baud_rate=uart_baud_rate, 
+                neuron = UartNeuron(circuit, Config, modbus_uart_port, scanfreq, scan_enabled, hw_dict, baud_rate=uart_baud_rate,
                                     parity=uart_parity, stopbits=uart_stopbits, device_name=device_name, uart_address=uart_address,
                                     direct_access=allow_register_access, dev_id=dev_counter, neuron_uart_circuit=neuron_uart_circuit)
                 Devices.register_device(NEURON, neuron)
