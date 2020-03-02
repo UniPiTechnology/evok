@@ -744,7 +744,7 @@ function syncDevice(msg) {
     // Dictionary for parsed message values; initialised with default fallback values
     var device_properties = extractDeviceProperties(device, circuit, circuit_display_name, msg);
 
-    if (!$('#' + device_signature + '_li').length > 0 && device != 'register') {
+    if (!$('#' + device_signature + '_li').length > 0 && device != 'register' && device != 'owbus') {
         li = document.createElement("li");
         li.id = device_signature + "_li";
 
@@ -998,7 +998,7 @@ function syncDevice(msg) {
         }
         }
     // Device representation already exists 
-    } else if (device != 'register') {
+    } else if (device != 'register' && device != 'owbus') {
         var main_el = document.getElementById(device_signature + "_value");
         var label = document.getElementById(device_signature + "_label");
         label.textContent = device_properties["device_name"];
