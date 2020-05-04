@@ -33,3 +33,8 @@ Type: boolean
 Description: Are your sure?
  Currently running website on port 80 will be disabled (by removing appropriate symlink from /etc/nginx/sites-enabled/)
 
+Template: evok/nginx_as_dependency
+Type: boolean
+Description: Nginx has been installed before
+Default: false
+
