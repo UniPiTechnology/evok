@@ -20,13 +20,17 @@ DEFAULT_EVOK_SITE="/etc/nginx/sites-enabled/evok"
 NGINX_ENABLED_DIR="/etc/nginx/sites-enabled/"
 NGINX_ENABLED_FILES=/etc/nginx/sites-enabled/*
 
+echo $@
+
 detect_nginx_conflict() {
 
     db_get evok/nginx_as_dependency
     if [ "$RET" = true ] ; then
-
+       echo "Nginx was installed as dependency..." 1>&2
        return 1 # Negative result -> no conflict found
     fi
+
+    echo "Nginx has been already installed" 1>&2
 
     db_reset evok/nginx_conflict_files
 
