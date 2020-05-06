@@ -29,6 +29,9 @@ case "$1" in
                         echo "Nginx was installed as dependency A" 1>&2
                 fi
 
+                        echo "Pre-script was invoked" 1>&2
+
+
     ;;
     upgrade)
 	;;
