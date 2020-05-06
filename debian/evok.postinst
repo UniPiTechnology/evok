@@ -35,6 +35,11 @@ if ! [ -z "$CONFLICT_CONFILE" ]; then # If a conflict has occurred
       *replace*) # Option 1 - Remove conflicting configuration file
           echo "Removing conflict confile $CONFLICT_CONFILE" >&2
           db_get evok/http_conflict_makesure || true
+
+          if [ -n "$DEBIAN_FRONTEND" -a "$DEBIAN_FRONTEND" = 'noninteractive' ]; then
+              RET=true
+          fi
+
           if [ "$RET" = true ] ; then
               rm "$CONFLICT_CONFILE"
           fi
