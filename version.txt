@@ -1,1 +1,1 @@
-Repository:evok-internal ActiveBranch:[test] PrecedingRelease:2.1.9.test.20200228093919 PrecedingRevision:477(ffcf354) LatestCommit:Mon Mar 2 12:48:46 CET 2020
+Repository:evok-internal ActiveBranch:[test] PrecedingRelease:2.2.1.test.20200505081543 PrecedingRevision:482(af2d7f1) LatestCommit:Wed May 13 11:50:13 CEDT 2020

@@ -1,9 +1,17 @@
 #!/bin/bash
 
+set_defaults() {
+	external_port_number=80
+	internal_port_number=8080
+	NO_WIFI=true
+	NO_REBOOT=true
+	NO_SERVICES=true
+}
+
 ask() {
 	# http://djm.me/ask
 	while true; do
-		
+
 		if [ "${2:-}" = "Y" ]; then
 			prompt="Y/n"
 			default=Y
@@ -14,21 +22,21 @@ ask() {
 			prompt="y/n"
 			default=
 		fi
-		
+
 		# Ask the question
 		read -r -p "$1 [$prompt] " REPLY
-		
+
 		# Default?
 		if [ -z "$REPLY" ]; then
 			REPLY=$default
 		fi
-		
+
 		# Check if the reply is valid
 		case "$REPLY" in
 			Y*|y*) return 0 ;;
 			N*|n*) return 1 ;;
 		esac
-		
+
 	done
 }
 
@@ -165,7 +173,7 @@ install_unipi_1() {
 	echo "## !!! USE ONLY WITH PLAIN RASPBIAN STRETCH                           !!! ##"
 	echo "############################################################################"
 	echo ' '
-	if ask "(Install WiFi?)"; then
+	[ -z "${NO_WIFI}" ] && if ask "(Install WiFi?)"; then
 		apt-get install -y hostapd dnsmasq iproute2
 		systemctl disable hostapd dnsmasq
 		systemctl stop hostapd dnsmasq
@@ -226,12 +234,12 @@ install_unipi_1() {
 		update-rc.d pigpiod defaults
 		update-rc.d evok defaults
 	fi
-	
+
 	sed -i -e "s/port = 8080/port = ${internal_port_number}/" /etc/evok.conf
-	
+
 	# Backup uninstallation script
 	cp uninstall-evok.sh /opt/evok/
-	
+
 	echo '##################################'
 	echo '## Evok installed sucessfully.  ##'
 	echo '## Info:                        ##'
@@ -248,9 +256,9 @@ install_unipi_1() {
 	echo '## (3. To uninstall evok run    ##'
 	echo '## /opt/evok/uninstall-evok.sh) ##'
 	echo '##################################'
-	if ask "Is it OK to reboot now?"; then
+	[ -z "${NO_REBOOT}" ] && if ask "Is it OK to reboot now?"; then
 		reboot
-	else
+	elif [ -z "${NO_SERVICES}" ]; then
 		echo '################################################'
 		echo '## Remember to reboot your Raspberry Pi in    ##'
 		echo '## order to start using Evok                  ##'
@@ -301,7 +309,7 @@ install_unipi_lite_1() {
 	echo "## !!! USE ONLY WITH PLAIN RASPBIAN STRETCH                           !!! ##"
 	echo "############################################################################"
 	echo ' '
-	if ask "(Install WiFi?)"; then
+	[ -z "${NO_WIFI}" ] && if ask "(Install WiFi?)"; then
 		apt-get install -y hostapd dnsmasq iproute2
 		systemctl disable hostapd dnsmasq
 		systemctl stop hostapd dnsmasq
@@ -384,9 +392,9 @@ install_unipi_lite_1() {
 	echo '## (3. To uninstall evok run    ##'
 	echo '## /opt/evok/uninstall-evok.sh) ##'
 	echo '##################################'
-	if ask "Is it OK to reboot now?"; then
+	[ -z "${NO_REBOOT}" ] && if ask "Is it OK to reboot now?"; then
 		reboot
-	else
+	elif [ -z "${NO_SERVICES}" ]; then
 		echo '################################################'
 		echo '## Remember to reboot your Raspberry Pi in    ##'
 		echo '## order to start using Evok                  ##'
@@ -412,10 +420,32 @@ if [ -f /opt/evok ]; then
 	echo "This script should only be used with a clean image"
     exit 0
 fi
+MODE=""
+
+# Parse command line options
+while getopts 'dl' opt ;do
+    case "$opt" in
+    d)
+	MODE=" with default values used"
+        [ -z "${platform}" ] && platform="UniPi 1.x"
+	set_defaults
+        ;;
+    l)
+	platform="UniPi Lite 1.x"
+        ;;
+    *)  exit 1
+	;;
+#    --port)
+#        shift; # The arg is next in position args
+#        PORT=$1
+#        ;;
+    esac
+done
 
 echo '########################'
-echo '## Installing EVOK... ##'
+echo "## Installing EVOK${MODE}... ##"
 echo '########################'
+
 cp -r boot/overlays /boot/
 
 enable_ic2
@@ -449,7 +479,8 @@ echo '## disable NGINX by deleting the /etc/nginx/sites-enabled/evok file    ##'
 echo '#########################################################################'
 echo '#########################################################################'
 echo ' '
-read -r -p 'Website Port to use: >' external_port_number
+[ -z "${external_port_number}" ] && read -r -p 'Website Port to use: >' external_port_number
+echo "Using external port ${external_port_number}"
 echo ' '
 echo '#########################################################################'
 echo '## Please select which port you wish the internal API to use           ##'
@@ -457,7 +488,8 @@ echo '## (use 8080 if you do not know what this means, can be changed in     ##'
 echo '## "/etc/evok.conf" and /etc/nginx/sites-enabled/evok later)           ##'
 echo '#########################################################################'
 echo ' '
-read -r -p 'API Port to use: >' internal_port_number
+[ -z "${internal_port_number}" ] && read -r -p 'API Port to use: >' internal_port_number
+echo "Using internal port ${internal_port_number}"
 echo ' '
 sed -i -e "s/listen 80/listen ${external_port_number}/" /etc/nginx/sites-enabled/evok
 sed -i -e "s/localhost:8080/localhost:${internal_port_number}/" /etc/nginx/sites-enabled/evok
@@ -467,33 +499,42 @@ echo '######### Please choose the type of your UniPi product: #########'
 echo '#################################################################'
 echo '## For other controllers, install EVOK via APT package system. ##'
 echo '#################################################################'
-echo ' ' 
+echo ' '
 PS3="Your model: >"
 options=(
 	"UniPi Lite 1.x"
 	"UniPi 1.x"
 )
 echo ''
-select platform in "${options[@]}"; do
 
-	case "$platform" in
-		"UniPi Lite 1.x")
-			echo '########################################'
-			echo '## Installing EVOK for UniPi Lite 1.x ##'
-			echo '########################################'
-			install_unipi_lite_1
-			break
-			;;
-		"UniPi 1.x")
-			echo '###################################'
-			echo '## Installing EVOK for UniPi 1.x ##'
-			echo '###################################'
-			install_unipi_1
-			break
-			;;
-		*)
-			echo '####################'
-			echo '## Invalid option ##'
-			echo '####################'
-	esac
-done
+if [ -z "${platform}" ] ; then
+	select platform in "${options[@]}"; do
+		case "$platform" in
+			"UniPi Lite 1.x")
+				break
+				;;
+			"UniPi 1.x")
+				break
+				;;
+			*)
+				echo '####################'
+				echo '## Invalid option ##'
+				echo '####################'
+		esac
+	done
+fi
+
+case "$platform" in
+	"UniPi Lite 1.x")
+		echo '########################################'
+		echo '## Installing EVOK for UniPi Lite 1.x ##'
+		echo '########################################'
+		install_unipi_lite_1
+		;;
+	"UniPi 1.x")
+		echo '###################################'
+		echo '## Installing EVOK for UniPi 1.x ##'
+		echo '###################################'
+		install_unipi_1
+		;;
+esac
