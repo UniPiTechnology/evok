@@ -538,6 +538,9 @@ function getDeviceCategoryName(device) {
 	case "neuron": {
 		return "EVOK Devices";
 	}
+	case "extension": {
+		return "Modbus extension";
+	}
 	case "wifi": {
 		return "WiFi Adapters";
 	}
@@ -708,6 +711,12 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 		device_properties["device_name"] = "Neuron " + device_properties["neuron_name"];
 		break;
 	}
+	case "extension": {
+		device_properties["device_name"] = "Modbus device: " + msg.model;
+		device_properties["device_addr"] = msg.circuit.split("_")[1];
+		device_properties["device_uart"] = msg.uart_port;
+		break;
+	}
 	case "wifi": {
 		device_properties["device_name"] = "WiFi Adapter " + circuit_display_name;
 		device_properties["wifi_ap_state"] = msg.ap_state;
@@ -836,6 +845,11 @@ function syncDevice(msg) {
             }
         	break;
         }
+        case "extension": {
+            main_el = document.createElement("h1");
+            main_el.textContent = "Address: " + device_properties["device_addr"] + "  UART: " + device_properties["device_uart"];
+            break;
+        }
         case "uart": {
             main_el = document.createElement("h1");
         	main_el.textContent = "Speed: " + device_properties["uart_speed_mode"] + " Parity: " + device_properties["uart_parity_mode"];
@@ -958,6 +972,13 @@ function syncDevice(msg) {
         	break;        	
         }
         case "neuron": {
+            var divider = document.getElementById("unipi_extension_divider");
+            var list = document.getElementById("system_list");
+            list.insertBefore(li, divider);
+            $('#system_list').listview('refresh');
+        	break;        	
+        }
+        case "extension": {
             var divider = document.getElementById("unipi_uart_divider");
             var list = document.getElementById("system_list");
             list.insertBefore(li, divider);
@@ -1051,7 +1072,11 @@ function syncDevice(msg) {
             	main_el.innerHTML = "S/N: " + device_properties["neuron_sn"];
             } else {
             	main_el.innerHTML = "";
-            }        	
+            }
+            break;
+        }
+        case "extension": {
+            main_el.innerHTML = "Address: " + device_properties["device_addr"] + "  UART: " + device_properties["device_uart"];
             break;
         }
         case "uart": {
