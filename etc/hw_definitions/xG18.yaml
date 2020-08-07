@@ -1,0 +1,39 @@
+# unipi xG18 - OneWire-to-Modbus gateway
+# File version: 1.0
+# Min. firmware version: 5.50
+---
+type: xG18
+modbus_register_blocks:
+    - board_index : 1
+      start_reg   : 1
+      count       : 9 
+      frequency   : 10
+      type        : input
+    - board_index : 1
+      start_reg   : 1000
+      count       : 20
+      frequency   : 10
+      type        : holding
+
+modbus_features:
+    - type        : UNIT_REGISTER
+      name        : "temperature"
+      count       : 8
+      major_group : 1
+      value_reg   : 1
+      valid_mask_reg : 9
+      offset      : 0
+      factor      : 0.01
+      unit        : "°C"
+    - type        : EXT_CONFIG
+      post_write_coils  : 
+          - 1003
+          - 1002
+      reg_blocks:
+          - name      : "period"
+            start_reg : 1010
+            count     : 8
+            unit      : "sec" 
+          - name      : "address"
+            start_reg : 1019
+            count     : 1 
