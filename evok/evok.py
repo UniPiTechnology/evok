@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os
+from collections import OrderedDict
 import ConfigParser
 import tornado.httpserver
 import tornado.httpclient
@@ -24,6 +25,7 @@ from log import *
 from tornadows import soaphandler, webservices
 from tornadows.soaphandler import webservice
 from __builtin__ import str
+from _ast import alias
 #from test.badsyntax_future3 import result
 
 try:
@@ -39,6 +41,8 @@ from devices import *
 
 from tornado_json.requesthandlers import APIHandler
 from tornado_json import schema
+from tornado_json.exceptions import APIError
+
 
 from tornadows import complextypes
 
@@ -833,6 +837,151 @@ class RestRegisterHandler(UserCookieHelper, APIHandler):
         self.set_status(204)
         self.finish()
 
+class RestExtConfigHandler(UserCookieHelper, APIHandler):
+    def initialize(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        enable_cors(self)
+
+    # usage: GET /rest/DEVICE/CIRCUIT
+    #        or
+    #        GET /rest/DEVICE/CIRCUIT/PROPERTY
+    if not use_output_schema:
+        @tornado.web.authenticated
+        @schema.validate()
+        def get(self, circuit, prop):
+            device = Devices.by_name("ext_config", circuit)
+            if prop:
+                if prop[0] in ('_'): raise Exception('Invalid property name')
+                result = {prop: getattr(device, prop)}
+            else:
+                result = device.full()
+            return result
+    else:
+        @tornado.web.authenticated
+        @schema.validate(output_schema=schemas.register_get_out_schema, output_example=schemas.register_get_out_example)
+        def get(self, circuit, prop):
+            device = Devices.by_name("ext_config", circuit)
+            if prop:
+                if prop[0] in ('_'): raise Exception('Invalid property name')
+                result = {prop: getattr(device, prop)}
+            else:
+                result = device.full()
+            return result
+
+
+    # usage: POST /rest/DEVICE/CIRCUIT
+    #          post-data: prop1=value1&prop2=value2...
+    #@tornado.web.authenticated
+    if not use_output_schema:
+        @schema.validate(input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
+        @tornado.gen.coroutine
+        def post(self, circuit, prop):
+            try:
+                device = Devices.by_name("ext_config", circuit)
+                js_dict = json.loads(self.request.body)
+                result = device.set(**js_dict)
+                if is_future(result):
+                    result = yield result
+                raise Return({'result': result})
+            except Return,E:
+                raise E
+            except Exception,E:
+                raise Return({'errors': str(E)})
+    else:
+        @schema.validate(output_schema=schemas.register_post_out_schema, output_example=schemas.register_post_out_example,
+                         input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
+        @tornado.gen.coroutine
+        def post(self, circuit, prop):
+            try:
+                device = Devices.by_name("ext_config", circuit)
+                js_dict = json.loads(self.request.body)
+                result = device.set(**js_dict)
+                if is_future(result):
+                    result = yield result
+                raise Return({'result': result})
+            except Return,E:
+                raise E
+            except Exception,E:
+                raise Return({'errors': str(E)})
+
+    def options(self):
+        self.set_status(204)
+        self.finish()
+
+class RestUnitRegisterHandler(UserCookieHelper, APIHandler):
+    def initialize(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        enable_cors(self)
+
+    # usage: GET /rest/DEVICE/CIRCUIT
+    #        or
+    #        GET /rest/DEVICE/CIRCUIT/PROPERTY
+    if not use_output_schema:
+        @tornado.web.authenticated
+        @schema.validate()
+        def get(self, circuit, prop):
+            device = Devices.by_name("unit_register", circuit)
+            if prop:
+                if prop[0] in ('_'): raise Exception('Invalid property name')
+                result = {prop: getattr(device, prop)}
+            else:
+                result = device.full()
+            return result
+    else:
+        @tornado.web.authenticated
+        @schema.validate(output_schema=schemas.register_get_out_schema, output_example=schemas.register_get_out_example)
+        def get(self, circuit, prop):
+            device = Devices.by_name("unit_register", circuit)
+            if prop:
+                if prop[0] in ('_'): raise Exception('Invalid property name')
+                result = {prop: getattr(device, prop)}
+            else:
+                result = device.full()
+            return result
+
+
+    # usage: POST /rest/DEVICE/CIRCUIT
+    #          post-data: prop1=value1&prop2=value2...
+    #@tornado.web.authenticated
+    if not use_output_schema:
+        @schema.validate(input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
+        @tornado.gen.coroutine
+        def post(self, circuit, prop):
+            try:
+                device = Devices.by_name("unit_register", circuit)
+                js_dict = json.loads(self.request.body)
+                result = device.set(**js_dict)
+                if is_future(result):
+                    result = yield result
+                raise Return({'result': result})
+            except Return,E:
+                raise E
+            except Exception,E:
+                raise APIError(status_code=400, log_message=str(E))
+    else:
+        @schema.validate(output_schema=schemas.register_post_out_schema, output_example=schemas.register_post_out_example,
+                         input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
+        @tornado.gen.coroutine
+        def post(self, circuit, prop):
+            try:
+                device = Devices.by_name("unit_register", circuit)
+                js_dict = json.loads(self.request.body)
+                result = device.set(**js_dict)
+                if is_future(result):
+                    result = yield result
+                raise Return({'result': result})
+            except Return,E:
+                raise E
+            except Exception,E:
+                raise APIError(status_code=400, log_message=str(E))
+
+    def options(self):
+        self.set_status(204)
+        self.finish()
 
 class RestDIHandler(UserCookieHelper, APIHandler):
     post_out_example = {"result": 1, "success": True}
@@ -1387,6 +1536,8 @@ class JSONLoadAllHandler(UserCookieHelper, APIHandler):
             result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
             result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
             result += map(lambda dev: dev.full(), Devices.by_int(LIGHT_CHANNEL))
+            result += map(lambda dev: dev.full(), Devices.by_int(UNIT_REGISTER))
+            result += map(lambda dev: dev.full(), Devices.by_int(EXT_CONFIG))
             return result
     else:
         @schema.validate(output_schema=schemas.all_get_out_schema, output_example=schemas.all_get_out_example)
@@ -1405,6 +1556,8 @@ class JSONLoadAllHandler(UserCookieHelper, APIHandler):
             result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
             result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
             result += map(lambda dev: dev.full(), Devices.by_int(LIGHT_CHANNEL))
+            result += map(lambda dev: dev.full(), Devices.by_int(UNIT_REGISTER))
+            result += map(lambda dev: dev.full(), Devices.by_int(EXT_CONFIG))
             return result
 
     def options(self):
@@ -1434,6 +1587,8 @@ class RestLoadAllHandler(UserCookieHelper, APIHandler):
         result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
         result += map(lambda dev: dev.full(), Devices.by_int(LIGHT_CHANNEL))
         result += map(lambda dev: dev.full(), Devices.by_int(OWBUS))
+        result += map(lambda dev: dev.full(), Devices.by_int(UNIT_REGISTER))
+        result += map(lambda dev: OrderedDict(sorted(dev.full().items(), key=lambda t: t[0])), Devices.by_int(EXT_CONFIG)) # Sort for better reading
         self.write(json.dumps(result))
         self.set_header('Content-Type', 'application/json')
         self.finish()
@@ -1781,6 +1936,8 @@ def main():
         (r"/json/light_channel/?([^/]+)/?([^/]+)?/?", RestLightChannelHandler),
         (r"/json/1wdevice/?([^/]+)/?([^/]+)?/?", RestOWireHandler),
         (r"/json/owbus/?([^/]+)/?([^/]+)?/?", RestOwbusHandler),
+        (r"/json/unit_register/?([^/]+)/?([^/]+)?/?", RestUnitRegisterHandler),
+        (r"/json/ext_config/?([^/]+)/?([^/]+)?/?", RestExtConfigHandler),
         (r"/version/?", VersionHandler),
         (r"/ws/?", WsHandler)
     ]

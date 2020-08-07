@@ -5,10 +5,13 @@ from log import *
 
 """
    Structured dict/dict of all devices in the system
-   
+
 """
+
+
 class DeviceList(dict):
     alias_dict = {}
+
     def __init__(self, altnames):
         super(DeviceList, self).__init__()
         self._arr = []
@@ -35,8 +38,6 @@ class DeviceList(dict):
                     to_delete += [(self[devtype_name])[dev_name]]
             for value in to_delete:
                 del (self[devtype_name])[value.circuit]
-                
-
 
     def by_int(self, devtypeid, circuit=None, major_group=None):
         devdict = self._arr[devtypeid]
@@ -44,7 +45,7 @@ class DeviceList(dict):
             if major_group is not None:
                 outp = []
                 if len(devdict.values()) > 1:
-                    for single_dev in devdict.values():    
+                    for single_dev in devdict.values():
                         if single_dev.major_group == major_group:
                             outp += [single_dev]
                     return outp
@@ -62,7 +63,7 @@ class DeviceList(dict):
             return devdict[circuit]
         except KeyError:
             if self.alias_dict.has_key(circuit):
-                return self.alias_dict[circuit] 
+                return self.alias_dict[circuit]
             else:
                 raise Exception('Invalid device circuit number %s' % str(circuit))
 
@@ -77,7 +78,7 @@ class DeviceList(dict):
             return devdict[circuit]
         except KeyError:
             if self.alias_dict.has_key(circuit):
-                return self.alias_dict[circuit] 
+                return self.alias_dict[circuit]
             else:
                 raise Exception('Invalid device circuit number %s' % str(circuit))
 
@@ -115,7 +116,7 @@ class DeviceList(dict):
             if (alias_key != device.alias):
                 raise Exception("Duplicate alias %s" % alias_key)
             return False
-        
+
     def save_alias_dict(self):
         try:
             with open("/var/evok/evok-alias.yaml", 'w+') as yfile:
@@ -125,6 +126,7 @@ class DeviceList(dict):
                 yfile.write(yaml.dump(out_dict))
         except Exception, E:
             logger.exception(str(E))
+
 
 # # define device types constants
 RELAY = 0
@@ -151,10 +153,10 @@ REGISTER = 20
 WIFI = 21
 LIGHT_CHANNEL = 22
 LIGHT_DEVICE = 23
+UNIT_REGISTER = 24
+EXT_CONFIG = 25
 
-
-
-## corresponding device types names !! ORDER IS IMPORTANT
+# # corresponding device types names !! ORDER IS IMPORTANT
 devtype_names = (
     'relay',
     'input',
@@ -179,7 +181,9 @@ devtype_names = (
     'register',
     'wifi',
     'light_channel',
-    'light_device'
+    'light_device',
+    'unit_register',
+    'ext_config'
 )
 
 devtype_altnames = {
@@ -194,12 +198,11 @@ devtype_altnames = {
     'temp': 'sensor'
     }
 
-
 Devices = DeviceList(devtype_altnames)
 for n in devtype_names:
     Devices[n] = {}
 
-#define units
+# define units
 NONE = 0
 CELSIUS = 1
 VOLT = 2
