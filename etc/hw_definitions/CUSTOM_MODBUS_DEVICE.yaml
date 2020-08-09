@@ -1,6 +1,6 @@
 ---
 # Type is the name in your device as it is in evok.conf (the filename is not meaningful, as long as it ends in .yaml and is placed in the "/etc/hw_definitions/" folder)
-type: CUSTOM MODBUS DEVICE
+type: CUSTOM_MODBUS_DEVICE
 # This key defines which Modbus registers will be periodically read. Each block (also sometimes referred to as "group") is read once ever ["frequency"] read cycles
 modbus_register_blocks:
     - board_index : 1
