@@ -535,7 +535,8 @@ apt-get update
 apt-get install -y python-ow python-pip make python-dev nginx vim
 pip install pymodbus==1.4.0
 pip install tornado==4.5.3
-pip install toro jsonrpclib pyyaml tornado_json tornado-webservices pyusb python-dali
+pip install python-dali==0.6
+pip install toro jsonrpclib pyyaml tornado_json tornado-webservices pyusb 
 ln -sf /etc/nginx/sites-enabled/evok /etc/evok-nginx.conf
 
 cp -r etc/hw_definitions /etc/
