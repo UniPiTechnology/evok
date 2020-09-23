@@ -441,7 +441,7 @@ all_get_out_schema = {
                         "counter": {
                             "type": "number",
                             "minimum": 0,
-                            "maximum": 65535
+                            "maximum": 2147483647
                         },
                         "mode": {
                             "type": "string",
@@ -1795,7 +1795,7 @@ di_get_out_schema = {
         "counter": {
             "type": "number",
             "minimum": 0,
-            "maximum": 65535
+            "maximum": 2147483647
         },
         "mode": {
             "type": "string",
