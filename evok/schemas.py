@@ -726,6 +726,79 @@ all_get_out_schema = {
                         "dev": {
                             "type": "string",
                             "enum": [
+                                "extension"
+                            ]
+                        },
+                        "circuit": {
+                            "type": "string"
+                        },
+                        "model": {
+                            "type": "string",
+                        },
+                        "glob_dev_id": {
+                            "type": "number",
+                            "minimum": 1
+                        },
+                        "uart_port": {
+                            "type": "string"
+                        },
+                        "last_comm": {
+                            "type": "number"
+                        },
+                        "alias": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "dev",
+                        "circuit",
+                        "glob_dev_id",
+                        "uart_port"
+                    ]
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "dev": {
+                            "type": "string",
+                            "enum": [
+                                "unit_register"
+                            ]
+                        },
+                        "value": {
+                            "type": "number"
+                        },
+                        "name": {
+                            "type": "string",
+                        },
+                        "glob_dev_id": {
+                            "type": "number",
+                            "minimum": 1
+                        },
+                        "circuit": {
+                            "type": "string"
+                        },
+                        "unit": {
+                            "type": "string"
+                        },
+                        "alias": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "dev",
+                        "circuit",
+                        "glob_dev_id",
+                        "name",
+                        "value"
+                    ]
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "dev": {
+                            "type": "string",
+                            "enum": [
                                 "led"
                             ]
                         },
