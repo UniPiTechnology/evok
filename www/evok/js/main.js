@@ -733,11 +733,14 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 		device_properties["broadcast_commands"] = msg.broadcast_commands;
 		break;
 	}
-	case "unit_register": {
-		device_properties["device_name"] = "Value register " + circuit_display_name + " <br>" + msg.name;
-		device_properties["unit"] = msg.unit;
-		break;
-	}
+    case "unit_register": {
+            if (msg.value.toString().includes(".")){
+                device_properties["value"] = msg.value.toFixed(2);
+            }
+            device_properties["device_name"] = "Value register " + circuit_display_name + " <br>" + msg.name;
+            device_properties["unit"] = msg.unit;
+            break;
+    }
 	}
     if ("alias" in msg) {
     	device_properties["device_name"] = circuit_display_name;
