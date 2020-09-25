@@ -472,7 +472,7 @@ function getConfigurationFormTitle(device) {
 		return "Lighting Channel Configuration";
 	}
 	default: {
-		return "Unknown Device Type Configuration";
+		return "Unknown Device Type Configuration" + device;
 		break;
 	}
 	}
@@ -539,12 +539,15 @@ function getDeviceCategoryName(device) {
 		return "EVOK Devices";
 	}
 	case "extension": {
-		return "Modbus extension";
+		return "Modbus extensions";
 	}
 	case "wifi": {
 		return "WiFi Adapters";
 	}
 	case "register": {
+		return "Modbus Registers";
+	}
+	case "unit_register": {
 		return "Modbus Registers";
 	}
 	case "do": {
@@ -561,7 +564,9 @@ function getDeviceCategoryName(device) {
 }
 
 function populateConfigTab(device, circuit, circuit_display_name, msg) {
+
     var translated_device = device;
+
     if (translated_device == "relay") {
     	if (("relay_type" in msg) && msg.relay_type == "digital") {
     		translated_device = "do";
@@ -728,6 +733,14 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 		device_properties["broadcast_commands"] = msg.broadcast_commands;
 		break;
 	}
+    case "unit_register": {
+            if (msg.value.toString().includes(".")){
+                device_properties["value"] = msg.value.toFixed(2);
+            }
+            device_properties["device_name"] = "Value register " + circuit_display_name + " <br>" + msg.name;
+            device_properties["unit"] = msg.unit;
+            break;
+    }
 	}
     if ("alias" in msg) {
     	device_properties["device_name"] = circuit_display_name;
@@ -736,35 +749,44 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 }
 
 function syncDevice(msg) {
+
+
+
     var circuit = msg.circuit;
     var device = msg.dev;
     var device_signature = "unipi_" + device + "_" + circuit;
     var circuit_display_name = circuit.replace(/\_/g, ' ');
-    if (circuit_display_name.substring(circuit_display_name.length - 3,circuit_display_name.length - 2) == ' ') {
-    	circuit_display_name = circuit_display_name.substring(0,circuit_display_name.length - 3) + '.' + circuit_display_name.substring(circuit_display_name.length - 2, circuit_display_name.length);
+
+    if(circuit_display_name.includes(" ")){
+        var pos = circuit_display_name.lastIndexOf(" ");
+        circuit_display_name = circuit_display_name.substring(0,pos) + '.' + circuit_display_name.substring(pos + 1, circuit_display_name.length);
     }
+
 	// Change alias back into text
 	if ("alias" in msg) {
 		var decoded_alias = msg.alias.substr(3, msg.alias.length - 1);
 		decoded_alias = decoded_alias.replace(/_/g," ");
 		circuit_display_name = decoded_alias;
 	}
-	
+
     // Dictionary for parsed message values; initialised with default fallback values
     var device_properties = extractDeviceProperties(device, circuit, circuit_display_name, msg);
 
     if (!$('#' + device_signature + '_li').length > 0 && device != 'register' && device != 'owbus') {
+
+
         li = document.createElement("li");
         li.id = device_signature + "_li";
 
-        populateConfigTab(device, circuit, circuit_display_name, msg);
-        
+        if (device != "extension"){ 
+            populateConfigTab(device, circuit, circuit_display_name, msg);
+        }
         var div = document.createElement("div");
         div.className = "ui-field-contain";
-        
+
         var right_div = document.createElement("div");
         right_div.style = "float: right;"
-        
+
         switch (device) {
         case "relay": {}
         case "led": {
@@ -796,7 +818,7 @@ function syncDevice(msg) {
         }
         case "temp": {
             main_el = document.createElement("h1");
-        	main_el.innerHTML  = device_properties["value"] + " " + device_properties["unit"];
+            main_el.innerHTML  = device_properties["value"] + " " + device_properties["unit"];
             //main_el.className = "ui-li-aside";
             break;
         }
@@ -886,7 +908,7 @@ function syncDevice(msg) {
         }
         default: {
             main_el = document.createElement("h1");
-            main_el.textContent = device_properties["value"] + " " + device_properties["unit"];
+            main_el.innerHTML = device_properties["value"] + " " + device_properties["unit"];
             break;
         }
         }
@@ -898,7 +920,7 @@ function syncDevice(msg) {
         label = document.createElement("label");
         label.id = device_signature + "_label";
         label.setAttribute("for", main_el.id);
-        label.textContent = device_properties["device_name"];
+        label.innerHTML = device_properties["device_name"];
 
         //Create the div structure
         div.appendChild(label);
@@ -937,8 +959,8 @@ function syncDevice(msg) {
             $('#outputs_list').listview('refresh');
             $('#' + main_el.id).bind("change", function (event, ui) {
                 makePostRequest('led/' + circuit, 'value=' + $(this).val());
-            });  
-        	break;        	
+            });
+        	break;
         }
         case "relay": {
             var divider = document.getElementById("unipi_led_divider");
@@ -962,6 +984,13 @@ function syncDevice(msg) {
         	break;        	
         }
         case "temp": {
+            var divider = document.getElementById("unipi_modbus_divider");
+            var list = document.getElementById("inputs_list");
+            list.insertBefore(li, divider);
+            $('#inputs_list').listview('refresh');
+        	break;       	
+        }
+        case "unit_register": {
             $('#inputs_list').append(li);
             $('#inputs_list').listview('refresh');
         	break;       	
@@ -972,18 +1001,16 @@ function syncDevice(msg) {
         	break;        	
         }
         case "neuron": {
-            var divider = document.getElementById("unipi_extension_divider");
+            var divider = document.getElementById("unipi_uart_divider");
             var list = document.getElementById("system_list");
             list.insertBefore(li, divider);
             $('#system_list').listview('refresh');
         	break;        	
         }
         case "extension": {
-            var divider = document.getElementById("unipi_uart_divider");
-            var list = document.getElementById("system_list");
-            list.insertBefore(li, divider);
+            $('#system_list').append(li);
             $('#system_list').listview('refresh');
-        	break;        	
+        	break;
         }
         case "uart": {
             var divider = document.getElementById("unipi_watchdog_divider");
@@ -993,15 +1020,17 @@ function syncDevice(msg) {
         	break;        	
         }
         case "wd": {
-        	var divider = document.getElementById("unipi_wifi_divider");
+            var divider = document.getElementById("unipi_wifi_divider");
             var list = document.getElementById("system_list");
             list.insertBefore(li, divider);
         	$('#system_list').listview('refresh');
         	break;        	
         }
         case "wifi": {
-        	$('#system_list').append(li);
-            $('#system_list').listview('refresh');
+            var divider = document.getElementById("unipi_extension_divider");
+            var list = document.getElementById("system_list");
+            list.insertBefore(li, divider);
+            $('#system_list').listview('refresh'); 
         	break;
         }
         case "light_channel": {
@@ -1022,7 +1051,7 @@ function syncDevice(msg) {
     } else if (device != 'register' && device != 'owbus') {
         var main_el = document.getElementById(device_signature + "_value");
         var label = document.getElementById(device_signature + "_label");
-        label.textContent = device_properties["device_name"];
+        label.innerHTML = device_properties["device_name"];
         // Set device-specific data
         switch(device) {
         case "relay": {
@@ -1106,7 +1135,7 @@ function syncDevice(msg) {
         	break;
         }       
         default: {
-            main_el.innerHTML = device_properties["value"] + " " + device_properties["unit"];        	
+            main_el.innerHTML = device_properties["value"] + " " + device_properties["unit"];
             break;
         }
         }
@@ -1123,7 +1152,7 @@ function updateValues() {
 				$("#unipi_loading_spinner").css('visibility', 'hidden');
 	            data = sortResults(data);
 	            $.each(data, function (name, msg) {
-	                syncDevice(msg);
+                        syncDevice(msg);
 	            });
 	        },
 	        error: function (data) {
