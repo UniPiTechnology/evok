@@ -2,7 +2,7 @@
 # File version: 1.0
 # Min. firmware version: 3.00
 ---
-type: iaq1926
+type: IAQ
 modbus_register_blocks:
     - board_index : 1
       start_reg   : 0
