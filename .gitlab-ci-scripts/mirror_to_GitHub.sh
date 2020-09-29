@@ -20,6 +20,9 @@ git filter-branch -f --index-filter 'git rm -r --cached --ignore-unmatch .projec
 echo "Filtering tags for testing branch..."
 git tag | grep "test" | xargs -n 1 -I% git tag -d % || exit 1
 
+echo "Removing current tag...will be added again later..."
+git tag -d "${EVOK_VERSION}"
+
 [[ -d ~/.ssh ]] || mkdir ~/.ssh
 
 echo "$GITHUB_SSH_KEY" | tr -d '\r' > ~/.ssh/github_ssh_key
@@ -29,11 +32,11 @@ ssh-add ~/.ssh/github_ssh_key
 
 ssh-keyscan -H "github.com" >> ~/.ssh/known_hosts
 
-echo "Tagging..."
-git tag "${EVOK_VERSION}"
-
 echo "Mirroring..."
 git push --mirror git@github.com:UniPiTechnology/evok
+
+echo "Tagging..."
+git tag "${EVOK_VERSION}"
 
 echo "Pushing tag"
 if [[ ! -z "${CI_COMMIT_TAG}" ]]; then
