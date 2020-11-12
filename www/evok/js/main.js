@@ -983,6 +983,7 @@ function syncDevice(msg) {
             $('#inputs_list').listview('refresh');
         	break;        	
         }
+        case "1wdevice": {}
         case "temp": {
             var divider = document.getElementById("unipi_modbus_divider");
             var list = document.getElementById("inputs_list");
@@ -994,11 +995,6 @@ function syncDevice(msg) {
             $('#inputs_list').append(li);
             $('#inputs_list').listview('refresh');
         	break;       	
-        }
-        case "1wdevice": {
-            $('#inputs_list').append(li);
-            $('#inputs_list').listview('refresh');  
-        	break;        	
         }
         case "neuron": {
             var divider = document.getElementById("unipi_uart_divider");
