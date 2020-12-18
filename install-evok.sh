@@ -102,9 +102,6 @@ enable_ic2() {
             # add the include to the begining of the config.txt 
             sed -i "1i$INCLUDE_LINE" /boot/config.txt
         fi
-		if ! grep -q 'device_tree_param=i2c1=on' /boot/config.txt ;then
-			echo -e "$(cat /boot/config.txt) \\n\\n#Enable i2c bus 1\\ndevice_tree_param=i2c1=on\\ndtoverlay=i2c-rtc,mcp7941x\\ndtoverlay=unipiee\\ndtoverlay=neuronee\\n" > /boot/config.txt
-		fi
 	else # Comment out blacklisted i2c on kernel < 3.18.5
 		echo '####################################'
 		echo '## Using kernel older than 3.18.5 ##'
