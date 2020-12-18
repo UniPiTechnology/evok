@@ -91,9 +91,17 @@ enable_ic2() {
 		echo '####################################'
 		echo '## Using kernel newer than 3.18.5 ##'
 		echo '####################################'
-		if ! grep -q 'device_tree_param=i2c1=on' /boot/config.txt ;then
-			echo -e "$(cat /boot/config.txt) \\n\\n#Enable i2c bus 1\\ndevice_tree_param=i2c1=on\\ndtoverlay=i2c-rtc,mcp7941x\\ndtoverlay=unipiee\\ndtoverlay=neuronee\\n" > /boot/config.txt
-		fi
+        INCLUDE_LINE="include config_unipi.inc"
+        if ! grep -q "$INCLUDE_LINE"; then
+            # add the neccessary parameters to separate file, which will be included in the config.txt
+            # TODO/TORETHINK: remove the lines from config.txt if present? How about different param names (device_tree_param vs. dtparam)
+            (
+                echo "dtparam=i2c_arm=on"
+                echo "dtoverlay=i2c-rtc,mcp7941x"
+            ) > /boot/config_unipi.inc
+            # add the include to the begining of the config.txt 
+            sed -i "1i$INCLUDE_LINE" /boot/config.txt
+        fi
 	else # Comment out blacklisted i2c on kernel < 3.18.5
 		echo '####################################'
 		echo '## Using kernel older than 3.18.5 ##'
