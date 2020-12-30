@@ -50,6 +50,10 @@ server {
 		proxy_pass http://evok;
 		proxy_set_header Host	$host:$server_port;
 	}
+	location /version {
+		proxy_pass http://evok;
+		proxy_set_header Host	$host:$server_port;
+	}
 	
 }
 
