@@ -92,7 +92,7 @@ enable_ic2() {
 		echo '## Using kernel newer than 3.18.5 ##'
 		echo '####################################'
         INCLUDE_LINE="include config_unipi.inc"
-        if ! grep -q "$INCLUDE_LINE"; then
+        if ! grep -q "$INCLUDE_LINE" /boot/config.txt; then
             # add the neccessary parameters to separate file, which will be included in the config.txt
             # TODO/TORETHINK: remove the lines from config.txt if present? How about different param names (device_tree_param vs. dtparam)
             (
