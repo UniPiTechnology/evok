@@ -142,7 +142,7 @@ class WhHandler():
                 if not self.complex_events:
                     self.http_client.fetch(self.url,method="GET")
                 else:
-                    self.http_client.fetch(self.url,method="POST",body=json.dumps(outp))
+                    self.http_client.fetch(self.url,method="POST",headers={'Content-Type': 'application/json'},body=json.dumps(outp))
         except Exception,E:
             logger.exception(str(E))
 
