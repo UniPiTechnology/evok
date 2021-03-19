@@ -10,7 +10,7 @@ Vcs-Browser: https://github.com/UniPiTechnology/evok/
 
 Package: evok
 Architecture: any
-Pre-Depends: dpkg (>= 1.16.1), python2.7 | python2.6, python-ow, ${misc:Pre-Depends}
+Pre-Depends: dpkg (>= 1.16.1), python2.7 | python2.6, python-ow, ucf,${misc:Pre-Depends}
 Depends: nginx, ${shlibs:Depends}, ${misc:Depends}, unipi-common
 Recommends: unipi-modbus-tools
 Description: UniPi API based on the Tornado webserver
