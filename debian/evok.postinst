@@ -15,6 +15,28 @@
 . /usr/share/debconf/confmodule
 
 # ----------------------------------------------------------------------------------------
+# Issue 0 - Resolve config files
+# ----------------------------------------------------------------------------------------
+HWPROC=$(cat /proc/cpuinfo | grep '^Hardware' | sed 's/^.*: //')
+[ -z "${HWPROC}" ] && HWPROC=$(cat /sys/devices/soc0/soc_id)
+
+if [ "${HWPROC}" = "Allwinnersun50iw2Family" ]; then  #Axon
+    ucf --debconf-ok --verbose /tmp/evok.conf.axon /etc/evok.conf || true
+    rm -f /tmp/evok.conf.axon  || true
+    rm -f /tmp/evok.conf.patron  || true
+    UNIPI_PLATFORM="Axon"
+elif [ "${HWPROC}" = "i.MX8MM" ]; then
+    ucf --debconf-ok --verbose /tmp/evok.conf.patron /etc/evok.conf || true
+    rm -f /tmp/evok.conf.patron  || true
+    rm -f /tmp/evok.conf.axon || true
+    UNIPI_PLATFORM="Patron"
+else
+    ucf --debconf-ok --verbose /tmp/evok.conf.neuron /etc/evok.conf || true
+    UNIPI_PLATFORM="Neuron"
+fi
+    echo "Using configuration file for unipi ${UNIPI_PLATFORM}" >&2
+
+# ----------------------------------------------------------------------------------------
 # Issue 1 - Resolve nginx config files conflict - no more sites can share the same port 80
 # ----------------------------------------------------------------------------------------
 
@@ -54,7 +76,7 @@ if ! [ -z "$CONFLICT_CONFILE" ]; then # If a conflict has occurred
           if [ -f "$EVOK_NGINX_CONFILE_ENABLED" ]; then
               sed -i "s/listen[[:space:]]*[[:digit:]]*/listen $RET/g" "$EVOK_NGINX_CONFILE_ENABLED"
           fi
-          
+
           ;;
       *) # Option 3 - Remove Evok Nginx confile
          # All services provided by Nginx are disabled (incl. those proxy-ed) !!!
