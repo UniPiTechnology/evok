@@ -18,11 +18,17 @@ set -e
 # for details, see https://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
+echo "Postrm script invoked..." >&2
 
 case "$1" in
-    purge|remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+    purge)
+        echo "Removing configuration file..." >&2
+        rm -f /etc/evok.conf
+        rm -f /etc/evok.conf.ucf-dist
+        ucf --verbose --purge "/etc/evok.conf" || true
     ;;
-
+    remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+    ;;
     *)
         echo "postrm called with unknown argument \`$1'" >&2
         exit 1
