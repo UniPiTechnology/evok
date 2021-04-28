@@ -201,13 +201,13 @@ class WsHandler(websocket.WebSocketHandler):
                         for dev in devices:
                             result += map(lambda dev: dev.full(), Devices.by_int(dev))
                     else:
-                        for dev in range(0,24):
+                        for dev in range(0,25):
                             added_results = map(lambda dev: dev.full() if dev.full() is not None else '', Devices.by_int(dev))
                             for added_result in added_results:
                                 if added_result != '' and added_result['dev'] in self.filter:
                                     result.append(added_result)
                 else:
-                    for dev in range(0,24):
+                    for dev in range(0,25):
                         added_results = map(lambda dev: dev.full() if dev.full() is not None else '', Devices.by_int(dev))
                         for added_result in added_results:
                             if added_result != '':
