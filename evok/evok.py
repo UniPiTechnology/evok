@@ -195,6 +195,7 @@ class WsHandler(websocket.WebSocketHandler):
             #get FULL state of each IO
             if cmd == "all":
                 result = []
+                #devices = [INPUT, RELAY, AI, AO, SENSOR, UNIT_REGISTER]
                 devices = [INPUT, RELAY, AI, AO, SENSOR]
                 if Config.getbooldef("MAIN", "websocket_all_filtered", False):
                     if (len(self.filter) == 1 and self.filter[0] == "default"):
@@ -254,8 +255,8 @@ class WsHandler(websocket.WebSocketHandler):
                 except Exception, E:
                     logger.error("Exc: %s", str(E))
 
-        except:
-            logger.debug("Skipping WS message: %s", message)
+        except Exception as E:
+            logger.debug("Skipping WS message: %s (%s)", message, str(E))
             # skip it since we do not understand this message....
             pass
 
