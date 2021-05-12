@@ -2,7 +2,7 @@ Source: evok
 Section: python
 Priority: optional
 Maintainer: Martin Triska <triska@unipi.technology>
-Build-Depends: debhelper (>= 9), python, dh-virtualenv (>= 0.8), dh-exec
+Build-Depends: debhelper (>= 9), python2.7, dh-virtualenv (>= 0.8), dh-exec
 Standards-Version: 3.9.5
 Homepage: http://www.unipi.technology
 Vcs-Git: https://github.com/UniPiTechnology/evok.git
