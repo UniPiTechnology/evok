@@ -756,6 +756,33 @@ all_get_out_schema = {
                         "uart_port"
                     ]
                 },
+                { 
+                    "type": "object",
+                    "properties": {
+                        "dev": { 
+                            "type": "string",
+                            "enum": [
+                                "ext_config"
+                            ]
+                        },
+                        "circuit": {
+                            "type": "string"
+                        },
+                        "address": {
+                            "type": "number",
+                            "minimum" : 1,
+                            "maximum" : 247
+                        },
+                        "glob_dev_id": {
+                            "type": "number",
+                            "minimum": 1
+                        }
+                    },
+                    "required": [
+                        "dev",
+                        "circuit",
+                    ]
+                },
                 {
                     "type": "object",
                     "properties": {
