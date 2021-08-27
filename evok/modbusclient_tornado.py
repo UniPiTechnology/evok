@@ -119,6 +119,12 @@ class ModbusClientProtocol():
         res = yield self.execute(request)
         raise gen.Return(res)
 
+    @gen.coroutine
+    def write_registers(self, address, values, **kwargs):
+        request = WriteMultipleRegistersRequest(address, values, **kwargs)
+        res = yield self.execute(request)
+        raise gen.Return(res)
+
 
 @gen.coroutine
 def StartClient(client, host='127.0.0.1', port=502, callback=None, callback_args=None):

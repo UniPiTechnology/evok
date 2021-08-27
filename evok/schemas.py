@@ -441,7 +441,7 @@ all_get_out_schema = {
                         "counter": {
                             "type": "number",
                             "minimum": 0,
-                            "maximum": 2147483647
+                            "maximum": 4294967295
                         },
                         "mode": {
                             "type": "string",
@@ -1895,7 +1895,7 @@ di_get_out_schema = {
         "counter": {
             "type": "number",
             "minimum": 0,
-            "maximum": 2147483647
+            "maximum": 4294967295
         },
         "mode": {
             "type": "string",
@@ -1967,7 +1967,9 @@ di_post_inp_schema = {
     "properties": {
         "value": { "type": "number"},
         "counter": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0,
+            "maximum": 4294967295
         },
         "counter_mode": {},
         "debounce": {"type": "number"}
