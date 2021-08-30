@@ -1,5 +1,11 @@
 #!/bin/bash
 
+echo "Installing additional packages"
+apt update && apt install -y dh-virtualenv dpkg-dev dh-exec build-essential fakeroot git
+
+echo
+echo "Patching version"
+
 if [[ ! -z "${CI_COMMIT_TAG}" ]]; then
   EVOK_VERSION=${CI_COMMIT_TAG}
   BRANCH="master"
