@@ -636,11 +636,6 @@ class UartBoard(object):
                                 dev_id=self.dev_id, datatype=_datatype, major_group=0, offset=_offset, factor=_factor, unit=_unit,
                                 valid_mask=_valid_mask, name=_name, post_write=_post_write_action)
 
-            if self.neuron.datadeps.has_key(board_val_reg + counter):
-                self.neuron.datadeps[board_val_reg + counter]+=[_xgt]
-            else:
-                self.neuron.datadeps[board_val_reg + counter] = [_xgt]
-
             Devices.register_device(UNIT_REGISTER, _xgt)
             counter+=1
 
@@ -1609,6 +1604,7 @@ class UnitRegister():
 
         return struct.unpack_from('>f', datal)[0]
 
+    # TODO - toto asi jenom read only -
     @gen.coroutine
     def set(self, value=None, alias=None, **kwargs):
         """ Sets new on/off status. Disable pending timeouts """
@@ -1618,7 +1614,8 @@ class UnitRegister():
 
         raise Exception("Unit_register object is read-only")
 
-        #--------------------------------------------
+
+        # nastavit to nepujde
 
         if value is not None:
 
@@ -1644,8 +1641,6 @@ class UnitRegister():
                 logger.info("Performed reset of board %s" % self.circuit)
         """
 
-    def value_delta(self, new_val):
-        pass
 
 
     def full(self):
@@ -1902,7 +1897,7 @@ class Input():
                 yield self.arm.neuron.client.write_register(self.regdebounce, int(float(debounce)), unit=self.arm.modbus_address)
         if counter is not None:
             if self.regcounter is not None:
-                yield self.arm.neuron.client.write_register(self.regcounter, int(float(counter)), unit=self.arm.modbus_address)
+                yield self.arm.neuron.client.write_registers(self.regcounter, ((int(float(counter)) & 0xFFFF), (int(float(counter)) >> 16) & 0xFFFF), unit=self.arm.modbus_address)
         raise gen.Return(self.full())
 
     def get(self):

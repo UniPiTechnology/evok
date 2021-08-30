@@ -441,7 +441,7 @@ all_get_out_schema = {
                         "counter": {
                             "type": "number",
                             "minimum": 0,
-                            "maximum": 2147483647
+                            "maximum": 4294967295
                         },
                         "mode": {
                             "type": "string",
@@ -754,6 +754,33 @@ all_get_out_schema = {
                         "circuit",
                         "glob_dev_id",
                         "uart_port"
+                    ]
+                },
+                { 
+                    "type": "object",
+                    "properties": {
+                        "dev": { 
+                            "type": "string",
+                            "enum": [
+                                "ext_config"
+                            ]
+                        },
+                        "circuit": {
+                            "type": "string"
+                        },
+                        "address": {
+                            "type": "number",
+                            "minimum" : 1,
+                            "maximum" : 247
+                        },
+                        "glob_dev_id": {
+                            "type": "number",
+                            "minimum": 1
+                        }
+                    },
+                    "required": [
+                        "dev",
+                        "circuit",
                     ]
                 },
                 {
@@ -1868,7 +1895,7 @@ di_get_out_schema = {
         "counter": {
             "type": "number",
             "minimum": 0,
-            "maximum": 2147483647
+            "maximum": 4294967295
         },
         "mode": {
             "type": "string",
@@ -1940,7 +1967,9 @@ di_post_inp_schema = {
     "properties": {
         "value": { "type": "number"},
         "counter": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0,
+            "maximum": 4294967295
         },
         "counter_mode": {},
         "debounce": {"type": "number"}
