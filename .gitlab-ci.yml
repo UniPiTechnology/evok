@@ -3,7 +3,7 @@ include:
     file: debian-pkg-ng.yaml
 
 variables:
-    PACKAGE_NAME: "evok"
+    package_name: "evok"
     build_for_architecture: "armhf arm64"
     build_for_distribution: "all"
     enable_mirror_to_github: "true"
