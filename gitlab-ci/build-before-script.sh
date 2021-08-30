@@ -1,10 +1,7 @@
 #!/bin/bash
 
 echo "Installing additional packages"
-apt update && apt install -y dh-virtualenv dpkg-dev dh-exec build-essential fakeroot git python2.7
-
-echo "Creating symlink python -> python2.7"
-ln -s /usr/bin/python2.7 /usr/bin/python
+apt update && apt install -y dh-virtualenv dpkg-dev dh-exec build-essential fakeroot git python2.7 python
 
 echo
 echo "Patching version"
