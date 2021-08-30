@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Installing additional packages"
-apt update && apt install -y dh-virtualenv dpkg-dev dh-exec build-essential fakeroot git
+apt update && apt install -y dh-virtualenv dpkg-dev dh-exec build-essential fakeroot git python2.7
 
 echo
 echo "Patching version"
