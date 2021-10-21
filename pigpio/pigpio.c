@@ -25,7 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 For more information, please refer to <http://unlicense.org/>
 */
 
-/* pigpio version 71 */
+/* pigpio version 79 */
 
 /* include ------------------------------------------------------- */
 
@@ -375,12 +375,13 @@ bit 0 READ_LAST_NOT_SET_ERROR
 
 /* DMA CS Control and Status bits */
 #define DMA_CHANNEL_RESET       (1<<31)
+#define DMA_CHANNEL_ABORT       (1<<30)
 #define DMA_WAIT_ON_WRITES      (1<<28)
 #define DMA_PANIC_PRIORITY(x) ((x)<<20)
 #define DMA_PRIORITY(x)       ((x)<<16)
 #define DMA_INTERRUPT_STATUS    (1<< 2)
 #define DMA_END_FLAG            (1<< 1)
-#define DMA_ACTIVATE            (1<< 0)
+#define DMA_ACTIVE              (1<< 0)
 
 /* DMA control block "info" field bits */
 #define DMA_NO_WIDE_BURSTS          (1<<26)
@@ -395,6 +396,7 @@ bit 0 READ_LAST_NOT_SET_ERROR
 #define DMA_DEST_WIDTH              (1<< 5)
 #define DMA_DEST_INC                (1<< 4)
 #define DMA_WAIT_RESP               (1<< 3)
+#define DMA_TDMODE                  (1<< 1)
 
 #define DMA_DEBUG_READ_ERR           (1<<2)
 #define DMA_DEBUG_FIFO_ERR           (1<<1)
@@ -663,6 +665,7 @@ bit 0 READ_LAST_NOT_SET_ERROR
 /* --------------------------------------------------------------- */
 
 #define NORMAL_DMA (DMA_NO_WIDE_BURSTS | DMA_WAIT_RESP)
+#define TWO_BEAT_DMA (DMA_TDMODE | DMA_BURST_LENGTH(1))
 
 #define TIMED_DMA(x) (DMA_DEST_DREQ | DMA_PERIPHERAL_MAPPING(x))
 
@@ -947,6 +950,7 @@ typedef struct
    uint32_t nfRBitV;
 
    uint32_t gfSteadyUs;
+   uint8_t  gfInitialised;
    uint32_t gfTick;
    uint32_t gfLBitV;
    uint32_t gfRBitV;
@@ -1567,6 +1571,9 @@ int myPathBad(char *name)
    parts = 0;
    in_part = 0;
    last_char_dot = 0;
+
+   if (strstr(name, "..")) return 1;
+   if (strstr(name, "\\.")) return 1;
 
    len = strlen(name);
 
@@ -2433,6 +2440,27 @@ static int myDoCommand(uintptr_t *p, unsigned bufSize, char *buf)
 
       case PI_CMD_WVCRE: res = gpioWaveCreate(); break;
 
+      case PI_CMD_WVCAP:
+         /* Make WVCAP variadic */
+         if (p[3] == 4)
+         {
+            memcpy(&tmp3, buf, 4); /* percent TOOL */
+            res = gpioWaveCreatePad(p[1], p[2], tmp3); /* rawWaveAdd* usage */
+            break;
+         }
+         if (p[2] && p[3]==0)
+         {
+            res = gpioWaveCreatePad(p[1], p[2], 0);
+            break;
+         }
+         if (p[2]==0 && p[3]==0)
+         {
+            res = gpioWaveCreatePad(p[1], p[1], 0); /* typical usage */
+            break;
+         }
+         res = PI_BAD_WAVE_ID; // FIX?
+         break;
+
       case PI_CMD_WVDEL: res = gpioWaveDelete(p[1]); break;
 
       case PI_CMD_WVGO:  res = gpioWaveTxStart(PI_WAVE_MODE_ONE_SHOT); break;
@@ -2976,8 +3004,9 @@ static void waveCBsOOLs(int *numCBs, int *numBOOLs, int *numTOOLs)
 
    for (i=0; i<numWaves; i++)
    {
-      if (waves[i].gpioOn)                 {numCB++; numBOOL++;}
-      if (waves[i].gpioOff)                {numCB++; numBOOL++;}
+      if (waves[i].gpioOn)                 {numBOOL++;}
+      if (waves[i].gpioOff)                {numBOOL++;}
+      if (waves[i].gpioOn || waves[i].gpioOff) {numCB++;}
       if (waves[i].flags & WAVE_FLAG_READ) {numCB++; numTOOL++;}
       if (waves[i].flags & WAVE_FLAG_TICK) {numCB++; numTOOL++;}
 
@@ -2991,11 +3020,12 @@ static void waveCBsOOLs(int *numCBs, int *numBOOLs, int *numTOOLs)
 
 /* ----------------------------------------------------------------------- */
 
-static int wave2Cbs(unsigned wave_mode, int *CB, int *BOOL, int *TOOL)
+static int wave2Cbs(unsigned wave_mode, int *CB, int *BOOL, int *TOOL,
+                    int numCB, int numBOOL, int numTOOL)
 {
    int botCB=*CB, botOOL=*BOOL, topOOL=*TOOL;
 
-   int status;
+   int status, s_stride;
 
    rawCbs_t *p=NULL;
 
@@ -3039,7 +3069,22 @@ static int wave2Cbs(unsigned wave_mode, int *CB, int *BOOL, int *TOOL)
 
    for (i=0; i<numWaves; i++)
    {
-      if (waves[i].gpioOn)
+      if (waves[i].gpioOn && waves[i].gpioOff)
+      /* Use 2-beat burst */
+      {
+         p = rawWaveCBAdr(botCB++);
+
+         p->info   = TWO_BEAT_DMA;
+         p->src    = waveOOLPOadr(botOOL);
+         waveSetOOL(botOOL++, waves[i].gpioOn);
+         s_stride = waveOOLPOadr(botOOL) - p->src;
+         waveSetOOL(botOOL++, waves[i].gpioOff);
+         p->dst    = ((GPIO_BASE + (GPSET0*4)) & 0x00ffffff) | PI_PERI_BUS;
+         p->length = (2<<16) + 4;         // 2 transfers of 4 bytes each
+         p->stride = (12<<16) + s_stride; // d_stride = (GPCLR0-GPSET0)*4 = 12
+         p->next   = waveCbPOadr(botCB);
+      }
+      if (waves[i].gpioOn && !waves[i].gpioOff)
       {
          waveSetOOL(botOOL, waves[i].gpioOn);
 
@@ -3051,8 +3096,7 @@ static int wave2Cbs(unsigned wave_mode, int *CB, int *BOOL, int *TOOL)
          p->length = 4;
          p->next   = waveCbPOadr(botCB);
       }
-
-      if (waves[i].gpioOff)
+      if (waves[i].gpioOff && !waves[i].gpioOn)
       {
          waveSetOOL(botOOL, waves[i].gpioOff);
 
@@ -3064,7 +3108,6 @@ static int wave2Cbs(unsigned wave_mode, int *CB, int *BOOL, int *TOOL)
          p->length = 4;
          p->next   = waveCbPOadr(botCB);
       }
-
       if (waves[i].flags & WAVE_FLAG_READ)
       {
          p = rawWaveCBAdr(botCB++);
@@ -3127,6 +3170,28 @@ static int wave2Cbs(unsigned wave_mode, int *CB, int *BOOL, int *TOOL)
             p->next = waveCbPOadr(botCB);
          }
       }
+   }
+
+   if (numCB)
+   {
+      /* Pad the wave */
+
+      botCB = *CB + numCB - 1;
+      botOOL = *BOOL + numBOOL - 1;
+      topOOL = *TOOL - numTOOL;
+
+      /* Link the last CB to end of wave */
+
+      p->next = waveCbPOadr(botCB);
+
+      /* Insert sentinel CB at end of DMA */
+
+      p = rawWaveCBAdr(botCB++);
+      p->info   = NORMAL_DMA | DMA_DEST_IGNORE;
+      p->src    = waveOOLPOadr(botOOL++);
+      p->dst    = ((GPIO_BASE + (GPSET0*4)) & 0x00ffffff) | PI_PERI_BUS;
+      p->length = 4;
+      p->next   = 0;
    }
 
    if (p != NULL)
@@ -3241,7 +3306,7 @@ int rawWaveAddGeneric(unsigned numIn1, rawWave_t *in1)
 
    unsigned numIn2, numOut;
 
-   uint32_t tNow, tNext1, tNext2, tDelay;
+   uint32_t tNow, tNext1, tNext2, tDelay, tMax;
 
    rawWave_t *in2, *out;
 
@@ -3252,6 +3317,7 @@ int rawWaveAddGeneric(unsigned numIn1, rawWave_t *in1)
    out   = wf[1-wfcur];
 
    tNow = 0;
+   tMax = 0;
 
    if (!numIn1) tNext1 = -1; else tNext1 = 0;
    if (!numIn2) tNext2 = -1; else tNext2 = 0;
@@ -3274,6 +3340,7 @@ int rawWaveAddGeneric(unsigned numIn1, rawWave_t *in1)
          out[outPos].flags   = in1[inPos1].flags;
 
          tNext1 = tNow + in1[inPos1].usDelay; ++inPos1;
+         if (tMax < tNext1) tMax = tNext1;
       }
       else if (tNext2 < tNext1)
       {
@@ -3291,6 +3358,7 @@ int rawWaveAddGeneric(unsigned numIn1, rawWave_t *in1)
          out[outPos].flags   = in2[inPos2].flags;
 
          tNext2 = tNow + in2[inPos2].usDelay; ++inPos2;
+         if (tMax < tNext2) tMax = tNext2;
       }
       else
       {
@@ -3309,6 +3377,8 @@ int rawWaveAddGeneric(unsigned numIn1, rawWave_t *in1)
 
          tNext1 = tNow + in1[inPos1].usDelay; ++inPos1;
          tNext2 = tNow + in2[inPos2].usDelay; ++inPos2;
+         if (tMax < tNext1) tMax = tNext1;
+         if (tMax < tNext2) tMax = tNext2;
       }
 
       if (tNext1 <= tNext2) { tDelay = tNext1 - tNow; tNow = tNext1; }
@@ -3318,9 +3388,7 @@ int rawWaveAddGeneric(unsigned numIn1, rawWave_t *in1)
 
       cbs += waveDelayCBs(tDelay);
 
-      if (out[outPos].gpioOn) cbs++; /* one cb if gpio on */
-
-      if (out[outPos].gpioOff) cbs++; /* one cb if gpio off */
+      if (out[outPos].gpioOn || out[outPos].gpioOff) cbs++;
 
       if (out[outPos].flags & WAVE_FLAG_READ)
       {
@@ -3339,6 +3407,13 @@ int rawWaveAddGeneric(unsigned numIn1, rawWave_t *in1)
       if (inPos1 >= numIn1) tNext1 = -1;
       if (inPos2 >= numIn2) tNext2 = -1;
 
+   }
+
+   if (tNow < tMax)
+   {
+      /* extend previous delay */
+      out[outPos-1].usDelay += (tMax - tNow);
+      tNow = tMax;
    }
 
    if ((outPos < numOut) && (outPos < level))
@@ -4041,7 +4116,7 @@ int i2cOpen(unsigned i2cBus, unsigned i2cAddr, unsigned i2cFlags)
    i2cInfo[slot].addr = i2cAddr;
    i2cInfo[slot].flags = i2cFlags;
    i2cInfo[slot].funcs = funcs;
-   i2cInfo[i].state = PI_I2C_OPENED;
+   i2cInfo[slot].state = PI_I2C_OPENED;
 
    return slot;
 }
@@ -4755,7 +4830,7 @@ int spiClose(unsigned handle)
    if (spiInfo[handle].state != PI_SPI_OPENED)
       SOFT_ERROR(PI_BAD_HANDLE, "bad handle (%d)", handle);
 
-   spiInfo[handle].state = PI_I2C_CLOSED;
+   spiInfo[handle].state = PI_SPI_CLOSED;
 
    if (!spiAnyOpen(spiInfo[handle].flags))
       spiTerm(spiInfo[handle].flags); /* terminate on last close */
@@ -5086,51 +5161,33 @@ int serDataAvailable(unsigned handle)
 static int chooseBestClock
    (clkInf_t *clkInf, unsigned f, unsigned numc, unsigned *cf)
 {
-   int c, valid, offby, offby2, best_offby;
-   uint32_t div;
-   uint64_t frac;
+   int c, valid;
+   double fdiv, offby, best_offby;
+   unsigned div, frac;
 
    valid = 0;
    best_offby = 0;
 
    for (c=0; c<numc; c++)
    {
-      div = cf[c] / f;
+      fdiv = (double)cf[c] / (double)f;
+      if (f < PI_MASH_MAX_FREQ)
+      {
+         fdiv += (0.5 / 4096.0);
+         div = fdiv;
+         frac = (fdiv - div) * 4096.0;
+      }
+      else
+      {
+         fdiv += 0.5;
+         div = fdiv;
+         frac = 0;
+      }
 
       if ((div > 1) && (div < 4096))
       {
-         if (f < PI_MASH_MAX_FREQ)
-         {
-            frac = cf[c] - (div * f);
-            frac = (frac * 4096) / f;
-            offby = cf[c] - (div * f) - ((frac * f) / 4096);
-            if (frac < 4095)
-            {
-               offby2 = cf[c] - (div * f) - (((frac+1) * f) / 4096);
-               if (offby2 < 0) offby2 = -offby2;
-               if (offby2 < offby)
-               {
-                  offby = offby2;
-                  frac++;
-               }
-            }
-         }
-         else
-         {
-            frac = 0;
-            offby = cf[c] - (div * f);
-            if (div < 4095)
-            {
-               offby2 = cf[c] - ((div+1) * f);
-               if (offby2 < 0) offby2 = -offby2;
-               if (offby2 < offby)
-               {
-                  offby = offby2;
-                  div++;
-               }
-            }
-         }
-
+         offby = f - (cf[c] / (div + (frac / 4096.0)));
+         if (offby < 0) offby = - offby;
          if ((!valid) || (offby <= best_offby))
          {
             valid = 1;
@@ -5632,7 +5689,7 @@ unsigned alert_delays[]=
 static void alertGlitchFilter(gpioSample_t *sample, int numSamples)
 {
    int i, j, diff;
-   uint32_t steadyUs, changedTick, RBitV, LBitV;
+   uint32_t steadyUs, changedTick, RBitV, LBitV, initialised;
    uint32_t bit, bitV;
 
    for (i=0; i<=PI_MAX_USER_GPIO; i++)
@@ -5641,6 +5698,17 @@ static void alertGlitchFilter(gpioSample_t *sample, int numSamples)
 
       if (monitorBits & bit & gFilterBits)
       {
+         initialised = gpioAlert[i].gfInitialised;
+         if (!initialised && numSamples > 0)
+         {
+           /* Initialise filter with first sample */
+           bitV = sample[0].level & bit;
+           gpioAlert[i].gfRBitV = bitV;
+           gpioAlert[i].gfLBitV = bitV;
+           gpioAlert[i].gfTick = sample[0].tick;
+           gpioAlert[i].gfInitialised = 1;
+         }
+
          steadyUs    = gpioAlert[i].gfSteadyUs;
          RBitV       = gpioAlert[i].gfRBitV;
          LBitV       = gpioAlert[i].gfLBitV;
@@ -6953,7 +7021,8 @@ static void *pthSocketThreadHandler(void *fdC)
 {
    int sock = *(int*)fdC;
    uintptr_t p[10];
-   uint32_t tmp;
+   uint32_t tmp, response[4];
+   int i;
    int opt;
    char buf[CMD_MAX_EXTENSION];
 
@@ -7043,7 +7112,16 @@ static void *pthSocketThreadHandler(void *fdC)
             p[3] = myDoCommand(p, sizeof(buf)-1, buf);
       }
 
-      if (write(sock, p, 16) == -1) { /* ignore errors */ }
+      if (sizeof(uintptr_t) == 8) // 64-bit system
+      {
+         for (i = 0; i < 4; i++)
+            response[i] = (uint32_t)p[i];
+         if (write(sock, response, 16) == -1) { /* ignore errors */ }
+      }
+      else // 32-bit system
+      {
+         if (write(sock, p, 16) == -1) { /* ignore errors */ }
+      }
 
       switch (p[0])
       {
@@ -7257,7 +7335,7 @@ static int initGrabLockFile(void)
 static uint32_t * initMapMem(int fd, uint32_t addr, uint32_t len)
 {
     return (uint32_t *) mmap(0, len,
-       PROT_READ|PROT_WRITE|PROT_EXEC,
+       PROT_READ|PROT_WRITE,
        MAP_SHARED|MAP_LOCKED,
        fd, addr);
 }
@@ -7838,13 +7916,22 @@ static void initClock(int mainClock)
    myGpioDelay(2000);
 }
 
+static void initKillDMA(volatile uint32_t *dmaAddr)
+{
+   dmaAddr[DMA_CS] = DMA_CHANNEL_ABORT;
+   dmaAddr[DMA_CS] = 0;
+   dmaAddr[DMA_CS] = DMA_CHANNEL_RESET;
+
+   dmaAddr[DMA_CONBLK_AD] = 0;
+}
+
 /* ----------------------------------------------------------------------- */
 
 static void initDMAgo(volatile uint32_t  *dmaAddr, uint32_t cbAddr)
 {
    DBG(DBG_STARTUP, "");
 
-   dmaAddr[DMA_CS] = DMA_CHANNEL_RESET;
+   initKillDMA(dmaAddr);
 
    dmaAddr[DMA_CS] = DMA_INTERRUPT_STATUS | DMA_END_FLAG;
 
@@ -7860,7 +7947,7 @@ static void initDMAgo(volatile uint32_t  *dmaAddr, uint32_t cbAddr)
    dmaAddr[DMA_CS] = DMA_WAIT_ON_WRITES    |
                      DMA_PANIC_PRIORITY(8) |
                      DMA_PRIORITY(8)       |
-                     DMA_ACTIVATE;
+                     DMA_ACTIVE;
 }
 
 /* ----------------------------------------------------------------------- */
@@ -8157,7 +8244,8 @@ static void initReleaseResources(void)
 
 int initInitialise(void)
 {
-   int rev, i, model;
+   int i;
+   unsigned rev, model;
    struct sockaddr_in server;
    struct sockaddr_in6 server6;
    char * portStr;
@@ -8205,13 +8293,27 @@ int initInitialise(void)
          7=Unknown
          8=Pi3B
          9=Zero
+         12=Zero W
+         13=Pi3B+
+         14=Pi3A+
+         17=Pi4B
          */
          if      (model <  2) gpioMask = PI_DEFAULT_UPDATE_MASK_A_B2;
          else if (model <  4) gpioMask = PI_DEFAULT_UPDATE_MASK_APLUS_BPLUS;
          else if (model == 4) gpioMask = PI_DEFAULT_UPDATE_MASK_PI2B;
-         else if (model == 6) gpioMask = PI_DEFAULT_UPDATE_MASK_COMPUTE;
-         else if (model == 8) gpioMask = PI_DEFAULT_UPDATE_MASK_PI3B;
-         else if (model == 9) gpioMask = PI_DEFAULT_UPDATE_MASK_ZERO;
+
+         else if (model == 6
+               || model ==10
+               || model ==16) gpioMask = PI_DEFAULT_UPDATE_MASK_COMPUTE;
+
+         else if (model == 8
+               || model ==13
+               || model ==14) gpioMask = PI_DEFAULT_UPDATE_MASK_PI3B;
+
+         else if (model == 9
+               || model ==12) gpioMask = PI_DEFAULT_UPDATE_MASK_ZERO;
+
+         else if (model ==17) gpioMask = PI_DEFAULT_UPDATE_MASK_PI4B;
          else                 gpioMask = PI_DEFAULT_UPDATE_MASK_UNKNOWN;
       }
 
@@ -8290,7 +8392,7 @@ int initInitialise(void)
             }
             server6.sin6_port = htons(port);
 
-            int opt;
+            int opt = 1;
             setsockopt(fdSock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
             if (bind(fdSock,(struct sockaddr *)&server6, sizeof(server6)) < 0)
                SOFT_ERROR(PI_INIT_FAILED, "bind to port %d failed (%m)", port);
@@ -8305,7 +8407,7 @@ int initInitialise(void)
             SOFT_ERROR(PI_INIT_FAILED, "socket failed (%m)");
          else
          {
-           int opt;
+           int opt = 1;
            setsockopt(fdSock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
          }
          server.sin_family = AF_INET;
@@ -8622,8 +8724,11 @@ void gpioTerminate(void)
 
    /* reset DMA */
 
-   if (dmaReg != MAP_FAILED) dmaIn[DMA_CS] = DMA_CHANNEL_RESET;
-   if (dmaReg != MAP_FAILED) dmaOut[DMA_CS] = DMA_CHANNEL_RESET;
+   if (dmaReg != MAP_FAILED)
+   {
+      initKillDMA(dmaIn);
+      initKillDMA(dmaOut);
+   }
 
 #ifndef EMBEDDED_IN_VM
    if ((gpioCfg.internals & PI_CFG_STATS) &&
@@ -9534,7 +9639,7 @@ int gpioWaveCreate(void)
 
    /* What resources are needed? */
 
-   waveCBsOOLs(&numCB, &numBOOL, &numTOOL);
+      waveCBsOOLs(&numCB, &numBOOL, &numTOOL);
 
    wid = -1;
 
@@ -9557,10 +9662,10 @@ int gpioWaveCreate(void)
    {
       /* Are there enough spare resources? */
 
-      if ((numCB+waveOutBotCB) >= NUM_WAVE_CBS)
+      if ((numCB+waveOutBotCB) > NUM_WAVE_CBS)
          return PI_TOO_MANY_CBS;
 
-      if ((numBOOL+waveOutBotOOL) >= (waveOutTopOOL-numTOOL))
+      if ((numBOOL+waveOutBotOOL) > (waveOutTopOOL-numTOOL))
          return PI_TOO_MANY_OOL;
 
       if (wid >= PI_MAX_WAVES)
@@ -9587,7 +9692,7 @@ int gpioWaveCreate(void)
    BOOL = waveInfo[wid].botOOL;
    TOOL = waveInfo[wid].topOOL;
 
-   wave2Cbs(PI_WAVE_MODE_ONE_SHOT, &CB, &BOOL, &TOOL);
+   wave2Cbs(PI_WAVE_MODE_ONE_SHOT, &CB, &BOOL, &TOOL, 0, 0, 0);
 
    /* Sanity check. */
 
@@ -9600,6 +9705,9 @@ int gpioWaveCreate(void)
          numBOOL, BOOL-waveInfo[wid].botOOL,
          numTOOL, waveInfo[wid].topOOL-TOOL);
    }
+
+   DBG(DBG_USER, "Wave Stats: wid=%d CBs %d BOOL %d TOOL %d", wid,
+      numCB, numBOOL, numTOOL);
 
    waveInfo[wid].deleted = 0;
 
@@ -9614,6 +9722,124 @@ int gpioWaveCreate(void)
    return wid;
 }
 
+int gpioWaveCreatePad(int pctCB, int pctBOOL, int pctTOOL)
+{
+   int i, wid;
+   int numCB, numBOOL, numTOOL;
+   int CB, BOOL, TOOL;
+
+   DBG(DBG_USER, "%d, %d, %d", pctCB, pctBOOL, pctTOOL);
+
+   CHECK_INITED;
+
+   if (pctCB < 0 || pctCB > 100)
+      SOFT_ERROR(PI_BAD_PARAM, "bad wave param, pctCB=(%d)", pctCB);
+   if (pctBOOL < 0 || pctBOOL > 100)
+      SOFT_ERROR(PI_BAD_PARAM, "bad wave param, pctBOOL=(%d)", pctBOOL);
+   if (pctTOOL < 0 || pctTOOL > 100)
+      SOFT_ERROR(PI_BAD_PARAM, "bad wave param, pctTOOL=(%d)", pctTOOL);
+
+   if (wfc[wfcur] == 0) return PI_EMPTY_WAVEFORM;
+
+   /* What resources are needed? */
+   waveCBsOOLs(&numCB, &numBOOL, &numTOOL);
+
+   /* Amount of pad required */
+   CB = (NUM_WAVE_CBS - PI_WAVE_COUNT_PAGES*CBS_PER_OPAGE) * pctCB / 100;
+   BOOL = (NUM_WAVE_OOL - PI_WAVE_COUNT_PAGES*OOL_PER_OPAGE) * pctBOOL /100;
+   TOOL = (NUM_WAVE_OOL - PI_WAVE_COUNT_PAGES*OOL_PER_OPAGE) * pctTOOL /100;
+
+   /* Reject if wave is too big */
+   if (numCB > CB) return PI_TOO_MANY_CBS;
+   if (numBOOL > BOOL) return PI_TOO_MANY_OOL;
+   if (numTOOL > TOOL) return PI_TOO_MANY_OOL;
+
+   /* Set the padding */
+   numCB = CB;
+   numBOOL = BOOL;
+   numTOOL = TOOL;
+
+
+   wid = -1;
+
+   /* Is there an exact fit with a deleted wave. */
+
+   for (i=0; i<waveOutCount; i++)
+   {
+      if (waveInfo[i].deleted             &&
+         (waveInfo[i].numCB   == numCB)   &&
+         (waveInfo[i].numBOOL == numBOOL) &&
+         (waveInfo[i].numTOOL == numTOOL))
+      {
+         /* Reuse the deleted waves resources. */
+         wid = i;
+         break;
+      }
+   }
+
+   if (wid == -1)
+   {
+      /* Are there enough spare resources? */
+
+      if ((numCB+waveOutBotCB) > NUM_WAVE_CBS)
+         return PI_TOO_MANY_CBS;
+
+      if ((numBOOL+waveOutBotOOL) > (waveOutTopOOL-numTOOL))
+         return PI_TOO_MANY_OOL;
+
+      if (wid >= PI_MAX_WAVES)
+         return PI_NO_WAVEFORM_ID;
+
+      wid = waveOutCount++;
+
+      waveInfo[wid].botCB  = waveOutBotCB;
+      waveInfo[wid].topCB  = waveOutBotCB + numCB -1;
+      waveInfo[wid].botOOL = waveOutBotOOL;
+      waveInfo[wid].topOOL = waveOutTopOOL;
+      waveInfo[wid].numCB = numCB;
+      waveInfo[wid].numBOOL = numBOOL;
+      waveInfo[wid].numTOOL = numTOOL;
+
+      waveOutBotCB += numCB;
+      waveOutBotOOL += numBOOL;
+      waveOutTopOOL -= numTOOL;
+   }
+
+   /* Must be room if got this far. */
+
+   CB   = waveInfo[wid].botCB;
+   BOOL = waveInfo[wid].botOOL;
+   TOOL = waveInfo[wid].topOOL;
+
+   wave2Cbs(PI_WAVE_MODE_ONE_SHOT, &CB, &BOOL, &TOOL, numCB, numBOOL, numTOOL);
+
+   /* Sanity check. */
+
+   if ( (numCB   != (CB-waveInfo[wid].botCB))    ||
+        (numBOOL != (BOOL-waveInfo[wid].botOOL)) ||
+        (numTOOL != (waveInfo[wid].topOOL-TOOL)) )
+   {
+      DBG(DBG_ALWAYS, "ERROR wid=%d CBs %d=%d BOOL %d=%d TOOL %d=%d", wid,
+         numCB,   CB-waveInfo[wid].botCB,
+         numBOOL, BOOL-waveInfo[wid].botOOL,
+         numTOOL, waveInfo[wid].topOOL-TOOL);
+   }
+
+   DBG(DBG_USER, "Wave padding: wid=%d CBs %d BOOL %d TOOL %d", wid,
+      numCB, numBOOL, numTOOL);
+
+   waveInfo[wid].deleted = 0;
+
+   /* Consume waves. */
+
+   wfc[0] = 0;
+   wfc[1] = 0;
+   wfc[2] = 0;
+
+   wfcur = 0;
+
+   return wid;
+}
 /* ----------------------------------------------------------------------- */
 
 int gpioWaveDelete(unsigned wave_id)
@@ -9678,11 +9904,7 @@ int gpioWaveTxSend(unsigned wave_id, unsigned wave_mode)
       PWMClockInited = 0;
    }
 
-   if (wave_mode < PI_WAVE_MODE_ONE_SHOT_SYNC)
-   {
-      dmaOut[DMA_CS] = DMA_CHANNEL_RESET;
-      dmaOut[DMA_CONBLK_AD] = 0;
-   }
+   if (wave_mode < PI_WAVE_MODE_ONE_SHOT_SYNC) initKillDMA(dmaOut);
 
    p = rawWaveCBAdr(waveInfo[wave_id].topCB);
 
@@ -9925,8 +10147,8 @@ int gpioWaveChain(char *buf, unsigned bufSize)
       PWMClockInited = 0;
    }
 
-   dmaOut[DMA_CS] = DMA_CHANNEL_RESET;
-   dmaOut[DMA_CONBLK_AD] = 0;
+   initKillDMA(dmaOut);
+
    waveEndPtr = NULL;
    endPtr = NULL;
 
@@ -10247,8 +10469,7 @@ int gpioWaveTxStop(void)
 
    CHECK_INITED;
 
-   dmaOut[DMA_CS] = DMA_CHANNEL_RESET;
-   dmaOut[DMA_CONBLK_AD] = 0;
+   initKillDMA(dmaOut);
 
    waveEndPtr = NULL;
 
@@ -10703,35 +10924,84 @@ int bbI2CZip(
 
 void bscInit(int mode)
 {
+   int sda, scl, mosi, miso, ce;
+
    bscsReg[BSC_CR]=0; /* clear device */
    bscsReg[BSC_RSR]=0; /* clear underrun and overrun errors */
    bscsReg[BSC_SLV]=0; /* clear I2C slave address */
    bscsReg[BSC_IMSC]=0xf; /* mask off all interrupts */
    bscsReg[BSC_ICR]=0x0f; /* clear all interrupts */
 
-   gpioSetMode(BSC_SDA_MOSI, PI_ALT3);
-   gpioSetMode(BSC_SCL_SCLK, PI_ALT3);
+   if (pi_is_2711)
+   {
+      sda = BSC_SDA_2711;
+      scl = BSC_SCL_SCLK_2711;
+      mosi = BSC_MOSI_2711;
+      miso = BSC_MISO_2711;
+      ce = BSC_CE_N_2711;
+   }
+   else
+   {
+      sda = BSC_SDA;
+      scl = BSC_SCL_SCLK;
+      mosi = BSC_MOSI;
+      miso = BSC_MISO;
+      ce = BSC_CE_N;
+   }
+
 
    if (mode > 1) /* SPI uses all GPIO */
    {
-      gpioSetMode(BSC_MISO, PI_ALT3);
-      gpioSetMode(BSC_CE_N, PI_ALT3);
+      gpioSetMode(scl, PI_ALT3);
+      gpioSetMode(mosi, PI_ALT3);
+      gpioSetMode(miso, PI_ALT3);
+      gpioSetMode(ce, PI_ALT3);
+   }
+   else
+   {
+      gpioSetMode(scl, PI_ALT3);
+      gpioSetMode(sda, PI_ALT3);
    }
 }
 
 void bscTerm(int mode)
 {
+   int sda, scl, mosi, miso, ce;
+
    bscsReg[BSC_CR] = 0; /* clear device */
    bscsReg[BSC_RSR]=0; /* clear underrun and overrun errors */
    bscsReg[BSC_SLV]=0; /* clear I2C slave address */
 
-   gpioSetMode(BSC_SDA_MOSI, PI_INPUT);
-   gpioSetMode(BSC_SCL_SCLK, PI_INPUT);
+   if (pi_is_2711)
+   {
+      sda = BSC_SDA_2711;
+      scl = BSC_SCL_SCLK_2711;
+      mosi = BSC_MOSI_2711;
+      miso = BSC_MISO_2711;
+      ce = BSC_CE_N_2711;
+   }
+   else
+   {
+      sda = BSC_SDA;
+      scl = BSC_SCL_SCLK;
+      mosi = BSC_MOSI;
+      miso = BSC_MISO;
+      ce = BSC_CE_N;
+   }
+
 
    if (mode > 1)
    {
-      gpioSetMode(BSC_MISO, PI_INPUT);
-      gpioSetMode(BSC_CE_N, PI_INPUT);
+      gpioSetMode(scl, PI_INPUT);
+      gpioSetMode(mosi, PI_INPUT);
+      gpioSetMode(miso, PI_INPUT);
+      gpioSetMode(ce, PI_INPUT);
+   }
+   else
+   {
+      gpioSetMode(sda, PI_INPUT);
+      gpioSetMode(scl, PI_INPUT);
+
    }
 }
 
@@ -10751,9 +11021,6 @@ int bscXfer(bsc_xfer_t *xfer)
 
    CHECK_INITED;
 
-   if (pi_is_2711)
-      SOFT_ERROR(PI_NOT_ON_BCM2711, "SPI/BSC slave not available on BCM2711");
-
    eventAlert[PI_EVENT_BSC].ignore = 1;
 
    if (xfer->control)
@@ -10767,7 +11034,7 @@ int bscXfer(bsc_xfer_t *xfer)
 
       if (mode > bscMode)
       {
-         bscInit(bscMode);
+         bscInit(mode);
          bscMode = mode;
       }
    }
@@ -12098,18 +12365,8 @@ int gpioGlitchFilter(unsigned gpio, unsigned steady)
 
    if (steady)
    {
-      gpioAlert[gpio].gfTick  = systReg[SYST_CLO];
-
-      if (gpioRead_Bits_0_31() & (1<<gpio))
-      {
-         gpioAlert[gpio].gfLBitV = (1<<gpio);
-         gpioAlert[gpio].gfRBitV = 0 ;
-      }
-      else
-      {
-         gpioAlert[gpio].gfLBitV = 0 ;
-         gpioAlert[gpio].gfRBitV = (1<<gpio);
-      }
+      /* Initialise values next time we process alerts */
+      gpioAlert[gpio].gfInitialised = 0;
    }
 
    gpioAlert[gpio].gfSteadyUs = steady;
@@ -12246,8 +12503,11 @@ int gpioSetTimerFunc(unsigned id, unsigned millis, gpioTimerFunc_t f)
    if (id > PI_MAX_TIMER)
       SOFT_ERROR(PI_BAD_TIMER, "bad timer id (%d)", id);
 
-   if ((millis < PI_MIN_MS) || (millis > PI_MAX_MS))
-      SOFT_ERROR(PI_BAD_MS, "timer %d, bad millis (%d)", id, millis);
+   if (f)
+   {
+      if ((millis < PI_MIN_MS) || (millis > PI_MAX_MS))
+         SOFT_ERROR(PI_BAD_MS, "timer %d, bad millis (%d)", id, millis);
+   }
 
    intGpioSetTimerFunc(id, millis, f, 0, NULL);
 
@@ -12982,6 +13242,8 @@ int fileApprove(char *filename)
    buffer[0] = 0;
    match[0] = 0;
 
+   if (myPathBad(filename)) return PI_FILE_NONE;
+
    f = fopen("/opt/pigpio/access", "r");
 
    if (!f) return PI_FILE_NONE;
@@ -13038,7 +13300,7 @@ int fileOpen(char *file, unsigned mode)
 {
    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
    int fd=-1;
-   int i, slot, oflag, omode;
+   int i, slot, oflag, omode, pmode, rmode;
    struct stat statbuf;
 
    DBG(DBG_USER, "file=%s mode=%d", file, mode);
@@ -13050,8 +13312,14 @@ int fileOpen(char *file, unsigned mode)
         ((mode & PI_FILE_RW) == 0) )
       SOFT_ERROR(PI_BAD_FILE_MODE, "bad mode (%d)", mode);
 
-   if ((fileApprove(file) & mode) == PI_FILE_NONE)
+   pmode = fileApprove(file); // 0=NONE, 1=READ, 2=WRITE, 3=RW
+   rmode = mode & PI_FILE_RW; // 0=NONE, 1=READ, 2=WRITE, 3=RW
+
+   if (((pmode & rmode) != rmode) || (rmode == PI_FILE_NONE))
       SOFT_ERROR(PI_NO_FILE_ACCESS, "no permission to access file (%s)", file);
+
+   if ((mode > 3) && ((mode & PI_FILE_WRITE) == 0))
+      SOFT_ERROR(PI_NO_FILE_ACCESS, "no permission to write file (%s)", file);
 
    slot = -1;
 
@@ -13076,7 +13344,6 @@ int fileOpen(char *file, unsigned mode)
 
    if (mode & PI_FILE_APPEND)
    {
-      mode |= PI_FILE_WRITE;
       oflag |= O_APPEND;
    }
 
@@ -13088,7 +13355,6 @@ int fileOpen(char *file, unsigned mode)
 
    if (mode & PI_FILE_TRUNC)
    {
-      mode |= PI_FILE_WRITE;
       oflag |= O_TRUNC;
    }
 
@@ -13273,7 +13539,7 @@ int fileList(char *fpat,  char *buf, unsigned count)
 
    CHECK_INITED;
 
-   if (fileApprove(fpat) == PI_FILE_NONE)
+   if ((fileApprove(fpat) & PI_FILE_READ) != PI_FILE_READ)
       SOFT_ERROR(PI_NO_FILE_ACCESS, "no permission to access file (%s)", fpat);
 
    bufpos = 0;
@@ -13431,13 +13697,14 @@ W  warranty void if either bit is set
 
 S  0=old (bits 0-22 are revision number) 1=new (following fields apply)
 
-M  0=256 1=512 2=1024
+M  0=256 1=512 2=1024 3=2GB 4=4GB
 
-B  0=Sony 1=Egoman 2=Embest 3=Unknown 4=Embest
+B  0=Sony 1=Egoman 2=Embest 3=Sony Japan 4=Embest 5=Stadium
 
-P  0=2835, 1=2836, 2=2837
+P  0=2835, 1=2836, 2=2837 3=2711
 
-T  0=A 1=B 2=A+ 3=B+ 4=Pi2B 5=Alpha 6=Compute Module 7=Unknown 8=Pi3B 9=Zero
+T  0=A 1=B 2=A+ 3=B+ 4=Pi2B 5=Alpha 6=CM1 8=Pi3B 9=Zero a=CM3 c=Zero W
+   d=3B+ e=3A+ 10=CM3+ 11=4B
 
 R  PCB board revision
 
@@ -13455,157 +13722,119 @@ unsigned gpioHardwareRevision(void)
 
    if (rev) return rev;
 
-   piCores = 0;
-
    filp = fopen ("/proc/cpuinfo", "r");
+
 
    if (filp != NULL)
    {
       while (fgets(buf, sizeof(buf), filp) != NULL)
       {
-         if (piCores == 0)
-         {
-            if (!strncasecmp("model name", buf, 10))
-            {
-               if (strstr (buf, "ARMv6") != NULL)
-               {
-                  piCores = 1;
-                  pi_peri_phys = 0x20000000;
-                  pi_dram_bus  = 0x40000000;
-                  pi_mem_flag  = 0x0C;
-               }
-               else if (strstr (buf, "ARMv7") != NULL)
-               {
-                  piCores = 4;
-                  pi_peri_phys = 0x3F000000;
-                  pi_dram_bus  = 0xC0000000;
-                  pi_mem_flag  = 0x04;
-               }
-               else if (strstr (buf, "ARMv8") != NULL)
-               {
-                  piCores = 4;
-                  pi_peri_phys = 0x3F000000;
-                  pi_dram_bus  = 0xC0000000;
-                  pi_mem_flag  = 0x04;
-               }
-            }
-         }
-
-         if (!strncasecmp("hardware\t: BCM", buf, 14))
-         {
-            int bcmno = atoi(buf+14);
-            if ((bcmno == 2708) ||
-                (bcmno == 2709) ||
-                (bcmno == 2710) ||
-                (bcmno == 2835) ||
-                (bcmno == 2836) ||
-                (bcmno == 2837))
-            {
-              pi_ispi = 1;
-            }
-         }
-
          if (!strncasecmp("revision\t:", buf, 10))
          {
             if (sscanf(buf+10, "%x%c", &rev, &term) == 2)
             {
                if (term != '\n') rev = 0;
-               else rev &= 0xFFFFFF; /* mask out warranty bit */
-               switch (rev&0xFFF0)  /* just interested in BCM model */
-               {
-                  case 0x3110: /* Pi4B */
-                     piCores = 4;
-                     pi_peri_phys = 0xFE000000;
-                     pi_dram_bus  = 0xC0000000;
-                     pi_mem_flag  = 0x04;
-                     pi_is_2711   = 1;
-                     pi_ispi      = 1;
-                     clk_osc_freq = CLK_OSC_FREQ_2711;
-                     clk_plld_freq = CLK_PLLD_FREQ_2711;
-                     hw_pwm_max_freq = PI_HW_PWM_MAX_FREQ_2711;
-                     hw_clk_min_freq = PI_HW_CLK_MIN_FREQ_2711;
-                     hw_clk_max_freq = PI_HW_CLK_MAX_FREQ_2711;
-
-                     fclose(filp);
-                     if (!gpioMaskSet)
-                     {
-                        gpioMaskSet = 1;
-                        gpioMask = PI_DEFAULT_UPDATE_MASK_PI4B;
-                     }
-                     return rev;
-                     break;
-               }
             }
          }
       }
-
       fclose(filp);
+   }
 
-      /*
-         Raspberry pi 3 running arm64 don't put all the
-         information we need in /proc/cpuinfo, but we can
-         get it elsewhere.
-      */
+   /* (some) arm64 operating systems get revision number here  */
 
-      if (!pi_ispi)
+   if (rev == 0)
+   {
+      DBG(DBG_USER, "searching /proc/device-tree for revision");
+      filp = fopen ("/proc/device-tree/system/linux,revision", "r");
+
+      if (filp != NULL)
       {
-         filp = fopen ("/proc/device-tree/model", "r");
-         if (filp != NULL)
+         uint32_t tmp;
+         if (fread(&tmp,1 , 4, filp) == 4)
          {
-            if (fgets(buf, sizeof(buf), filp) != NULL)
-            {
-               if (!strncmp("Raspberry Pi 3", buf, 14)) 
-               {
-                  pi_ispi = 1;
-                  piCores = 4;
-                  pi_peri_phys = 0x3F000000;
-                  pi_dram_bus  = 0xC0000000;
-                  pi_mem_flag  = 0x04;
-               }
-               else if (!strncmp("Raspberry Pi 4 Model B", buf, 22))
-               {
-                  pi_ispi      = 1;
-                  piCores      = 4;
-                  pi_peri_phys = 0xFE000000;
-                  pi_dram_bus  = 0xC0000000;
-                  pi_mem_flag  = 0x04;
-                  pi_is_2711   = 1;
-                  clk_osc_freq = CLK_OSC_FREQ_2711;
-                  clk_plld_freq = CLK_PLLD_FREQ_2711;
-                  hw_pwm_max_freq = PI_HW_PWM_MAX_FREQ_2711;
-                  hw_clk_min_freq = PI_HW_CLK_MIN_FREQ_2711;
-                  hw_clk_max_freq = PI_HW_CLK_MAX_FREQ_2711;
-                  if (!gpioMaskSet)
-                  {
-                     gpioMaskSet = 1;
-                     gpioMask = PI_DEFAULT_UPDATE_MASK_PI4B;
-                  }
-               }
-            }
-         }
-         fclose(filp);
-      }
-
-      if (rev == 0)
-      {
-         filp = fopen ("/proc/device-tree/system/linux,revision", "r");
-         if (filp != NULL)
-         {
-            uint32_t tmp;
-            if (fread(&tmp,1 , 4, filp) == 4)
-            {
-               /*
-                  for some reason the value returned by reading
-                  this /proc entry seems to be big endian,
-                  convert it.
-               */
-               rev = ntohl(tmp);
-               rev &= 0xFFFFFF; /* mask out warranty bit */
-            }
+            /*
+               for some reason the value returned by reading
+               this /proc entry seems to be big endian,
+               convert it.
+            */
+            rev = ntohl(tmp);
+            rev &= 0xFFFFFF; /* mask out warranty bit */
          }
          fclose(filp);
       }
    }
+
+   piCores = 0;
+   pi_ispi = 0;
+   rev &= 0xFFFFFF; /* mask out warranty bit */
+
+   /* Decode revision code */
+
+   if ((rev & 0x800000) == 0) /* old rev code */
+   {
+      if ((rev > 0) && (rev < 0x0016)) /* all BCM2835 */
+      {
+         pi_ispi = 1;
+         piCores = 1;
+         pi_peri_phys = 0x20000000;
+         pi_dram_bus  = 0x40000000;
+         pi_mem_flag  = 0x0C;
+      }
+      else
+      {
+         DBG(DBG_ALWAYS, "unknown revision=%x", rev);
+         rev = 0;
+      }
+   }
+   else /* new rev code */
+   {
+      switch ((rev >> 12) & 0xF)  /* just interested in BCM model */
+      {
+
+         case 0x0:   /* BCM2835 */
+            pi_ispi = 1;
+            piCores = 1;
+            pi_peri_phys = 0x20000000;
+            pi_dram_bus  = 0x40000000;
+            pi_mem_flag  = 0x0C;
+            break;
+
+         case 0x1:   /* BCM2836 */
+         case 0x2:   /* BCM2837 */
+            pi_ispi = 1;
+            piCores = 4;
+            pi_peri_phys = 0x3F000000;
+            pi_dram_bus  = 0xC0000000;
+            pi_mem_flag  = 0x04;
+            break;
+
+         case 0x3:   /* BCM2711 */
+            pi_ispi = 1;
+            piCores = 4;
+            pi_peri_phys = 0xFE000000;
+            pi_dram_bus  = 0xC0000000;
+            pi_mem_flag  = 0x04;
+            pi_is_2711   = 1;
+            clk_osc_freq = CLK_OSC_FREQ_2711;
+            clk_plld_freq = CLK_PLLD_FREQ_2711;
+            hw_pwm_max_freq = PI_HW_PWM_MAX_FREQ_2711;
+            hw_clk_min_freq = PI_HW_CLK_MIN_FREQ_2711;
+            hw_clk_max_freq = PI_HW_CLK_MAX_FREQ_2711;
+            break;
+
+         default:
+            DBG(DBG_ALWAYS, "unknown rev code (%x)", rev);
+            rev=0;
+            pi_ispi = 0;
+            break;
+      }
+   }
+
+   DBG(DBG_USER, "revision=%x", rev);
+   DBG(DBG_USER, "pi_peri_phys=%x", pi_peri_phys);
+   DBG(DBG_USER, "pi_dram_bus=%x", pi_dram_bus);
+   DBG(DBG_USER, "pi_mem_flag=%x", pi_mem_flag);
+
    return rev;
 }
 
@@ -13798,44 +14027,6 @@ int gpioCfgSetInternals(uint32_t cfgVal)
    gpioCfg.dbgLevel = cfgVal & 0xF;
    gpioCfg.alertFreq = (cfgVal>>4) & 0xF;
    return 0;
-}
-
-int gpioCfgInternals(unsigned cfgWhat, unsigned cfgVal)
-{
-   int retVal = PI_BAD_CFG_INTERNAL;
-
-   DBG(DBG_USER, "cfgWhat=%u, cfgVal=%d", cfgWhat, cfgVal);
-
-   switch(cfgWhat)
-   {
-      case 562484977:
-
-         if (cfgVal) gpioCfg.internals |= PI_CFG_STATS;
-         else gpioCfg.internals &= (~PI_CFG_STATS);
-
-         DBG(DBG_ALWAYS, "show stats is %u", cfgVal);
-
-         retVal = 0;
-
-         break;
-
-      case 984762879:
-
-         if ((cfgVal >= DBG_ALWAYS) && (cfgVal <= DBG_MAX_LEVEL))
-         {
-            
-            gpioCfg.dbgLevel = cfgVal;
-            gpioCfg.internals = (gpioCfg.internals & (~0xF)) | cfgVal;
-
-            DBG(DBG_ALWAYS, "Debug level is %u", cfgVal);
-
-            retVal = 0;
-         }
-
-         break;
-   }
-
-   return retVal;
 }
 
 
