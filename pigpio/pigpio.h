@@ -27,10 +27,11 @@ For more information, please refer to <http://unlicense.org/>
 #ifndef PIGPIO_H
 #define PIGPIO_H
 
+#include <stddef.h>
 #include <stdint.h>
 #include <pthread.h>
 
-#define PIGPIO_VERSION 71
+#define PIGPIO_VERSION 79
 
 /*TEXT
 
@@ -72,8 +73,6 @@ The PWM and servo pulses are timed using the DMA and PWM peripherals.
 
 This use was inspired by Richard Hirst's servoblaster kernel module.
 
-See [[https://github.com/richardghirst/PiBits/tree/master/ServoBlaster]]
-
 *Usage*
 
 Include <pigpio.h> in your source files.
@@ -108,6 +107,16 @@ return error PI_NOT_INITIALISED.
 If the library is initialised the [*gpioCfg**] functions will return
 error PI_INITIALISED.
 
+If you intend to rely on signals sent to your application, you should
+turn off the internal signal handling as shown in this example:
+
+. .
+int cfg = gpioCfgGetInternals();
+cfg |= PI_CFG_NOSIGHANDLER;  // (1<<10)
+gpioCfgSetInternals(cfg);
+int status = gpioInitialise();
+. .
+
 TEXT*/
 
 /*OVERVIEW
@@ -117,7 +126,7 @@ ESSENTIAL
 gpioInitialise             Initialise library
 gpioTerminate              Stop library
 
-BEGINNER
+BASIC
 
 gpioSetMode                Set a GPIO mode
 gpioGetMode                Get a GPIO mode
@@ -127,29 +136,29 @@ gpioSetPullUpDown          Set/clear GPIO pull up/down resistor
 gpioRead                   Read a GPIO
 gpioWrite                  Write a GPIO
 
+PWM_(overrides_servo_commands_on_same_GPIO)
+
 gpioPWM                    Start/stop PWM pulses on a GPIO
+gpioSetPWMfrequency        Configure PWM frequency for a GPIO
+gpioSetPWMrange            Configure PWM range for a GPIO
+
 gpioGetPWMdutycycle        Get dutycycle setting on a GPIO
+gpioGetPWMfrequency        Get configured PWM frequency for a GPIO
+gpioGetPWMrange            Get configured PWM range for a GPIO
+
+gpioGetPWMrealRange        Get underlying PWM range for a GPIO
+
+Servo_(overrides_PWM_commands_on_same_GPIO)
 
 gpioServo                  Start/stop servo pulses on a GPIO
+
 gpioGetServoPulsewidth     Get pulsewidth setting on a GPIO
-
-gpioDelay                  Delay for a number of microseconds
-
-gpioSetAlertFunc           Request a GPIO level change callback
-
-gpioSetTimerFunc           Request a regular timed callback
 
 INTERMEDIATE
 
-gpioTrigger                Send a trigger pulse to a GPIO.
+gpioTrigger                Send a trigger pulse to a GPIO
 
-gpioSetWatchdog            Set a watchdog on a GPIO.
-
-gpioSetPWMrange            Configure PWM range for a GPIO
-gpioGetPWMrange            Get configured PWM range for a GPIO
-
-gpioSetPWMfrequency        Configure PWM frequency for a GPIO
-gpioGetPWMfrequency        Get configured PWM frequency for a GPIO
+gpioSetWatchdog            Set a watchdog on a GPIO
 
 gpioRead_Bits_0_31         Read all GPIO in bank 1
 gpioRead_Bits_32_53        Read all GPIO in bank 2
@@ -160,14 +169,34 @@ gpioWrite_Bits_32_53_Clear Clear selected GPIO in bank 2
 gpioWrite_Bits_0_31_Set    Set selected GPIO in bank 1
 gpioWrite_Bits_32_53_Set   Set selected GPIO in bank 2
 
+gpioSetAlertFunc           Request a GPIO level change callback
+gpioSetAlertFuncEx         Request a GPIO change callback, extended
+
+gpioSetTimerFunc           Request a regular timed callback
+gpioSetTimerFuncEx         Request a regular timed callback, extended
+
 gpioStartThread            Start a new thread
 gpioStopThread             Stop a previously started thread
 
 ADVANCED
 
-gpioGetPWMrealRange        Get underlying PWM range for a GPIO
+gpioNotifyOpen             Request a notification handle
+gpioNotifyClose            Close a notification
+gpioNotifyOpenWithSize     Request a notification with sized pipe
+gpioNotifyBegin            Start notifications for selected GPIO
+gpioNotifyPause            Pause notifications
 
-gpioSetAlertFuncEx         Request a GPIO change callback, extended
+gpioHardwareClock          Start hardware clock on supported GPIO
+
+gpioHardwarePWM            Start hardware PWM on supported GPIO
+
+gpioGlitchFilter           Set a glitch filter on a GPIO
+gpioNoiseFilter            Set a noise filter on a GPIO
+
+gpioSetPad                 Sets a pads drive strength
+gpioGetPad                 Gets a pads drive strength
+
+shell                      Executes a shell command
 
 gpioSetISRFunc             Request a GPIO interrupt callback
 gpioSetISRFuncEx           Request a GPIO interrupt callback, extended
@@ -178,31 +207,20 @@ gpioSetSignalFuncEx        Request a signal callback, extended
 gpioSetGetSamplesFunc      Requests a GPIO samples callback
 gpioSetGetSamplesFuncEx    Requests a GPIO samples callback, extended
 
-gpioSetTimerFuncEx         Request a regular timed callback, extended
+Custom
 
-gpioNotifyOpen             Request a notification handle
-gpioNotifyOpenWithSize     Request a notification handle with sized pipe
-gpioNotifyBegin            Start notifications for selected GPIO
-gpioNotifyPause            Pause notifications
-gpioNotifyClose            Close a notification
+gpioCustom1                User custom function 1
+gpioCustom2                User custom function 2
 
-gpioSerialReadOpen         Opens a GPIO for bit bang serial reads
-gpioSerialReadInvert       Configures normal/inverted for serial reads
-gpioSerialRead             Reads bit bang serial data from a GPIO
-gpioSerialReadClose        Closes a GPIO for bit bang serial reads
+Events
 
-gpioHardwareClock          Start hardware clock on supported GPIO
-gpioHardwarePWM            Start hardware PWM on supported GPIO
+eventMonitor               Sets the events to monitor
+eventSetFunc               Request an event callback
+eventSetFuncEx             Request an event callback, extended
 
-gpioGlitchFilter           Set a glitch filter on a GPIO
-gpioNoiseFilter            Set a noise filter on a GPIO
+eventTrigger               Trigger an event
 
-gpioGetPad                 Gets a pads drive strength
-gpioSetPad                 Sets a pads drive strength
-
-shell                      Executes a shell command
-
-SCRIPTS
+Scripts
 
 gpioStoreScript            Store a script
 gpioRunScript              Run a stored script
@@ -211,60 +229,33 @@ gpioScriptStatus           Get script status and parameters
 gpioStopScript             Stop a running script
 gpioDeleteScript           Delete a stored script
 
-WAVES
-
-gpioWaveClear              Deletes all waveforms
-
-gpioWaveAddNew             Starts a new waveform
-gpioWaveAddGeneric         Adds a series of pulses to the waveform
-gpioWaveAddSerial          Adds serial data to the waveform
-
-gpioWaveCreate             Creates a waveform from added data
-gpioWaveDelete             Deletes a waveform
-
-gpioWaveTxSend             Transmits a waveform
-
-gpioWaveChain              Transmits a chain of waveforms
-
-gpioWaveTxAt               Returns the current transmitting waveform
-
-gpioWaveTxBusy             Checks to see if the waveform has ended
-gpioWaveTxStop             Aborts the current waveform
-
-gpioWaveGetMicros          Length in microseconds of the current waveform
-gpioWaveGetHighMicros      Length of longest waveform so far
-gpioWaveGetMaxMicros       Absolute maximum allowed micros
-
-gpioWaveGetPulses          Length in pulses of the current waveform
-gpioWaveGetHighPulses      Length of longest waveform so far
-gpioWaveGetMaxPulses       Absolute maximum allowed pulses
-
-gpioWaveGetCbs             Length in control blocks of the current waveform
-gpioWaveGetHighCbs         Length of longest waveform so far
-gpioWaveGetMaxCbs          Absolute maximum allowed control blocks
-
 I2C
 
 i2cOpen                    Opens an I2C device
 i2cClose                   Closes an I2C device
 
 i2cWriteQuick              SMBus write quick
-i2cWriteByte               SMBus write byte
-i2cReadByte                SMBus read byte
-i2cWriteByteData           SMBus write byte data
-i2cWriteWordData           SMBus write word data
-i2cReadByteData            SMBus read byte data
-i2cReadWordData            SMBus read word data
-i2cProcessCall             SMBus process call
-i2cWriteBlockData          SMBus write block data
-i2cReadBlockData           SMBus read block data
-i2cBlockProcessCall        SMBus block process call
 
-i2cWriteI2CBlockData       SMBus write I2C block data
+i2cReadByte                SMBus read byte
+i2cWriteByte               SMBus write byte
+
+i2cReadByteData            SMBus read byte data
+i2cWriteByteData           SMBus write byte data
+
+i2cReadWordData            SMBus read word data
+i2cWriteWordData           SMBus write word data
+
+i2cReadBlockData           SMBus read block data
+i2cWriteBlockData          SMBus write block data
+
 i2cReadI2CBlockData        SMBus read I2C block data
+i2cWriteI2CBlockData       SMBus write I2C block data
 
 i2cReadDevice              Reads the raw I2C device
 i2cWriteDevice             Writes the raw I2C device
+
+i2cProcessCall             SMBus process call
+i2cBlockProcessCall        SMBus block process call
 
 i2cSwitchCombined          Sets or clears the combined flag
 
@@ -272,22 +263,12 @@ i2cSegments                Performs multiple I2C transactions
 
 i2cZip                     Performs multiple I2C transactions
 
+I2C_BIT_BANG
+
 bbI2COpen                  Opens GPIO for bit banging I2C
 bbI2CClose                 Closes GPIO for bit banging I2C
-bbI2CZip                   Performs multiple bit banged I2C transactions
 
-SPI
-
-spiOpen                    Opens a SPI device
-spiClose                   Closes a SPI device
-
-spiRead                    Reads bytes from a SPI device
-spiWrite                   Writes bytes to a SPI device
-spiXfer                    Transfers bytes with a SPI device
-
-bbSPIOpen                  Opens GPIO for bit banging SPI
-bbSPIClose                 Closes GPIO for bit banging SPI
-bbSPIXfer                  Performs multiple bit banged SPI transactions
+bbI2CZip                   Performs bit banged I2C transactions
 
 I2C/SPI_SLAVE
 
@@ -300,49 +281,86 @@ serClose                   Closes a serial device
 
 serReadByte                Reads a byte from a serial device
 serWriteByte               Writes a byte to a serial device
+
 serRead                    Reads bytes from a serial device
 serWrite                   Writes bytes to a serial device
 
 serDataAvailable           Returns number of bytes ready to be read
 
+SERIAL_BIT_BANG_(read_only)
+
+gpioSerialReadOpen         Opens a GPIO for bit bang serial reads
+gpioSerialReadClose        Closes a GPIO for bit bang serial reads
+
+gpioSerialReadInvert       Configures normal/inverted for serial reads
+
+gpioSerialRead             Reads bit bang serial data from a GPIO
+
+SPI
+
+spiOpen                    Opens a SPI device
+spiClose                   Closes a SPI device
+
+spiRead                    Reads bytes from a SPI device
+spiWrite                   Writes bytes to a SPI device
+spiXfer                    Transfers bytes with a SPI device
+
+SPI_BIT_BANG
+
+bbSPIOpen                  Opens GPIO for bit banging SPI
+bbSPIClose                 Closes GPIO for bit banging SPI
+
+bbSPIXfer                  Performs bit banged SPI transactions
+
 FILES
 
 fileOpen                   Opens a file
 fileClose                  Closes a file
+
 fileRead                   Reads bytes from a file
 fileWrite                  Writes bytes to a file
+
 fileSeek                   Seeks to a position within a file
+
 fileList                   List files which match a pattern
 
-EVENTS
+WAVES
 
-eventMonitor               Sets the events to monitor
-eventSetFunc               Request an event callback
-eventSetFuncEx             Request an event callback, extended
-eventTrigger               Trigger an event
+gpioWaveClear              Deletes all waveforms
 
-CONFIGURATION
+gpioWaveAddNew             Starts a new waveform
+gpioWaveAddGeneric         Adds a series of pulses to the waveform
+gpioWaveAddSerial          Adds serial data to the waveform
 
-gpioCfgBufferSize          Configure the GPIO sample buffer size
-gpioCfgClock               Configure the GPIO sample rate
-gpioCfgDMAchannel          Configure the DMA channel (DEPRECATED)
-gpioCfgDMAchannels         Configure the DMA channels
-gpioCfgPermissions         Configure the GPIO access permissions
-gpioCfgInterfaces          Configure user interfaces
-gpioCfgSocketPort          Configure socket port
-gpioCfgMemAlloc            Configure DMA memory allocation mode
-gpioCfgNetAddr             Configure allowed network addresses
+gpioWaveCreate             Creates a waveform from added data
+gpioWaveCreatePad          Creates a waveform of fixed size from added data
+gpioWaveDelete             Deletes a waveform
 
-gpioCfgInternals           Configure miscellaneous internals (DEPRECATED)
-gpioCfgGetInternals        Get internal configuration settings
-gpioCfgSetInternals        Set internal configuration settings
+gpioWaveTxSend             Transmits a waveform
 
-CUSTOM
+gpioWaveChain              Transmits a chain of waveforms
 
-gpioCustom1                User custom function 1
-gpioCustom2                User custom function 2
+gpioWaveTxAt               Returns the current transmitting waveform
+
+gpioWaveTxBusy             Checks to see if the waveform has ended
+
+gpioWaveTxStop             Aborts the current waveform
+
+gpioWaveGetCbs             Length in CBs of the current waveform
+gpioWaveGetHighCbs         Length of longest waveform so far
+gpioWaveGetMaxCbs          Absolute maximum allowed CBs
+
+gpioWaveGetMicros          Length in micros of the current waveform
+gpioWaveGetHighMicros      Length of longest waveform so far
+gpioWaveGetMaxMicros       Absolute maximum allowed micros
+
+gpioWaveGetPulses          Length in pulses of the current waveform
+gpioWaveGetHighPulses      Length of longest waveform so far
+gpioWaveGetMaxPulses       Absolute maximum allowed pulses
 
 UTILITIES
+
+gpioDelay                  Delay for a number of microseconds
 
 gpioTick                   Get current tick (microseconds)
 
@@ -357,6 +375,21 @@ gpioSleep                  Sleep for specified time
 
 time_sleep                 Sleeps for a float number of seconds
 time_time                  Float number of seconds since the epoch
+
+CONFIGURATION
+
+gpioCfgBufferSize          Configure the GPIO sample buffer size
+gpioCfgClock               Configure the GPIO sample rate
+gpioCfgDMAchannel          Configure the DMA channel (DEPRECATED)
+gpioCfgDMAchannels         Configure the DMA channels
+gpioCfgPermissions         Configure the GPIO access permissions
+gpioCfgInterfaces          Configure user interfaces
+gpioCfgSocketPort          Configure socket port
+gpioCfgMemAlloc            Configure DMA memory allocation mode
+gpioCfgNetAddr             Configure allowed network addresses
+
+gpioCfgGetInternals        Get internal configuration settings
+gpioCfgSetInternals        Set internal configuration settings
 
 EXPERT
 
@@ -680,7 +713,7 @@ typedef void *(gpioThreadFunc_t) (void *);
 /* Files, I2C, SPI, SER */
 
 #define PI_FILE_SLOTS 16
-#define PI_I2C_SLOTS  64
+#define PI_I2C_SLOTS  512
 #define PI_SPI_SLOTS  32
 #define PI_SER_SLOTS  16
 
@@ -770,10 +803,17 @@ typedef void *(gpioThreadFunc_t) (void *);
 
 /* BSC GPIO */
 
-#define BSC_SDA_MOSI 18
+#define BSC_SDA      18
+#define BSC_MOSI     20
 #define BSC_SCL_SCLK 19
-#define BSC_MISO     20
+#define BSC_MISO     18
 #define BSC_CE_N     21
+
+#define BSC_SDA_2711      10
+#define BSC_MOSI_2711      9
+#define BSC_SCL_SCLK_2711 11
+#define BSC_MISO_2711     10
+#define BSC_CE_N_2711      8
 
 /* Longest busy delay */
 
@@ -1417,6 +1457,12 @@ once per level change since the last time the thread was activated.
 i.e. The active alert functions will get all level changes but there
 will be a latency.
 
+If you want to track the level of more than one GPIO do so by
+maintaining the state in the callback.  Do not use [*gpioRead*].
+Remember the event that triggered the callback may have
+happened several milliseconds before and the GPIO may have
+changed level many times since then.
+
 The tick value is the time stamp of the sample in microseconds, see
 [*gpioTick*] for more details.
 
@@ -1955,6 +2001,49 @@ D*/
 
 
 /*F*/
+int gpioWaveCreatePad(int pctCB, int pctBOOL, int pctTOOL);
+/*D
+Similar to [*gpioWaveCreate*], this function creates a waveform but pads the consumed
+resources. Padded waves of equal dimension can be re-cycled efficiently allowing
+newly created waves to re-use the resources of deleted waves of the same dimension.
+
+. .
+pctCB: 0-100, the percent of all DMA control blocks to consume.
+pctBOOL: 0-100, percent On-Off-Level (OOL) buffer to consume for wave output.
+pctTOOL: 0-100, the percent of OOL buffer to consume for wave input (flags).
+. .
+
+Upon success a wave id greater than or equal to 0 is returned, otherwise
+PI_EMPTY_WAVEFORM, PI_TOO_MANY_CBS, PI_TOO_MANY_OOL, or PI_NO_WAVEFORM_ID.
+
+Waveform data provided by [*gpioWaveAdd**] and [*rawWaveAdd**] functions are
+consumed by this function.
+
+A usage would be the creation of two waves where one is filled while the other
+is being transmitted. Each wave is assigned 50% of the resources.
+This buffer structure allows the transmission of infinite wave sequences.
+
+...
+  // get firstWaveChunk, somehow
+  gpioWaveAddGeneric(firstWaveChunk);
+  wid = gpioWaveCreatePad(50, 50, 0);
+  gpioWaveTxSend(wid, PI_WAVE_MODE_ONE_SHOT);
+  // get nextWaveChunk
+
+  while (nextWaveChunk) {
+     gpioWaveAddGeneric(nextWaveChunk);
+     nextWid = gpioWaveCreatePad(50, 50, 0);
+     gpioWaveTxSend(nextWid, PI_WAVE_MODE_ONE_SHOT_SYNC);
+     while(gpioWaveTxAt() == wid) time_sleep(0.1);
+     gpioWaveDelete(wid);
+     wid = nextWid;
+     // get nextWaveChunk
+  }
+...
+
+D*/
+
+/*F*/
 int gpioWaveDelete(unsigned wave_id);
 /*D
 This function deletes the waveform with id wave_id.
@@ -2104,7 +2193,7 @@ D*/
 int gpioWaveTxAt(void);
 /*D
 This function returns the id of the waveform currently being
-transmitted.
+transmitted using [*gpioWaveTxSend*].  Chained waves are not supported.
 
 Returns the waveform id or one of the following special values:
 
@@ -2878,15 +2967,18 @@ D*/
 /*F*/
 int bscXfer(bsc_xfer_t *bsc_xfer);
 /*D
-This function provides a low-level interface to the
-SPI/I2C Slave peripheral.  This peripheral allows the
-Pi to act as a slave device on an I2C or SPI bus.
+This function provides a low-level interface to the SPI/I2C Slave
+peripheral on the BCM chip.
 
-This function is not available on the BCM2711 (e.g. as
-used in the Pi4B).
+This peripheral allows the Pi to act as a hardware slave device
+on an I2C or SPI bus.
 
-I can't get SPI to work properly.  I tried with a
-control word of 0x303 and swapped MISO and MOSI.
+This is not a bit bang version and as such is OS timing
+independent. The bus timing is handled directly by the chip.
+
+The output process is simple. You simply append data to the FIFO
+buffer on the chip.  This works like a queue, you add data to the
+queue and the master removes it.
 
 The function sets the BSC mode, writes any data in
 the transmit buffer to the BSC transmit FIFO, and
@@ -2906,8 +2998,9 @@ typedef struct
 } bsc_xfer_t;
 . .
 
-To start a transfer set control (see below) and copy the bytes to
-be sent (if any) to txBuf and set the byte count in txCnt.
+To start a transfer set control (see below), copy the bytes to
+be added to the transmit FIFO (if any) to txBuf and set txCnt to
+the number of copied bytes.
 
 Upon return rxCnt will be set to the number of received bytes placed
 in rxBuf.
@@ -2915,11 +3008,19 @@ in rxBuf.
 Note that the control word sets the BSC mode.  The BSC will stay in
 that mode until a different control word is sent.
 
-The BSC peripheral uses GPIO 18 (SDA) and 19 (SCL) in I2C mode
-and GPIO 18 (MOSI), 19 (SCLK), 20 (MISO), and 21 (CE) in SPI mode.  You
-need to swap MISO/MOSI between master and slave.
+GPIO used for models other than those based on the BCM2711.
 
-When a zero control word is received GPIO 18-21 will be reset
+    @ SDA @ SCL @ MOSI @ SCLK @ MISO @ CE
+I2C @ 18  @ 19  @ -    @ -    @ -    @ -
+SPI @ -   @ -   @ 20   @ 19   @ 18   @ 21
+
+GPIO used for models based on the BCM2711 (e.g. the Pi4B).
+
+    @ SDA @ SCL @ MOSI @ SCLK @ MISO @ CE
+I2C @ 10  @ 11  @ -    @ -    @ -    @ -
+SPI @ -   @ -   @ 9    @ 11   @ 10   @ 8
+
+When a zero control word is received the used GPIO will be reset
 to INPUT mode.
 
 The returned function value is the status of the transfer (see below).
@@ -2970,7 +3071,7 @@ pages 165-166 of the Broadcom peripherals document for full
 details.
 
 SSSSS @ number of bytes successfully copied to transmit FIFO
-RRRRR @ number of bytes in receieve FIFO
+RRRRR @ number of bytes in receive FIFO
 TTTTT @ number of bytes in transmit FIFO
 RB    @ receive busy
 TE    @ transmit FIFO empty
@@ -2997,6 +3098,17 @@ if (status >= 0)
    // process transfer
 }
 ...
+
+The BSC slave in SPI mode deserializes data from the MOSI pin into its
+receiver/FIFO when the LSB of the first byte is a 0.  No data is output on
+the MISO pin.  When the LSB of the first byte on MOSI is a 1, the
+transmitter/FIFO data is serialized onto the MISO pin while all other data
+on the MOSI pin is ignored.
+
+The BK bit of the BSC control register is non-functional when in the SPI
+mode.  The transmitter along with its FIFO can be dequeued by successively
+disabling and re-enabling the TE bit on the BSC control register while in
+SPI mode.
 D*/
 
 /*F*/
@@ -3742,24 +3854,6 @@ The function returns a script id if the script is valid,
 otherwise PI_BAD_SCRIPT.
 D*/
 
-
-/*F*/
-int gpioRunScript(unsigned script_id, unsigned numPar, uint32_t *param);
-/*D
-This function runs a stored script.
-
-. .
-script_id: >=0, as returned by [*gpioStoreScript*]
-   numPar: 0-10, the number of parameters
-    param: an array of parameters
-. .
-
-The function returns 0 if OK, otherwise PI_BAD_SCRIPT_ID, or
-PI_TOO_MANY_PARAM.
-
-param is an array of up to 10 parameters which may be referenced in
-the script as p0 to p9.
-D*/
 
 /*F*/
 int gpioRunScript(unsigned script_id, unsigned numPar, uint32_t *param);
@@ -4884,18 +4978,6 @@ D*/
 
 
 /*F*/
-int gpioCfgInternals(unsigned cfgWhat, unsigned cfgVal);
-/*D
-Used to tune internal settings.
-
-. .
-cfgWhat: see source code
- cfgVal: see source code
-. .
-D*/
-
-
-/*F*/
 uint32_t gpioCfgGetInternals(void);
 /*D
 This function returns the current library internal configuration
@@ -4911,6 +4993,7 @@ settings.
 . .
 cfgVal: see source code
 . .
+
 D*/
 
 
@@ -5712,6 +5795,15 @@ high and low levels.
 *param::
 An array of script parameters.
 
+pctBOOL:: 0-100
+percent On-Off-Level (OOL) buffer to consume for wave output.
+
+pctCB:: 0-100
+the percent of all DMA control blocks to consume.
+
+pctTOOL:: 0-100
+the percent of OOL buffer to consume for wave input (flags).
+
 pi_i2c_msg_t::
 . .
 typedef struct
@@ -6223,6 +6315,7 @@ PARAMS*/
 #define PI_CMD_EVT   116
 
 #define PI_CMD_PROCU 117
+#define PI_CMD_WVCAP 118
 
 /*DEF_E*/
 
@@ -6459,7 +6552,7 @@ after this command is issued.
 #define PI_DEFAULT_DMA_NOT_SET             15
 #define PI_DEFAULT_SOCKET_PORT             8888
 #define PI_DEFAULT_SOCKET_PORT_STR         "8888"
-#define PI_DEFAULT_SOCKET_ADDR_STR         "127.0.0.1"
+#define PI_DEFAULT_SOCKET_ADDR_STR         "localhost"
 #define PI_DEFAULT_UPDATE_MASK_UNKNOWN     0x0000000FFFFFFCLL
 #define PI_DEFAULT_UPDATE_MASK_B1          0x03E7CF93
 #define PI_DEFAULT_UPDATE_MASK_A_B2        0xFBC7CF9C
