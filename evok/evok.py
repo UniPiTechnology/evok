@@ -245,7 +245,12 @@ class WsHandler(websocket.WebSocketHandler):
                         else:
                             result = func(value)
                     else:
-                        result = func()
+                        #Set other property than "value" (e.g. counter of an input)
+                        funcdata = {key:value for (key,value) in message.items() if key not in ("circuit", "value", "cmd", "dev")}
+                        if len(funcdata) > 0:
+                            result = func(**funcdata)
+                        else:
+                            result = func()
                     if is_future(result):
                         result = yield result
                     if cmd == "full":
