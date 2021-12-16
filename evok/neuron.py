@@ -636,11 +636,6 @@ class UartBoard(object):
                                 dev_id=self.dev_id, datatype=_datatype, major_group=0, offset=_offset, factor=_factor, unit=_unit,
                                 valid_mask=_valid_mask, name=_name, post_write=_post_write_action)
 
-            if self.neuron.datadeps.has_key(board_val_reg + counter):
-                self.neuron.datadeps[board_val_reg + counter]+=[_xgt]
-            else:
-                self.neuron.datadeps[board_val_reg + counter] = [_xgt]
-
             Devices.register_device(UNIT_REGISTER, _xgt)
             counter+=1
 
@@ -1372,7 +1367,7 @@ class Watchdog(object):
         self.major_group = major_group
         self.legacy_mode = legacy_mode
         self.timeoutvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.toreg, unit=self.arm.modbus_address)
-        self.regvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, unit=self.arm.modbus_address)[0]
+        self.regvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.toreg, unit=self.arm.modbus_address)[0]
         self.nvsavvalue = 0
         self.resetvalue = 0
         self.nv_save_coil = nv_save_coil
@@ -1408,7 +1403,7 @@ class Watchdog(object):
     @property
     def value(self):
         try:
-            if self.regvalue() & 0b01: return 1
+            if self.regvalue() & self.bitmask: return 1
         except:
             pass
         return 0
@@ -1447,14 +1442,9 @@ class Watchdog(object):
     def set(self, value=None, timeout=None, reset=None, nv_save=None, alias=None):
         """ Sets new on/off status. Disable pending timeouts
         """
-
         if alias is not None:
             if Devices.add_alias(alias, self, file_update=True):
                 self.alias = alias
-
-        if value is not None:
-            value = int(value)
-            self.arm.neuron.client.write_register(self.valreg, 1 if value else 0, unit=self.arm.modbus_address)
 
         if self.nv_save_coil >= 0 and nv_save is not None and nv_save != self.nvsavvalue:
             if nv_save != 0:
@@ -1462,6 +1452,11 @@ class Watchdog(object):
             else:
                 self.nvsavvalue = 0
             self.arm.neuron.client.write_coil(self.nv_save_coil, 1, unit=self.arm.modbus_address)
+        if value is not None:
+            value = int(value)
+
+
+        self.arm.neuron.client.write_register(self.valreg, 1 if value else 0, unit=self.arm.modbus_address)
 
         if not (timeout is None):
             timeout = int(timeout)
@@ -1476,6 +1471,7 @@ class Watchdog(object):
                 logger.info("Performed reset of board %s" % self.circuit)
 
         raise gen.Return(self.full())
+
 
 
 class ExtConfig(object):
@@ -1608,6 +1604,7 @@ class UnitRegister():
 
         return struct.unpack_from('>f', datal)[0]
 
+    # TODO - toto asi jenom read only -
     @gen.coroutine
     def set(self, value=None, alias=None, **kwargs):
         """ Sets new on/off status. Disable pending timeouts """
@@ -1617,7 +1614,8 @@ class UnitRegister():
 
         raise Exception("Unit_register object is read-only")
 
-        #--------------------------------------------
+
+        # nastavit to nepujde
 
         if value is not None:
 
@@ -1643,8 +1641,6 @@ class UnitRegister():
                 logger.info("Performed reset of board %s" % self.circuit)
         """
 
-    def value_delta(self, new_val):
-        pass
 
 
     def full(self):
@@ -1901,7 +1897,7 @@ class Input():
                 yield self.arm.neuron.client.write_register(self.regdebounce, int(float(debounce)), unit=self.arm.modbus_address)
         if counter is not None:
             if self.regcounter is not None:
-                yield self.arm.neuron.client.write_register(self.regcounter, int(float(counter)), unit=self.arm.modbus_address)
+                yield self.arm.neuron.client.write_registers(self.regcounter, ((int(float(counter)) & 0xFFFF), (int(float(counter)) >> 16) & 0xFFFF), unit=self.arm.modbus_address)
         raise gen.Return(self.full())
 
     def get(self):
