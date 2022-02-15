@@ -41,7 +41,7 @@ scan_enabled = True 				; Optional, True default
 
 ;[EXTENSION_2]
 ;global_id = 3					; Mandatory, REQUIRED TO BE UNIQUE
-;device_name = CUSTOM MODBUS DEVICE		; Mandatory, must match name of .yaml modbus map file in /etc/hw_definitions
+;device_name = CUSTOM_MODBUS_DEVICE		; Mandatory, must match name of .yaml modbus map file in /etc/hw_definitions
 ;modbus_uart_port = /dev/extcomm/0/0 		; Mandatory
 ;neuron_uart_circuit = 1_01			; Optional, allows associating extensions with specific Neuron UART-over-Modbus ports (not possible for non-Modbus UART ports, e.g. /dev/ttyUSB0 or /dev/ttyS0)
 ;allow_register_access = True 			; Mandatory with third-party devices
