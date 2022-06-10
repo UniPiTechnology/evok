@@ -374,6 +374,21 @@ def create_devices(Config, hw_dict):
                                     parity=uart_parity, stopbits=uart_stopbits, device_name=device_name, uart_address=uart_address,
                                     direct_access=allow_register_access, dev_id=dev_counter, neuron_uart_circuit=neuron_uart_circuit)
                 Devices.register_device(NEURON, neuron)
+            elif devclass == 'IRISCARD':
+                from neuron import TcpNeuron
+                dev_counter += 1
+                modbus_server = Config.getstringdef(section, "modbus_server", "127.0.0.1")
+                modbus_port = Config.getstringdef(section, "modbus_port", "502")
+                scanfreq = Config.getfloatdef(section, "scan_frequency", 10)
+                scan_enabled = Config.getbooldef(section, "scan_enabled", True)
+                modbus_address = Config.getintdef(section, "address", 1)
+                device_name = Config.getstringdef(section, "device_name", "unspecified")
+                allow_register_access = Config.getbooldef(section, "allow_register_access", False)
+                circuit = Config.getintdef(section, "global_id", 2)
+                neuron = TcpNeuron(circuit, Config, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict,
+                                    device_name=device_name, modbus_address=modbus_address,
+                                    direct_access=allow_register_access, dev_id=dev_counter)
+                Devices.register_device(NEURON, neuron)
 
         except Exception, E:
             logger.exception("Error in config section %s - %s", section, str(E))
