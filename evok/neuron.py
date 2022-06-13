@@ -422,7 +422,7 @@ class TcpNeuron(ModbusNeuron):
                  modbus_address=1, major_group=1, device_name='unspecified', direct_access=False, dev_id=0):
         ModbusNeuron.__init__(self,circuit, Config, scan_freq, scan_enabled, hw_dict, modbus_address,
                               major_group, device_name, direct_access, dev_id)
-        self.circuit = "EXT_" + str(modbus_address)
+        self.circuit = circuit; #"EXT_" + str(modbus_address)
         self.modbus_server = modbus_server
         self.modbus_port = modbus_port
 
@@ -604,19 +604,41 @@ class UartBoard(object):
             Devices.register_device(AO, _ao)
             counter+=1
 
+    def parse_feature_ai18(self, max_count, m_feature, board_id):
+        value_reg = m_feature['val_reg']
+        mode_reg = m_feature['mode_reg']
+        for i in range(max_count):
+            circuit = "%s_%02d" % (self.circuit, i + 1)
+            _ai = AnalogInput18(circuit, self, value_reg, regmode=mode_reg+i,
+                                dev_id=self.dev_id, major_group=0, modes=m_feature['modes'])
+
+            if self.neuron.datadeps.has_key(value_reg):
+                self.neuron.datadeps[value_reg]+=[_ai]
+            else:
+                self.neuron.datadeps[value_reg] = [_ai]
+            Devices.register_device(AI, _ai)
+            value_reg += 2;
+
+
     def parse_feature_ai(self, max_count, m_feature, board_id):
         counter = 0
         while counter < max_count:
             board_val_reg = m_feature['val_reg']
-            tolerances = m_feature['tolerances']
+            tolerances = m_feature.get('tolerances')
+            circuit = "%s_%02d" % (self.circuit, counter + 1)
             if m_feature.has_key('cal_reg'):
                 board_val_reg = m_feature['val_reg'] + counter
-                _ai = AnalogInput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg, regcal=m_feature['cal_reg'],
+                _ai = AnalogInput(circuit, self, board_val_reg, regcal=m_feature['cal_reg'],
                                   regmode=m_feature['mode_reg'], 
                                   dev_id=self.dev_id, major_group=0, tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
+            elif (m_feature.get('type') == "AI18" ):
+                board_val_reg = m_feature['val_reg'] + counter * 2
+                _ai = AnalogInput18(circuit, self, board_val_reg,
+                                  regmode=m_feature['mode_reg'] + counter, 
+                                  dev_id=self.dev_id, major_group=0, modes=m_feature['modes'])
             else:
                 board_val_reg = m_feature['val_reg'] + counter * 2
-                _ai = AnalogInput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg,
+                _ai = AnalogInput(circuit, self, board_val_reg,
                                   regmode=m_feature['mode_reg'] + counter, 
                                   dev_id=self.dev_id, major_group=0, tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
 
@@ -713,6 +735,8 @@ class UartBoard(object):
         elif m_feature['type'] == 'AO':
             self.parse_feature_ao(max_count, m_feature, board_id)
         elif m_feature['type'] == 'AI':
+            self.parse_feature_ai(max_count, m_feature, board_id)
+        elif m_feature['type'] == 'AI18':
             self.parse_feature_ai(max_count, m_feature, board_id)
         elif m_feature['type'] == 'REGISTER' and self.direct_access:
             self.parse_feature_register(max_count, m_feature, board_id)
@@ -2562,4 +2586,92 @@ class AnalogInput():
             return unit_names[AMPERE]
         else:
             return unit_names[OHM]
+
+
+class AnalogInput18():
+
+    def __init__(self, circuit, arm, reg, regmode=-1, dev_id=0, major_group=0, modes=['Voltage']):
+        self.alias = ""
+        self.devtype = AI
+        self.dev_id = dev_id
+        self.circuit = circuit
+        self.valreg = reg
+        self.arm = arm
+        self.regmode = regmode
+        self.modes = modes
+        self.mode = 'Voltage'
+        self.unit_name = ''
+        self.tolerances = ["Integer 18bit", "Float"]
+        self.tolerance_mode = "Integer 18bit"
+        self.raw_mode = self.arm.neuron.modbus_cache_map.get_register(1, self.regmode, unit=self.arm.modbus_address)[0]
+        self.mode = self.get_mode()
+        self.major_group = major_group
+        self.calibration = {'Voltage': 10.0/(1<<18)/0.9772, 'Current': 40.0/(1<<18)}
+
+
+    @property
+    def value(self):
+        try:
+            U32 = self.arm.neuron.modbus_cache_map.get_register(2, self.valreg, unit=self.arm.modbus_address)
+            raw_value = U32[0] | (U32[1] << 16)
+            return raw_value if self.tolerance_mode == "Integer 18bit" else float(raw_value)*self.calibration[self.mode]
+        except Exception, E:
+            logger.exception(str(E))
+            return 0
+
+    def get_mode(self):
+        if self.raw_mode == 1:
+            return "Current"
+        else:
+            return "Voltage"
+
+
+    @gen.coroutine
+    def set(self, mode=None, range=None, alias=None):
+        if alias is not None:
+            if Devices.add_alias(alias, self, file_update=True):
+                self.alias = alias
+        if mode is not None and mode in self.modes:
+            self.mode = mode
+            if self.mode == "Voltage":
+                    self.raw_mode = 0
+            elif self.mode == "Current":
+                    self.raw_mode = 1
+            yield self.arm.neuron.client.write_register(self.regmode, self.raw_mode, unit=self.arm.modbus_address)
+
+        if range is not None and range in self.tolerances:
+            self.tolerance_mode = range
+            if range == "Float":
+                self.unit_name = unit_names[AMPERE] if self.mode == "Current" else unit_names[VOLT]
+            else:
+                self.unit_name = ''
+
+        raise gen.Return(self.full())
+
+    def full(self):
+        ret = {'dev': 'ai',
+               'circuit': self.circuit,
+               'value': self.value,
+               'unit': self.unit_name,
+               'glob_dev_id': self.dev_id,
+               'mode': self.mode,
+               'modes': self.modes,
+               'range': self.tolerance_mode,
+               'range_modes': self.tolerances
+              }
+        if self.alias != '':
+            ret['alias'] = self.alias
+        return ret
+
+    def get(self):
+        return self.full()
+
+    def simple(self):
+        return {'dev': 'ai',
+                'circuit': self.circuit,
+                'value': self.value}
+
+    @property
+    def voltage(self):
+        return self.value
 
