@@ -13,6 +13,8 @@ services:
     volumes:
       - ./docker.evok.iris:/etc/evok.conf
       - ./var/evok-alias.yaml:/var/evok/evok-alias.yaml
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 #    extra_hosts:
 #     - "flexibee.faster.cz:10.64.11.89"
 #      - "flexi-tools:10.64.11.87"
