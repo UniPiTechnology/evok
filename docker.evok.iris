@@ -29,16 +29,18 @@ websocket_all_filtered = False			; 'All' WebSocket requests will be subject to t
 global_id = 11					; Mandatory, REQUIRED TO BE UNIQUE
 device_name = IC-DiS2Do2-1		; Mandatory, must match name of .yaml modbus map file in /etc/hw_definitions
 ;modbus_server = host.docker.internal
-modbus_server = 192.168.221.96
+;modbus_server = 192.168.221.96
+modbus_server = modbus_tcp
 modbus_port = 502
 address = 11					; Optional, 1 default
 
 [IRISCARD_21]
 global_id = 21					; Mandatory, REQUIRED TO BE UNIQUE
 device_name = IC-AiUC8-2		; Mandatory, must match name of .yaml modbus map file in /etc/hw_definitions
-modbus_server = host.docker.internal
+;modbus_server = host.docker.internal
+modbus_server = modbus_tcp
 modbus_port = 502
-address = 21					; Optional, 1 default
+address = 22					; Optional, 1 default
 
 ;modbus_uart_port = /dev/extcomm/0/0 		; Mandatory
 ;neuron_uart_circuit = 1_01			; Optional, allows associating extensions with specific Neuron UART-over-Modbus ports (not possible for non-Modbus UART ports, e.g. /dev/ttyUSB0 or /dev/ttyS0)
