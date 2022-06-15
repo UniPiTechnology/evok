@@ -29,7 +29,6 @@ websocket_all_filtered = False			; 'All' WebSocket requests will be subject to t
 global_id = 11					; Mandatory, REQUIRED TO BE UNIQUE
 device_name = IC-DiS2Do2-1		; Mandatory, must match name of .yaml modbus map file in /etc/hw_definitions
 ;modbus_server = host.docker.internal
-;modbus_server = 192.168.221.96
 modbus_server = modbus_tcp
 modbus_port = 502
 address = 11					; Optional, 1 default

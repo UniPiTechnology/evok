@@ -5,16 +5,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: evok-test:devel
+    image: bokula/evok:devel
     restart: unless-stopped
     command: ["python", "evok.py"]
-#    env_file: &envfile
-#      - .env
     volumes:
       - ./docker.evok.iris:/etc/evok.conf
       - ./var/evok-alias.yaml:/var/evok/evok-alias.yaml
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     depends_on:
       - modbus_tcp
 
@@ -23,7 +19,6 @@ services:
     restart: unless-stopped
     ports:
       - "8080:80"
-#      - "443:443"
     volumes:
       - ./docker-nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./www:/var/www
@@ -31,7 +26,7 @@ services:
       - evok
 
   modbus_tcp:
-    image: unipi-modbus:devel
+    image: bokula/unipi_modbus:devel
     command: ["unipi_tcp_server", "-l", "0.0.0.0"]
     restart: unless-stopped
     ports: [ 502 ]
