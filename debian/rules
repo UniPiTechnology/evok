@@ -21,7 +21,7 @@ export DH_VIRTUALENV_INSTALL_ROOT=/opt
 
 
 override_dh_virtualenv:
-	dh_virtualenv --python python2.7
+	dh_virtualenv --python python2.7 --extra-pip-arg --no-use-pep517 --preinstall "setuptools"
 
 # dh_make generated override targets
 # This is example for Cmake (See https://bugs.debian.org/641051 )
