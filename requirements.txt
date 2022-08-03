@@ -1,3 +1,5 @@
+--extra-index-url=https://www.piwheels.org/simple
+setuptools
 pymodbus==1.4.0
 tornado==4.5.3
 python-dali==0.6
@@ -5,6 +7,6 @@ toro
 jsonrpclib
 tornado_json
 tornado-webservices
-pyusb
 pyyaml==3.12
 onewire
+pyusb
