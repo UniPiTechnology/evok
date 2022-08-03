@@ -1,6 +1,10 @@
 #!/bin/bash
 
-echo "Installing additional packages by command ${0}"
+# Set environment variables
+. /ci-scripts/include.sh
+
+# Fix default bob-preinstalled binary of virtualenv
+# Replace it by the one from the package dh-virtualenv
 
 UNWANTED_VIRTUALENV="/usr/local/bin/virtualenv"
 
