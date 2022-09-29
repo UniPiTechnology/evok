@@ -338,6 +338,20 @@ class AsyncModbusGeneratorClient(AsyncModbusSerialClient):
         finally:
             self.sem.release()
         raise gen.Return(fut_result.result())
+
+    @gen.coroutine
+    def write_registers(self, address, values, **kwargs):
+        fut_result = Future()
+        request = WriteMultipleRegistersRequest(address, values, **kwargs)
+        yield self.sem.acquire()
+        try:
+            res = self.execute(request) 
+            res.addCallback(fut_result.set_result)
+            yield fut_result
+        finally:
+            self.sem.release()
+        raise gen.Return(fut_result.result())
+
     
 @gen.coroutine
 def UartStartClient(client, callback=None, callback_args=None):
