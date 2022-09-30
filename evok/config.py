@@ -27,6 +27,9 @@ up_globals = {
 }
 
 def read_eprom_config():
+
+    model_len = 6
+
     try:
         with open('/sys/bus/i2c/devices/1-0050/eeprom','r') as f:
             ee_bytes=f.read(256)
@@ -58,9 +61,10 @@ def read_eprom_config():
             ee_bytes=f.read(128)
             if ee_bytes[96:98] == '\xfa\x55':
                 up_globals['version2'] = "%d.%d" % (ord(ee_bytes[99]), ord(ee_bytes[98]))
-                up_globals['model'] = "%s" % (ee_bytes[106:110],)
+                while (ee_bytes[106+model_len-1] == '\xff') : model_len = model_len - 1
+                up_globals['model'] = "%s" % (ee_bytes[106:106+model_len],)
                 up_globals['serial'] = struct.unpack('i', ee_bytes[100:104])[0]
-                logger.info("eprom: UniPi Patron %s version: %s serial: 0x%x", up_globals["model"], up_globals['version2'],up_globals["serial"])
+                logger.info("eprom: UniPi ZULU in product %s version: %s serial: 0x%x", up_globals["model"], up_globals['version2'],up_globals["serial"])
     except Exception:
         pass
     try:
@@ -68,7 +72,8 @@ def read_eprom_config():
             ee_bytes=f.read(128)
             if ee_bytes[96:98] == '\xfa\x55':
                 up_globals['version2'] = "%d.%d" % (ord(ee_bytes[99]), ord(ee_bytes[98]))
-                up_globals['model'] = "%s" % (ee_bytes[106:110],)
+                while (ee_bytes[106+model_len-1] == '\xff') : model_len = model_len - 1
+                up_globals['model'] = "%s" % (ee_bytes[106:106+model_len],)
                 up_globals['serial'] = struct.unpack('i', ee_bytes[100:104])[0]
                 logger.info("eprom: UniPi Neuron %s version: %s serial: 0x%x", up_globals["model"], up_globals['version2'],up_globals["serial"])
     except Exception:
@@ -78,7 +83,8 @@ def read_eprom_config():
             ee_bytes=f.read(128)
             if ee_bytes[96:98] == '\xfa\x55':
                 up_globals['version2'] = "%d.%d" % (ord(ee_bytes[99]), ord(ee_bytes[98]))
-                up_globals['model'] = "%s" % (ee_bytes[106:110],)
+                while (ee_bytes[model_len] == '\xff') : model_len = model_len - 1
+                up_globals['model'] = "%s" % (ee_bytes[106:106+model_len],)
                 up_globals['serial'] = struct.unpack('i', ee_bytes[100:104])[0]
                 logger.info("eprom: UniPi Neuron %s version: %s serial: 0x%x", up_globals["model"], up_globals['version2'],up_globals["serial"])
     except Exception:
@@ -93,17 +99,17 @@ class HWDict():
             if filen.endswith(".yaml"):
                 try:
                     with open(d_path + filen, 'r') as yfile:    
-                        self.definitions += [yaml.load(yfile)]
+                        self.definitions += [yaml.load(yfile, Loader=yaml.SafeLoader)]
                         logger.info("YAML Definition loaded: %s, type: %s, definition count %d", filen, len(self.definitions[len(self.definitions)-1]),  len(self.definitions) - 1)
                 except Exception:
                     pass
             elif filen.endswith("BuiltIn") and 'model' in up_globals:
                 try:
                     with open(d_path + filen + "/" + up_globals['model'] + '.yaml', 'r') as yfile:    
-                        self.neuron_definition = yaml.load(yfile)
+                        self.neuron_definition = yaml.load(yfile, Loader=yaml.SafeLoader)
                         logger.info("YAML Definition loaded: %s, type: UniPiBuiltIn", d_path + filen + "/" + up_globals['model'] + '.yaml')
                 except Exception:
-                    logger.error("No valid YAML definition for active Neuron/Axon device!! Device name %s", up_globals['model'])
+                    logger.warning("No valid YAML definition for active Neuron/Axon device!! Device name %s", up_globals['model'])
                     pass
                     
 class HWDefinition():
@@ -373,6 +379,21 @@ def create_devices(Config, hw_dict):
                 neuron = UartNeuron(circuit, Config, modbus_uart_port, scanfreq, scan_enabled, hw_dict, baud_rate=uart_baud_rate,
                                     parity=uart_parity, stopbits=uart_stopbits, device_name=device_name, uart_address=uart_address,
                                     direct_access=allow_register_access, dev_id=dev_counter, neuron_uart_circuit=neuron_uart_circuit)
+                Devices.register_device(NEURON, neuron)
+            elif devclass == 'IRISCARD':
+                from neuron import TcpNeuron
+                dev_counter += 1
+                modbus_server = Config.getstringdef(section, "modbus_server", "127.0.0.1")
+                modbus_port = Config.getstringdef(section, "modbus_port", "502")
+                scanfreq = Config.getfloatdef(section, "scan_frequency", 10)
+                scan_enabled = Config.getbooldef(section, "scan_enabled", True)
+                modbus_address = Config.getintdef(section, "address", 1)
+                device_name = Config.getstringdef(section, "device_name", "unspecified")
+                allow_register_access = Config.getbooldef(section, "allow_register_access", False)
+                circuit = Config.getintdef(section, "global_id", 2)
+                neuron = TcpNeuron(circuit, Config, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict,
+                                    device_name=device_name, modbus_address=modbus_address,
+                                    direct_access=allow_register_access, dev_id=dev_counter)
                 Devices.register_device(NEURON, neuron)
 
         except Exception, E:

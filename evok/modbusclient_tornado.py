@@ -131,7 +131,7 @@ def StartClient(client, host='127.0.0.1', port=502, callback=None, callback_args
     ''' Connect to tcp host and, join to client.transport, wait for reply data
         Reconnect on close
     ''' 
-    logger.info("SPI client started")
+    logger.info("TCP/Modbus client to {}:{} started".format(host, port))
     while True:
         try:
             stream = yield TCPClient().connect(host, port)

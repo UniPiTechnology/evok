@@ -1,86 +1,10 @@
-variables:
-    TEMPLATE_DEB_NAME: "evok"
-    DISABLE_SHELLCHECK: "0"
-
-before_script:
-    - apt update
-    - apt install -y dh-virtualenv dpkg-dev dh-exec build-essential fakeroot git
-
 include: 
     project: docker/template
-    file: debian-pkg.yaml
+    file: debian-pkg-ng.yaml
 
-##############################################################
+variables:
+    package_name: "evok"
+    build_for_architecture: "armhf arm64"
+    build_for_distribution: "all"
+    enable_mirror_to_github: "true"
 
-build-newstable:nano:
-    before_script:
-      - .gitlab-ci-scripts/update_version_consts.sh 
-    extends: .build_for_newstable
-    tags: ['arm64']
-    variables:
-        GIT_STRATEGY: clone
-        GIT_CHECKOUT: "true"
-
-build-newstable:rpi:
-    before_script:
-      - .gitlab-ci-scripts/update_version_consts.sh 
-    extends: .build_for_newstable
-    tags: ['armhf']
-    variables:
-        GIT_STRATEGY: clone
-        GIT_CHECKOUT: "true"
-
-build-stable:nano:
-    before_script:
-      - .gitlab-ci-scripts/update_version_consts.sh 
-    extends: .build_for_stable
-    tags: ['arm64']
-    variables:
-        GIT_STRATEGY: clone
-        GIT_CHECKOUT: "true"
-
-build-stable:rpi:
-    before_script:
-      - .gitlab-ci-scripts/update_version_consts.sh 
-    extends: .build_for_stable
-    tags: ['armhf']
-    variables:
-        GIT_STRATEGY: clone
-        GIT_CHECKOUT: "true"
-
-build-oldstable:nano:
-    before_script:
-      - .gitlab-ci-scripts/update_version_consts.sh 
-    extends: .build_for_oldstable
-    tags: ['arm64']
-    variables:
-        GIT_STRATEGY: clone
-        GIT_CHECKOUT: "true"
-
-build-oldstable:rpi:
-    before_script:
-      - .gitlab-ci-scripts/update_version_consts.sh 
-    extends: .build_for_oldstable
-    tags: ['armhf']
-    variables:
-        GIT_STRATEGY: clone
-        GIT_CHECKOUT: "true"
-
-deploy-test:
-    extends: .deploy_test
-
-deploy-release:
-    extends: .deploy_master
-
-mirror-to-github:
-    before_script:
-      - .gitlab-ci-scripts/update_version_consts.sh WITH_COMMIT 
-    extends: .condition_for_tagged
-    image: $CI_REGISTRY/docker/bob-the-builder/$STABLE_CODENAME:latest
-    stage: deploy_package
-    when: manual
-    script:
-      - .gitlab-ci-scripts/mirror_to_GitHub.sh
-    variables:
-        GIT_STRATEGY: clone
-        GIT_CHECKOUT: "true"

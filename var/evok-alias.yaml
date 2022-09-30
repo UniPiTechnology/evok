@@ -1,11 +1,2 @@
----
+aliases: []
 version: 1.0
-aliases:
-# Example config below
-    - circuit     : "1_01"
-      dev_type    : 0
-      name        : "al_lights_kitchen"
-    - circuit     : "1_02"
-      dev_type    : 0
-      name        : "al_lights_bedroom"
-      
