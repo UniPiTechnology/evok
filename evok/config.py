@@ -27,6 +27,9 @@ up_globals = {
 }
 
 def read_eprom_config():
+
+    model_len = 6
+
     try:
         with open('/sys/bus/i2c/devices/1-0050/eeprom','r') as f:
             ee_bytes=f.read(256)
@@ -58,9 +61,10 @@ def read_eprom_config():
             ee_bytes=f.read(128)
             if ee_bytes[96:98] == '\xfa\x55':
                 up_globals['version2'] = "%d.%d" % (ord(ee_bytes[99]), ord(ee_bytes[98]))
-                up_globals['model'] = "%s" % (ee_bytes[106:110],)
+                while (ee_bytes[106+model_len-1] == '\xff') : model_len = model_len - 1
+                up_globals['model'] = "%s" % (ee_bytes[106:106+model_len],)
                 up_globals['serial'] = struct.unpack('i', ee_bytes[100:104])[0]
-                logger.info("eprom: UniPi Patron %s version: %s serial: 0x%x", up_globals["model"], up_globals['version2'],up_globals["serial"])
+                logger.info("eprom: UniPi ZULU in product %s version: %s serial: 0x%x", up_globals["model"], up_globals['version2'],up_globals["serial"])
     except Exception:
         pass
     try:
@@ -68,7 +72,8 @@ def read_eprom_config():
             ee_bytes=f.read(128)
             if ee_bytes[96:98] == '\xfa\x55':
                 up_globals['version2'] = "%d.%d" % (ord(ee_bytes[99]), ord(ee_bytes[98]))
-                up_globals['model'] = "%s" % (ee_bytes[106:110],)
+                while (ee_bytes[106+model_len-1] == '\xff') : model_len = model_len - 1
+                up_globals['model'] = "%s" % (ee_bytes[106:106+model_len],)
                 up_globals['serial'] = struct.unpack('i', ee_bytes[100:104])[0]
                 logger.info("eprom: UniPi Neuron %s version: %s serial: 0x%x", up_globals["model"], up_globals['version2'],up_globals["serial"])
     except Exception:
@@ -78,7 +83,8 @@ def read_eprom_config():
             ee_bytes=f.read(128)
             if ee_bytes[96:98] == '\xfa\x55':
                 up_globals['version2'] = "%d.%d" % (ord(ee_bytes[99]), ord(ee_bytes[98]))
-                up_globals['model'] = "%s" % (ee_bytes[106:110],)
+                while (ee_bytes[model_len] == '\xff') : model_len = model_len - 1
+                up_globals['model'] = "%s" % (ee_bytes[106:106+model_len],)
                 up_globals['serial'] = struct.unpack('i', ee_bytes[100:104])[0]
                 logger.info("eprom: UniPi Neuron %s version: %s serial: 0x%x", up_globals["model"], up_globals['version2'],up_globals["serial"])
     except Exception:
@@ -103,7 +109,7 @@ class HWDict():
                         self.neuron_definition = yaml.load(yfile, Loader=yaml.SafeLoader)
                         logger.info("YAML Definition loaded: %s, type: UniPiBuiltIn", d_path + filen + "/" + up_globals['model'] + '.yaml')
                 except Exception:
-                    logger.error("No valid YAML definition for active Neuron/Axon device!! Device name %s", up_globals['model'])
+                    logger.warning("No valid YAML definition for active Neuron/Axon device!! Device name %s", up_globals['model'])
                     pass
                     
 class HWDefinition():
