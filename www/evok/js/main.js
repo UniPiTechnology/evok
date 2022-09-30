@@ -630,12 +630,15 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 	switch(device) {
 	case "ai": {
 		device_properties["device_name"] = "Analog Input " + circuit_display_name;
-        device_properties["value"] = msg.value.toFixed(3);
-        if ("unit" in msg) {
-        	device_properties["unit"] = msg.unit;
-        } else {
-        	device_properties["unit"] = "V";
-        }
+		device_properties["value"] = msg.value.toFixed(3);
+		if ("unit" in msg) {
+			device_properties["unit"] = msg.unit;
+			if (msg.unit == ""){
+				device_properties["value"] = msg.value;
+			}
+		} else {
+			device_properties["unit"] = "V";
+		}
 		break;
 	}
 	case "ao": {

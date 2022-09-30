@@ -9,7 +9,7 @@ modbus_register_blocks:
       start_reg   : 1000
       count       : 25
       frequency   : 10
-modbus_features: 
+modbus_features:
     - type        : RO
       count       : 5
       major_group : 1
@@ -31,10 +31,10 @@ modbus_features:
       max_v       : 24
       val_reg     : 0
       counter_reg : 15
-      direct_reg  : 1016
+      direct_reg  : 1014
       deboun_reg  : 1010
-      polar_reg   : 1017
-      toggle_reg  : 1018
+      polar_reg   : 1015
+      toggle_reg  : 1016
     - type        : AO
       count       : 4
       major_group : 1

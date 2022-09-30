@@ -1,3 +1,6 @@
+upstream evok {
+        server 127.0.0.1:8080;
+}
 
 server {
 	listen 80 default_server;
@@ -20,7 +23,7 @@ server {
 	}
 
 	location /ws {
-		proxy_pass http://localhost:8080;
+		proxy_pass http://evok;
 		proxy_set_header Host $host:$server_port;
 		proxy_http_version 1.1;
 		proxy_set_header Upgrade $http_upgrade;
@@ -31,22 +34,23 @@ server {
 	}
 
 	location /rest {
-		proxy_pass http://localhost:8080;
+		proxy_pass http://evok;
 		proxy_set_header Host      $host:$server_port;
 	}
 	
 	location /json {
-		proxy_pass http://localhost:8080;
+		proxy_pass http://evok;
 		proxy_set_header Host      $host:$server_port;
 	}
 	location /bulk {
-		proxy_pass http://localhost:8080;
+		proxy_pass http://evok;
 		proxy_set_header Host	$host:$server_port;
 	}
 	location /rpc {
-		proxy_pass http://localhost:8080;
+		proxy_pass http://evok;
 		proxy_set_header Host	$host:$server_port;
 	}
 	
 }
+
 

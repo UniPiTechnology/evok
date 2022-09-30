@@ -1,7 +1,7 @@
 import multiprocessing
 import os
 import time
-import ow
+import onewire as ow
 import signal
 import string
 from tornado.ioloop import IOLoop
@@ -270,6 +270,7 @@ class OwBusDriver(multiprocessing.Process):
         self.cycle_cnt = 0
         self.register_in_caller = lambda x: None  # pro registraci, zatim prazdna funkce
         # ow.init(bus)
+        self.ow = None
 
 
     def full(self):
@@ -356,9 +357,12 @@ class OwBusDriver(multiprocessing.Process):
         """
         tmp_buf = set()
         self.cycle_cnt += 1
-        for sens in ow.Sensor("/uncached").sensors(): # For every sensor connected to the bus
+        for sens in self.ow.find(): # For every sensor connected to the bus
+
+            sens.address = str(sens.address)[:14]
 
             tmp_buf.add(sens.address)
+
             if not (sens.address in self.scanned): # The sensor is scanned for a first time
                 address = sens.address
                 try:
@@ -441,11 +445,13 @@ class OwBusDriver(multiprocessing.Process):
             Peridocally scan 1wire sensors, else sleep
         """
         signal.signal(signal.SIGINT, signal.SIG_IGN)
-        ow.init(self.bus)
+        #ow.init(self.bus) old
+        self.ow = ow.Onewire(self.bus)
         logger.info("Entering OWW loop with PID {}".format(os.getpid()))
 
         while True: # If no sensors are in cache
-            if self.scan_interval != 0: self.do_scan() # Do initial scan
+            if self.scan_interval != 0:
+                self.do_scan() # Do initial scan
             if len(self.mysensors) > 0:
                 break
 
@@ -457,6 +463,7 @@ class OwBusDriver(multiprocessing.Process):
         mysensor = min(self.mysensors, key=lambda x: x.time) # Find sensor with min time (all se to 0 as default)
 
         scan_time = time.time() + self.scan_interval # Plan next scan
+
 
         while True: # "Main loop"
 

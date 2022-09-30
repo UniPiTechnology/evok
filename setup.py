@@ -8,7 +8,7 @@ def readme():
 
 setup(
     name='evok',
-    version='2.0.7a',
+    version='2.6.6',
     description='',
     long_description=readme(),
     author='Tomas Knot',
@@ -16,14 +16,13 @@ setup(
     url='https://github.com/UniPiTechnology/evok',
     packages=[
         'evok',
-		'tornadorpc_evok',
-		'UnipiDali'
+	'tornadorpc_evok',
+	'UnipiDali'
     ],
     classifiers=[
 		'Development Status :: 5 - Production/Stable',
 		'Environment :: Console',
 		'Intended Audience :: Developers',
-		'Programming Language :: Python',
 		'Programming Language :: Python :: 2'
     ],
     license='Apache License 2.0',
