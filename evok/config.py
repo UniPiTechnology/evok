@@ -61,7 +61,7 @@ def read_eprom_config():
             ee_bytes=f.read(128)
             if ee_bytes[96:98] == '\xfa\x55':
                 up_globals['version2'] = "%d.%d" % (ord(ee_bytes[99]), ord(ee_bytes[98]))
-                while (ee_bytes[106+model_len-1] == '\xff') : model_len = model_len - 1
+                while (ee_bytes[106+model_len-1] in ('\x00' ,'\xff')) : model_len = model_len - 1
                 up_globals['model'] = "%s" % (ee_bytes[106:106+model_len],)
                 up_globals['serial'] = struct.unpack('i', ee_bytes[100:104])[0]
                 logger.info("eprom: UniPi ZULU in product %s version: %s serial: 0x%x", up_globals["model"], up_globals['version2'],up_globals["serial"])
@@ -72,7 +72,7 @@ def read_eprom_config():
             ee_bytes=f.read(128)
             if ee_bytes[96:98] == '\xfa\x55':
                 up_globals['version2'] = "%d.%d" % (ord(ee_bytes[99]), ord(ee_bytes[98]))
-                while (ee_bytes[106+model_len-1] == '\xff') : model_len = model_len - 1
+                while (ee_bytes[106+model_len-1] in ('\x00' ,'\xff')) : model_len = model_len - 1
                 up_globals['model'] = "%s" % (ee_bytes[106:106+model_len],)
                 up_globals['serial'] = struct.unpack('i', ee_bytes[100:104])[0]
                 logger.info("eprom: UniPi Neuron %s version: %s serial: 0x%x", up_globals["model"], up_globals['version2'],up_globals["serial"])
@@ -83,7 +83,7 @@ def read_eprom_config():
             ee_bytes=f.read(128)
             if ee_bytes[96:98] == '\xfa\x55':
                 up_globals['version2'] = "%d.%d" % (ord(ee_bytes[99]), ord(ee_bytes[98]))
-                while (ee_bytes[model_len] == '\xff') : model_len = model_len - 1
+                while (ee_bytes[106+model_len-1] in ('\x00' ,'\xff')) : model_len = model_len - 1
                 up_globals['model'] = "%s" % (ee_bytes[106:106+model_len],)
                 up_globals['serial'] = struct.unpack('i', ee_bytes[100:104])[0]
                 logger.info("eprom: UniPi Neuron %s version: %s serial: 0x%x", up_globals["model"], up_globals['version2'],up_globals["serial"])
