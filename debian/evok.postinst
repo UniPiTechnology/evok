@@ -92,11 +92,7 @@ if ! [ -z "$CONFLICT_CONFILE" ]; then # If a conflict has occurred
           rm -f "$EVOK_NGINX_CONFILE"
           ;;
     esac
-
     #rm -f "/etc/nginx/sites-enabled/evok"
-    echo "Restarting nginx..." >&2
-    systemctl restart nginx
-
 fi
 
 # ----------------------------------------------------------------------------------------
@@ -124,7 +120,9 @@ fi
 # ----------------------------------------------------------------------------------------
 # FINALLY - Start the service
 # ----------------------------------------------------------------------------------------
-echo "Starting Evok..."
+echo "Starting Evok..." >&2
 systemctl start evok  || true
+echo "Restarting nginx..." >&2
+systemctl restart nginx || true
 
 exit 0
