@@ -6,5 +6,5 @@ variables:
     package_name: "evok"
     build_for_architecture: "armhf arm64"
     build_for_distribution: "all"
-    enable_mirror_to_github: "true"
-
+    mirror_to_github: "yes"
+    github_url: "git@github.com:UniPiTechnology/evok.git"
