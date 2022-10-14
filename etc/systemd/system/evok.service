@@ -1,7 +1,7 @@
 [Unit]
 Description=Evok Modbus/Websocket/Rpc Server
 Requires=pigpio.service
-Requires=neurontcp.service
+###Requires=neurontcp.service
 StartLimitIntervalSec=300
 
 [Service]
