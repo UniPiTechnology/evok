@@ -462,12 +462,28 @@ cp -r etc/modprobe.d /etc/
 cp -r etc/opt /etc/
 
 apt-get update
-apt-get install -y python-ow python-pip make python-dev nginx vim
-package_available python3-distutils && apt-get install -y python3-distutils
-pip install pymodbus==1.4.0
-pip install tornado==4.5.3
-pip install python-dali==0.6
-pip install toro jsonrpclib pyyaml tornado_json tornado-webservices pyusb
+
+if [ $(lsb_release -sc) == "bullseye" ]; then
+
+    apt-get install -y make python2.7 nginx vim
+    wget https://bootstrap.pypa.io/pip/2.7/get-pip.py
+    python2 get-pip.py
+    rm -f get-pip.py
+    pip2 install pymodbus==1.4.0
+    pip2 install tornado==4.5.3
+    pip2 install python-dali==0.6
+    pip2 install onewire==0.2
+    pip2 install toro jsonrpclib pyyaml tornado_json tornado-webservices pyusb
+
+else
+    apt-get install -y python-ow python-pip make python-dev nginx vim
+    package_available python3-distutils && apt-get install -y python3-distutils
+    pip install pymodbus==1.4.0
+    pip install tornado==4.5.3
+    pip install python-dali==0.6
+    pip install toro jsonrpclib pyyaml tornado_json tornado-webservices pyusb
+fi
+
 ln -sf /etc/nginx/sites-enabled/evok /etc/evok-nginx.conf
 
 cp -r etc/hw_definitions /etc/
