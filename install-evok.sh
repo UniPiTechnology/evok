@@ -310,26 +310,6 @@ install_unipi_lite_1() {
 	# Copy tornadorpc
 	cp -r tornadorpc_evok /usr/local/lib/python2.7/dist-packages/
 	
-	# Setup wifi
-	echo "############################################################################"
-	echo "## !!! POTENTIALLY DANGEROUS: Do you wish to install WiFi AP support? !!! ##"
-	echo "## !!! DO NOT USE WITH CUSTOM NETWORK CONFIGURATION                   !!! ##"
-	echo "## !!! USE ONLY WITH PLAIN RASPBIAN STRETCH                           !!! ##"
-	echo "############################################################################"
-	echo ' '
-	[ -z "${NO_WIFI}" ] && if ask "(Install WiFi?)"; then
-		apt-get install -y hostapd dnsmasq iproute2
-		systemctl disable hostapd dnsmasq
-		systemctl stop hostapd dnsmasq
-		sed -i -e 's/option domain-name/#option domain-name/' /etc/dhcp/dhcpd.conf
-		sed -i -e 's/option domain-name-servers/#option domain-name-servers/' /etc/dhcp/dhcpd.conf
-		sed -i -e 's/#authoritative/authoritative/' /etc/dhcp/dhcpd.conf
-		sed -i -e 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
-		sed -i -e 's/wifi_control_enabled = False/wifi_control_enabled = True/' etc/evok-lite.conf
-	else
-		ifconfig wlan0 down
-	fi
-	
 	# Copy evok
 	cp -r evok/ /opt/
 	cp version.txt /opt/evok/
@@ -462,12 +442,28 @@ cp -r etc/modprobe.d /etc/
 cp -r etc/opt /etc/
 
 apt-get update
-apt-get install -y python-ow python-pip make python-dev nginx vim
-package_available python3-distutils && apt-get install -y python3-distutils
-pip install pymodbus==1.4.0
-pip install tornado==4.5.3
-pip install python-dali==0.6
-pip install toro jsonrpclib pyyaml tornado_json tornado-webservices pyusb
+
+if [ "$(lsb_release -sc)" == "bullseye" ]; then
+
+    apt-get install -y make python2.7 python2-dev nginx vim libow-dev python3-distutils
+    wget https://bootstrap.pypa.io/pip/2.7/get-pip.py
+    python2.7 get-pip.py
+    rm -f get-pip.py
+    pip2.7 install pymodbus==1.4.0
+    pip2.7 install tornado==4.5.3
+    pip2.7 install python-dali==0.6
+    pip2.7 install onewire==0.2
+    pip2.7 install toro jsonrpclib pyyaml tornado_json tornado-webservices pyusb
+else
+    apt-get install -y python-ow python-pip make python-dev nginx vim
+    package_available python3-distutils && apt-get install -y python3-distutils
+    pip install pymodbus==1.4.0
+    pip install tornado==4.5.3
+    pip install python-dali==0.6
+    pip install onewire==0.2
+    pip install toro jsonrpclib pyyaml tornado_json tornado-webservices pyusb
+fi
+
 ln -sf /etc/nginx/sites-enabled/evok /etc/evok-nginx.conf
 
 cp -r etc/hw_definitions /etc/
