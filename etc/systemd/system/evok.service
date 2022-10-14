@@ -1,12 +1,12 @@
 [Unit]
 Description=Evok Modbus/Websocket/Rpc Server
 Requires=pigpio.service
-Requires=neurontcp.service
+###Requires=neurontcp.service
 StartLimitIntervalSec=300
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python /opt/evok/evok.py
+ExecStart=/usr/bin/python2 /opt/evok/evok.py
 TimeoutStopSec=3
 SyslogLevel=debug
 SyslogIdentifier=evok
