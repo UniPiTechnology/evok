@@ -98,6 +98,7 @@ enable_ic2() {
             (
                 echo "dtparam=i2c_arm=on"
                 echo "dtoverlay=i2c-rtc,mcp7941x"
+                echo "dtoverlay=unipiee"
             ) > /boot/config_unipi.inc
             # add the include to the begining of the config.txt 
             sed -i "1i$INCLUDE_LINE" /boot/config.txt
@@ -455,7 +456,7 @@ if [ "$(lsb_release -sc)" == "bullseye" ]; then
     pip2.7 install onewire==0.2
     pip2.7 install toro jsonrpclib pyyaml tornado_json tornado-webservices pyusb
 else
-    apt-get install -y python-ow python-pip make python-dev nginx vim
+    apt-get install -y python-ow python-pip make python-dev nginx vim libow-dev
     package_available python3-distutils && apt-get install -y python3-distutils
     pip install pymodbus==1.4.0
     pip install tornado==4.5.3
