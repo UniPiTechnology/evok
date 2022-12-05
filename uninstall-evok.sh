@@ -33,22 +33,27 @@ ask() {
 }
 
 uninstall_pigpio() {
-	rm -f /usr/local/include/pigpio.h
-	rm -f /usr/local/include/pigpiod_if.h
-	rm -f /usr/local/lib/libpigpio.a
-	rm -f /usr/local/lib/libpigpiod_if.a
-	rm -f /usr/local/bin/pig2vcd
-	rm -f /usr/local/bin/pigpiod
-	rm -f /usr/local/bin/pigs
-	rm -f /usr/local/man/man1/pig*.1
-	rm -f /usr/local/man/man3/pig*.3
+	if [ -d ./pigpio ]; then
+		cd pigpio
+                make uninstall
+	else
+		rm -f /usr/local/include/pigpio.h
+		rm -f /usr/local/include/pigpiod_if.h
+		rm -f /usr/local/lib/libpigpio.a
+		rm -f /usr/local/lib/libpigpiod_if.a
+		rm -f /usr/local/bin/pig2vcd
+		rm -f /usr/local/bin/pigpiod
+		rm -f /usr/local/bin/pigs
+		rm -f /usr/local/man/man1/pig*.1
+		rm -f /usr/local/man/man3/pig*.3
+	fi
 }
 
 uninstall() {
     service evok stop
     service pigpio stop
-    pip uninstall -y tornado toro jsonrpclib
-    apt-get remove -y python-ow python3-distutils
+    pip uninstall -y tornado toro jsonrpclib python-dali onewire
+    apt-get remove -y python3-distutils libow-dev
     uninstall_pigpio
     rm -rf /usr/local/lib/python2.7/dist-packages/tornadorpc_evok
     rm -rf /opt/evok
@@ -66,7 +71,7 @@ if [ "$EUID" -ne 0 ]
   exit
 fi
 
-echo "Warning, the following packages will be removed: evok, pigpiod, python-ow, tornado, toro, jsonrpclib, tornadorpc-evok python3-distutils"
+echo "Warning, the following packages will be removed: evok, pigpiod, onewire, libow-dev, tornado, toro, jsonrpclib, tornadorpc-evok python3-distutils"
 if ask "Are you sure you want to continue?"; then
     uninstall
 else

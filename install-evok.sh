@@ -98,6 +98,7 @@ enable_ic2() {
             (
                 echo "dtparam=i2c_arm=on"
                 echo "dtoverlay=i2c-rtc,mcp7941x"
+                echo "dtoverlay=unipiee"
             ) > /boot/config_unipi.inc
             # add the include to the begining of the config.txt 
             sed -i "1i$INCLUDE_LINE" /boot/config.txt
@@ -173,26 +174,6 @@ install_unipi_1() {
 	
 	# Copy tornadorpc
 	cp -r tornadorpc_evok /usr/local/lib/python2.7/dist-packages/
-	
-	# Setup wifi
-	echo "############################################################################"
-	echo "## !!! POTENTIALLY DANGEROUS: Do you wish to install WiFi AP support? !!! ##"
-	echo "## !!! DO NOT USE WITH CUSTOM NETWORK CONFIGURATION                   !!! ##"
-	echo "## !!! USE ONLY WITH PLAIN RASPBIAN STRETCH                           !!! ##"
-	echo "############################################################################"
-	echo ' '
-	[ -z "${NO_WIFI}" ] && if ask "(Install WiFi?)"; then
-		apt-get install -y hostapd dnsmasq iproute2
-		systemctl disable hostapd dnsmasq
-		systemctl stop hostapd dnsmasq
-		sed -i -e 's/option domain-name/#option domain-name/' /etc/dhcp/dhcpd.conf
-		sed -i -e 's/option domain-name-servers/#option domain-name-servers/' /etc/dhcp/dhcpd.conf
-		sed -i -e 's/#authoritative/authoritative/' /etc/dhcp/dhcpd.conf
-		sed -i -e 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
-		sed -i -e 's/wifi_control_enabled = False/wifi_control_enabled = True/' etc/evok-unipi1.1.conf
-	else
-		ifconfig wlan0 down
-	fi
 	
 	# Copy evok
 	cp -r evok/ /opt/
@@ -455,7 +436,7 @@ if [ "$(lsb_release -sc)" == "bullseye" ]; then
     pip2.7 install onewire==0.2
     pip2.7 install toro jsonrpclib pyyaml tornado_json tornado-webservices pyusb
 else
-    apt-get install -y python-ow python-pip make python-dev nginx vim
+    apt-get install -y python-ow python-pip make python-dev nginx vim libow-dev
     package_available python3-distutils && apt-get install -y python3-distutils
     pip install pymodbus==1.4.0
     pip install tornado==4.5.3
