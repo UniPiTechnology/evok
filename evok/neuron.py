@@ -1667,7 +1667,6 @@ class UnitRegister():
 
         return struct.unpack_from('>f', datal)[0]
 
-    # TODO - toto asi jenom read only -
     @gen.coroutine
     def set(self, value=None, alias=None, **kwargs):
         """ Sets new on/off status. Disable pending timeouts """
@@ -2415,8 +2414,6 @@ class AnalogInput():
     @property
     def value(self):
         try:
-            if self.circuit == '1_01':
-
             if self.circuit == '1_01':
                 raw_val = self.regvalue()
 
