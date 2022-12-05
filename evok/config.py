@@ -98,20 +98,26 @@ class HWDict():
         for filen in os.listdir(d_path):
             if filen.endswith(".yaml"):
                 try:
-                    with open(d_path + filen, 'r') as yfile:    
+                    with open(d_path + filen, 'r') as yfile:
                         self.definitions += [yaml.load(yfile, Loader=yaml.SafeLoader)]
                         logger.info("YAML Definition loaded: %s, type: %s, definition count %d", filen, len(self.definitions[len(self.definitions)-1]),  len(self.definitions) - 1)
                 except Exception:
                     pass
             elif filen.endswith("BuiltIn") and 'model' in up_globals:
                 try:
-                    with open(d_path + filen + "/" + up_globals['model'] + '.yaml', 'r') as yfile:    
+                    with open(d_path + filen + "/" + up_globals['model'] + '.yaml', 'r') as yfile:
                         self.neuron_definition = yaml.load(yfile, Loader=yaml.SafeLoader)
                         logger.info("YAML Definition loaded: %s, type: UniPiBuiltIn", d_path + filen + "/" + up_globals['model'] + '.yaml')
                 except Exception:
-                    logger.warning("No valid YAML definition for active Neuron/Axon device!! Device name %s", up_globals['model'])
+                    try:
+                        with open(d_path + filen + "/" + up_globals['model'][:4] + '.yaml', 'r') as yfile:
+                            self.neuron_definition = yaml.load(yfile, Loader=yaml.SafeLoader)
+                            logger.info("Generic YAML Definition loaded: %s, type: UniPiBuiltIn", d_path + filen + "/" + up_globals['model'][:4] + '.yaml')
+                    except:
+                        logger.warning("No valid YAML definition for this unit !!! Device name %s", up_globals['model'])
+                        pass
                     pass
-                    
+
 class HWDefinition():
     def __init__(self):
         False
