@@ -400,9 +400,9 @@ class OwBusDriver(multiprocessing.Process):
                 ret = client.write_coil(1001, True, unit=1)
                 time.sleep(0.2)
                 ret = client.write_coil(1001, False, unit=1)
-            ow.finish()
-            time.sleep(0.05)
-            ow.init(self.bus)
+            #ow.finish()
+            #time.sleep(0.05)
+            #ow.init(self.bus)
         except (ConnectionException):
             pass
 
@@ -481,7 +481,7 @@ class OwBusDriver(multiprocessing.Process):
                 if self.resultQ:
                     # send measurement into result queue
                     self.resultQ.send((mysensor.circuit, mysensor.value))
-            except (ow.exUnknownSensor, AttributeError):
+            except (TypeError, AttributeError):
                 if not mysensor.lost: # Catch the edge
                     mysensor.set_lost()
                     self.resultQ.send((mysensor.circuit, mysensor.lost)) # Send info about lost to the queue
