@@ -481,7 +481,7 @@ class OwBusDriver(multiprocessing.Process):
                 if self.resultQ:
                     # send measurement into result queue
                     self.resultQ.send((mysensor.circuit, mysensor.value))
-            except (ow.exUnknownSensor, AttributeError):
+            except (TypeError, AttributeError):
                 if not mysensor.lost: # Catch the edge
                     mysensor.set_lost()
                     self.resultQ.send((mysensor.circuit, mysensor.lost)) # Send info about lost to the queue
