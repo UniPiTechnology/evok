@@ -1515,11 +1515,10 @@ class Watchdog(object):
             else:
                 self.nvsavvalue = 0
             self.arm.neuron.client.write_coil(self.nv_save_coil, 1, unit=self.arm.modbus_address)
+
         if value is not None:
             value = int(value)
-
-
-        self.arm.neuron.client.write_register(self.valreg, 1 if value else 0, unit=self.arm.modbus_address)
+            self.arm.neuron.client.write_register(self.valreg, 1 if value else 0, unit=self.arm.modbus_address)
 
         if not (timeout is None):
             timeout = int(timeout)
