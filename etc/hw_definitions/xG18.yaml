@@ -24,6 +24,7 @@ modbus_features:
       valid_mask_reg : 9
       offset      : 0
       factor      : 0.01
+      datatype    : signed16
       unit        : "°C"
     - type        : EXT_CONFIG
       post_write_coils  : 
