@@ -1674,8 +1674,8 @@ class UnitRegister():
         if alias is not None:
             if Devices.add_alias(alias, self, file_update=True):
                 self.alias = alias
-
-        raise Exception("Unit_register object is read-only")
+        else:
+            raise Exception("Unit_register object is read-only")
 
     def full(self):
 
