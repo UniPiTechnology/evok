@@ -1,0 +1,28 @@
+---
+type: IC-AiUC8-1
+modbus_register_blocks:
+    - board_index : 1
+      start_reg   : 0
+      count       : 17
+      frequency   : 1
+    - board_index : 1
+      start_reg   : 1000
+      count       : 18
+      frequency   : 10
+modbus_features:
+    - type        : AI18
+      count       : 8
+      major_group : 1
+      modes       :
+        - Voltage
+        - Current
+      val_reg     : 0
+      mode_reg    : 1010
+
+    - type        : WD
+      major_group : 1
+      count       : 1
+      val_reg     : 16
+      timeout_reg : 1008
+      nv_sav_coil : 1003
+      reset_coil  : 1002
