@@ -359,7 +359,7 @@ class OwBusDriver(multiprocessing.Process):
         self.cycle_cnt += 1
         for sens in self.ow.find(): # For every sensor connected to the bus
 
-            sens.address = str(sens.address)[:14]
+            sens.address = str(sens.address)[:16]
 
             tmp_buf.add(sens.address)
 
