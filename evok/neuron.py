@@ -636,6 +636,13 @@ class UartBoard(object):
                 _ai = AnalogInput18(circuit, self, board_val_reg,
                                   regmode=m_feature['mode_reg'] + counter, 
                                   dev_id=self.dev_id, major_group=0, modes=m_feature['modes'])
+            elif (m_feature.get('type') == "AI12"):
+                board_val_reg = m_feature['val_reg'] + counter * 2
+                board_val_reg_raw = m_feature['val_reg'] + 17 + counter * 2
+                _ai = AnalogInput12(circuit, self, board_val_reg, board_val_reg_raw,
+                                    regmode=m_feature['mode_reg'] + counter,
+                                    dev_id=self.dev_id, major_group=0, modes=m_feature['modes'])
+
             else:
                 board_val_reg = m_feature['val_reg'] + counter * 2
                 _ai = AnalogInput(circuit, self, board_val_reg,
@@ -723,6 +730,7 @@ class UartBoard(object):
 
     def parse_feature(self, m_feature):
         board_id = 1 # UART Extension has always only one group
+        #print("Kajda " + str(m_feature['type']))
         max_count = m_feature.get('count')
         if m_feature['type'] == 'DI':
             self.parse_feature_di(max_count, m_feature, board_id)
@@ -737,6 +745,8 @@ class UartBoard(object):
         elif m_feature['type'] == 'AI':
             self.parse_feature_ai(max_count, m_feature, board_id)
         elif m_feature['type'] == 'AI18':
+            self.parse_feature_ai(max_count, m_feature, board_id)
+        elif m_feature['type'] == 'AI12':
             self.parse_feature_ai(max_count, m_feature, board_id)
         elif m_feature['type'] == 'REGISTER' and self.direct_access:
             self.parse_feature_register(max_count, m_feature, board_id)
@@ -1674,8 +1684,8 @@ class UnitRegister():
         if alias is not None:
             if Devices.add_alias(alias, self, file_update=True):
                 self.alias = alias
-        else:
-            raise Exception("Unit_register object is read-only")
+
+        raise Exception("Unit_register object is read-only")
 
     def full(self):
 
@@ -2650,3 +2660,106 @@ class AnalogInput18():
     def voltage(self):
         return self.value
 
+
+class AnalogInput12():
+    """
+    Internal ADC of the ARM Cortex-M0 MCU
+    """
+
+
+    def __init__(self, circuit, arm, reg_float, reg_raw, regmode=-1, dev_id=0, major_group=0, modes=['Voltage', 'Current'], formats=["Integer RAW", "Float"]):
+        self.alias = ""
+        self.devtype = AI
+        self.dev_id = dev_id
+        self.circuit = circuit
+        self.valreg = reg_float
+        self.valreg_raw = reg_raw
+        self.arm = arm
+        self.regmode = regmode
+        self.modes = modes
+        self.mode = 'Voltage'
+        self.unit_name = unit_names[VOLT]
+        self.val_formats = formats
+        self.val_format = "Float"
+        print("Kukosssska" + str(self.regmode) + " " + str(self.arm.modbus_address) + " " + circuit)
+        self.raw_mode = self.arm.neuron.modbus_cache_map.get_register(1, self.regmode, unit=self.arm.modbus_address)[0]
+        print("Kakosssska")
+        self.mode = self.get_mode()
+        self.major_group = major_group
+
+    @property
+    def value(self):
+        try:
+            if self.val_format == "Integer RAW":
+                regs = self.arm.neuron.modbus_cache_map.get_register(2, self.valreg_raw, unit=self.arm.modbus_address)
+                val = regs[0] | (regs[1] << 16)
+            else:
+                regs = self.arm.neuron.modbus_cache_map.get_register(2, self.valreg, unit=self.arm.modbus_address)
+                byte_arr = bytearray(4)
+                byte_arr[2] = (regs[0] >> 8) & 255
+                byte_arr[3] = regs[0] & 255
+                byte_arr[0] = (regs[1] >> 8) & 255
+                byte_arr[1] = regs[1] & 255
+                val = round(struct.unpack('>f', str(byte_arr))[0],3)
+
+            return val
+        except Exception, E:
+            logger.exception(str(E))
+            return 0
+
+    def get_mode(self):
+        if self.raw_mode == 2:
+            return "Current"
+        else:
+            return "Voltage"
+
+    def full(self):
+        ret = {'dev': 'ai',
+               'circuit': self.circuit,
+               'value': self.value,
+               'unit': self.unit_name,
+               'glob_dev_id': self.dev_id,
+               'mode': self.mode,
+               'modes': self.modes,
+               'val_format': self.val_format,
+               'val_formats': self.val_formats
+              }
+        if self.alias != '':
+            ret['alias'] = self.alias
+        return ret
+
+    def get(self):
+        return self.full()
+
+    def simple(self):
+        return {'dev': 'ai',
+                'circuit': self.circuit,
+                'value': self.value}
+
+    @gen.coroutine
+    def set(self, mode=None, val_format=None, alias=None):
+        if alias is not None:
+            if Devices.add_alias(alias, self, file_update=True):
+                self.alias = alias
+
+        if mode is not None and mode in self.modes:
+            self.mode = mode
+            if self.mode == "Voltage":
+                self.raw_mode = 1
+            elif self.mode == "Current":
+                self.raw_mode = 2
+            yield self.arm.neuron.client.write_register(self.regmode, self.raw_mode, unit=self.arm.modbus_address)
+
+        if val_format is not None and val_format in self.val_formats:
+            self.val_format = val_format
+
+        if self.val_format == "Float":
+            self.unit_name = unit_names[AMPERE] if self.mode == "Current" else unit_names[VOLT]
+        else:
+            self.unit_name = ''
+
+        raise gen.Return(self.full())
+
+    @property
+    def voltage(self):
+        return self.value
