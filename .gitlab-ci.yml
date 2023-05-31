@@ -5,6 +5,6 @@ include:
 variables:
     package_name: "evok"
     build_for_architecture: "armhf arm64"
-    build_for_distribution: "all"
+    build_for_distribution: "stable newstable"
     mirror_to_github: "yes"
     github_url: "git@github.com:UniPiTechnology/evok.git"
