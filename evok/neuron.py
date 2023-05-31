@@ -539,15 +539,40 @@ class UartBoard(object):
         counter = 0
         while counter < max_count:
             board_val_reg = m_feature['val_reg']
-            if m_feature['type'] == 'DO' and m_feature['pwm_reg'] and m_feature['pwm_ps_reg'] and m_feature['pwm_c_reg']:
-                if not self.legacy_mode:
-                    _r = Relay("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
-                               dev_id=self.dev_id, major_group=0, pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
-                               pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
+            #if m_feature['type'] == 'DO' and m_feature['pwm_reg'] and m_feature['pwm_ps_reg'] and (m_feature['pwm_c_reg'] or m_feature['pwm_pres_reg']):
+            if m_feature['type'] == 'DO' and m_feature.get('pwm_reg') is not None:
+                # PWM with presets
+
+                if m_feature.get('pwm_preset_reg') is not None:
+
+                    # PWM with both preset and cycle registers
+                    if m_feature.get('pwm_c_reg') is not None:
+                        _r = Relay("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter,
+                                   board_val_reg, 0x1 << (counter % 16),
+                                   dev_id=self.dev_id, major_group=0, pwmcyclereg=m_feature['pwm_c_reg'],
+                                   pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
+                                   pwmdutyreg=m_feature['pwm_reg'] + counter, presetreg=m_feature['pwm_preset_reg'], presets=m_feature['presets'], modes=m_feature['modes'],
+                                   legacy_mode=self.legacy_mode)
+                    # PWM with preset register
+                    else:
+                        _r = Relay("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter,
+                                   board_val_reg, 0x1 << (counter % 16),
+                                   dev_id=self.dev_id, major_group=0,
+                                   pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
+                                   pwmdutyreg=m_feature['pwm_reg'] + counter, presetreg=m_feature['pwm_preset_reg'], presets=m_feature['presets'], modes=m_feature['modes'],
+                                   legacy_mode=self.legacy_mode)
+
+                # SW PWM without preset register
                 else:
-                    _r = Relay("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
-                               dev_id=self.dev_id, major_group=0, pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
-                               pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
+                    _r = Relay("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter,
+                               board_val_reg, 0x1 << (counter % 16),
+                               dev_id=self.dev_id, major_group=0, pwmcyclereg=m_feature['pwm_c_reg'],
+                               pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
+                               pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'],
+                               legacy_mode=self.legacy_mode)
+
+
+
             else:
                     _r = Relay("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
                                dev_id=self.dev_id, major_group=0, legacy_mode=self.legacy_mode)
@@ -636,6 +661,13 @@ class UartBoard(object):
                 _ai = AnalogInput18(circuit, self, board_val_reg,
                                   regmode=m_feature['mode_reg'] + counter, 
                                   dev_id=self.dev_id, major_group=0, modes=m_feature['modes'])
+            elif (m_feature.get('type') == "AI12"):
+                board_val_reg = m_feature['val_reg'] + counter * 2
+                board_val_reg_raw = m_feature['val_reg'] + 17 + counter * 2
+                _ai = AnalogInput12(circuit, self, board_val_reg, board_val_reg_raw,
+                                    regmode=m_feature['mode_reg'] + counter,
+                                    dev_id=self.dev_id, major_group=0, modes=m_feature['modes'])
+
             else:
                 board_val_reg = m_feature['val_reg'] + counter * 2
                 _ai = AnalogInput(circuit, self, board_val_reg,
@@ -737,6 +769,8 @@ class UartBoard(object):
         elif m_feature['type'] == 'AI':
             self.parse_feature_ai(max_count, m_feature, board_id)
         elif m_feature['type'] == 'AI18':
+            self.parse_feature_ai(max_count, m_feature, board_id)
+        elif m_feature['type'] == 'AI12':
             self.parse_feature_ai(max_count, m_feature, board_id)
         elif m_feature['type'] == 'REGISTER' and self.direct_access:
             self.parse_feature_register(max_count, m_feature, board_id)
@@ -1012,7 +1046,11 @@ class Board(object):
 
 class Relay(object):
     pending_id = 0
-    def __init__(self, circuit, arm, coil, reg, mask, dev_id=0, major_group=0, pwmcyclereg=-1, pwmprescalereg=-1, pwmdutyreg=-1, legacy_mode=True, digital_only=False, modes=['Simple']):
+
+    PWM_PRESET_MAP = {0:1000, 1:100, 2:0}
+    PWM_PRESET_MAP_STRINGS = {0: "1kHz", 1: "100Hz", 2: "Custom"}
+    PWM_PRESET_CUSTOM = 0
+    def __init__(self, circuit, arm, coil, reg, mask, dev_id=0, major_group=0, pwmcyclereg=-1, pwmprescalereg=-1, pwmdutyreg=-1, presetreg=-1, legacy_mode=True, digital_only=False, modes=['Simple'], presets=[]):
         self.alias = ""
         self.devtype = RELAY
         self.dev_id = dev_id
@@ -1022,6 +1060,7 @@ class Relay(object):
         self.pwmcyclereg = pwmcyclereg
         self.pwmprescalereg = pwmprescalereg
         self.pwmdutyreg = pwmdutyreg
+        self.pwmpresetreg = presetreg
         self.pwm_duty = 0
         self.pwm_duty_val = 0
         self.pwm_freq = 0
@@ -1032,28 +1071,48 @@ class Relay(object):
         self.digital_only = digital_only
         self.coil = coil
         self.valreg = reg
+        self.pwm_presets = presets
+        self.pwm_preset = -1
         self.bitmask = mask
         self.regvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1,self.valreg, unit=self.arm.modbus_address)[0]
         if self.pwmdutyreg >= 0: # This instance supports PWM mode
             self.pwm_duty_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.pwmdutyreg, unit=self.arm.modbus_address))[0]
-            self.pwm_cycle_val = ((self.arm.neuron.modbus_cache_map.get_register(1, self.pwmcyclereg, unit=self.arm.modbus_address))[0] + 1)
-            self.pwm_prescale_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.pwmprescalereg, unit=self.arm.modbus_address))[0]
-            if (self.pwm_cycle_val > 0) and (self.pwm_prescale_val > 0):
-                self.pwm_freq = 48000000 / (self.pwm_cycle_val * self.pwm_prescale_val)
+            # With preset
+            if self.pwmpresetreg > 0:
+                self.pwm_preset = (self.arm.neuron.modbus_cache_map.get_register(1, self.pwmpresetreg, unit=self.arm.modbus_address))[0]
+                if Relay.PWM_PRESET_MAP[self.pwm_preset] != Relay.PWM_PRESET_CUSTOM:
+                    self.pwm_freq = Relay.PWM_PRESET_MAP[self.pwm_preset]
+                else:
+                    self.pwm_prescale_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.pwmprescalereg, unit=self.arm.modbus_address))[0]
+                    self.pwm_freq = 1000 / (1 + self.pwm_prescale_val)
+
+            # Without preset
             else:
-                self.pwm_freq = 0
-            if (self.pwm_duty_val == 0):
+                if self.pwmcyclereg >=0:
+                    self.pwm_cycle_val = ((self.arm.neuron.modbus_cache_map.get_register(1, self.pwmcyclereg, unit=self.arm.modbus_address))[0] + 1)
+                self.pwm_prescale_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.pwmprescalereg, unit=self.arm.modbus_address))[0]
+
+                if (self.pwm_cycle_val > 0) and (self.pwm_prescale_val > 0):
+                    self.pwm_freq = 48000000 / (self.pwm_cycle_val * self.pwm_prescale_val)
+                else:
+                    self.pwm_freq = 0
+
+            if self.pwm_duty_val == 0:
                 self.pwm_duty = 0
                 self.mode = 'Simple'  # Mode field is for backward compatibility, will be deprecated soon
             else:
-                logger.info("Pocitam z {} {}".format(self.pwm_cycle_val, self.pwm_duty_val))
-                self.pwm_duty = (100 / (float(self.pwm_cycle_val) / float(self.pwm_duty_val)))
-                self.pwm_duty = round(self.pwm_duty ,1) if self.pwm_duty % 1 else int(self.pwm_duty)
+                if pwmcyclereg > 0:
+                    self.pwm_duty = (100 / (float(self.pwm_cycle_val) / float(self.pwm_duty_val)))
+                    self.pwm_duty = round(self.pwm_duty ,1) if self.pwm_duty % 1 else int(self.pwm_duty)
+                else:
+                    self.pwm_duty = self.pwm_duty_val
+
                 self.mode = 'PWM'  # Mode field is for backward compatibility, will be deprecated soon
         else: # This RELAY instance does not support PWM mode (no pwmdutyreg given)
             self.mode = 'Simple'
 
         self.forced_changes = arm.neuron.Config.getbooldef("MAIN", "force_immediate_state_changes", False)
+
 
     def full(self, forced_value=None):
         ret =  {'dev': 'relay',
@@ -1068,6 +1127,9 @@ class Relay(object):
             ret['relay_type'] = 'digital'
             ret['pwm_freq'] = self.pwm_freq
             ret['pwm_duty'] = self.pwm_duty
+        if self.pwmpresetreg > 0:
+            ret['pwm_preset'] = Relay.PWM_PRESET_MAP_STRINGS[self.pwm_preset]
+            ret['pwm_presets'] = self.pwm_presets
         if self.alias != '':
             ret['alias'] = self.alias
         if forced_value is not None:
@@ -1122,45 +1184,64 @@ class Relay(object):
         # Set PWM Freq
         if (pwm_freq is not None) and (float(pwm_freq) > 0):
             self.pwm_freq = pwm_freq;
-            self.pwm_delay_val = 48000000 / float(pwm_freq)
-            if ((int(self.pwm_delay_val) % 50000) == 0) and ((self.pwm_delay_val / 50000) < 65535):
-                self.pwm_cycle_val = 50000
-                self.pwm_prescale_val = self.pwm_delay_val / 50000
-            elif ((int(self.pwm_delay_val) % 10000) == 0) and ((self.pwm_delay_val / 10000) < 65535):
-                self.pwm_cycle_val = 10000
-                self.pwm_prescale_val = self.pwm_delay_val / 10000
-            elif ((int(self.pwm_delay_val) % 5000) == 0) and ((self.pwm_delay_val / 5000) < 65535):
-                self.pwm_cycle_val = 5000
-                self.pwm_prescale_val = self.pwm_delay_val / 5000
-            elif ((int(self.pwm_delay_val) % 1000) == 0) and ((self.pwm_delay_val / 1000) < 65535):
-                self.pwm_cycle_val = 1000
-                self.pwm_prescale_val = self.pwm_delay_val / 1000
-            else:
-                self.pwm_prescale_val = sqrt(self.pwm_delay_val)
-                self.pwm_cycle_val = self.pwm_prescale_val
 
-            if self.pwm_duty > 0:
-                self.pwm_duty_val = float(self.pwm_cycle_val) * float(float(self.pwm_duty) / 100.0)
-            #else:
-            #    self.pwm_duty_val = 0
-            #    self.arm.neuron.client.write_register(self.pwmdutyreg, self.pwm_duty_val, unit=self.arm.modbus_address)
 
-            other_devs = Devices.by_int(RELAY, major_group=self.major_group)  # All PWM outs in the same group share this registers
-            for other_dev in other_devs:
-                if other_dev.pwm_duty > 0:
-                    other_dev.pwm_freq = self.pwm_freq
-                    other_dev.pwm_delay_val = self.pwm_delay_val
-                    other_dev.pwm_cycle_val = self.pwm_cycle_val
-                    other_dev.pwm_prescale_val = self.pwm_prescale_val
-                    yield other_dev.set(pwm_duty=other_dev.pwm_duty)
+            if self.pwmcyclereg > 0:
+                self.pwm_delay_val = 48000000 / float(pwm_freq)
+                if ((int(self.pwm_delay_val) % 50000) == 0) and ((self.pwm_delay_val / 50000) < 65535):
+                    self.pwm_cycle_val = 50000
+                    self.pwm_prescale_val = self.pwm_delay_val / 50000
+                elif ((int(self.pwm_delay_val) % 10000) == 0) and ((self.pwm_delay_val / 10000) < 65535):
+                    self.pwm_cycle_val = 10000
+                    self.pwm_prescale_val = self.pwm_delay_val / 10000
+                elif ((int(self.pwm_delay_val) % 5000) == 0) and ((self.pwm_delay_val / 5000) < 65535):
+                    self.pwm_cycle_val = 5000
+                    self.pwm_prescale_val = self.pwm_delay_val / 5000
+                elif ((int(self.pwm_delay_val) % 1000) == 0) and ((self.pwm_delay_val / 1000) < 65535):
+                    self.pwm_cycle_val = 1000
+                    self.pwm_prescale_val = self.pwm_delay_val / 1000
+                else:
+                    self.pwm_prescale_val = sqrt(self.pwm_delay_val)
+                    self.pwm_cycle_val = self.pwm_prescale_val
 
-            self.arm.neuron.client.write_register(self.pwmcyclereg, self.pwm_cycle_val - 1, unit=self.arm.modbus_address)
-            self.arm.neuron.client.write_register(self.pwmprescalereg, self.pwm_prescale_val, unit=self.arm.modbus_address)
-            self.arm.neuron.client.write_register(self.pwmdutyreg, self.pwm_duty_val, unit=self.arm.modbus_address)
+                if self.pwm_duty > 0:
+                    self.pwm_duty_val = float(self.pwm_cycle_val) * float(float(self.pwm_duty) / 100.0)
+                #else:
+                #    self.pwm_duty_val = 0
+                #    self.arm.neuron.client.write_register(self.pwmdutyreg, self.pwm_duty_val, unit=self.arm.modbus_address)
+
+                self.arm.neuron.client.write_register(self.pwmcyclereg, self.pwm_cycle_val - 1, unit=self.arm.modbus_address)
+                self.arm.neuron.client.write_register(self.pwmprescalereg, self.pwm_prescale_val, unit=self.arm.modbus_address)
+                self.arm.neuron.client.write_register(self.pwmdutyreg, self.pwm_duty_val, unit=self.arm.modbus_address)
+
+                other_devs = Devices.by_int(RELAY, major_group=self.major_group)  # All PWM outs in the same group share this registers
+                for other_dev in other_devs:
+                    if other_dev.pwm_duty > 0:
+                        other_dev.pwm_freq = self.pwm_freq
+                        other_dev.pwm_delay_val = self.pwm_delay_val
+                        other_dev.pwm_cycle_val = self.pwm_cycle_val
+                        other_dev.pwm_prescale_val = self.pwm_prescale_val
+                        yield other_dev.set(pwm_duty=other_dev.pwm_duty)
+
+            if self.pwmpresetreg > 0:
+                # IF wanted freq is one of preset options
+                for preset, freq in Relay.PWM_PRESET_MAP.iteritems():
+                    if int(pwm_freq) == freq:
+                        self.pwm_preset = preset
+                        self.arm.neuron.client.write_register(self.pwmpresetreg, self.pwm_preset,
+                                                              unit=self.arm.modbus_address)
+                        break
+
+                other_devs = Devices.by_int(RELAY, major_group=self.major_group)  # All PWM outs in the same group share this registers
+                for other_dev in other_devs:
+                    if other_dev.pwm_duty > 0:
+                        other_dev.pwm_freq = self.pwm_freq
+                        other_dev.pwm_preset = self.pwm_preset
+                        other_dev.pwm_prescale_val = self.pwm_prescale_val
+                        yield other_dev.set(pwm_duty=other_dev.pwm_duty)
 
         # Set Binary value
         if value is not None:
-
             parsed_value = 1 if int(value) else 0
 
             if pwm_duty is not None:
@@ -1179,9 +1260,13 @@ class Relay(object):
                 self.arm.neuron.client.write_register(self.pwmdutyreg, self.pwm_duty, unit=self.arm.modbus_address) # Turn off PWM
 
         # Set PWM Duty
-        elif pwm_duty is not None and float(pwm_duty) >= 0.0 and float(pwm_duty) <= 100.0:
+        elif pwm_duty is not None and 0.0 <= float(pwm_duty) <= 100.0:
             self.pwm_duty = pwm_duty
-            self.pwm_duty_val = float(self.pwm_cycle_val) * float(float(self.pwm_duty) / 100.0)
+            if self.pwmcyclereg > 0:
+                self.pwm_duty_val = float(self.pwm_cycle_val) * float(float(self.pwm_duty) / 100.0)
+            else:
+                self.pwm_duty_val = int(self.pwm_duty)
+
             if self.value != 0:
                 self.arm.neuron.client.write_coil(self.coil, 0, unit=self.arm.modbus_address)
             self.arm.neuron.client.write_register(self.pwmdutyreg, self.pwm_duty_val, unit=self.arm.modbus_address)
@@ -2650,3 +2735,104 @@ class AnalogInput18():
     def voltage(self):
         return self.value
 
+
+class AnalogInput12():
+    """
+    Internal ADC of the ARM Cortex-M0 MCU
+    """
+
+
+    def __init__(self, circuit, arm, reg_float, reg_raw, regmode=-1, dev_id=0, major_group=0, modes=['Voltage', 'Current'], formats=["Integer RAW", "Float"]):
+        self.alias = ""
+        self.devtype = AI
+        self.dev_id = dev_id
+        self.circuit = circuit
+        self.valreg = reg_float
+        self.valreg_raw = reg_raw
+        self.arm = arm
+        self.regmode = regmode
+        self.modes = modes
+        self.mode = 'Voltage'
+        self.unit_name = unit_names[VOLT]
+        self.val_formats = formats
+        self.val_format = "Float"
+        self.raw_mode = self.arm.neuron.modbus_cache_map.get_register(1, self.regmode, unit=self.arm.modbus_address)[0]
+        self.mode = self.get_mode()
+        self.major_group = major_group
+
+    @property
+    def value(self):
+        try:
+            if self.val_format == "Integer RAW":
+                regs = self.arm.neuron.modbus_cache_map.get_register(2, self.valreg_raw, unit=self.arm.modbus_address)
+                val = regs[0] | (regs[1] << 16)
+            else:
+                regs = self.arm.neuron.modbus_cache_map.get_register(2, self.valreg, unit=self.arm.modbus_address)
+                byte_arr = bytearray(4)
+                byte_arr[2] = (regs[0] >> 8) & 255
+                byte_arr[3] = regs[0] & 255
+                byte_arr[0] = (regs[1] >> 8) & 255
+                byte_arr[1] = regs[1] & 255
+                val = round(struct.unpack('>f', str(byte_arr))[0],3)
+
+            return val
+        except Exception, E:
+            logger.exception(str(E))
+            return 0
+
+    def get_mode(self):
+        if self.raw_mode == 2:
+            return "Current"
+        else:
+            return "Voltage"
+
+    def full(self):
+        ret = {'dev': 'ai',
+               'circuit': self.circuit,
+               'value': self.value,
+               'unit': self.unit_name,
+               'glob_dev_id': self.dev_id,
+               'mode': self.mode,
+               'modes': self.modes,
+               'val_format': self.val_format,
+               'val_formats': self.val_formats
+              }
+        if self.alias != '':
+            ret['alias'] = self.alias
+        return ret
+
+    def get(self):
+        return self.full()
+
+    def simple(self):
+        return {'dev': 'ai',
+                'circuit': self.circuit,
+                'value': self.value}
+
+    @gen.coroutine
+    def set(self, mode=None, val_format=None, alias=None):
+        if alias is not None:
+            if Devices.add_alias(alias, self, file_update=True):
+                self.alias = alias
+
+        if mode is not None and mode in self.modes:
+            self.mode = mode
+            if self.mode == "Voltage":
+                self.raw_mode = 1
+            elif self.mode == "Current":
+                self.raw_mode = 2
+            yield self.arm.neuron.client.write_register(self.regmode, self.raw_mode, unit=self.arm.modbus_address)
+
+        if val_format is not None and val_format in self.val_formats:
+            self.val_format = val_format
+
+        if self.val_format == "Float":
+            self.unit_name = unit_names[AMPERE] if self.mode == "Current" else unit_names[VOLT]
+        else:
+            self.unit_name = ''
+
+        raise gen.Return(self.full())
+
+    @property
+    def voltage(self):
+        return self.value
