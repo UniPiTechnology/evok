@@ -755,6 +755,7 @@ class UartBoard(object):
 
     def parse_feature(self, m_feature):
         board_id = 1 # UART Extension has always only one group
+        #print("Kajda " + str(m_feature['type']))
         max_count = m_feature.get('count')
         if m_feature['type'] == 'DI':
             self.parse_feature_di(max_count, m_feature, board_id)
