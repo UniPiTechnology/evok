@@ -7,7 +7,7 @@ modbus_register_blocks:
       frequency   : 1
     - board_index : 1
       start_reg   : 1000
-      count       : 12
+      count       : 26
       frequency   : 10
 modbus_features:
     - type        : DI
