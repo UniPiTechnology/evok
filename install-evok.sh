@@ -430,11 +430,12 @@ if [ "$(lsb_release -sc)" == "bullseye" ]; then
     wget https://bootstrap.pypa.io/pip/2.7/get-pip.py
     python2.7 get-pip.py
     rm -f get-pip.py
+    pip2.7 install Cython<3.0 pyyaml --no-build-isolation
     pip2.7 install pymodbus==1.4.0
     pip2.7 install tornado==4.5.3
     pip2.7 install python-dali==0.6
     pip2.7 install onewire==0.2
-    pip2.7 install toro jsonrpclib pyyaml tornado_json tornado-webservices pyusb
+    pip2.7 install toro jsonrpclib tornado_json tornado-webservices pyusb
 else
     apt-get install -y python-ow python-pip make python-dev nginx vim libow-dev
     package_available python3-distutils && apt-get install -y python3-distutils
