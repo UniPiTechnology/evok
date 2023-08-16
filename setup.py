@@ -8,7 +8,7 @@ def readme():
 
 setup(
     name='evok',
-    version='2.6.6',
+    version='2.4.34',
     description='',
     long_description=readme(),
     author='Tomas Knot',
