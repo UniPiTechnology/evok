@@ -2,7 +2,7 @@
 
 # EVOK - the UniPi API
 
-EVOK is the primary Web-services API for [NEURON], [AXON] and [UniPi 1.1] devices. It provides a RESTful interface over HTTP, a JSON-RPC interface, a WebSocket interface a SOAP interface and a bulk JSON interface to UniPi devices.
+EVOK is the primary Web-services API for [PATRON], [NEURON], [AXON] and [UniPi 1.1] plc unit series. It provides a RESTful interface over HTTP, a JSON-RPC interface, a WebSocket interface a SOAP interface and a bulk JSON interface to UniPi devices.
 
 Evok is still in active development, so any testing, feedback and contributions are very much welcome and appreciated.
 
@@ -19,13 +19,13 @@ EVOK also supports sending notifications via webhook.
 
 ### For more information see our documentation at [api-docs.io].
 
-## Installation process on AXON/Neuron PLCs using pre-build OS images (recommended)
+## Installation process on Patron/Neuron/Axon PLCs using pre-build OS images (recommended)
 
 The latest images for Axon/Neuron controllers can be downloaded from:
 
 [UniPi.technology Knowledge Base](https://kb.unipi.technology/en:files:software:os-images:)
 
-All necessary APT UniPi repositories are already preconfigured in the OS images. Therefore, all that's required is to login to the PLC via SSH (there is a large number of clients you can use, for windows we recommend using [PUTTY]). The default username for Axon PLCs is "unipi" and the default password is "unipi.technology". After you connect to your Axon PLC execute the following commands:
+All necessary APT UniPi repositories are already preconfigured in the official Unipi OS images. Therefore, all that's required is to login to the PLC via SSH (there is a large number of clients you can use, for windows we recommend using [PUTTY]). The default username for Axon PLCs is "unipi" and the default password is "unipi.technology". After you connect to your PLC execute the following commands:
 
     sudo su
     apt-get update
@@ -46,28 +46,19 @@ You can use the following commands to update your EVOK package distribution to a
     reboot
 
 
-## Installation process on Neuron family controllers with fresh Rapsbian image 
+## Installation process on Neuron family controllers with fresh Raspberry Pi OS 
 
-*Warning: if you have previously used the shell script install method noted below you will need to use a clean image!*
+*Warning: if you have previously used the legacy shell script install method noted below, you will need to use a clean image!*
 
-In order to install EVOK on Neuron you will need an SD card with a standard (Lite) ***Raspbian Stretch*** or ***Raspbian Buster*** image. It is also necessary to enable SSH on the image by creating an empty file named "ssh" in the boot partition of your SD card (the partition should be visible on all systems which support FAT16, which includes Windows, Linux and OSX among others).
+In order to install EVOK on Neuron you will need an SD card with a standard (Lite) ***Raspberry Pi OS*** or ***Raspberry Pi OS Lite*** image based on Debian 11 or Debian 10. It is also necessary to enable SSH on the image by creating an empty file named "ssh" in the boot partition of your SD card (the partition should be visible on all systems which support FAT16, which includes Windows, Linux and OSX among others).
 
 To install EVOK itself first connect to your Neuron using SSH (there is a large number of clients you can use, for windows we recommend using [PUTTY]). The default username for Raspbian is "pi" and the default password is "raspberry". After you connect to your Neuron execute the following commands: 
 
 *NOTE: The installation process will overwrite default server configuration for NGINX*
 
     sudo su
-    echo "deb https://repo.unipi.technology/debian $(lsb_release -sc) main" >> /etc/apt/sources.list.d/unipi.list
-    wget https://repo.unipi.technology/debian/unipi_pub.gpg -O - | apt-key add
-    apt-get update
-    apt-get upgrade
-    reboot
-    
-    sudo su
-    apt-get install nginx
-    rm -f /etc/nginx/sites-enabled/default
-    apt-get install evok
-    systemctl enable evok
+    wget -qO - https://repo.unipi.technology/debian/raspberry-install.sh | bash
+    apt install evok
     reboot
     
 It is possible that some (or all) of the above steps will already have been finished previously; in that case simply continue on with the next steps. Performing all the steps will ensure you have the latest version of the software installed.
