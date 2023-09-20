@@ -1,14 +1,15 @@
-''''
+'''
     Code specific to UniPi 1.1 devices
 '''
 
+import asyncio
 import struct
 import time
 import datetime
 import atexit
 from math import isnan, floor
 
-from tornado import gen
+#from tornado import gen
 from tornado.ioloop import IOLoop
 import pigpio
 from devices import *
@@ -44,24 +45,22 @@ class Eprom(object):
             config.up_globals['version'] = "1.0"
         # print "UniPi version:" + config.up_globals['version']
 
-    @gen.coroutine
-    def write_byte(self, index, value):
+    async def write_byte(self, index, value):
         assert (index < self.size and index >= 0)
-        with (yield self.i2cbus.iolock.acquire()):
+        async with self.i2cbus.iolock:
             # write byte
             extents = [struct.pack("I", (value & 0xff))]
-            result = yield self.i2cbus.apigpio_command_ext(
+            result = await self.i2cbus.apigpio_command_ext(
                 pigpio._PI_CMD_I2CWB,
                 self.i2c, index, 4, extents)
             pigpio._u2i(result)  # check errors
 
-    @gen.coroutine
-    def read_byte(self, index):
+    async def read_byte(self, index):
         assert (index < 256 and index >= 0)
-        with (yield self.i2cbus.iolock.acquire()):
-            result = yield self.i2cbus.apigpio_command(
+        async with self.i2cbus.iolock:
+            result = await self.i2cbus.apigpio_command(
                 pigpio._PI_CMD_I2CRB, self.i2c, index)
-            raise gen.Return(pigpio._u2i(result))
+            return(pigpio._u2i(result))
 
 
 #################################################################
@@ -103,24 +102,23 @@ class UnipiMcp(object):
         if not (relay in self.relays):
             self.relays.append(relay)
 
-    @gen.coroutine
-    def __set_masked_value(self, mask, value):
+    async  def __set_masked_value(self, mask, value):
         # old pattern
         if value:
             byte_val = (self.value | mask) & 0xff
         else:
             byte_val = (self.value & ~mask) & 0xff
 
-        with (yield self.i2cbus.iolock.acquire()):
+        async with self.i2cbus.iolock:
             #write byte
             extents = [struct.pack("I", byte_val)]
-            result = yield self.i2cbus.apigpio_command_ext(
+            result = await self.i2cbus.apigpio_command_ext(
                 pigpio._PI_CMD_I2CWB,
                 self.i2c, MCP23008_GPIO, 4, extents)
             pigpio._u2i(result)  # check errors
 
             #read byte
-            result = yield self.i2cbus.apigpio_command(
+            result = await self.i2cbus.apigpio_command(
                 pigpio._PI_CMD_I2CRB,
                 self.i2c, MCP23008_OLAT)
             mask = self.value
@@ -129,28 +127,26 @@ class UnipiMcp(object):
             for r in filter(lambda r: r._mask & mask, self.relays):
                 devents.status(r)
 
-    @gen.coroutine
-    def set_masked_value(self, mask, value):
+    async def set_masked_value(self, mask, value):
 
         if value:
-            yield self.set_bitmap(mask, 0xff)
+            await self.set_bitmap(mask, 0xff)
         else:
-            yield self.set_bitmap(mask, 0x0)
+            await self.set_bitmap(mask, 0x0)
 
 
-    @gen.coroutine
-    def set_bitmap(self, mask, bitmap):
+    async  def set_bitmap(self, mask, bitmap):
         byte_val = (self.value & ~mask) | (bitmap & mask)
-        with (yield self.i2cbus.iolock.acquire()):
+        async with self.i2cbus.iolock:
             #write byte
             extents = [struct.pack("I", byte_val)]
-            result = yield self.i2cbus.apigpio_command_ext(
+            result = await self.i2cbus.apigpio_command_ext(
                 pigpio._PI_CMD_I2CWB,
                 self.i2c, MCP23008_GPIO, 4, extents)
             pigpio._u2i(result)  # check errors
 
             #read byte
-            result = yield self.i2cbus.apigpio_command(
+            result = await self.i2cbus.apigpio_command(
                 pigpio._PI_CMD_I2CRB,
                 self.i2c, MCP23008_OLAT)
             mask = self.value
@@ -195,34 +191,33 @@ class Relay(object):
         """
         return (self.value, self.pending_id != 0)
 
-    @gen.coroutine
-    def set_state(self, value):
+    async def set_state(self, value):
         """ Sets new on/off status. Disable pending timeouts
         """
         if self.pending_id:
             IOLoop.instance().remove_timeout(self.pending_id)
             self.pending_id = None
-        yield self.mcp.set_masked_value(self._mask, value)
-        raise gen.Return(1 if self.mcp.value & self._mask else 0)
+        await self.mcp.set_masked_value(self._mask, value)
+        return(1 if self.mcp.value & self._mask else 0)
 
-    @gen.coroutine
-    def set(self, value=None, timeout=None):
+    async def set(self, value=None, timeout=None, alias=None):
         """ Sets new on/off status. Disable pending timeouts
         """
-        if value is None:
-            raise Exception('Value must be specified')
-        value = int(value)
+        if not(value is None):
+            #raise Exception('Value must be specified')
+            value = int(value)
+
         if not (timeout is None):
             timeout = float(timeout)
 
-        yield self.mcp.set_masked_value(self._mask, value)
+        await self.mcp.set_masked_value(self._mask, value)
 
         if timeout is None:
-            raise gen.Return(1 if self.mcp.value & self._mask else 0)
+            return(1 if self.mcp.value & self._mask else 0)
 
-        def timercallback():
+        async def timercallback():
             self.pending_id = None
-            self.mcp.set_masked_value(self._mask, not value)
+            await self.mcp.set_masked_value(self._mask, not value)
             #global _lastt
             #t = IOLoop.instance().time()           
             #print "%s %s" % (t-_lastt,t)
@@ -230,7 +225,8 @@ class Relay(object):
 
         self.pending_id = IOLoop.instance().add_timeout(
             datetime.timedelta(seconds=float(timeout)), timercallback)
-        raise gen.Return(1 if self.mcp.value & self._mask else 0)
+
+        return 1 if self.mcp.value & self._mask else 0
 
 
 #################################################################
@@ -317,8 +313,7 @@ class UnipiMCP342x(object):
             self.must_measure = True
 
 
-    @gen.coroutine
-    def measure_loop(self, mainloop):
+    async def measure_loop(self, mainloop):
         # print("Entering measure loop")
         #mainloop = IOLoop.instance()
         try:
@@ -326,7 +321,7 @@ class UnipiMCP342x(object):
             looptime = mainloop.time()
             for channel in self.channels:
                 channel._nextmeasure = looptime
-                yield channel._read_correction()
+                await channel._read_correction()
                 next = channel
 
             while True:
@@ -334,11 +329,11 @@ class UnipiMCP342x(object):
                 if next:
                     if not self.continuous or self.must_measure:
                         # run measurement for channel                
-                        yield self.measure(next)
-                        yield gen.Task(mainloop.call_later, next._waittime)
+                        await self.measure(next)
+                        await asyncio.sleep(next._waittime)
 
                     # try to read value 
-                    if (yield self.read_raw()):
+                    if (await self.read_raw()):
                         ## set next time for current channel
                         channel = self.lastmeasure
                         if channel.interval > 0:
@@ -354,31 +349,29 @@ class UnipiMCP342x(object):
                 if next:
                     looptime = mainloop.time()
                     if looptime < next._nextmeasure:
-                        yield gen.Task(mainloop.call_at, next._nextmeasure)
+                        await asyncio.sleep(next._nextmeasure-looptime)
                 else:
-                    yield gen.Task(mainloop.call_later, 1)
+                    await asyncio.sleep(1)
 
-        except Exception, E:
+        except Exception as E:
             logger.debug("%s", str(E))
 
 
-    @gen.coroutine
-    def measure(self, ai):
+    async  def measure(self, ai):
         self.lastmeasure = ai
         self.continuous = ai.continuous
-        with (yield self.i2cbus.iolock.acquire()):
-            yield self.i2cbus.apigpio_command(pigpio._PI_CMD_I2CWS, self.i2c, ai._mode)
+        async with self.i2cbus.iolock:
+            await self.i2cbus.apigpio_command(pigpio._PI_CMD_I2CWS, self.i2c, ai._mode)
         self.must_measure = False
 
-    @gen.coroutine
-    def read_raw(self):
+    async def read_raw(self):
         # reads the raw value from the selected previously planned one-shot operation or continuous
         # requires correctly bits
         readlen = 4 if self.lastmeasure.bits == 18 else 3  # if bits=18 : 4 else: 3
-        with (yield self.i2cbus.iolock.acquire()):
-            bytes = pigpio.u2i((yield self.i2cbus.apigpio_command(pigpio._PI_CMD_I2CRD, self.i2c, readlen)))
+        async with self.i2cbus.iolock:
+            bytes = pigpio.u2i((await self.i2cbus.apigpio_command(pigpio._PI_CMD_I2CRD, self.i2c, readlen)))
             if bytes <= 0: return
-            data = yield self.i2cbus.arxbuf(bytes)
+            data = await self.i2cbus.arxbuf(bytes)
 
         status = data[readlen - 1]
         if status & 0x80:
@@ -396,7 +389,7 @@ class UnipiMCP342x(object):
         value &= BIT_MASKS[bits][0]
         if sign: value = -value
         self.lastmeasure._set_voltage(2.048 / BIT_MASKS[bits][0] * value)
-        raise gen.Return(True)
+        return(True)
 
 
 class AnalogInput():
@@ -422,12 +415,11 @@ class AnalogInput():
         mcp.register_channel(self)
         self.koef = self.correction / self.gain
 
-    @gen.coroutine
-    def _read_correction(self):
+    async def _read_correction(self):
         if self.rom and self.corr_addr:
             hexstr = ""
             for addr in range(self.corr_addr, self.corr_addr + 4):
-                res = yield self.rom.read_byte(addr)
+                res = await self.rom.read_byte(addr)
                 result = '{:x}'.format(res)
                 if len(result) == 1:
                     result = '0' + result
@@ -463,8 +455,7 @@ class AnalogInput():
     def get(self):
         return (self.value, "%s" % self.time)
 
-    #@gen.coroutine
-    def set(self, bits=None, gain=None, interval=None):
+    async def set(self, bits=None, gain=None, interval=None, mode=None, alias=None):
         if not (bits is None): self.bits = int(bits)
         if not (gain is None):
             self.gain = int(gain)
@@ -475,9 +466,9 @@ class AnalogInput():
         return 0
 
 
-        #@gen.coroutine
+        #async
         #def Measure(self):
-        #    yield self.mcp.measure(self)
+        #    await self.mcp.measure(self)
 
 
 #################################################################
@@ -543,7 +534,7 @@ class UnipiPCA9685(object):
         self.frequency = frequency
         self.__set_freq(self.frequency)
 
-    def __set_freq(self, freq):
+    async def __set_freq(self, freq):
         """
         Set frequency of all channels between 40Hz - 1 000Hz using internal oscillator
         """
@@ -552,26 +543,24 @@ class UnipiPCA9685(object):
         prescale = int(floor((self.__CLOCK_FREQ / 4096 / freq) - 1 + 0.5))
         prescale = prescale if prescale >= 3 else 3 #hw forces min value of prescale value to 3
         # print "Setting PWM frequency on PCA9685 %d to %d with prescale %d" % (self.circuit, freq, prescale)
-        old_mode = self.i2cbus.i2c_read_byte_data(self.i2c, self.__MODE1) #backup old mode
+        old_mode = await self.i2cbus.i2c_read_byte_data(self.i2c, self.__MODE1) #backup old mode
         new_mode = (old_mode & 0x7F) | self.__SLEEP #sleep mode
-        self.i2cbus.i2c_write_byte_data(self.i2c, self.__MODE1, new_mode) #set SLEEP bit on register MODE1
-        self.i2cbus.i2c_write_byte_data(self.i2c, self.__PRESCALE, prescale) #set PRESCALE register
-        self.i2cbus.i2c_write_byte_data(self.i2c, self.__MODE1, old_mode) #restore previous MODE1 register value
+        await self.i2cbus.i2c_write_byte_data(self.i2c, self.__MODE1, new_mode) #set SLEEP bit on register MODE1
+        await self.i2cbus.i2c_write_byte_data(self.i2c, self.__PRESCALE, prescale) #set PRESCALE register
+        await self.i2cbus.i2c_write_byte_data(self.i2c, self.__MODE1, old_mode) #restore previous MODE1 register value
         time.sleep(0.005)
-        self.i2cbus.i2c_write_byte_data(self.i2c, self.__MODE1, old_mode | self.__RESTART) #restart!]
+        await self.i2cbus.i2c_write_byte_data(self.i2c, self.__MODE1, old_mode | self.__RESTART) #restart!]
         self.frequency = freq
 
-    @gen.coroutine
-    def set_pwm(self, channel, val):
+    async def set_pwm(self, channel, val):
         """
         Set PWM value on channel 0 - 4095
         """
         val = val if val <= 4095 else 4095
         val = val if val >= 0 else 0
-        yield self.set(channel, 0, val)
+        await self.set(channel, 0, val)
 
-    @gen.coroutine
-    def set(self, channel, on, off):
+    async def set(self, channel, on, off):
         """
         Set LED_on and LED_OFF registers value on channel, on(off) values between 0-4096
         """
@@ -582,34 +571,34 @@ class UnipiPCA9685(object):
         off = off if off <= 4096 else 4096
         off = off if off >= 0 else 0
 
-        with (yield self.i2cbus.iolock.acquire()):
+        async with self.i2cbus.iolock:
             byte_val = on & 0xFF
             extents = [struct.pack("I", byte_val)]
-            yield self.i2cbus.apigpio_command_ext(
+            await self.i2cbus.apigpio_command_ext(
                 pigpio._PI_CMD_I2CWB,
                 self.i2c, self.__LED0_ON_L + self.__LED_MULTIPLIER*channel, 4, extents)
-            result = yield self.i2cbus.apigpio_command(
+            result = await self.i2cbus.apigpio_command(
                 pigpio._PI_CMD_I2CRB,
                 self.i2c, self.__LED0_ON_L + self.__LED_MULTIPLIER*channel)
             pigpio._u2i(result)  # check errors
 
             byte_val = on >> 8
             extents = [struct.pack("I", byte_val)]
-            result = yield self.i2cbus.apigpio_command_ext(
+            result = await self.i2cbus.apigpio_command_ext(
                 pigpio._PI_CMD_I2CWB,
                 self.i2c, self.__LED0_ON_H + self.__LED_MULTIPLIER*channel, 4, extents)
             pigpio._u2i(result)  # check errors
 
             byte_val = off & 0xFF
             extents = [struct.pack("I", byte_val)]
-            result = yield self.i2cbus.apigpio_command_ext(
+            result = await self.i2cbus.apigpio_command_ext(
                 pigpio._PI_CMD_I2CWB,
                 self.i2c, self.__LED0_OFF_L + self.__LED_MULTIPLIER*channel, 4, extents)
             pigpio._u2i(result)  # check errors
 
             byte_val = off >> 8
             extents = [struct.pack("I", byte_val)]
-            result = yield self.i2cbus.apigpio_command_ext(
+            result = await self.i2cbus.apigpio_command_ext(
                 pigpio._PI_CMD_I2CWB,
                 self.i2c, self.__LED0_OFF_H + self.__LED_MULTIPLIER*channel, 4, extents)
             pigpio._u2i(result)  # check errors
@@ -617,7 +606,7 @@ class UnipiPCA9685(object):
             #update object's channels registers
             self.channels[channel] = (on, off)
             #print "PCA9685 "+ str(self.circuit) +" Channel: " + str(channel) + " - " + str((on, off))
-            raise gen.Return(True)
+            return(True)
 
     def stop(self):
         self.i2cbus.i2c_close(self.i2c)
@@ -648,19 +637,17 @@ class AnalogOutputPCA():
     def simple(self):
         return {'dev': 'ao', 'circuit': self.circuit, 'value': self.value}
 
-    @gen.coroutine
-    def set_value(self, value):
+    async def set_value(self, value):
         value = float(value)
-        result = yield self.pca.set_pwm(self.channel, int(floor(value*409.5+0.5)))
+        result = await self.pca.set_pwm(self.channel, int(floor(value*409.5+0.5)))
         self.value = value
-        raise gen.Return(result)
+        return(result)
 
-    @gen.coroutine
-    def set(self, value=None, frequency=None):
+    async def set(self, value=None, frequency=None):
         value = float(value)
-        result = yield self.pca.set_pwm(self.channel, int(floor(value*409.5+0.5)))
+        result = await self.pca.set_pwm(self.channel, int(floor(value*409.5+0.5)))
         self.value = value
-        raise gen.Return(result)
+        return(result)
 
 
 #################################################################
@@ -699,31 +686,29 @@ class AnalogOutputGPIO():
         else:
             return int(round(value * 100))
 
-    @gen.coroutine
-    def set_value(self, value):
+    async def set_value(self, value):
         value10 = self.__calc_value(value)
-        result = pigpio._u2i((yield self.bus.apigpio_command(pigpio._PI_CMD_PWM, self.pin, value10)))
+        result = pigpio._u2i((await self.bus.apigpio_command(pigpio._PI_CMD_PWM, self.pin, value10)))
         self.value = value
         devents.status(self)
-        raise gen.Return(result)
+        return result
 
-    @gen.coroutine
-    def set(self, value=None, frequency=None):
+    async def set(self, value=None, frequency=None, alias=None):
         result = None
         if not (frequency is None) and (frequency != self.frequency):
             # print int(frequency)
-            result = pigpio._u2i((yield self.bus.apigpio_command(pigpio._PI_CMD_PFS, self.pin, int(frequency))))
+            result = pigpio._u2i((await self.bus.apigpio_command(pigpio._PI_CMD_PFS, self.pin, int(frequency))))
             self.frequency = frequency
             if not (value is None):
-                result = yield self.set_value(float(value))
+                result = await self.set_value(float(value))
             else:
-                result = yield self.set_value(self.value)
+                result = await self.set_value(self.value)
             devents.config(self)
-            raise gen.Return(result)
+            return result
 
         if not (value is None) and (value != self.value):
-            result = yield self.set_value(float(value))
-        raise gen.Return(result)
+            result = await self.set_value(float(value))
+        return result
 
 
 #################################################################
@@ -812,8 +797,7 @@ class Input():
             self.value = value
         devents.status(self)
 
-    #@gen.coroutine
-    def set(self, debounce=None, counter=None, counter_mode=None):
+    async def set(self, debounce=None, counter=None, counter_mode=None, alias=None):
         if (counter_mode is not None and counter_mode != self.counter_mode and counter_mode in ["rising", "falling", "disabled"]):
             self.counter_mode = counter_mode
         if not (debounce is None):
@@ -859,7 +843,7 @@ class DS2408_pio(object):
     def simple(self):
         pass
 
-    def set(self, value):
+    async def set(self, value):
         pass
 
     def get_value(self):
@@ -872,7 +856,7 @@ class DS2408_pio(object):
         return self.get_value()
 
 
-    def set_value(self, value):
+    async def set_value(self, value):
         #value = int(not value)
         if self.value != value:
             self.value = value
@@ -896,12 +880,10 @@ class DS2408_relay(DS2408_pio):
     def simple(self):
         return {'dev': 'relay', 'circuit': self.circuit, 'value': self.value}
 
-    @gen.coroutine
-    def set_state(self, value):
-        self.set(value)
+    async def set_state(self, value):
+        await self.set(value)
 
-    @gen.coroutine
-    def set(self, value=None, timeout=None):
+    async def set(self, value=None, timeout=None):
         if value is None:
             raise Exception('Value must be specified')
         value = int(value)
@@ -912,7 +894,7 @@ class DS2408_relay(DS2408_pio):
         self.ds2408.m_set_pio(self.circuit, (self.pin, value))
 
         if timeout is None:
-            raise gen.Return(1 if self.value & value else 0)
+            return 1 if self.value & value else 0
 
         def timercallback():
             self.pending_id = None
@@ -920,4 +902,5 @@ class DS2408_relay(DS2408_pio):
 
         self.pending_id = IOLoop.instance().add_timeout(
             datetime.timedelta(seconds=float(timeout)), timercallback)
-        raise gen.Return(1 if self.value & value else 0)
+
+        return 1 if self.value & value else 0

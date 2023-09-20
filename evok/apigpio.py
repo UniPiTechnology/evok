@@ -3,9 +3,8 @@
 import os
 import struct
 import pigpio
-import toro
+import asyncio
 from tornado.iostream import IOStream, PipeIOStream
-from tornado import gen
 from tornado.ioloop import IOLoop
 import fcntl
 from log import *
@@ -36,7 +35,7 @@ class _PigBus(object, pigpio.pi):
         self.alias = ""
         self.circuit = circuit
         pigpio.pi.__init__(self, host, port)
-        self.iolock = toro.Lock()
+        self.iolock = asyncio.Lock()
         # dispose _notify thread
         self._notify.stop()
         self._notify = None
@@ -56,18 +55,16 @@ class _PigBus(object, pigpio.pi):
     def switch_to_sync(self):
         set_blocking(self.sl.s)
 
-    @gen.coroutine
-    def apigpio_command(self, cmd, p1, p2):
+    async def apigpio_command(self, cmd, p1, p2):
         """
         Runs a pigpio socket command.
         """
-        yield self.iostream.write(struct.pack('IIII', cmd, p1, p2, 0))
-        result = yield self.iostream.read_bytes(16)
+        await self.iostream.write(struct.pack('IIII', cmd, p1, p2, 0))
+        result = await self.iostream.read_bytes(16)
         dummy, res = struct.unpack('12sI', result)
-        raise gen.Return(res)
+        return res
 
-    @gen.coroutine
-    def apigpio_command_ext(self, cmd, p1, p2, p3, extents):
+    async def apigpio_command_ext(self, cmd, p1, p2, p3, extents):
         """
         Runs a pigpio socket command ext.
         """
@@ -80,20 +77,19 @@ class _PigBus(object, pigpio.pi):
             #else:
             #   ext.extend(x)
 
-        yield self.iostream.write(ext)
-        result = yield self.iostream.read_bytes(16)
+        await self.iostream.write(ext)
+        result = await self.iostream.read_bytes(16)
         dummy, res = struct.unpack('12sI', result)
-        raise gen.Return(res)
+        return res
 
-    @gen.coroutine
-    def arxbuf(self, count):
+    async def arxbuf(self, count):
         """Returns count bytes from the command socket."""
-        ext = yield self.iostream.read_bytes(count)
+        ext = await self.iostream.read_bytes(count)
         ext = bytearray(ext)
         while len(ext) < count:
-            rbytes = yield self.iostream.read_bytes(count - len(ext))
+            rbytes = await self.iostream.read_bytes(count - len(ext))
             ext.extend(rbytes)
-        raise gen.Return(ext)
+        return ext
 
 
 class I2cBus(_PigBus):
@@ -131,12 +127,12 @@ class GpioBus(_PigBus):
         # print "shutting gpio"
         try:
             os.close(self.notify_handle)
-        except Exception, E:
+        except Exception as E:
             logger.debug(str(E))
             pass
         try:
             self.notify_close(self.notify_pig)
-        except Exception, E:
+        except Exception as E:
             logger.debug(str(E))
             pass
             # pigpio.pi.stop(self)
@@ -152,7 +148,7 @@ class GpioBus(_PigBus):
         for inp in self.inputs.values():
             try:
                 inp._cb_set_value(self.bank1 & inp.mask, 0, 0)
-            except Exception, E:
+            except Exception as E:
                 logger.debug(str(E))
 
         self.notify_begin(self.notify_pig, self.notify_mask)  # | 1<<18)
@@ -161,7 +157,6 @@ class GpioBus(_PigBus):
         self.notify = PipeIOStream(self.notify_handle)
         mainloop.add_handler(self.notify, self.notify_callback, IOLoop.READ)  # +IOLoop.WRITE)
 
-    # @gen.coroutine
     def notify_callback(self, fd, event):
         # PIPE_BUF=512
         #try:        
@@ -182,7 +177,7 @@ class GpioBus(_PigBus):
         for inp in filter(lambda inp: changes & inp.mask, self.inputs.values()):
             try:
                 inp._cb_set_value(level & inp.mask, tick, seq)
-            except Exception, E:
+            except Exception as E:
                 logger.debug(str(E))
         self.bank1 = level
         return

@@ -50,7 +50,7 @@ class DeviceList(dict):
                             outp += [single_dev]
                     return outp
                 elif len(devdict.values()) > 0:
-                    single_dev = devdict.values()[0]
+                    single_dev = list(devdict.values())[0]
                     if single_dev.major_group == major_group:
                         return devdict.values()
                     else:
@@ -62,7 +62,7 @@ class DeviceList(dict):
         try:
             return devdict[circuit]
         except KeyError:
-            if self.alias_dict.has_key(circuit):
+            if circuit in self.alias_dict:
                 return self.alias_dict[circuit]
             else:
                 raise Exception('Invalid device circuit number %s' % str(circuit))
@@ -77,7 +77,7 @@ class DeviceList(dict):
         try:
             return devdict[circuit]
         except KeyError:
-            if self.alias_dict.has_key(circuit):
+            if circuit in self.alias_dict:
                 return self.alias_dict[circuit]
             else:
                 raise Exception('Invalid device circuit number %s' % str(circuit))
@@ -124,7 +124,7 @@ class DeviceList(dict):
                 for single_alias in self.alias_dict:
                     out_dict["aliases"] += [{"circuit": self.alias_dict[single_alias].circuit, "dev_type": self.alias_dict[single_alias].devtype, "name": single_alias}]
                 yfile.write(yaml.dump(out_dict))
-        except Exception, E:
+        except Exception as E:
             logger.exception(str(E))
 
 
