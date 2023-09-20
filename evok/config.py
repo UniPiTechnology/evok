@@ -1,12 +1,12 @@
 import os
 import multiprocessing
 import struct
-import ConfigParser
-import neuron
+import configparser as ConfigParser
+#import neuron
 from tornado import gen
 from log import *
 from devices import *
-from neuron import WiFiAdapter
+#from neuron import WiFiAdapter
 
 try:
     import unipig
@@ -29,6 +29,10 @@ up_globals = {
 def read_eprom_config():
 
     model_len = 6
+### HACK ###
+#    up_globals['model'] = "ACC"
+#    up_globals['serial'] = "11111"
+### ----- ###
 
     try:
         with open('/sys/bus/i2c/devices/1-0050/eeprom','r') as f:
@@ -161,7 +165,7 @@ class GPIOBusDevice():
 class EvokConfig(ConfigParser.RawConfigParser):
 
     def __init__(self):
-        ConfigParser.RawConfigParser.__init__(self)
+        ConfigParser.RawConfigParser.__init__(self, inline_comment_prefixes=(';'))
 
     def configtojson(self):
         return dict(
@@ -266,7 +270,7 @@ def create_devices(Config, hw_dict):
             elif devclass == 'I2CBUS':
                 # I2C bus on /dev/i2c-1 via pigpio daemon
                 busid = Config.getint(section, "busid")
-                bus_driver = I2cBus(circuit=circuit, host='localhost', busid=busid)
+                bus_driver = I2cBus(circuit=circuit, busid=busid)
                 i2cbus = I2CBusDevice(bus_driver, 0)
                 Devices.register_device(I2CBUS, i2cbus)
             elif devclass == 'MCP':
@@ -285,7 +289,7 @@ def create_devices(Config, hw_dict):
                 Devices.register_device(RELAY, r)
             elif devclass == 'GPIOBUS':
                 # access to GPIO via pigpio daemon
-                bus_driver = GpioBus(circuit=circuit, host='localhost')
+                bus_driver = GpioBus(circuit=circuit)
                 gpio_bus = GPIOBusDevice(bus_driver, 0)
                 Devices.register_device(GPIOBUS, gpio_bus)
             elif devclass == 'PCA9685':
@@ -402,11 +406,10 @@ def create_devices(Config, hw_dict):
                                     direct_access=allow_register_access, dev_id=dev_counter)
                 Devices.register_device(NEURON, neuron)
 
-        except Exception, E:
+        except Exception as E:
             logger.exception("Error in config section %s - %s", section, str(E))
 
-@gen.coroutine
-def add_aliases(alias_conf):
+async def add_aliases(alias_conf):
     if alias_conf is not None:
         for alias_conf_single in alias_conf:
             if alias_conf_single is not None:
@@ -417,7 +420,7 @@ def add_aliases(alias_conf):
                             logger.info("Alias loaded: " + str(dev_obj) + " " + str(dev_pointer["name"]))
                             if Devices.add_alias(dev_pointer["name"], dev_obj):
                                 dev_obj.alias = dev_pointer["name"]
-                        except Exception, E:
+                        except Exception as E:
                             logger.exception(str(E))
 
 def add_wifi():

@@ -1,8 +1,10 @@
 #!/usr/bin/python
 
+import asyncio
+
 import os
 from collections import OrderedDict
-import ConfigParser
+import configparser as ConfigParser
 import tornado.httpserver
 import tornado.httpclient
 import tornado.ioloop
@@ -22,9 +24,9 @@ from tornado.process import Subprocess  # not sure about it
 import subprocess  # not sure about it
 
 from log import *
-from tornadows import soaphandler, webservices
-from tornadows.soaphandler import webservice
-from __builtin__ import str
+#from tornadows import soaphandler, webservices
+#from tornadows.soaphandler import webservice
+#from __builtin__ import str
 from _ast import alias
 #from test.badsyntax_future3 import result
 
@@ -44,7 +46,7 @@ from tornado_json import schema
 from tornado_json.exceptions import APIError
 
 
-from tornadows import complextypes
+#from tornadows import complextypes
 
 # Read config during initialisation
 Config = config.EvokConfig() #ConfigParser.RawConfigParser()
@@ -70,6 +72,7 @@ class UserCookieHelper():
         if len(self._passwords) == 0: return True
         return self.get_secure_cookie("user")
 
+'''
 class SoapProperty(complextypes.ComplexType):
     property_name = str
     property_value = str
@@ -91,7 +94,7 @@ class SoapCommandInputList(complextypes.ComplexType):
 
 class SoapOutputList(complextypes.ComplexType):
     single_output = [SoapPropertyList]
-
+'''
 def enable_cors(handler):
     if cors:
         handler.set_header("Access-Control-Allow-Headers", "*")
@@ -126,7 +129,7 @@ class WhHandler():
 
     def open(self):
         logger.debug("New WebSocket modbusclient_rs485 connected")
-        if not registered_ws.has_key("all"):
+        if not ("all" in registered_ws):
             registered_ws["all"] = set()
 
         registered_ws["all"].add(self)
@@ -143,7 +146,7 @@ class WhHandler():
                     self.http_client.fetch(self.url,method="GET")
                 else:
                     self.http_client.fetch(self.url,method="POST",body=json.dumps(outp))
-        except Exception,E:
+        except Exception as E:
             logger.exception(str(E))
 
 
@@ -160,7 +163,7 @@ class WsHandler(websocket.WebSocketHandler):
     def open(self):
         self.filter = ["default"]
         logger.debug("New WebSocket client connected")
-        if not registered_ws.has_key("all"):
+        if not ("all" in registered_ws):
             registered_ws["all"] = set()
 
         registered_ws["all"].add(self)
@@ -227,7 +230,7 @@ class WsHandler(websocket.WebSocketHandler):
                             self.filter = ["default"]
                     else:
                         raise Exception("Invalid 'devices' argument: %s" % str(message["devices"]))
-                except Exception,E:
+                except Exception as E:
                     logger.exception("Exc: %s", str(E))
             elif cmd is not None:
                 dev = message["dev"]
@@ -257,7 +260,7 @@ class WsHandler(websocket.WebSocketHandler):
                         self.write_message(json.dumps(result))
                     #send response only to the modbusclient_rs485 requesting full info
                 #nebo except Exception as e:
-                except Exception, E:
+                except Exception as E:
                     logger.error("Exc: %s", str(E))
 
         except Exception as E:
@@ -266,7 +269,7 @@ class WsHandler(websocket.WebSocketHandler):
             pass
 
     def on_close(self):
-        if registered_ws.has_key("all") and (self in registered_ws["all"]):
+        if ("all" in registered_ws) and (self in registered_ws["all"]):
             registered_ws["all"].remove(self)
             if len(registered_ws["all"]) == 0:
                 for neuron in Devices.by_int(NEURON):
@@ -324,16 +327,13 @@ class LegacyRestHandler(UserCookieHelper, tornado.web.RequestHandler):
 
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
-    @tornado.gen.coroutine
-    def post(self, dev, circuit, prop):
+    async def post(self, dev, circuit, prop):
         try:
             device = Devices.by_name(dev, circuit)
-            kw = dict([(k, v[0]) for (k, v) in self.request.body_arguments.iteritems()])
-            result = device.set(**kw)
-            if is_future(result):
-                result = yield result
+            kw = dict([(k, v[0]) for (k, v) in self.request.body_arguments.items()])
+            result = await device.set(**kw)
             self.write(json.dumps({'success': True, 'result': result}))
-        except Exception, E:
+        except Exception as E:
             self.write(json.dumps({'success': False, 'errors': {'__all__': str(E)}}))
         self.set_header('Content-Type', 'application/json')
         self.finish()
@@ -342,6 +342,7 @@ class LegacyRestHandler(UserCookieHelper, tornado.web.RequestHandler):
     def options(self):
         self.set_status(204)
         self.finish()
+
 
 class RestLightChannelHandler(UserCookieHelper, APIHandler):
     def initialize(self):
@@ -389,9 +390,9 @@ class RestLightChannelHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
     else:
         @schema.validate(output_schema=schemas.light_channel_post_out_schema, output_example=schemas.light_channel_post_out_example,
@@ -405,14 +406,17 @@ class RestLightChannelHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
 
     def options(self):
         self.set_status(204)
         self.finish()
+
+
+
 
 class RestOWireHandler(UserCookieHelper, APIHandler):
     def initialize(self):
@@ -460,9 +464,9 @@ class RestOWireHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
     else:
         @schema.validate(output_schema=schemas.owire_post_out_schema, output_example=schemas.owire_post_out_example,
@@ -476,9 +480,9 @@ class RestOWireHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
 
     def options(self):
@@ -531,9 +535,9 @@ class RestUARTHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
     else:
         @schema.validate(output_schema=schemas.uart_post_out_schema, output_example=schemas.uart_post_out_example,
@@ -547,9 +551,9 @@ class RestUARTHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
 
     def options(self):
@@ -602,9 +606,9 @@ class RestNeuronHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
     else:
         @schema.validate(output_schema=schemas.neuron_post_out_schema, output_example=schemas.neuron_post_out_example,
@@ -618,9 +622,9 @@ class RestNeuronHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
 
     def options(self):
@@ -673,9 +677,9 @@ class RestLEDHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
     else:
         @schema.validate(output_schema=schemas.led_post_out_schema, output_example=schemas.led_post_out_example,
@@ -689,9 +693,9 @@ class RestLEDHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
 
     def options(self):
@@ -745,9 +749,9 @@ class RestWatchdogHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
     else:
         @schema.validate(output_schema=schemas.wd_post_out_schema, output_example=schemas.wd_post_out_example,
@@ -761,9 +765,9 @@ class RestWatchdogHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
 
     def options(self):
@@ -818,9 +822,9 @@ class RestRegisterHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
     else:
         @schema.validate(output_schema=schemas.register_post_out_schema, output_example=schemas.register_post_out_example,
@@ -834,9 +838,9 @@ class RestRegisterHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
 
     def options(self):
@@ -891,9 +895,9 @@ class RestExtConfigHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
     else:
         @schema.validate(output_schema=schemas.register_post_out_schema, output_example=schemas.register_post_out_example,
@@ -907,9 +911,9 @@ class RestExtConfigHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
 
     def options(self):
@@ -964,9 +968,9 @@ class RestUnitRegisterHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise APIError(status_code=400, log_message=str(E))
     else:
         @schema.validate(output_schema=schemas.register_post_out_schema, output_example=schemas.register_post_out_example,
@@ -980,9 +984,9 @@ class RestUnitRegisterHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise APIError(status_code=400, log_message=str(E))
 
     def options(self):
@@ -1039,9 +1043,9 @@ class RestDIHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
     else:
         @schema.validate(output_schema=schemas.di_post_out_schema, output_example=schemas.di_post_out_example,
@@ -1055,9 +1059,9 @@ class RestDIHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
 
     def options(self):
@@ -1107,15 +1111,14 @@ class RestOwbusHandler(UserCookieHelper, APIHandler):
         def post(self, circuit, prop):
             try:
                 device = Devices.by_name("owbus", circuit)
-                print(device)
                 js_dict = json.loads(self.request.body)
                 result = device.bus_driver.set(**js_dict)
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
     else:
         @schema.validate(input_schema=schemas.owbus_post_inp_schema, input_example=schemas.owbus_post_inp_example,
@@ -1129,9 +1132,9 @@ class RestOwbusHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
 
     def options(self):
@@ -1186,9 +1189,9 @@ class RestDOHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
     else:
         @schema.validate(output_schema=schemas.relay_post_out_schema, output_example=schemas.relay_post_out_example,
@@ -1202,9 +1205,9 @@ class RestDOHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
 
     def options(self):
@@ -1259,9 +1262,9 @@ class RestWiFiHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
     else:
         @schema.validate(output_schema=schemas.wifi_post_out_schema, output_example=schemas.wifi_post_out_example,
@@ -1275,9 +1278,9 @@ class RestWiFiHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
 
     def options(self):
@@ -1331,9 +1334,9 @@ class RestAIHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
     else:
         @schema.validate(output_schema=schemas.ai_post_out_schema, output_example=schemas.ai_post_out_example,
@@ -1347,9 +1350,9 @@ class RestAIHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
 
 
@@ -1403,9 +1406,9 @@ class RestAOHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
     else:
         @schema.validate(output_schema=schemas.ao_post_out_schema, output_example=schemas.ao_post_out_example,
@@ -1419,9 +1422,9 @@ class RestAOHandler(UserCookieHelper, APIHandler):
                 if is_future(result):
                     result = yield result
                 raise Return({'result': result})
-            except Return,E:
+            except Return as E:
                 raise E
-            except Exception,E:
+            except Exception as E:
                 raise Return({'errors': str(E)})
 
     def options(self):
@@ -1526,10 +1529,10 @@ class JSONLoadAllHandler(UserCookieHelper, APIHandler):
         self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
 
     if not use_output_schema:
-        @schema.validate(output_schema=schemas.all_get_out_schema)
-        def get(self):
+        #@schema.validate(output_schema=schemas.all_get_out_schema)
+        async def get(self):
             """This function returns a heterogeneous list of all devices exposed via the REST API"""
-            result = map(lambda dev: dev.full(), Devices.by_int(INPUT))
+            result = list(map(lambda dev: dev.full(), Devices.by_int(INPUT)))
             result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
             result += map(lambda dev: dev.full(), Devices.by_int(OUTPUT))
             result += map(lambda dev: dev.full(), Devices.by_int(AI))
@@ -1544,12 +1547,13 @@ class JSONLoadAllHandler(UserCookieHelper, APIHandler):
             result += map(lambda dev: dev.full(), Devices.by_int(LIGHT_CHANNEL))
             result += map(lambda dev: dev.full(), Devices.by_int(UNIT_REGISTER))
             result += map(lambda dev: dev.full(), Devices.by_int(EXT_CONFIG))
-            return result
+            self.success(result)
+
     else:
-        @schema.validate(output_schema=schemas.all_get_out_schema, output_example=schemas.all_get_out_example)
-        def get(self):
+        #@schema.validate(output_schema=schemas.all_get_out_schema, output_example=schemas.all_get_out_example)
+        async def get(self):
             """This function returns a heterogeneous list of all devices exposed via the REST API"""
-            result = map(lambda dev: dev.full(), Devices.by_int(INPUT))
+            result = list(map(lambda dev: dev.full(), Devices.by_int(INPUT)))
             result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
             result += map(lambda dev: dev.full(), Devices.by_int(OUTPUT))
             result += map(lambda dev: dev.full(), Devices.by_int(AI))
@@ -1564,7 +1568,7 @@ class JSONLoadAllHandler(UserCookieHelper, APIHandler):
             result += map(lambda dev: dev.full(), Devices.by_int(LIGHT_CHANNEL))
             result += map(lambda dev: dev.full(), Devices.by_int(UNIT_REGISTER))
             result += map(lambda dev: dev.full(), Devices.by_int(EXT_CONFIG))
-            return result
+            self.success(result)
 
     def options(self):
         # no body
@@ -1578,9 +1582,9 @@ class RestLoadAllHandler(UserCookieHelper, APIHandler):
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
         self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
 
-    def get(self):
+    async def get(self):
         """This function returns a heterogeneous list of all devices exposed via the REST API"""
-        result = map(lambda dev: dev.full(), Devices.by_int(INPUT))
+        result = list(map(lambda dev: dev.full(), Devices.by_int(INPUT)))
         result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
         result += map(lambda dev: dev.full(), Devices.by_int(AI))
         result += map(lambda dev: dev.full(), Devices.by_int(AO))
@@ -1769,6 +1773,7 @@ class JSONBulkHandler(APIHandler):
             raise gen.Return(result)
 
 
+'''
 class UniPiQueryService(soaphandler.SoapHandler):
     """ Service which returns a list of values and keys for a given device id and type """
     @tornado.gen.coroutine
@@ -1798,9 +1803,9 @@ class UniPiQueryService(soaphandler.SoapHandler):
             outp = SoapOutputList()
             outp.single_output = results
             raise gen.Return(outp)
-        except gen.Return, E:
+        except gen.Return as E:
             raise E
-        except Exception, E:
+        except Exception as E:
             logger.exception(str(E))
 
 
@@ -1832,29 +1837,29 @@ class UniPiCommandService(soaphandler.SoapHandler):
                         prop.property_value = json.dumps(outp[single_key])
                         result_properties.property_list += [prop]
                     results += [result_properties]
-                except Exception, E:
+                except Exception as E:
                     logger.exception(str(E))
             outp = SoapOutputList()
             outp.output_list = results
             raise gen.Return(outp)
-        except gen.Return, E:
+        except gen.Return as E:
             raise E
-        except Exception, E:
+        except Exception as E:
             logger.exception(str(E))
-
+'''
 
 # callback generators for devents
 def gener_status_cb(mainloop, modbus_context):
     def status_cb_modbus(device, *kwargs):
         modbus_context.status_callback(device)
-        if registered_ws.has_key("all"):
-            map(lambda x: x.on_event(device), registered_ws['all'])
-        pass
+        if "all" in registered_ws:
+            for x in registered_ws['all']: 
+                x.on_event(device)
 
     def status_cb(device, *kwargs):
-        if registered_ws.has_key("all"):
-            map(lambda x: x.on_event(device), registered_ws['all'])
-        pass
+        if "all" in registered_ws:
+            for x in registered_ws['all']: 
+                x.on_event(device)
 
     if modbus_context:
         return status_cb_modbus
@@ -1886,7 +1891,7 @@ def main():
     config.read_eprom_config()
 
     #tornado.httpclient.AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
-    log_file = Config.getstringdef("MAIN", "log_file", "/var/log/evok.log")
+    log_file = Config.getstringdef("MAIN", "log_file", "./evok.log")
     log_level = Config.getstringdef("MAIN", "log_level", "INFO").upper()
 
     #rotating file handler
@@ -1898,8 +1903,8 @@ def main():
 
     logger.info("Starting using config file %s", config_path)
 
-    hw_dict = config.HWDict('/etc/hw_definitions/')
-    alias_dict = (config.HWDict('/var/evok/')).definitions
+    hw_dict = config.HWDict('../etc/hw_definitions/')
+    alias_dict = (config.HWDict('../var/')).definitions
 
     cors = True
     corsdomains = Config.getstringdef("MAIN", "cors_domains", "*")
@@ -1945,7 +1950,11 @@ def main():
         (r"/json/unit_register/?([^/]+)/?([^/]+)?/?", RestUnitRegisterHandler),
         (r"/json/ext_config/?([^/]+)/?([^/]+)?/?", RestExtConfigHandler),
         (r"/version/?", VersionHandler),
-        (r"/ws/?", WsHandler)
+        (r"/ws/?", WsHandler),
+        (r"/(.*)", tornado.web.StaticFileHandler, {
+            "path": "../var/www/evok",
+            "default_filename": "index.html"
+           })
     ]
 
     if allow_unsafe_configuration_handlers:
@@ -1960,7 +1969,7 @@ def main():
     #try:
     #    with open('./API_docs.md', "w") as api_out:
     #        api_out.writelines(docs)
-    #except Exception, E:
+    #except Exception as E:
     #    logger.exception(str(E))
 
     #### prepare http server #####
@@ -2033,7 +2042,7 @@ def main():
 
     def sig_handler(sig, frame):
         if sig in (signal.SIGTERM, signal.SIGINT):
-            tornado.ioloop.IOLoop.instance().add_callback(shutdown)
+            tornado.ioloop.IOLoop.instance().add_callback_from_signal(shutdown)
 
     #graceful shutdown
     def shutdown():

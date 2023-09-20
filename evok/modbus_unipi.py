@@ -331,14 +331,14 @@ class UnipiContext(ModbusServerContext):
                     if not(index): raise EForeigner("Foreigner")
                     Handle.join(index, device, self.proxybits, self.proxyregs)
                     device._modbus_handle = Handle
-                except Exception, e:
+                except Exception as e:
                     self.foreigners.add(device)
                     raise
 
             self.status_callback(device)
         except (EForeigner, KeyError):
             pass
-        except Exception, E:
+        except Exception as E:
             logger.debug(str(E))
             pass
 
@@ -347,7 +347,7 @@ class UnipiContext(ModbusServerContext):
             device._modbus_handle.sync(device, self.bits, self.regs)
         except AttributeError:
             pass
-        except Exception,e :
+        except Exception as e :
             #print str(e)
             pass
 

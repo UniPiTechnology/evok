@@ -103,7 +103,7 @@ class ModbusConnection(object):
         try:
             context = self.application.store[request.unit_id]
             response = request.execute(context)
-        except Exception, ex:
+        except Exception as ex:
             _logger.debug("Datastore unable to fulfill request: %s" % ex)
             response = request.doException(merror.SlaveFailure)
         #self.framer.populateResult(response)

@@ -3,9 +3,9 @@
 import tornado
 import tornado.ioloop
 
-from tornadorpc_evok.json import JSONRPCHandler
-import tornadorpc_evok as tornadorpc
-from tornado import gen
+from tornado_jsonrpc2 import JSONRPCHandler
+#import tornadorpc_evok as tornadorpc
+#from tornado import gen
 
 import time
 import datetime
@@ -45,8 +45,8 @@ class userBasicHelper():
 
 class Handler(userBasicHelper, JSONRPCHandler):
     @tornado.web.authenticated
-    def post(self):
-        JSONRPCHandler.post(self)
+    async def post(self):
+        await JSONRPCHandler.post(self)
 
     ###### Input ######
     def input_get(self, circuit):
@@ -66,19 +66,15 @@ class Handler(userBasicHelper, JSONRPCHandler):
         relay = Devices.by_int(RELAY, str(circuit))
         return relay.get_state()
 
-    @tornadorpc.coroutine
-    def relay_set(self, circuit, value):
+    async def relay_set(self, circuit, value):
         relay = Devices.by_int(RELAY, str(circuit))
-        result = yield relay.set_state(value)
-        raise gen.Return(result)
+        return await relay.set_state(value)
 
-    @tornadorpc.coroutine
-    def relay_set_for_time(self, circuit, value, timeout):
+    async def relay_set_for_time(self, circuit, value, timeout):
         relay = Devices.by_int(RELAY, str(circuit))
         if timeout <= 0:
             raise Exception('Invalid timeout %s' % str(timeout))
-        result = yield relay.set(value, timeout)
-        raise gen.Return(result)
+        return await relay.set(value, timeout)
 
     ###### Analog Input ######
     def ai_get(self, circuit):
@@ -104,17 +100,13 @@ class Handler(userBasicHelper, JSONRPCHandler):
     #def ai_measure(self, circuit):
 
     ###### Analog Output (0-10V) ######
-    @tornadorpc.coroutine
-    def ao_set_value(self, circuit, value):
+    async def ao_set_value(self, circuit, value):
         ao = Devices.by_int(AO, str(circuit))
-        result = yield ao.set_value(value)
-        raise gen.Return(result)
+        return await ao.set_value(value)
 
-    @tornadorpc.coroutine
-    def ao_set(self, circuit, value, frequency):
+    async def ao_set(self, circuit, value, frequency):
         ao = Devices.by_int(AO, str(circuit))
-        result = yield ao.set(value, frequency)
-        raise gen.Return(result)
+        return await ao.set(value, frequency)
 
     ###### OwBus (1wire bus) ######
     def owbus_get(self, circuit):
@@ -146,27 +138,19 @@ class Handler(userBasicHelper, JSONRPCHandler):
         sens = Devices.by_int(SENSOR, str(circuit))
         return sens.get_value()
 
-    @tornadorpc.coroutine
-    def pca_set(self, circuit, channel, on, off):
+    async def pca_set(self, circuit, channel, on, off):
         pca = Devices.by_int(PCA9685, str(circuit))
-        result = yield pca.set(channel, on, off)
-        raise gen.Return(result)
+        return await pca.set(channel, on, off)
 
-    @tornadorpc.coroutine
-    def pca_set_pwm(self, circuit, channel, val):
+    async def pca_set_pwm(self, circuit, channel, val):
         pca = Devices.by_int(PCA9685, str(circuit))
-        result = yield pca.set_pwm(channel, val)
-        raise gen.Return(result)
+        return await pca.set_pwm(channel, val)
 
     ###### EEprom ######
-    @tornadorpc.coroutine
-    def ee_read_byte(self, circuit, index):
+    async def ee_read_byte(self, circuit, index):
         ee = Devices.by_int(EE, str(circuit))
-        result = yield ee.read_byte(index)
-        raise gen.Return(result)
+        return  await ee.read_byte(index)
 
-    @tornadorpc.coroutine
-    def ee_write_byte(self, circuit, index, value):
+    async def ee_write_byte(self, circuit, index, value):
         ee = Devices.by_int(EE, str(circuit))
-        result = yield ee.write_byte(index, value)
-        raise gen.Return(result)
+        return  await ee.write_byte(index, value)

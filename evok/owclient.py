@@ -9,7 +9,7 @@ import devents
 import devices
 from log import *
 
-from pymodbus.client.sync import ModbusTcpClient as ModbusClient
+from pymodbus.client import ModbusTcpClient as ModbusClient
 from pymodbus.exceptions import ConnectionException
 
 MAX_LOSTINTERVAL = 300  # 5 minutes
@@ -134,6 +134,7 @@ class DS18B20(MySensor):  # thermometer
             self.value = round(float(sens.temperature) * 2, 1) / 2  # 4 bits for frac part of number
         else:
             logger.debug("PoR detected! 85C")
+
 
 class DS2438(MySensor):  # vdd + vad + thermometer
 
@@ -395,6 +396,7 @@ class OwBusDriver(multiprocessing.Process):
 
     def do_reset(self):
         logger.debug("Invoked reset of 1W master")
+        '''
         try:
             with ModbusClient('127.0.0.1') as client: # Send request to local unipi-tcp in simple sync mode
                 ret = client.write_coil(1001, True, unit=1)
@@ -405,6 +407,7 @@ class OwBusDriver(multiprocessing.Process):
             ow.init(self.bus)
         except (ConnectionException):
             pass
+        '''
 
     # This routine is invoked from the subprocess
     def do_command(self, cmd):
@@ -481,7 +484,8 @@ class OwBusDriver(multiprocessing.Process):
                 if self.resultQ:
                     # send measurement into result queue
                     self.resultQ.send((mysensor.circuit, mysensor.value))
-            except (ow.exUnknownSensor, AttributeError):
+            #except (ow.exUnknownSensor, AttributeError, TypeError):
+            except (AttributeError, TypeError):
                 if not mysensor.lost: # Catch the edge
                     mysensor.set_lost()
                     self.resultQ.send((mysensor.circuit, mysensor.lost)) # Send info about lost to the queue
