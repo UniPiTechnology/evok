@@ -4,7 +4,9 @@ FROM alpine:3.15
 # See: https://github.com/Docker-Hub-frolvlad/docker-alpine-python3/pull/13
 ENV PYTHONUNBUFFERED=1
 
-RUN apk add --no-cache python2 && \
+RUN apk update && \
+    apk add --no-cache python2 build-base python2-dev && \
+    apk add --no-cache owfs-dev --repository=https://dl-cdn.alpinelinux.org/alpine/v3.16/community/ && \
     python -m ensurepip && \
     rm -r /usr/lib/python*/ensurepip && \
     pip install --upgrade pip setuptools && \
