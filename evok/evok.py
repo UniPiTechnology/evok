@@ -24,11 +24,12 @@ from tornado.process import Subprocess  # not sure about it
 import subprocess  # not sure about it
 
 from log import *
-#from tornadows import soaphandler, webservices
-#from tornadows.soaphandler import webservice
-#from __builtin__ import str
+# from tornadows import soaphandler, webservices
+# from tornadows.soaphandler import webservice
+# from __builtin__ import str
 from _ast import alias
-#from test.badsyntax_future3 import result
+
+# from test.badsyntax_future3 import result
 
 try:
     from urllib.parse import urlparse  # py2
@@ -45,11 +46,10 @@ from tornado_json.requesthandlers import APIHandler
 from tornado_json import schema
 from tornado_json.exceptions import APIError
 
-
-#from tornadows import complextypes
+# from tornadows import complextypes
 
 # Read config during initialisation
-Config = config.EvokConfig() #ConfigParser.RawConfigParser()
+Config = config.EvokConfig()  # ConfigParser.RawConfigParser()
 Config.add_section('MAIN')
 config_path = '/etc/evok.conf'
 if not os.path.isfile(config_path):
@@ -59,11 +59,12 @@ Config.read(config_path)
 wh = None
 cors = False
 corsdomains = '*'
-use_output_schema = Config.getbooldef('MAIN','use_schema_verification',False)
-allow_unsafe_configuration_handlers = Config.getbooldef('MAIN','allow_unsafe_configuration_handlers',False)
+use_output_schema = Config.getbooldef('MAIN', 'use_schema_verification', False)
+allow_unsafe_configuration_handlers = Config.getbooldef('MAIN', 'allow_unsafe_configuration_handlers', False)
 
 import rpc_handler
 import neuron
+
 
 class UserCookieHelper():
     _passwords = []
@@ -71,6 +72,7 @@ class UserCookieHelper():
     def get_current_user(self):
         if len(self._passwords) == 0: return True
         return self.get_secure_cookie("user")
+
 
 '''
 class SoapProperty(complextypes.ComplexType):
@@ -95,6 +97,8 @@ class SoapCommandInputList(complextypes.ComplexType):
 class SoapOutputList(complextypes.ComplexType):
     single_output = [SoapPropertyList]
 '''
+
+
 def enable_cors(handler):
     if cors:
         handler.set_header("Access-Control-Allow-Headers", "*")
@@ -105,10 +109,7 @@ def enable_cors(handler):
         handler.set_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
 
 
-
-
-
-#class IndexHandler(UserCookieHelper, tornado.web.RequestHandler):
+# class IndexHandler(UserCookieHelper, tornado.web.RequestHandler):
 #
 #    def initialize(self, staticfiles):
 #        self.index = '%s/index.html' % staticfiles
@@ -119,6 +120,7 @@ def enable_cors(handler):
 #    def get(self):
 #        self.render(self.index)
 registered_ws = {}
+
 
 class WhHandler():
     def __init__(self, url, allowed_types, complex_events):
@@ -143,9 +145,9 @@ class WhHandler():
         try:
             if len(outp) > 0:
                 if not self.complex_events:
-                    self.http_client.fetch(self.url,method="GET")
+                    self.http_client.fetch(self.url, method="GET")
                 else:
-                    self.http_client.fetch(self.url,method="POST",body=json.dumps(outp))
+                    self.http_client.fetch(self.url, method="POST", body=json.dumps(outp))
         except Exception as E:
             logger.exception(str(E))
 
@@ -157,7 +159,7 @@ class WsHandler(websocket.WebSocketHandler):
         parsed_origin = urlparse(origin)
         origin = parsed_origin.netloc
         origin = origin.lower()
-        #return origin == host or origin_origin == host
+        # return origin == host or origin_origin == host
         return True
 
     def open(self):
@@ -186,7 +188,6 @@ class WsHandler(websocket.WebSocketHandler):
             logger.error("Exc: %s", str(e))
             pass
 
-
     @tornado.gen.coroutine
     def on_message(self, message):
         try:
@@ -195,29 +196,31 @@ class WsHandler(websocket.WebSocketHandler):
                 cmd = message["cmd"]
             except:
                 cmd = None
-            #get FULL state of each IO
+            # get FULL state of each IO
             if cmd == "all":
                 result = []
-                #devices = [INPUT, RELAY, AI, AO, SENSOR, UNIT_REGISTER]
+                # devices = [INPUT, RELAY, AI, AO, SENSOR, UNIT_REGISTER]
                 devices = [INPUT, RELAY, AI, AO, SENSOR]
                 if Config.getbooldef("MAIN", "websocket_all_filtered", False):
                     if (len(self.filter) == 1 and self.filter[0] == "default"):
                         for dev in devices:
                             result += map(lambda dev: dev.full(), Devices.by_int(dev))
                     else:
-                        for dev in range(0,25):
-                            added_results = map(lambda dev: dev.full() if dev.full() is not None else '', Devices.by_int(dev))
+                        for dev in range(0, 25):
+                            added_results = map(lambda dev: dev.full() if dev.full() is not None else '',
+                                                Devices.by_int(dev))
                             for added_result in added_results:
                                 if added_result != '' and added_result['dev'] in self.filter:
                                     result.append(added_result)
                 else:
-                    for dev in range(0,25):
-                        added_results = map(lambda dev: dev.full() if dev.full() is not None else '', Devices.by_int(dev))
+                    for dev in range(0, 25):
+                        added_results = map(lambda dev: dev.full() if dev.full() is not None else '',
+                                            Devices.by_int(dev))
                         for added_result in added_results:
                             if added_result != '':
                                 result.append(added_result)
                 self.write_message(json.dumps(result))
-            #set device state
+            # set device state
             elif cmd == "filter":
                 devices = []
                 try:
@@ -248,8 +251,9 @@ class WsHandler(websocket.WebSocketHandler):
                         else:
                             result = func(value)
                     else:
-                        #Set other property than "value" (e.g. counter of an input)
-                        funcdata = {key:value for (key,value) in message.items() if key not in ("circuit", "value", "cmd", "dev")}
+                        # Set other property than "value" (e.g. counter of an input)
+                        funcdata = {key: value for (key, value) in message.items() if
+                                    key not in ("circuit", "value", "cmd", "dev")}
                         if len(funcdata) > 0:
                             result = func(**funcdata)
                         else:
@@ -258,8 +262,8 @@ class WsHandler(websocket.WebSocketHandler):
                         result = yield result
                     if cmd == "full":
                         self.write_message(json.dumps(result))
-                    #send response only to the modbusclient_rs485 requesting full info
-                #nebo except Exception as e:
+                    # send response only to the modbusclient_rs485 requesting full info
+                # nebo except Exception as e:
                 except Exception as E:
                     logger.error("Exc: %s", str(E))
 
@@ -275,10 +279,12 @@ class WsHandler(websocket.WebSocketHandler):
                 for neuron in Devices.by_int(NEURON):
                     neuron.stop_scanning()
 
+
 class LogoutHandler(tornado.web.RequestHandler):
     def get(self):
         self.clear_cookie("user")
         self.redirect(self.get_argument("next", "/"))
+
 
 class LoginHandler(tornado.web.RequestHandler):
     def initialize(self):
@@ -303,6 +309,7 @@ class LoginHandler(tornado.web.RequestHandler):
             return True
         return False
 
+
 class LegacyRestHandler(UserCookieHelper, tornado.web.RequestHandler):
     def initialize(self):
         enable_cors(self)
@@ -324,7 +331,6 @@ class LegacyRestHandler(UserCookieHelper, tornado.web.RequestHandler):
         self.write(json.dumps(result))
         self.finish()
 
-
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
     async def post(self, dev, circuit, prop):
@@ -337,7 +343,6 @@ class LegacyRestHandler(UserCookieHelper, tornado.web.RequestHandler):
             self.write(json.dumps({'success': False, 'errors': {'__all__': str(E)}}))
         self.set_header('Content-Type', 'application/json')
         self.finish()
-
 
     def options(self):
         self.set_status(204)
@@ -367,7 +372,8 @@ class RestLightChannelHandler(UserCookieHelper, APIHandler):
             return result
     else:
         @tornado.web.authenticated
-        @schema.validate(output_schema=schemas.light_channel_get_out_schema, output_example=schemas.light_channel_get_out_example)
+        @schema.validate(output_schema=schemas.light_channel_get_out_schema,
+                         output_example=schemas.light_channel_get_out_example)
         def get(self, circuit, prop):
             device = Devices.by_name("light_channel", circuit)
             if prop:
@@ -380,7 +386,8 @@ class RestLightChannelHandler(UserCookieHelper, APIHandler):
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
     if not use_output_schema:
-        @schema.validate(input_schema=schemas.light_channel_post_inp_schema, input_example=schemas.light_channel_post_inp_example)
+        @schema.validate(input_schema=schemas.light_channel_post_inp_schema,
+                         input_example=schemas.light_channel_post_inp_example)
         @tornado.gen.coroutine
         def post(self, circuit, prop):
             try:
@@ -395,8 +402,10 @@ class RestLightChannelHandler(UserCookieHelper, APIHandler):
             except Exception as E:
                 raise Return({'errors': str(E)})
     else:
-        @schema.validate(output_schema=schemas.light_channel_post_out_schema, output_example=schemas.light_channel_post_out_example,
-                         input_schema=schemas.light_channel_post_inp_schema, input_example=schemas.light_channel_post_inp_example)
+        @schema.validate(output_schema=schemas.light_channel_post_out_schema,
+                         output_example=schemas.light_channel_post_out_example,
+                         input_schema=schemas.light_channel_post_inp_schema,
+                         input_example=schemas.light_channel_post_inp_example)
         @tornado.gen.coroutine
         def post(self, circuit, prop):
             try:
@@ -414,8 +423,6 @@ class RestLightChannelHandler(UserCookieHelper, APIHandler):
     def options(self):
         self.set_status(204)
         self.finish()
-
-
 
 
 class RestOWireHandler(UserCookieHelper, APIHandler):
@@ -489,6 +496,7 @@ class RestOWireHandler(UserCookieHelper, APIHandler):
         self.set_status(204)
         self.finish()
 
+
 class RestUARTHandler(UserCookieHelper, APIHandler):
     def initialize(self):
         self.set_header("Access-Control-Allow-Origin", "*")
@@ -559,6 +567,7 @@ class RestUARTHandler(UserCookieHelper, APIHandler):
     def options(self):
         self.set_status(204)
         self.finish()
+
 
 class RestNeuronHandler(UserCookieHelper, APIHandler):
     def initialize(self):
@@ -631,6 +640,7 @@ class RestNeuronHandler(UserCookieHelper, APIHandler):
         self.set_status(204)
         self.finish()
 
+
 class RestLEDHandler(UserCookieHelper, APIHandler):
     def initialize(self):
         self.set_header("Access-Control-Allow-Origin", "*")
@@ -702,6 +712,7 @@ class RestLEDHandler(UserCookieHelper, APIHandler):
         self.set_status(204)
         self.finish()
 
+
 class RestWatchdogHandler(UserCookieHelper, APIHandler):
     def initialize(self):
         self.set_header("Access-Control-Allow-Origin", "*")
@@ -734,7 +745,6 @@ class RestWatchdogHandler(UserCookieHelper, APIHandler):
             else:
                 result = device.full()
             return result
-
 
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
@@ -774,6 +784,7 @@ class RestWatchdogHandler(UserCookieHelper, APIHandler):
         self.set_status(204)
         self.finish()
 
+
 class RestRegisterHandler(UserCookieHelper, APIHandler):
     def initialize(self):
         self.set_header("Access-Control-Allow-Origin", "*")
@@ -807,10 +818,9 @@ class RestRegisterHandler(UserCookieHelper, APIHandler):
                 result = device.full()
             return result
 
-
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
-    #@tornado.web.authenticated
+    # @tornado.web.authenticated
     if not use_output_schema:
         @schema.validate(input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
         @tornado.gen.coroutine
@@ -827,7 +837,8 @@ class RestRegisterHandler(UserCookieHelper, APIHandler):
             except Exception as E:
                 raise Return({'errors': str(E)})
     else:
-        @schema.validate(output_schema=schemas.register_post_out_schema, output_example=schemas.register_post_out_example,
+        @schema.validate(output_schema=schemas.register_post_out_schema,
+                         output_example=schemas.register_post_out_example,
                          input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
         @tornado.gen.coroutine
         def post(self, circuit, prop):
@@ -846,6 +857,7 @@ class RestRegisterHandler(UserCookieHelper, APIHandler):
     def options(self):
         self.set_status(204)
         self.finish()
+
 
 class RestExtConfigHandler(UserCookieHelper, APIHandler):
     def initialize(self):
@@ -880,10 +892,9 @@ class RestExtConfigHandler(UserCookieHelper, APIHandler):
                 result = device.full()
             return result
 
-
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
-    #@tornado.web.authenticated
+    # @tornado.web.authenticated
     if not use_output_schema:
         @schema.validate(input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
         @tornado.gen.coroutine
@@ -900,7 +911,8 @@ class RestExtConfigHandler(UserCookieHelper, APIHandler):
             except Exception as E:
                 raise Return({'errors': str(E)})
     else:
-        @schema.validate(output_schema=schemas.register_post_out_schema, output_example=schemas.register_post_out_example,
+        @schema.validate(output_schema=schemas.register_post_out_schema,
+                         output_example=schemas.register_post_out_example,
                          input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
         @tornado.gen.coroutine
         def post(self, circuit, prop):
@@ -919,6 +931,7 @@ class RestExtConfigHandler(UserCookieHelper, APIHandler):
     def options(self):
         self.set_status(204)
         self.finish()
+
 
 class RestUnitRegisterHandler(UserCookieHelper, APIHandler):
     def initialize(self):
@@ -953,10 +966,9 @@ class RestUnitRegisterHandler(UserCookieHelper, APIHandler):
                 result = device.full()
             return result
 
-
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
-    #@tornado.web.authenticated
+    # @tornado.web.authenticated
     if not use_output_schema:
         @schema.validate(input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
         @tornado.gen.coroutine
@@ -973,7 +985,8 @@ class RestUnitRegisterHandler(UserCookieHelper, APIHandler):
             except Exception as E:
                 raise APIError(status_code=400, log_message=str(E))
     else:
-        @schema.validate(output_schema=schemas.register_post_out_schema, output_example=schemas.register_post_out_example,
+        @schema.validate(output_schema=schemas.register_post_out_schema,
+                         output_example=schemas.register_post_out_example,
                          input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
         @tornado.gen.coroutine
         def post(self, circuit, prop):
@@ -993,6 +1006,7 @@ class RestUnitRegisterHandler(UserCookieHelper, APIHandler):
         self.set_status(204)
         self.finish()
 
+
 class RestDIHandler(UserCookieHelper, APIHandler):
     post_out_example = {"result": 1, "success": True}
 
@@ -1001,7 +1015,6 @@ class RestDIHandler(UserCookieHelper, APIHandler):
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
         self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
         enable_cors(self)
-
 
     # usage: GET /rest/DEVICE/CIRCUIT
     #        or
@@ -1028,7 +1041,6 @@ class RestDIHandler(UserCookieHelper, APIHandler):
             else:
                 result = device.full()
             return result
-
 
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
@@ -1142,6 +1154,7 @@ class RestOwbusHandler(UserCookieHelper, APIHandler):
         self.set_status(204)
         self.finish()
 
+
 class RestDOHandler(UserCookieHelper, APIHandler):
     def initialize(self):
         enable_cors(self)
@@ -1215,6 +1228,7 @@ class RestDOHandler(UserCookieHelper, APIHandler):
         self.set_status(204)
         self.finish()
 
+
 class RestWiFiHandler(UserCookieHelper, APIHandler):
     def initialize(self):
         enable_cors(self)
@@ -1247,7 +1261,6 @@ class RestWiFiHandler(UserCookieHelper, APIHandler):
             else:
                 result = device.full()
             return result
-
 
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
@@ -1287,6 +1300,7 @@ class RestWiFiHandler(UserCookieHelper, APIHandler):
         self.set_status(204)
         self.finish()
 
+
 class RestAIHandler(UserCookieHelper, APIHandler):
     def initialize(self):
         enable_cors(self)
@@ -1319,7 +1333,6 @@ class RestAIHandler(UserCookieHelper, APIHandler):
             else:
                 result = device.full()
             return result
-
 
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
@@ -1355,10 +1368,10 @@ class RestAIHandler(UserCookieHelper, APIHandler):
             except Exception as E:
                 raise Return({'errors': str(E)})
 
-
     def options(self):
         self.set_status(204)
         self.finish()
+
 
 class RestAOHandler(UserCookieHelper, APIHandler):
     def initialize(self):
@@ -1432,7 +1445,8 @@ class RestAOHandler(UserCookieHelper, APIHandler):
         self.set_status(204)
         self.finish()
 
-class RemoteCMDHandler(UserCookieHelper, tornado.web.RequestHandler): # ToDo CHECK
+
+class RemoteCMDHandler(UserCookieHelper, tornado.web.RequestHandler):  # ToDo CHECK
     def initialize(self):
         enable_cors(self)
 
@@ -1447,6 +1461,7 @@ class RemoteCMDHandler(UserCookieHelper, tornado.web.RequestHandler): # ToDo CHE
         if service == 'pw':
             yield call_shell_subprocess('echo -e "%s\\n%s" | passwd root' % (status, status))
         self.finish()
+
 
 class ConfigHandler(UserCookieHelper, tornado.web.RequestHandler):
     def initialize(self):
@@ -1464,7 +1479,7 @@ class ConfigHandler(UserCookieHelper, tornado.web.RequestHandler):
     @tornado.web.authenticated
     def post(self):
         conf = ConfigParser.ConfigParser()
-        #make sure it it saved in the received order
+        # make sure it it saved in the received order
         from collections import OrderedDict
         data = json.loads(self.request.body, object_pairs_hook=OrderedDict)
         for key in data:
@@ -1494,6 +1509,7 @@ class VersionHandler(UserCookieHelper, APIHandler):
         self.write(self.version)
         self.finish()
 
+
 @gen.coroutine
 def call_shell_subprocess(cmd, stdin_data=None, stdin_async=False):
     """
@@ -1521,6 +1537,7 @@ def call_shell_subprocess(cmd, stdin_data=None, stdin_async=False):
 
     raise gen.Return((result, error))
 
+
 class JSONLoadAllHandler(UserCookieHelper, APIHandler):
     def initialize(self):
         enable_cors(self)
@@ -1529,7 +1546,7 @@ class JSONLoadAllHandler(UserCookieHelper, APIHandler):
         self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
 
     if not use_output_schema:
-        #@schema.validate(output_schema=schemas.all_get_out_schema)
+        # @schema.validate(output_schema=schemas.all_get_out_schema)
         async def get(self):
             """This function returns a heterogeneous list of all devices exposed via the REST API"""
             result = list(map(lambda dev: dev.full(), Devices.by_int(INPUT)))
@@ -1550,7 +1567,7 @@ class JSONLoadAllHandler(UserCookieHelper, APIHandler):
             self.success(result)
 
     else:
-        #@schema.validate(output_schema=schemas.all_get_out_schema, output_example=schemas.all_get_out_example)
+        # @schema.validate(output_schema=schemas.all_get_out_schema, output_example=schemas.all_get_out_example)
         async def get(self):
             """This function returns a heterogeneous list of all devices exposed via the REST API"""
             result = list(map(lambda dev: dev.full(), Devices.by_int(INPUT)))
@@ -1574,6 +1591,7 @@ class JSONLoadAllHandler(UserCookieHelper, APIHandler):
         # no body
         self.set_status(204)
         self.finish()
+
 
 class RestLoadAllHandler(UserCookieHelper, APIHandler):
     def initialize(self):
@@ -1598,7 +1616,8 @@ class RestLoadAllHandler(UserCookieHelper, APIHandler):
         result += map(lambda dev: dev.full(), Devices.by_int(LIGHT_CHANNEL))
         result += map(lambda dev: dev.full(), Devices.by_int(OWBUS))
         result += map(lambda dev: dev.full(), Devices.by_int(UNIT_REGISTER))
-        result += map(lambda dev: OrderedDict(sorted(dev.full().items(), key=lambda t: t[0])), Devices.by_int(EXT_CONFIG)) # Sort for better reading
+        result += map(lambda dev: OrderedDict(sorted(dev.full().items(), key=lambda t: t[0])),
+                      Devices.by_int(EXT_CONFIG))  # Sort for better reading
         self.write(json.dumps(result))
         self.set_header('Content-Type', 'application/json')
         self.finish()
@@ -1608,9 +1627,10 @@ class RestLoadAllHandler(UserCookieHelper, APIHandler):
         self.set_status(204)
         self.finish()
 
+
 class JSONBulkHandler(APIHandler):
     def initialize(self):
-        #enable_cors(self)
+        # enable_cors(self)
         self.set_header("Content-Type", "application/json")
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
@@ -1623,8 +1643,8 @@ class JSONBulkHandler(APIHandler):
 
     if use_output_schema:
         @schema.validate(
-        #    input_schema=schemas.json_post_inp_schema,
-        #    input_example=schemas.json_post_inp_example,
+            #    input_schema=schemas.json_post_inp_schema,
+            #    input_example=schemas.json_post_inp_example,
             output_schema=schemas.json_post_out_schema,
             output_example=schemas.json_post_out_example
         )
@@ -1760,7 +1780,7 @@ class JSONBulkHandler(APIHandler):
                         result['group_assignments'] += [map(methodcaller('full'), all_devs)]
                     else:
                         result['group_assignments'] = [map(methodcaller('full'), all_devs)]
-            if     'individual_assignments' in js_dict:
+            if 'individual_assignments' in js_dict:
                 for single_command in js_dict['individual_assignments']:
                     outp = Devices.by_name(single_command['device_type'], circuit=single_command['device_circuit'])
                     outp = outp.set(**(single_command['assigned_values']))
@@ -1848,17 +1868,18 @@ class UniPiCommandService(soaphandler.SoapHandler):
             logger.exception(str(E))
 '''
 
+
 # callback generators for devents
 def gener_status_cb(mainloop, modbus_context):
     def status_cb_modbus(device, *kwargs):
         modbus_context.status_callback(device)
         if "all" in registered_ws:
-            for x in registered_ws['all']: 
+            for x in registered_ws['all']:
                 x.on_event(device)
 
     def status_cb(device, *kwargs):
         if "all" in registered_ws:
-            for x in registered_ws['all']: 
+            for x in registered_ws['all']:
                 x.on_event(device)
 
     if modbus_context:
@@ -1881,20 +1902,19 @@ def gener_config_cb(mainloop, modbus_context):
 ################################ MAIN ################################
 
 def main():
-
     # define("path1", default='', help="Use this config file, if device is Unipi 1.x", type=str)
     # define("path2", default='', help="Use this config file, if device is Unipi Neuron", type=str)
     define("port", default=-1, help="Http server listening ports", type=int)
     define("modbus_port", default=-1, help="Modbus/TCP listening port, 0 disables modbus", type=int)
     tornado.options.parse_command_line()
 
-    config.read_eprom_config()
+    config.read_config()
 
-    #tornado.httpclient.AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
+    # tornado.httpclient.AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
     log_file = Config.getstringdef("MAIN", "log_file", "./evok.log")
     log_level = Config.getstringdef("MAIN", "log_level", "INFO").upper()
 
-    #rotating file handler
+    # rotating file handler
     filelog_handler = logging.handlers.TimedRotatingFileHandler(filename=log_file, when='D', backupCount=7)
     log_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     filelog_handler.setFormatter(log_formatter)
@@ -1903,21 +1923,21 @@ def main():
 
     logger.info("Starting using config file %s", config_path)
 
-    hw_dict = config.HWDict('../etc/hw_definitions/')
-    alias_dict = (config.HWDict('../var/')).definitions
+    hw_dict = config.HWDict(dir_paths=['../etc/hw_definitions/', '../etc/hw_definitions/BuiltIn/'])  # TODO: dynamic
+    alias_dict = (config.HWDict(dir_paths=['../var/'])).definitions
 
     cors = True
     corsdomains = Config.getstringdef("MAIN", "cors_domains", "*")
     define("cors", default=True, help="enable CORS support", type=bool)
     port = Config.getintdef("MAIN", "port", 8080)
     if options.as_dict()['port'] != -1:
-        port = options.as_dict()['port'] # use command-line option instead of config option
+        port = options.as_dict()['port']  # use command-line option instead of config option
 
     modbus_address = Config.getstringdef("MAIN", "modbus_address", '')
     modbus_port = Config.getintdef("MAIN", "modbus_port", 0)
 
     if options.as_dict()['modbus_port'] != -1:
-        modbus_port = options.as_dict()['modbus_port'] # use command-line option instead of config option
+        modbus_port = options.as_dict()['modbus_port']  # use command-line option instead of config option
 
     app_routes = [
         (r"/rpc/?", rpc_handler.Handler),
@@ -1954,7 +1974,7 @@ def main():
         (r"/(.*)", tornado.web.StaticFileHandler, {
             "path": "../var/www/evok",
             "default_filename": "index.html"
-           })
+        })
     ]
 
     if allow_unsafe_configuration_handlers:
@@ -1964,12 +1984,12 @@ def main():
     app = tornado.web.Application(
         handlers=app_routes
     )
-    #docs = get_api_docs(app_routes)
-    #print docs
-    #try:
+    # docs = get_api_docs(app_routes)
+    # print docs
+    # try:
     #    with open('./API_docs.md', "w") as api_out:
     #        api_out.writelines(docs)
-    #except Exception as E:
+    # except Exception as E:
     #    logger.exception(str(E))
 
     #### prepare http server #####
@@ -1977,10 +1997,10 @@ def main():
     httpServer.listen(port)
     logger.info("HTTP server listening on port: %d", port)
 
-    if modbus_port > 0: # used for UniPi 1.x
+    if modbus_port > 0:  # used for UniPi 1.x
         from modbus_tornado import ModbusServer, ModbusApplication
         import modbus_unipi
-        #modbus_context = modbus_unipi.UnipiContext()  # full version
+        # modbus_context = modbus_unipi.UnipiContext()  # full version
         modbus_context = modbus_unipi.UnipiContextGpio()  # limited version
 
         modbus_server = ModbusServer(ModbusApplication(store=modbus_context, identity=modbus_unipi.identity))
@@ -2000,13 +2020,13 @@ def main():
         soap_server.listen(soap_port)
         logger.info("Starting SOAP server on %d", soap_port)
 
-
     if Config.getbooldef("MAIN", "webhook_enabled", False):
-        wh_types = json.loads(Config.getstringdef("MAIN", "webhook_device_mask", '["input", "sensor", "uart", "watchdog"]'))
+        wh_types = json.loads(
+            Config.getstringdef("MAIN", "webhook_device_mask", '["input", "sensor", "uart", "watchdog"]'))
         wh_complex = Config.getbooldef("MAIN", "webhook_complex_events", False)
-        wh = WhHandler(Config.getstringdef("MAIN", "webhook_address", "http://127.0.0.1:80/index.html"), wh_types, wh_complex)
+        wh = WhHandler(Config.getstringdef("MAIN", "webhook_address", "http://127.0.0.1:80/index.html"), wh_types,
+                       wh_complex)
         wh.open()
-
 
     mainLoop = tornado.ioloop.IOLoop.instance()
 
@@ -2044,7 +2064,7 @@ def main():
         if sig in (signal.SIGTERM, signal.SIGINT):
             tornado.ioloop.IOLoop.instance().add_callback_from_signal(shutdown)
 
-    #graceful shutdown
+    # graceful shutdown
     def shutdown():
         for bus in Devices.by_int(I2CBUS):
             bus.bus_driver.switch_to_sync()
