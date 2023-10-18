@@ -2,6 +2,7 @@
   Code specific to Neuron devices
 ------------------------------------------
 '''
+import logging
 import struct
 import datetime
 #from dali.bus import Bus
@@ -994,14 +995,16 @@ class Board(object):
         self.volt_refx = 33000
         self.volt_ref = 3.3
         if 'model' not in config.up_globals:
-            logger.info("NO NEURON EEPROM DATA DETECTED, EXITING")
+            logger.info("NO NEURON DATA DETECTED, EXITING")
             logger.info("PLEASE USE A FRESH EVOK IMAGE, OR ENABLE I2C, I2C-DEV AND THE EEPROM OVERLAY")
-            exit(-1);
-        defin = hw_dict.neuron_definition
-        if defin and defin['type'] in config.up_globals['model']:
-            await self.initialise_cache(defin)
-            for m_feature in defin['modbus_features']:
-                self.parse_feature(m_feature, board_id)
+            # exit(-1)
+        for defin in hw_dict.definitions:
+            if defin and defin['type'] in config.up_globals['model']:
+                await self.initialise_cache(defin)
+                for m_feature in defin['modbus_features']:
+                    self.parse_feature(m_feature, board_id)
+                return
+        logging.error(f"Not found type '{config.up_globals['model']}' in loaded hw-definitions.")
 
     def get(self):
         return self.full()

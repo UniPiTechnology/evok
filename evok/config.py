@@ -1,12 +1,12 @@
 import os
 import multiprocessing
-import struct
 import configparser as ConfigParser
-#import neuron
-from tornado import gen
-from log import *
+from typing import List
+
+import yaml
 from devices import *
-#from neuron import WiFiAdapter
+
+# from neuron import WiFiAdapter
 
 try:
     import unipig
@@ -26,124 +26,60 @@ up_globals = {
     'version2': None,
 }
 
-def read_eprom_config():
 
-    model_len = 6
-### HACK ###
-#    up_globals['model'] = "ACC"
-#    up_globals['serial'] = "11111"
-### ----- ###
-
-    try:
-        with open('/sys/bus/i2c/devices/1-0050/eeprom','r') as f:
-            ee_bytes=f.read(256)
-            if ee_bytes[224:226] == '\xfa\x55':
-                if ord(ee_bytes[226]) == 1 and ord(ee_bytes[227]) == 1:
-                    up_globals['version'] = "UniPi 1.1"
-                elif ord(ee_bytes[226]) == 11 and ord(ee_bytes[227]) == 1:
-                    up_globals['version'] = "UniPi Lite 1.1"
-                else:
-                    up_globals['version'] = "UniPi 1.0"
-                up_globals['version1'] = up_globals['version']
-                #AIs coeff
-                if up_globals['version'] in ("UniPi 1.1", "UniPi 1.0"):
-                    up_globals['devices'] = { 'ai': {
-                                              '1': struct.unpack('!f', ee_bytes[240:244])[0],
-                                              '2': struct.unpack('!f', ee_bytes[244:248])[0],
-                                         }}
-                else:
-                    up_globals['devices'] = { 'ai': {
-                                              '1': 0,
-                                              '2': 0,
-                                         }}
-                up_globals['serial'] = struct.unpack('i', ee_bytes[228:232])[0]
-                logger.debug("eprom: UniPi version %s, serial: %d", up_globals['version'], up_globals['serial'])
-    except Exception:
-        pass
-    try:
-        with open('/sys/bus/i2c/devices/2-0057/eeprom','r') as f:
-            ee_bytes=f.read(128)
-            if ee_bytes[96:98] == '\xfa\x55':
-                up_globals['version2'] = "%d.%d" % (ord(ee_bytes[99]), ord(ee_bytes[98]))
-                while (ee_bytes[106+model_len-1] in ('\x00' ,'\xff')) : model_len = model_len - 1
-                up_globals['model'] = "%s" % (ee_bytes[106:106+model_len],)
-                up_globals['serial'] = struct.unpack('i', ee_bytes[100:104])[0]
-                logger.info("eprom: UniPi ZULU in product %s version: %s serial: 0x%x", up_globals["model"], up_globals['version2'],up_globals["serial"])
-    except Exception:
-        pass
-    try:
-        with open('/sys/bus/i2c/devices/1-0057/eeprom','r') as f:
-            ee_bytes=f.read(128)
-            if ee_bytes[96:98] == '\xfa\x55':
-                up_globals['version2'] = "%d.%d" % (ord(ee_bytes[99]), ord(ee_bytes[98]))
-                while (ee_bytes[106+model_len-1] in ('\x00' ,'\xff')) : model_len = model_len - 1
-                up_globals['model'] = "%s" % (ee_bytes[106:106+model_len],)
-                up_globals['serial'] = struct.unpack('i', ee_bytes[100:104])[0]
-                logger.info("eprom: UniPi Neuron %s version: %s serial: 0x%x", up_globals["model"], up_globals['version2'],up_globals["serial"])
-    except Exception:
-        pass
-    try:
-        with open('/sys/bus/i2c/devices/0-0057/eeprom','r') as f:
-            ee_bytes=f.read(128)
-            if ee_bytes[96:98] == '\xfa\x55':
-                up_globals['version2'] = "%d.%d" % (ord(ee_bytes[99]), ord(ee_bytes[98]))
-                while (ee_bytes[106+model_len-1] in ('\x00' ,'\xff')) : model_len = model_len - 1
-                up_globals['model'] = "%s" % (ee_bytes[106:106+model_len],)
-                up_globals['serial'] = struct.unpack('i', ee_bytes[100:104])[0]
-                logger.info("eprom: UniPi Neuron %s version: %s serial: 0x%x", up_globals["model"], up_globals['version2'],up_globals["serial"])
-    except Exception:
-        pass
+def read_config():
+    global up_globals
+    up_globals['model'] = 'S103'
+    up_globals['serial'] = 2535
 
 
 class HWDict():
-    def __init__(self, d_path):
+    def __init__(self, dir_paths: List[str] = None, paths: List[str] = None):
+        """
+        :param dir_paths: path to dir for load
+        :param paths: paths to config files
+        """
         self.definitions = []
-        self.neuron_definition = None
-        for filen in os.listdir(d_path):
-            if filen.endswith(".yaml"):
+        scope = list()
+        if dir_paths is not None:
+            for dp in dir_paths:
+                scope.extend([dp + f for f in os.listdir(dp)])
+        if paths is not None:
+            scope.extend(paths)
+        if scope is None or len(scope) == 0:
+            raise ValueError(f"HWDict: no scope!")
+        for file_path in scope:
+            if file_path.endswith(".yaml"):
                 try:
-                    with open(d_path + filen, 'r') as yfile:
+                    with open(file_path, 'r') as yfile:
                         self.definitions += [yaml.load(yfile, Loader=yaml.SafeLoader)]
-                        logger.info("YAML Definition loaded: %s, type: %s, definition count %d", filen, len(self.definitions[len(self.definitions)-1]),  len(self.definitions) - 1)
-                except Exception:
-                    pass
-            elif filen.endswith("BuiltIn") and 'model' in up_globals:
-                try:
-                    with open(d_path + filen + "/" + up_globals['model'] + '.yaml', 'r') as yfile:
-                        self.neuron_definition = yaml.load(yfile, Loader=yaml.SafeLoader)
-                        logger.info("YAML Definition loaded: %s, type: UniPiBuiltIn", d_path + filen + "/" + up_globals['model'] + '.yaml')
-                except Exception:
-                    try:
-                        with open(d_path + filen + "/" + up_globals['model'][:4] + '.yaml', 'r') as yfile:
-                            self.neuron_definition = yaml.load(yfile, Loader=yaml.SafeLoader)
-                            logger.info("Generic YAML Definition loaded: %s, type: UniPiBuiltIn", d_path + filen + "/" + up_globals['model'][:4] + '.yaml')
-                    except:
-                        logger.warning("No valid YAML definition for this unit !!! Device name %s", up_globals['model'])
-                        pass
+                        logger.info("YAML Definition loaded: %s, type: %s, definition count %d", file_path,
+                                    len(self.definitions[len(self.definitions) - 1]), len(self.definitions) - 1)
+                except Exception as E:
+                    raise E
                     pass
 
-class HWDefinition():
-    def __init__(self):
-        False
-    
+
 class OWBusDevice():
     def __init__(self, bus_driver, dev_id):
         self.dev_id = dev_id
         self.bus_driver = bus_driver
         self.circuit = bus_driver.circuit
-        
+
     def full(self):
         return self.bus_driver.full()
+
 
 class OWSensorDevice():
     def __init__(self, sensor_dev, dev_id):
         self.dev_id = dev_id
-        self.sensor_dev = sensor_dev 
+        self.sensor_dev = sensor_dev
         self.circuit = sensor_dev.circuit
-        
+
     def full(self):
         return self.sensor_dev.full()
-        
+
+
 class I2CBusDevice():
     def __init__(self, bus_driver, dev_id):
         self.dev_id = dev_id
@@ -152,7 +88,8 @@ class I2CBusDevice():
 
     def full(self):
         return None
-    
+
+
 class GPIOBusDevice():
     def __init__(self, bus_driver, dev_id):
         self.dev_id = dev_id
@@ -162,6 +99,7 @@ class GPIOBusDevice():
     def full(self):
         return None
 
+
 class EvokConfig(ConfigParser.RawConfigParser):
 
     def __init__(self):
@@ -169,11 +107,11 @@ class EvokConfig(ConfigParser.RawConfigParser):
 
     def configtojson(self):
         return dict(
-             ( section, 
-               dict(
-                ( option,
+            (section,
+             dict(
+                 (option,
                   self.get(section, option)
-                ) for option in self.options(section))
+                  ) for option in self.options(section))
              ) for section in self.sections())
 
     def getintdef(self, section, key, default):
@@ -182,13 +120,11 @@ class EvokConfig(ConfigParser.RawConfigParser):
         except:
             return default
 
-
     def getfloatdef(self, section, key, default):
         try:
             return self.getfloat(section, key)
         except:
             return default
-
 
     def getbooldef(self, section, key, default):
         true_booleans = ['yes', 'true', '1']
@@ -202,7 +138,6 @@ class EvokConfig(ConfigParser.RawConfigParser):
             return default
         except:
             return default
-
 
     def getstringdef(self, section, key, default):
         try:
@@ -228,6 +163,7 @@ def create_devices(Config, hw_dict):
             if not res: continue
         devclass = res.group(1)
         circuit = res.group(2)
+        print(section, res, devclass, circuit)
         try:
             if devclass == 'OWBUS':
                 import owclient
@@ -238,11 +174,11 @@ def create_devices(Config, hw_dict):
                 resultPipe = multiprocessing.Pipe()
                 taskPipe = multiprocessing.Pipe()
                 bus_driver = owclient.OwBusDriver(circuit, taskPipe, resultPipe, bus=bus,
-                                             interval=interval, scan_interval=scan_interval)
+                                                  interval=interval, scan_interval=scan_interval)
                 owbus = OWBusDevice(bus_driver, dev_id=0)
                 Devices.register_device(OWBUS, owbus)
             elif devclass == 'SENSOR' or devclass == '1WDEVICE':
-                #permanent thermometer
+                # permanent thermometer
                 bus = Config.get(section, "bus")
                 owbus = (Devices.by_int(OWBUS, bus)).bus_driver
                 ow_type = Config.get(section, "type")
@@ -250,7 +186,7 @@ def create_devices(Config, hw_dict):
                 interval = Config.getintdef(section, "interval", 15)
                 sensor = owclient.MySensorFabric(address, ow_type, owbus, interval=interval, circuit=circuit,
                                                  is_static=True)
-                if ow_type in ["DS2408","DS2406", "DS2404", "DS2413"]:
+                if ow_type in ["DS2408", "DS2406", "DS2404", "DS2413"]:
                     sensor = OWSensorDevice(sensor, dev_id=0)
                 Devices.register_device(SENSOR, sensor)
             elif devclass == '1WRELAY':
@@ -293,7 +229,7 @@ def create_devices(Config, hw_dict):
                 gpio_bus = GPIOBusDevice(bus_driver, 0)
                 Devices.register_device(GPIOBUS, gpio_bus)
             elif devclass == 'PCA9685':
-                #PCA9685 on I2C
+                # PCA9685 on I2C
                 i2cbus = Config.get(section, "i2cbus")
                 address = hexint(Config.get(section, "address"))
                 frequency = Config.getintdef(section, "frequency", 400)
@@ -302,10 +238,10 @@ def create_devices(Config, hw_dict):
                 Devices.register_device(PCA9685, pca)
             elif devclass in ('AO', 'ANALOGOUTPUT'):
                 try:
-                    #analog output on PCA9685
+                    # analog output on PCA9685
                     pca = Config.get(section, "pca")
                     channel = Config.getint(section, "channel")
-                    #value = Config.getfloatdef(section, "value", 0)
+                    # value = Config.getfloatdef(section, "value", 0)
                     driver = Devices.by_int(PCA9685, pca)
                     ao = unipig.AnalogOutputPCA(circuit, driver, channel, dev_id=0)
                 except:
@@ -369,7 +305,8 @@ def create_devices(Config, hw_dict):
                 scan_enabled = Config.getbooldef(section, "scan_enabled", True)
                 allow_register_access = Config.getbooldef(section, "allow_register_access", False)
                 circuit = Config.getintdef(section, "global_id", 2)
-                neuron = Neuron(circuit, Config, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict, direct_access=allow_register_access,
+                neuron = Neuron(circuit, Config, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict,
+                                direct_access=allow_register_access,
                                 dev_id=dev_counter)
                 Devices.register_device(NEURON, neuron)
             elif devclass == 'EXTENSION':
@@ -386,9 +323,12 @@ def create_devices(Config, hw_dict):
                 allow_register_access = Config.getbooldef(section, "allow_register_access", False)
                 neuron_uart_circuit = Config.getstringdef(section, "neuron_uart_circuit", "None")
                 circuit = Config.getintdef(section, "global_id", 2)
-                neuron = UartNeuron(circuit, Config, modbus_uart_port, scanfreq, scan_enabled, hw_dict, baud_rate=uart_baud_rate,
-                                    parity=uart_parity, stopbits=uart_stopbits, device_name=device_name, uart_address=uart_address,
-                                    direct_access=allow_register_access, dev_id=dev_counter, neuron_uart_circuit=neuron_uart_circuit)
+                neuron = UartNeuron(circuit, Config, modbus_uart_port, scanfreq, scan_enabled, hw_dict,
+                                    baud_rate=uart_baud_rate,
+                                    parity=uart_parity, stopbits=uart_stopbits, device_name=device_name,
+                                    uart_address=uart_address,
+                                    direct_access=allow_register_access, dev_id=dev_counter,
+                                    neuron_uart_circuit=neuron_uart_circuit)
                 Devices.register_device(NEURON, neuron)
             elif devclass == 'IRISCARD':
                 from neuron import TcpNeuron
@@ -402,18 +342,20 @@ def create_devices(Config, hw_dict):
                 allow_register_access = Config.getbooldef(section, "allow_register_access", False)
                 circuit = Config.getintdef(section, "global_id", 2)
                 neuron = TcpNeuron(circuit, Config, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict,
-                                    device_name=device_name, modbus_address=modbus_address,
-                                    direct_access=allow_register_access, dev_id=dev_counter)
+                                   device_name=device_name, modbus_address=modbus_address,
+                                   direct_access=allow_register_access, dev_id=dev_counter)
                 Devices.register_device(NEURON, neuron)
 
         except Exception as E:
             logger.exception("Error in config section %s - %s", section, str(E))
 
+
 async def add_aliases(alias_conf):
     if alias_conf is not None:
         for alias_conf_single in alias_conf:
             if alias_conf_single is not None:
-                if "version" in alias_conf_single and "aliases" in alias_conf_single and alias_conf_single["version"] == 1.0:
+                if "version" in alias_conf_single and "aliases" in alias_conf_single and alias_conf_single[
+                    "version"] == 1.0:
                     for dev_pointer in alias_conf_single['aliases']:
                         try:
                             dev_obj = Devices.by_int(dev_pointer["dev_type"], dev_pointer["circuit"])
@@ -422,6 +364,7 @@ async def add_aliases(alias_conf):
                                 dev_obj.alias = dev_pointer["name"]
                         except Exception as E:
                             logger.exception(str(E))
+
 
 def add_wifi():
     wifi = WiFiAdapter("1_01")
