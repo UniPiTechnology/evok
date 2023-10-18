@@ -9,6 +9,7 @@ import tornado.httpserver
 import tornado.httpclient
 import tornado.ioloop
 import tornado.web
+import yaml
 
 import schemas
 
@@ -1923,8 +1924,9 @@ def main():
 
     logger.info("Starting using config file %s", config_path)
 
-    hw_dict = config.HWDict(dir_paths=['../etc/hw_definitions/', '../etc/hw_definitions/BuiltIn/'])  # TODO: dynamic
-    alias_dict = (config.HWDict(dir_paths=['../var/'])).definitions
+    # hw_dict = config.HWDict(dir_paths=['../etc/hw_definitions/', '../etc/hw_definitions/BuiltIn/'])  # TODO: dynamic
+    hw_dict = config.HWDict(paths=['/etc/hw_definitions/BuiltIn/L523.yaml'])  # TODO: dynamic
+    alias_dict = (config.HWDict(dir_paths=['/home/unipi/remote_evok/var/'])).definitions
 
     cors = True
     corsdomains = Config.getstringdef("MAIN", "cors_domains", "*")
@@ -2034,8 +2036,12 @@ def main():
     # prepare callbacks for config events
     devents.register_config_cb(gener_config_cb(mainLoop, modbus_context))
     devents.register_status_cb(gener_status_cb(mainLoop, modbus_context))
+
     # create hw devices
-    config.create_devices(Config, hw_dict)
+    hw_conf_path = Config.getstringdef("MAIN", "hwconf_path", "/etc/evok.yaml")
+    with open(hw_conf_path, 'r') as f:
+        hw_conf = yaml.load(stream=f, Loader=yaml.Loader)
+    config.create_devices(Config, hw_conf, hw_dict)
     if Config.getbooldef("MAIN", "wifi_control_enabled", False):
         config.add_wifi()
     '''

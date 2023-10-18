@@ -29,7 +29,7 @@ up_globals = {
 
 def read_config():
     global up_globals
-    up_globals['model'] = 'S103'
+    up_globals['model'] = 'L523'
     up_globals['serial'] = 2535
 
 
@@ -152,24 +152,21 @@ def hexint(value):
     return int(value)
 
 
-def create_devices(Config, hw_dict):
+def create_devices(evok_config: EvokConfig, hw_config: dict, hw_dict):
     dev_counter = 0
-    Config.hw_dict = hw_dict
-    for section in Config.sections():
+    # Config.hw_dict = hw_dict
+    for section, data in hw_config.items():
+        data: dict
         # split section name ITEM123 or ITEM_123 or ITEM-123 into device=ITEM and circuit=123
-        res = re.search('^([^_-]+)[_-]+(.+)$', section)
-        if not res:
-            res = re.search('^(.*\D)(\d+)$', section)
-            if not res: continue
-        devclass = res.group(1)
-        circuit = res.group(2)
-        print(section, res, devclass, circuit)
+        devclass = data['type']
+        circuit = data.get('circuit', 0)
+        logging.info(f"Creating device '{section}' with type '{devclass}'")
         try:
             if devclass == 'OWBUS':
                 import owclient
-                bus = Config.get(section, "owbus")
-                interval = Config.getfloat(section, "interval")
-                scan_interval = Config.getfloat(section, "scan_interval")
+                bus = data.get("owbus")
+                interval = data.get("interval")
+                scan_interval = data.get("scan_interval")
                 #### prepare 1wire process ##### (using thread affects timing!)
                 resultPipe = multiprocessing.Pipe()
                 taskPipe = multiprocessing.Pipe()
@@ -299,30 +296,30 @@ def create_devices(Config, hw_dict):
             elif devclass == 'NEURON':
                 from neuron import Neuron
                 dev_counter += 1
-                modbus_server = Config.getstringdef(section, "modbus_server", "127.0.0.1")
-                modbus_port = Config.getintdef(section, "modbus_port", 502)
-                scanfreq = Config.getfloatdef(section, "scan_frequency", 1)
-                scan_enabled = Config.getbooldef(section, "scan_enabled", True)
-                allow_register_access = Config.getbooldef(section, "allow_register_access", False)
-                circuit = Config.getintdef(section, "global_id", 2)
-                neuron = Neuron(circuit, Config, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict,
+                modbus_server = data.get("modbus_server", "127.0.0.1")
+                modbus_port = data.get("modbus_port", 502)
+                scanfreq = data.get("scan_frequency", 1)
+                scan_enabled = data.get("scan_enabled", True)
+                allow_register_access = data.get("allow_register_access", False)
+                circuit = data.get("global_id", 2)
+                neuron = Neuron(circuit, evok_config, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict,
                                 direct_access=allow_register_access,
                                 dev_id=dev_counter)
                 Devices.register_device(NEURON, neuron)
             elif devclass == 'EXTENSION':
                 from neuron import UartNeuron
                 dev_counter += 1
-                modbus_uart_port = Config.getstringdef(section, "modbus_uart_port", "/dev/ttyNS0")
-                scanfreq = Config.getfloatdef(section, "scan_frequency", 10)
-                scan_enabled = Config.getbooldef(section, "scan_enabled", True)
-                uart_baud_rate = Config.getintdef(section, "baud_rate", 19200)
-                uart_parity = Config.getstringdef(section, "parity", 'N')
-                uart_stopbits = Config.getintdef(section, "stop_bits", 1)
-                uart_address = Config.getintdef(section, "address", 1)
-                device_name = Config.getstringdef(section, "device_name", "unspecified")
-                allow_register_access = Config.getbooldef(section, "allow_register_access", False)
-                neuron_uart_circuit = Config.getstringdef(section, "neuron_uart_circuit", "None")
-                circuit = Config.getintdef(section, "global_id", 2)
+                modbus_uart_port = data.get("modbus_uart_port", "/dev/ttyNS0")
+                scanfreq = data.get("scan_frequency", 10)
+                scan_enabled = data.get("scan_enabled", True)
+                uart_baud_rate = data.get("baud_rate", 19200)
+                uart_parity = data.get("parity", 'N')
+                uart_stopbits = data.get("stop_bits", 1)
+                uart_address = data.get("address", 1)
+                device_name = data.get("device_name", "unspecified")
+                allow_register_access = data.get("allow_register_access", False)
+                neuron_uart_circuit = data.get("neuron_uart_circuit", "None")
+                circuit = data.get("global_id", 2)
                 neuron = UartNeuron(circuit, Config, modbus_uart_port, scanfreq, scan_enabled, hw_dict,
                                     baud_rate=uart_baud_rate,
                                     parity=uart_parity, stopbits=uart_stopbits, device_name=device_name,

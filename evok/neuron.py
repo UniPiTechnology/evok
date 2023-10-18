@@ -2412,7 +2412,7 @@ class AnalogInput():
                 byte_arr[3] = self.regvalue() & 255
                 byte_arr[0] = (self.arm.neuron.modbus_cache_map.get_register(1, self.valreg + 1, slave=self.arm.modbus_address)[0] >> 8) & 255
                 byte_arr[1] = self.arm.neuron.modbus_cache_map.get_register(1, self.valreg + 1, slave=self.arm.modbus_address)[0] & 255
-                return struct.unpack('>f', str(byte_arr))[0]
+                return struct.unpack('>f', byte_arr)[0]
         except Exception as E:
             logger.exception(str(E))
             return 0
