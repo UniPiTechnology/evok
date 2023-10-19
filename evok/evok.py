@@ -1925,7 +1925,7 @@ def main():
     logger.info("Starting using config file %s", config_path)
 
     # hw_dict = config.HWDict(dir_paths=['../etc/hw_definitions/', '../etc/hw_definitions/BuiltIn/'])  # TODO: dynamic
-    hw_dict = config.HWDict(paths=['/etc/hw_definitions/BuiltIn/L523.yaml'])  # TODO: dynamic
+    hw_dict = config.HWDict(paths=['/etc/hw_definitions/BuiltIn/S103.yaml'])  # TODO: dynamic
     alias_dict = (config.HWDict(dir_paths=['/home/unipi/remote_evok/var/'])).definitions
 
     cors = True

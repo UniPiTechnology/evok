@@ -16,6 +16,14 @@ from devices import *
 import config
 from log import *
 
+
+class Unipig:
+    """
+    Class for unipig control
+    """
+    def __init__(self):
+        pass
+
 class Eprom(object):
     def __init__(self, i2cbus, circuit, address=0x50, size=256, major_group=1, dev_id=0):
         # running with blocking
