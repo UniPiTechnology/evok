@@ -277,7 +277,7 @@ class WsHandler(websocket.WebSocketHandler):
         if ("all" in registered_ws) and (self in registered_ws["all"]):
             registered_ws["all"].remove(self)
             if len(registered_ws["all"]) == 0:
-                for neuron in Devices.by_int(NEURON):
+                for neuron in Devices.by_int(MODBUS_SLAVE):
                     neuron.stop_scanning()
 
 
@@ -1558,7 +1558,7 @@ class JSONLoadAllHandler(UserCookieHelper, APIHandler):
             result += map(lambda dev: dev.full(), Devices.by_int(SENSOR))
             result += map(lambda dev: dev.full(), Devices.by_int(LED))
             result += map(lambda dev: dev.full(), Devices.by_int(WATCHDOG))
-            result += map(lambda dev: dev.full(), Devices.by_int(NEURON))
+            result += map(lambda dev: dev.full(), Devices.by_int(MODBUS_SLAVE))
             result += map(lambda dev: dev.full(), Devices.by_int(UART))
             result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
             result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
@@ -1579,7 +1579,7 @@ class JSONLoadAllHandler(UserCookieHelper, APIHandler):
             result += map(lambda dev: dev.full(), Devices.by_int(SENSOR))
             result += map(lambda dev: dev.full(), Devices.by_int(LED))
             result += map(lambda dev: dev.full(), Devices.by_int(WATCHDOG))
-            result += map(lambda dev: dev.full(), Devices.by_int(NEURON))
+            result += map(lambda dev: dev.full(), Devices.by_int(MODBUS_SLAVE))
             result += map(lambda dev: dev.full(), Devices.by_int(UART))
             result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
             result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
@@ -1610,7 +1610,7 @@ class RestLoadAllHandler(UserCookieHelper, APIHandler):
         result += map(lambda dev: dev.full(), Devices.by_int(SENSOR))
         result += map(lambda dev: dev.full(), Devices.by_int(LED))
         result += map(lambda dev: dev.full(), Devices.by_int(WATCHDOG))
-        result += map(lambda dev: dev.full(), Devices.by_int(NEURON))
+        result += map(lambda dev: dev.full(), Devices.by_int(MODBUS_SLAVE))
         result += map(lambda dev: dev.full(), Devices.by_int(UART))
         result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
         result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
@@ -2061,7 +2061,7 @@ def main():
     for device in Devices.by_int(ADCHIP):
         device.switch_to_async(mainLoop)
 
-    for neuron in Devices.by_int(NEURON):
+    for neuron in Devices.by_int(MODBUS_SLAVE):
         neuron.switch_to_async(mainLoop, alias_dict)
         if neuron.scan_enabled:
             neuron.start_scanning()

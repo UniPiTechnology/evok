@@ -144,7 +144,7 @@ PCA9685 = 11
 DS2408 = 12
 UNIPI2 = 13
 UART = 14
-NEURON = 15
+MODBUS_SLAVE = 15
 BOARD = 16
 OUTPUT = 17
 LED = 18
@@ -155,6 +155,7 @@ LIGHT_CHANNEL = 22
 LIGHT_DEVICE = 23
 UNIT_REGISTER = 24
 EXT_CONFIG = 25
+UNIPIG = 26
 
 # # corresponding device types names !! ORDER IS IMPORTANT
 devtype_names = (
@@ -173,7 +174,7 @@ devtype_names = (
     'ds2408',
     'unipi2',
     'uart',
-    'neuron',
+    'modbus_slave',
     'board',
     'misc_output',
     'led',
@@ -183,7 +184,8 @@ devtype_names = (
     'light_channel',
     'light_device',
     'unit_register',
-    'ext_config'
+    'ext_config',
+    'unipig'
 )
 
 devtype_altnames = {
