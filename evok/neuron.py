@@ -182,7 +182,7 @@ class ModbusSlave(object):
     def __init__(self, circuit, Config, scan_freq, scan_enabled, hw_dict, modbus_address=15,
                  major_group=1, device_model='unspecified', dev_id=0):
         self.alias = ""
-        self.devtype = NEURON
+        self.devtype = MODBUS_SLAVE
         self.modbus_cache_map = None
         self.datadeps = {}
         self.boards = list()
@@ -225,6 +225,7 @@ class ModbusSlave(object):
                     self.hw_board_dict = defin
                     break
             self.versions = await self.client.read_input_registers(1000, 10, slave=self.modbus_address)
+            # TODO: ^^ toto lze pouzit pouze u unipi jednotek ... co s tim?
             if isinstance(self.versions, ExceptionResponse):
                 self.versions = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             else:
@@ -317,7 +318,6 @@ class TcpModbusSlave(ModbusSlave):
         self.circuit = circuit
         self.modbus_server = modbus_server
         self.modbus_port = modbus_port
-
 
     def switch_to_async(self, loop, alias_dict):
         self.loop = loop
