@@ -296,7 +296,7 @@ def create_devices(evok_config: EvokConfig, hw_config: dict, hw_dict):
                                                 continuous=False, interval=interval, correction=correction, dev_id=0)
                     Devices.register_device(AI, ai)
                 elif device_type == 'MODBUS_SLAVE':
-                    from neuron import TcpNeuron
+                    from neuron import TcpModbusSlave
                     dev_counter += 1
                     modbus_server = device_data.get("modbus_server", "127.0.0.1")
                     modbus_port = device_data.get("modbus_port", 502)
@@ -304,13 +304,13 @@ def create_devices(evok_config: EvokConfig, hw_config: dict, hw_dict):
                     scan_enabled = device_data.get("scan_enabled", True)
                     allow_register_access = device_data.get("allow_register_access", False)
                     circuit = device_data.get("global_id", 2)
-                    neuron = TcpNeuron(circuit, evok_config, modbus_server, modbus_port, scanfreq, scan_enabled,
-                                       hw_dict,
-                                       direct_access=allow_register_access,
-                                       dev_id=dev_counter)
+                    device_model = device_data["model"]
+                    neuron = TcpModbusSlave(circuit, evok_config, modbus_server, modbus_port, scanfreq, scan_enabled,
+                                            hw_dict, device_model=device_model,
+                                            dev_id=dev_counter)
                     Devices.register_device(NEURON, neuron)
                 elif device_type == 'EXTENSION':
-                    from neuron import UartNeuron
+                    from neuron import UartModbusSlave
                     dev_counter += 1
                     modbus_uart_port = device_data.get("modbus_uart_port", "/dev/ttyNS0")
                     scanfreq = device_data.get("scan_frequency", 10)
@@ -323,15 +323,15 @@ def create_devices(evok_config: EvokConfig, hw_config: dict, hw_dict):
                     allow_register_access = device_data.get("allow_register_access", False)
                     neuron_uart_circuit = device_data.get("neuron_uart_circuit", "None")
                     circuit = device_data.get("global_id", 2)
-                    neuron = UartNeuron(circuit, Config, modbus_uart_port, scanfreq, scan_enabled, hw_dict,
-                                        baud_rate=uart_baud_rate,
-                                        parity=uart_parity, stopbits=uart_stopbits, device_name=device_name,
-                                        uart_address=uart_address,
-                                        direct_access=allow_register_access, dev_id=dev_counter,
-                                        neuron_uart_circuit=neuron_uart_circuit)
+                    neuron = UartModbusSlave(circuit, Config, modbus_uart_port, scanfreq, scan_enabled, hw_dict,
+                                             baud_rate=uart_baud_rate,
+                                             parity=uart_parity, stopbits=uart_stopbits, device_model=device_name,
+                                             uart_address=uart_address,
+                                             direct_access=allow_register_access, dev_id=dev_counter,
+                                             neuron_uart_circuit=neuron_uart_circuit)
                     Devices.register_device(NEURON, neuron)
                 elif device_type == 'IRISCARD':
-                    from neuron import TcpNeuron
+                    from neuron import TcpModbusSlave
                     dev_counter += 1
                     modbus_server = Config.getstringdef(section, "modbus_server", "127.0.0.1")
                     modbus_port = Config.getstringdef(section, "modbus_port", "502")
@@ -341,9 +341,9 @@ def create_devices(evok_config: EvokConfig, hw_config: dict, hw_dict):
                     device_name = Config.getstringdef(section, "device_name", "unspecified")
                     allow_register_access = Config.getbooldef(section, "allow_register_access", False)
                     circuit = Config.getintdef(section, "global_id", 2)
-                    neuron = TcpNeuron(circuit, Config, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict,
-                                       device_name=device_name, modbus_address=modbus_address,
-                                       direct_access=allow_register_access, dev_id=dev_counter)
+                    neuron = TcpModbusSlave(circuit, Config, modbus_server, modbus_port, scanfreq, scan_enabled, hw_dict,
+                                            device_name=device_name, modbus_address=modbus_address,
+                                            direct_access=allow_register_access, dev_id=dev_counter)
                     Devices.register_device(NEURON, neuron)
                 else:
                     logger.error(f"Unknown device type: '{device_type}'! skipping...")
