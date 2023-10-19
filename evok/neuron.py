@@ -8,6 +8,8 @@ import datetime
 #from dali.bus import Bus
 #import dali.gear.general
 from math import sqrt
+from typing import Union
+
 #from tornado import gen
 from tornado.ioloop import IOLoop
 from pymodbus.client import AsyncModbusTcpClient, AsyncModbusSerialClient
@@ -174,122 +176,11 @@ class ModbusCacheMap(object):
                 await self.neuron.client.write_register(index + counter, 1, inp[counter], slave=slave)
                 self.registered[index + counter] = inp[counter]
 
-class Neuron(object):
-    def __init__(self, circuit, Config, modbus_server, modbus_port, scan_freq, scan_enabled, hw_dict, direct_access=False, major_group=1, dev_id=0):
-        self.alias = ""
-        self.devtype = NEURON
-        self.dev_id = dev_id
-        self.circuit = str(circuit)
-        self.hw_dict = hw_dict
-        self.datadeps = {}
-        self.Config = Config
-        self.direct_access = direct_access
-        self.modbus_server = modbus_server
-        self.modbus_port = modbus_port
-        self.major_group = major_group
-        self.modbus_address = 0
-        self.do_scanning = False
-        self.is_scanning = False
-        self.scanning_error_triggered = False
-        if scan_freq == 0:
-            self.scan_interval = 0
-        else:
-            self.scan_interval = 1.0 / scan_freq
-        self.scan_enabled = scan_enabled
-        self.boards = list()
-        self.modbus_cache_map = None
-        self.versions = []
-        self.logfile = Config.getstringdef("MAIN", "log_file", "/var/log/evok.log")
 
-    def switch_to_async(self, loop, alias_dict):
-        self.loop = loop
-        self.client = AsyncModbusTcpClient(host=self.modbus_server, port=self.modbus_port)
-        loop.add_callback(lambda: self.readboards(alias_dict))
-        #self.client = ModbusClientProtocol()
-        #loop.add_callback(lambda: StartClient(self.client, self.modbus_server, self.modbus_port, self.readboards, callback_args=alias_dict))
-
-    async def set(self, print_log=None):
-        if print_log is not None and print_log != 0:
-            log_tail = subprocess.check_output(["tail", "-n 255", self.logfile])
-            return log_tail
-        else:
-            return ""
-
-    async def readboards(self, alias_dict):
-        """ Try to read version registers on 3 boards and create subdevices """
-        logger.info("Reading SPI boards")
-        await self.client.connect()
-        for board in self.boards:
-            del (board)
-        self.boards = list()
-        for i in (1, 2, 3):
-            try:
-                versions = await self.client.read_input_registers(1000, 10, slave=i)
-                if isinstance(versions, ExceptionResponse) or isinstance(versions, ConnectionException):
-                    raise ENoBoard("Bad request")
-                else:
-                    self.versions += [versions.registers]
-                board = Board(self.Config, i, self, versions.registers, major_group=i, direct_access=self.direct_access, dev_id=self.dev_id)
-                await board.parse_definition(self.hw_dict, i)
-                self.boards.append(board)
-            except (ENoBoard, ConnectionException):
-                logger.info("No board on SPI %d" % i)
-                continue
-            except Exception as E:
-                logger.exception(str(E))
-                pass
-        await config.add_aliases(alias_dict)
-
-    def start_scanning(self):
-        self.do_scanning = True
-        if not self.is_scanning:
-            self.loop.call_later(self.scan_interval, self.scan_boards)
-            self.is_scanning = True
-
-
-    def stop_scanning(self):
-        if not self.scan_enabled:
-            self.do_scanning = False
-
-    def full(self):
-        ret = {'dev': 'neuron',
-                'circuit': self.circuit,
-                'model': config.up_globals['model'],
-                'sn': config.up_globals['serial'],
-                'ver2': config.up_globals['version2'],
-                'board_count': len(self.boards),
-                'glob_dev_id': self.dev_id,
-                'last_comm': 0x7fffffff}
-        if self.alias != '':
-            ret['alias'] = self.alias
-        if self.modbus_cache_map is not None:
-            ret['last_comm'] = time.time() - self.modbus_cache_map.last_comm_time
-        return ret
-
-    def get(self):
-        return self.full()
-
-    async def scan_boards(self):
-        if self.client.connected:
-            try:
-                if self.modbus_cache_map is not None:
-                    await self.modbus_cache_map.do_scan()
-            except Exception as E:
-                if not self.scanning_error_triggered:
-                    logger.exception(str(E))
-                self.scanning_error_triggered = True
-            self.scanning_error_triggered = False
-        if self.do_scanning and (self.scan_interval != 0):
-            self.loop.call_later(self.scan_interval, self.scan_boards)
-            self.is_scanning = True
-        else:
-            self.is_scanning = False
-
-
-class ModbusNeuron(object):
+class ModbusSlave(object):
 
     def __init__(self, circuit, Config, scan_freq, scan_enabled, hw_dict, modbus_address=15,
-                       major_group=1, device_name='unspecified', direct_access=False, dev_id=0):
+                 major_group=1, device_model='unspecified', dev_id=0):
         self.alias = ""
         self.devtype = NEURON
         self.modbus_cache_map = None
@@ -297,9 +188,8 @@ class ModbusNeuron(object):
         self.boards = list()
         self.dev_id = dev_id
         self.hw_dict = hw_dict
-        self.direct_access = direct_access
         self.modbus_address = modbus_address
-        self.device_name = device_name
+        self.device_model = device_model
         self.Config = Config
         self.do_scanning = False
         self.is_scanning = False
@@ -313,6 +203,7 @@ class ModbusNeuron(object):
         self.scan_enabled = scan_enabled
         self.versions = []
         self.logfile = Config.getstringdef("MAIN", "log_file", "/var/log/evok.log")
+        self.client: Union[None, AsyncModbusTcpClient, AsyncModbusSerialClient] = None
 
     def get(self):
         return self.full()
@@ -325,27 +216,26 @@ class ModbusNeuron(object):
             return ""
 
     async def readboards(self, alias_dict):
-        logger.info("Reading the Modbus board on Modbus address %d" % self.modbus_address)
+        logger.info(f"Reading the Modbus board on Modbus address {self.modbus_address}")
+        await self.client.connect()
         self.boards = list()
         try:
             for defin in self.hw_dict.definitions:
-                if defin and (defin['type'] == self.device_name):
+                if defin and (defin['type'] == self.device_model):
                     self.hw_board_dict = defin
                     break
             self.versions = await self.client.read_input_registers(1000, 10, slave=self.modbus_address)
             if isinstance(self.versions, ExceptionResponse):
                 self.versions = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-            elif isinstance(self.versions, AsyncErrorResponse):
-                self.versions = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             else:
                 self.versions = self.versions.registers
 
-            board = UartBoard(self.Config, self.circuit, self.modbus_address, self, self.versions, dev_id=self.dev_id, direct_access=self.direct_access)
+            board = Board(self.Config, self.circuit, self.modbus_address, self, self.versions, dev_id=self.dev_id)
             await board.parse_definition(self.hw_dict)
             self.boards.append(board)
             await config.add_aliases(alias_dict)
-        except (ENoBoard, ConnectionException):
-            logger.info("No board detected on Modbus %d" % self.modbus_address)
+        except (ENoBoard, ConnectionException) as E:
+            logger.error(f"No board detected on Modbus {self.modbus_address}\t({type(E).__name__}:{E})")
         except Exception as E:
             Devices.remove_global_device(self.dev_id)
             logger.exception(str(E))
@@ -379,13 +269,13 @@ class ModbusNeuron(object):
             self.is_scanning = False
 
 
-class UartNeuron(ModbusNeuron):
+class UartModbusSlave(ModbusSlave):
 
-    def __init__(self, circuit, Config, port, scan_freq, scan_enabled, hw_dict, 
-                 baud_rate=19200, parity='N', stopbits=1, uart_address=15, major_group=1, 
-                 device_name='unspecified', direct_access=False, neuron_uart_circuit="None", dev_id=0):
-        ModbusNeuron.__init__(self,circuit, Config, scan_freq, scan_enabled, hw_dict, uart_address,
-                              major_group, device_name, direct_access, dev_id)
+    def __init__(self, circuit, Config, port, scan_freq, scan_enabled, hw_dict,
+                 baud_rate=19200, parity='N', stopbits=1, uart_address=15, major_group=1,
+                 device_model='unspecified', neuron_uart_circuit="None", dev_id=0):
+        ModbusSlave.__init__(self, circuit, Config, scan_freq, scan_enabled, hw_dict, uart_address,
+                             major_group, device_model, dev_id)
         self.circuit = "UART_" + str(uart_address) + "_" + str(circuit)
         self.port = port
         self.baud_rate = baud_rate
@@ -406,7 +296,7 @@ class UartNeuron(ModbusNeuron):
     def full(self):
         ret = {'dev': 'extension',
                 'circuit': self.circuit,
-                'model': self.device_name,
+                'model': self.device_model,
                 'uart_circuit': self.neuron_uart_circuit,
                 'uart_port': self.port,
                 'glob_dev_id': self.dev_id,
@@ -418,13 +308,13 @@ class UartNeuron(ModbusNeuron):
         return ret
 
 
-class TcpNeuron(ModbusNeuron):
+class TcpModbusSlave(ModbusSlave):
 
-    def __init__(self, circuit, Config, modbus_server, modbus_port, scan_freq, scan_enabled, hw_dict, 
-                 modbus_address=1, major_group=1, device_name='unspecified', direct_access=False, dev_id=0):
-        ModbusNeuron.__init__(self,circuit, Config, scan_freq, scan_enabled, hw_dict, modbus_address,
-                              major_group, device_name, direct_access, dev_id)
-        self.circuit = circuit; #"EXT_" + str(modbus_address)
+    def __init__(self, circuit, Config, modbus_server, modbus_port, scan_freq, scan_enabled, hw_dict,
+                 modbus_address=1, major_group=1, device_model='unspecified', dev_id=0):
+        ModbusSlave.__init__(self, circuit, Config, scan_freq, scan_enabled, hw_dict, modbus_address,
+                             major_group, device_model, dev_id)
+        self.circuit = circuit
         self.modbus_server = modbus_server
         self.modbus_port = modbus_port
 
@@ -439,7 +329,7 @@ class TcpNeuron(ModbusNeuron):
     def full(self):
         ret = {'dev': 'extension',
                 'circuit': self.circuit,
-                'model': self.device_name,
+                'model': self.device_model,
                 'modbus_server': self.modbus_server,
                 'modbus_port': self.modbus_port,
                 'glob_dev_id': self.dev_id,
@@ -463,16 +353,16 @@ class Proxy(object):
     def fullcache(self):
         return self.result
 
-class UartBoard(object):
-    def __init__(self, Config, circuit, modbus_address, neuron, versions, direct_access=False, major_group=1, dev_id=0):
+
+class Board(object):
+    def __init__(self, Config, circuit, modbus_address, neuron: ModbusSlave, versions, major_group=1, dev_id=0):
         self.alias = ""
         self.devtype = BOARD
         self.dev_id = dev_id
         self.Config = Config
         self.circuit = circuit
-        self.direct_access = direct_access
         self.legacy_mode = not (Config.getbooldef('MAIN','use_experimental_api', False))
-        self.neuron = neuron
+        self.neuron: ModbusSlave = neuron
         self.major_group = major_group
         self.modbus_address = modbus_address
         self.sw = versions[0]
@@ -494,7 +384,7 @@ class UartBoard(object):
         return await self.full()
 
     async def initialise_cache(self, cache_definition):
-        if cache_definition and (self.neuron.device_name == cache_definition['type']):
+        if cache_definition and (self.neuron.device_model == cache_definition['type']):
             if 'modbus_register_blocks' in cache_definition:
                 if self.neuron.modbus_cache_map == None:
                     self.neuron.modbus_cache_map = ModbusCacheMap(cache_definition['modbus_register_blocks'], self.neuron)
@@ -667,11 +557,11 @@ class UartBoard(object):
             Devices.register_device(REGISTER, _reg)
             counter+=1
 
-    def parse_feature_uart(self, max_count, m_feature, board_id):
+    def parse_feature_uart(self, max_count: int, m_feature: dict, board_id):
         counter = 0
         while counter < max_count:
             board_val_reg = m_feature['conf_reg']
-            address_reg = m_feature['address_reg']
+            address_reg = int(m_feature.get('address_reg', -1))
             _uart = Uart("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, dev_id=self.dev_id,
                          major_group=0, parity_modes=m_feature['parity_modes'], speed_modes=m_feature['speed_modes'],
                          stopb_modes=m_feature['stopb_modes'], address_reg=address_reg, legacy_mode=self.legacy_mode)
@@ -739,7 +629,7 @@ class UartBoard(object):
             self.parse_feature_ai(max_count, m_feature, board_id)
         elif m_feature['type'] == 'AI18':
             self.parse_feature_ai(max_count, m_feature, board_id)
-        elif m_feature['type'] == 'REGISTER' and self.direct_access:
+        elif m_feature['type'] == 'REGISTER':
             self.parse_feature_register(max_count, m_feature, board_id)
         elif m_feature['type'] == 'UART':
             self.parse_feature_uart(max_count, m_feature, board_id)
@@ -748,266 +638,22 @@ class UartBoard(object):
         elif m_feature['type'] == 'EXT_CONFIG':
             self.parse_feature_ext_config(m_feature, board_id)
         else:
-            print("Unknown feature: " + str(m_feature) + " at board id: " + str(board_id))
+            logging.error("Unknown feature: " + str(m_feature) + " at board id: " + str(board_id))
 
     async def parse_definition(self, hw_dict):
         self.volt_refx = 33000
         self.volt_ref = 3.3
         for defin in hw_dict.definitions:
-            if defin and (self.neuron.device_name == defin['type']):
+            if defin and (self.neuron.device_model == defin['type']):
                 await self.initialise_cache(defin);
                 for m_feature in defin['modbus_features']:
                     self.parse_feature(m_feature)
-
-    def get(self):
-        return self.full()
-
-
-class Board(object):
-    def __init__(self, Config, circuit, neuron, versions, major_group=1, dev_id=0, direct_access=False):
-        self.alias = ""
-        self.devtype = BOARD
-        self.dev_id = dev_id
-        self.Config = Config
-        self.circuit = circuit
-        self.direct_access = direct_access
-        self.legacy_mode = not (Config.getbooldef('MAIN','use_experimental_api', False))
-        self.modbus_address = 0
-        self.sw = versions[0]
-        self.neuron = neuron
-        self.major_group = major_group
-        self.ndi = (versions[1] & 0xff00) >> 8
-        self.ndo = (versions[1] & 0x00ff)
-        self.nai = (versions[2] & 0xff00) >> 8
-        self.nao = (versions[2] & 0x00f0) >> 4
-        self.nuart = (versions[2] & 0x000f)
-        self.hw = (versions[3] & 0xff00) >> 8
-        self.hwv = (versions[3] & 0x00ff)
-        self.serial = versions[5] + (versions[6] << 16)
-        self.nai1 = self.nai if self.hw != 0 else 1  # full featured AI (with switched V/A)
-        self.nai2 = 0 if self.hw != 0 else 1  # Voltage only AI
-
-    async def set(self, alias=None):
-        if not alias is None:
-            if Devices.add_alias(alias, self, file_update=True):
-                self.alias = alias
-        return self.full()
-
-    async def initialise_cache(self, cache_definition):
-        if 'modbus_register_blocks' in cache_definition:
-            if self.neuron.modbus_cache_map == None:
-                self.neuron.modbus_cache_map = ModbusCacheMap(cache_definition['modbus_register_blocks'], self.neuron)
-                await self.neuron.modbus_cache_map.do_scan(initial=True)
-                await self.neuron.modbus_cache_map.sem.acquire()
-                self.neuron.modbus_cache_map.sem.release()
-                if (self.hw == 0):
-                    self.volt_refx = (3.3 * (1 + self.neuron.modbus_cache_map.get_register(1, 1009)[0]))
-                    self.volt_ref = (3.3 * (1 + self.neuron.modbus_cache_map.get_register(1, 1009)[0])) / self.neuron.modbus_cache_map.get_register(1, 5)[0]
-            else:
-                await self.neuron.modbus_cache_map.sem.acquire()
-                self.neuron.modbus_cache_map.sem.release()
-        else:
-            raise Exception("HW Definition %s requires Modbus register blocks to be specified" % cache_definition['type'])
-
-    def parse_feature_di(self, max_count, m_feature, board_id):
-        counter = 0
-        while counter < max_count:
-            board_val_reg = m_feature['val_reg']
-            board_counter_reg = m_feature['counter_reg']
-            board_deboun_reg = m_feature['deboun_reg']
-            if 'ds_modes' in m_feature and 'direct_reg' in m_feature and 'polar_reg' in m_feature and 'toggle_reg' in m_feature:
-                _inp = Input("%s_%02d" % (self.circuit, len(Devices.by_int(INPUT, major_group=m_feature['major_group'])) + 1), self, board_val_reg, 0x1 << (counter % 16),
-                             regdebounce=board_deboun_reg + counter, major_group=m_feature['major_group'], regcounter=board_counter_reg + (2 * counter), modes=m_feature['modes'],
-                             dev_id=self.dev_id, ds_modes=m_feature['ds_modes'], regmode=m_feature['direct_reg'], regtoggle=m_feature['toggle_reg'],
-                             regpolarity=m_feature['polar_reg'], legacy_mode=self.legacy_mode)
-            else:
-                _inp = Input("%s_%02d" % (self.circuit, len(Devices.by_int(INPUT, major_group=m_feature['major_group'])) + 1), self, board_val_reg, 0x1 << (counter % 16),
-                             regdebounce=board_deboun_reg + counter, major_group=m_feature['major_group'], regcounter=board_counter_reg + (2 * counter), modes=m_feature['modes'],
-                             dev_id=self.dev_id, legacy_mode=self.legacy_mode)
-            if board_val_reg in self.neuron.datadeps:
-                self.neuron.datadeps[board_val_reg]+=[_inp]
-            else:
-                self.neuron.datadeps[board_val_reg] = [_inp]
-            if (board_counter_reg + (2 * counter)) in self.neuron.datadeps:
-                self.neuron.datadeps[board_counter_reg + (2 * counter)]+=[_inp]
-            else:
-                self.neuron.datadeps[board_counter_reg + (2 * counter)] = [_inp]
-            Devices.register_device(INPUT, _inp)
-            counter+=1
-
-    def parse_feature_ro(self, max_count, m_feature, board_id):
-        counter = 0
-        while counter < max_count:
-            board_val_reg = m_feature['val_reg']
-            if m_feature['type'] == 'DO' and 'pwm_reg' in m_feature and'pwm_ps_reg'in  m_feature and 'pwm_c_reg' in m_feature:
-                if not self.legacy_mode:
-                    _r = Relay("%s_%02d" % (self.circuit, len(Devices.by_int(RELAY, major_group=m_feature['major_group'])) + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
-                               dev_id=self.dev_id, major_group=m_feature['major_group'], pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
-                               pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
-                else:
-                    _r = Relay("%s_%02d" % (self.circuit, len(Devices.by_int(RELAY, major_group=m_feature['major_group'])) + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
-                               dev_id=self.dev_id, major_group=m_feature['major_group'], pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
-                               pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
-            else:
-                    _r = Relay("%s_%02d" % (self.circuit, len(Devices.by_int(RELAY, major_group=m_feature['major_group'])) + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
-                               dev_id=self.dev_id, major_group=m_feature['major_group'], legacy_mode=self.legacy_mode)
-            if (board_val_reg) in self.neuron.datadeps:
-                self.neuron.datadeps[board_val_reg]+=[_r]
-            else:
-                self.neuron.datadeps[board_val_reg] = [_r]
-            Devices.register_device(RELAY, _r)
-            counter+=1
-
-    def parse_feature_led(self, max_count, m_feature, board_id):
-        counter = 0
-        while counter < max_count:
-            board_val_reg = m_feature['val_reg']
-            _led = ULED("%s_%02d" % (self.circuit, len(Devices.by_int(LED, major_group=m_feature['major_group'])) + 1), self, counter, board_val_reg, 0x1 << (counter % 16), m_feature['val_coil'] + counter,
-                        dev_id=self.dev_id, major_group=m_feature['major_group'], legacy_mode=self.legacy_mode)
-            if board_val_reg in self.neuron.datadeps:
-                self.neuron.datadeps[board_val_reg]+=[_led]
-            else:
-                self.neuron.datadeps[board_val_reg] = [_led]
-            Devices.register_device(LED, _led)
-            counter+=1
-
-    def parse_feature_wd(self, max_count, m_feature, board_id):
-        counter = 0
-        while counter < max_count:
-            board_val_reg = m_feature['val_reg']
-            board_timeout_reg = m_feature['timeout_reg']
-            _wd = Watchdog("%s_%02d" % (self.circuit, len(Devices.by_int(WATCHDOG, major_group=m_feature['major_group'])) + 1), self, counter, board_val_reg + counter, board_timeout_reg + counter,
-                           dev_id=self.dev_id, major_group=m_feature['major_group'], nv_save_coil=m_feature['nv_sav_coil'], reset_coil=m_feature['reset_coil'],
-                           legacy_mode=self.legacy_mode)
-            if (board_val_reg + counter) in self.neuron.datadeps:
-                self.neuron.datadeps[board_val_reg + counter]+=[_wd]
-            else:
-                self.neuron.datadeps[board_val_reg + counter] = [_wd]
-            Devices.register_device(WATCHDOG, _wd)
-            counter+=1
-
-    def parse_feature_ao(self, max_count, m_feature, board_id):
-        counter = 0
-        while counter < max_count:
-            board_val_reg = m_feature['val_reg']
-            if 'cal_reg' in m_feature:
-                res_val_reg = m_feature['res_val_reg']
-                _ao = AnalogOutput("%s_%02d" % (self.circuit, len(Devices.by_int(AO, major_group=m_feature['major_group'])) + 1), self, board_val_reg + counter, regcal=m_feature['cal_reg'],
-                                   regmode=m_feature['mode_reg'], reg_res=m_feature['res_val_reg'], modes=m_feature['modes'],
-                                   dev_id=self.dev_id, major_group=m_feature['major_group'], legacy_mode=self.legacy_mode)
-                if (res_val_reg + counter) in self.neuron.datadeps:
-                    self.neuron.datadeps[res_val_reg + counter]+=[_ao]
-                else:
-                    self.neuron.datadeps[res_val_reg + counter] = [_ao]
-            else:
-                _ao = AnalogOutput("%s_%02d" % (self.circuit, len(Devices.by_int(AO, major_group=m_feature['major_group'])) + 1), self, board_val_reg + counter, dev_id=self.dev_id,
-                                   major_group=m_feature['major_group'], legacy_mode=self.legacy_mode)
-            if (board_val_reg + counter) in self.neuron.datadeps:
-                self.neuron.datadeps[board_val_reg + counter]+=[_ao]
-            else:
-                self.neuron.datadeps[board_val_reg + counter] = [_ao]
-            Devices.register_device(AO, _ao)
-            counter+=1
-
-    def parse_feature_ai(self, max_count, m_feature, board_id):
-        counter = 0
-        while counter < max_count:
-            board_val_reg = m_feature['val_reg']
-            tolerances = m_feature['tolerances']
-            if 'cal_reg' in m_feature:
-                _ai = AnalogInput("%s_%02d" % (self.circuit, len(Devices.by_int(AI, major_group=m_feature['major_group'])) + 1), self, board_val_reg + counter, regcal=m_feature['cal_reg'], regmode=m_feature['mode_reg'],
-                                  dev_id=self.dev_id, major_group=m_feature['major_group'], tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
-                if (board_val_reg + counter) in self.neuron.datadeps:
-                    self.neuron.datadeps[board_val_reg + counter] += [_ai]
-                else:
-                    self.neuron.datadeps[board_val_reg + counter] = [_ai]
-            else:
-                _ai = AnalogInput("%s_%02d" % (self.circuit, len(Devices.by_int(AI, major_group=m_feature['major_group'])) + 1), self, board_val_reg + counter * 2, regmode=m_feature['mode_reg'] + counter,
-                                 dev_id=self.dev_id, major_group=m_feature['major_group'], tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
-                if (board_val_reg + (counter * 2)) in self.neuron.datadeps:
-                    self.neuron.datadeps[board_val_reg + (counter * 2)] += [_ai]
-                else:
-                    self.neuron.datadeps[board_val_reg + (counter * 2)] = [_ai]
-            Devices.register_device(AI, _ai)
-            counter+=1
-
-    def parse_feature_register(self, max_count, m_feature, board_id):
-        counter = 0
-        while counter < max_count:
-            board_val_reg = m_feature['start_reg']
-            if 'reg_type' in m_feature and m_feature['reg_type'] == 'input':
-                _reg = Register("%s_%d_inp" % (self.circuit, board_val_reg + counter), self, counter, board_val_reg + counter, reg_type='input', dev_id=self.dev_id,
-                                major_group=m_feature['major_group'], legacy_mode=self.legacy_mode)
-            else:
-                _reg = Register("%s_%d" % (self.circuit, board_val_reg + counter), self, counter, board_val_reg + counter, dev_id=self.dev_id,
-                                major_group=m_feature['major_group'], legacy_mode=self.legacy_mode)
-            if board_val_reg and ((board_val_reg + counter) in self.neuron.datadeps):
-                self.neuron.datadeps[board_val_reg + counter] += [_reg]
-            elif board_val_reg:
-                self.neuron.datadeps[board_val_reg + counter] = [_reg]
-            Devices.register_device(REGISTER, _reg)
-            counter+=1
-
-    def parse_feature_uart(self, max_count, m_feature, board_id):
-        counter = 0
-        while counter < max_count:
-            board_val_reg = m_feature['conf_reg']
-            _uart = Uart("%s_%02d" % (self.circuit, len(Devices.by_int(UART, major_group=m_feature['major_group'])) + 1), self, board_val_reg + counter, dev_id=self.dev_id,
-                         major_group=m_feature['major_group'], parity_modes=m_feature['parity_modes'], speed_modes=m_feature['speed_modes'],
-                         stopb_modes=m_feature['stopb_modes'], legacy_mode=self.legacy_mode)
-            Devices.register_device(UART, _uart)
-            counter+=1
-
-    def parse_feature_light_channel(self, max_count, m_feature, board_id):
-        counter = 0
-        while counter < max_count:
-            read_reg = m_feature['read_reg'] + (counter * 3)
-            write_reg = m_feature['write_reg'] + (counter * 2)
-            status_reg = m_feature['status_reg']
-            _light_c = LightChannel("%s_%02d" % (self.circuit, len(Devices.by_int(LIGHT_CHANNEL, major_group=m_feature['major_group'])) + 1),
-                                  self, counter, status_reg, 0x1 << counter, read_reg + 1, read_reg, write_reg, read_reg + 2, write_reg + 1, dev_id=self.dev_id,
-                                  major_group=m_feature['major_group'], legacy_mode=self.legacy_mode)
-            Devices.register_device(LIGHT_CHANNEL, _light_c)
-            counter+=1
-
-    def parse_feature(self, m_feature, board_id):
-        max_count = m_feature['count']
-        if m_feature['type'] == 'DI' and m_feature['major_group'] == board_id:
-            self.parse_feature_di(max_count, m_feature, board_id)
-        elif (m_feature['type'] == 'RO' or m_feature['type'] == 'DO') and m_feature['major_group'] == board_id:
-            self.parse_feature_ro(max_count, m_feature, board_id)
-        elif m_feature['type'] == 'LED' and m_feature['major_group'] == board_id:
-            self.parse_feature_led(max_count, m_feature, board_id)
-        elif m_feature['type'] == 'WD' and m_feature['major_group'] == board_id:
-            self.parse_feature_wd(max_count, m_feature, board_id)
-        elif m_feature['type'] == 'AO' and m_feature['major_group'] == board_id:
-            self.parse_feature_ao(max_count, m_feature, board_id)
-        elif m_feature['type'] == 'AI' and m_feature['major_group'] == board_id:
-            self.parse_feature_ai(max_count, m_feature, board_id)
-        elif m_feature['type'] == 'REGISTER' and m_feature['major_group'] == board_id and self.direct_access:
-            self.parse_feature_register(max_count, m_feature, board_id)
-        elif m_feature['type'] == 'UART' and m_feature['major_group'] == board_id:
-            self.parse_feature_uart(max_count, m_feature, board_id)
-        elif m_feature['type'] == 'LIGHT_CHANNEL' and m_feature['major_group'] == board_id:
-            self.parse_feature_light
-
-    async def parse_definition(self, hw_dict, board_id):
-        self.volt_refx = 33000
-        self.volt_ref = 3.3
-        if 'model' not in config.up_globals:
-            logger.info("NO NEURON DATA DETECTED, EXITING")
-            logger.info("PLEASE USE A FRESH EVOK IMAGE, OR ENABLE I2C, I2C-DEV AND THE EEPROM OVERLAY")
-            # exit(-1)
-        for defin in hw_dict.definitions:
-            if defin and defin['type'] in config.up_globals['model']:
-                await self.initialise_cache(defin)
-                for m_feature in defin['modbus_features']:
-                    self.parse_feature(m_feature, board_id)
                 return
-        logging.error(f"Not found type '{config.up_globals['model']}' in loaded hw-definitions.")
+        logging.error(f"Not found type '{self.neuron.device_model}' in loaded hw-definitions.")
 
     def get(self):
         return self.full()
+
 
 class Relay(object):
     pending_id = 0
@@ -1962,8 +1608,7 @@ class Input():
         return self.value
 
 class Uart():
-    def __init__(self, circuit, arm, reg, dev_id=0, parity_modes=['None'], speed_modes=['19200bps'], stopb_modes = ['One'],
-                 address_reg=-1, major_group=0, legacy_mode=True):
+    def __init__(self, circuit, arm, reg, dev_id=0, parity_modes=['None'], speed_modes=['19200bps'], stopb_modes = ['One'], address_reg=-1, major_group=0, legacy_mode=True):
         self.alias = ""
         self.devtype = UART
         self.dev_id = dev_id
