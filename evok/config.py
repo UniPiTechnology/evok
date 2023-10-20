@@ -212,11 +212,11 @@ def create_devices(evok_config: EvokConfig, hw_config: dict, hw_dict):
                     modbus_address = device_data.get("slave-id", 1)
                     scanfreq = device_data.get("scan_frequency", 1)
                     scan_enabled = device_data.get("scan_enabled", True)
-                    circuit = device_data.get("global_id", 2)
+                    circuit = device_name
                     device_model = device_data["model"]
                     neuron = TcpModbusSlave(circuit, evok_config, modbus_server, modbus_port, scanfreq, scan_enabled,
                                             hw_dict, device_model=device_model, modbus_address=modbus_address,
-                                            dev_id=dev_counter)
+                                            dev_id=dev_counter, major_group=device_name)
                     Devices.register_device(MODBUS_SLAVE, neuron)
                 else:
                     logger.error(f"Unknown device type: '{device_type}'! skipping...")
