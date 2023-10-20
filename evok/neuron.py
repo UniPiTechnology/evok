@@ -917,148 +917,6 @@ class ULED(object):
     def get(self):
         return self.full()
 
-class LightDevice(object):
-    def __init__(self, circuit, arm, bus, dev_id=0):
-        self.alias = ""
-        self.devtype = LIGHT_DEVICE
-        self.dev_id = dev_id
-
-    def full(self):
-        ret = {'dev': 'light_channel', 'circuit': self.circuit, 'glob_dev_id': self.dev_id}
-        if self.alias != '':
-            ret['alias'] = self.alias
-        return ret
-
-    def get(self):
-        return self.full()
-
-class LightChannel(object):
-    def __init__(self, circuit, arm, bus_number, reg_status, status_mask, reg_transmit, reg_receive, reg_receive_counter, reg_config_transmit, reg_config_receive, dev_id=0, major_group=0, legacy_mode=True):
-        self.alias = ""
-        self.devtype = LIGHT_CHANNEL
-        self.dev_id = dev_id
-        self.circuit = circuit
-        self.arm = arm
-        self.major_group = major_group
-        self.legacy_mode = legacy_mode
-        self.reg_status = reg_status
-        self.bus_number = bus_number
-        self.status_mask = status_mask
-        self.reg_transmit = reg_transmit
-        self.reg_receive = reg_receive
-        self.reg_receive_counter = reg_receive_counter
-        self.reg_config_transmit = reg_config_transmit
-        self.reg_config_receive = reg_config_receive
-        self.broadcast_commands = ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off",
-                                   "turn_on_and_step_up", "DAPC", "reset", "identify_device", "DTR0", "DTR1", "DTR2"]
-        self.group_commands = ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off",
-                               "turn_on_and_step_up", "DAPC", "reset", "identify_device"]
-        self.scan_types = ["assigned", "unassigned"]
-        self.light_driver = SyncUnipiDALIDriver(self.bus_number)
-        #self.light_driver.logger = logger
-        #self.light_driver.debug = True
-        self.light_bus = Bus(self.circuit, self.light_driver)
-
-    def full(self):
-        ret = {'dev': 'light_channel', 'circuit': self.circuit, 'glob_dev_id': self.dev_id, 'broadcast_commands': self.broadcast_commands,
-               'group_commands': self.group_commands, 'scan_types': self.scan_types}
-        if self.alias != '':
-            ret['alias'] = self.alias
-        return ret
-
-
-    def get(self):
-        return self.full()
-
-    def simple(self):
-        return {'dev': 'light_channel', 'circuit': self.circuit}
-
-    async def set(self, broadcast_command=None, broadcast_argument=None, group_command=None, group_address=None, group_argument=None, scan=None, alias=None):
-        """ Sets new on/off status. Disable pending timeouts
-        """
-        if alias is not None:
-            if Devices.add_alias(alias, self):
-                self.alias = alias
-        if scan is not None and scan is self.scan_types:
-            try:
-                self.light_bus.assign_short_addresses()
-            except Exception as E:
-                logger.exception(str(E))
-        elif broadcast_command is not None:
-            if broadcast_command == "recall_max_level":
-                command = dali.gear.general.RecallMaxLevel(Broadcast())
-            elif broadcast_command == "recall_min_level":
-                command = dali.gear.general.RecallMinLevel(Broadcast())
-            elif broadcast_command == "off":
-                command = dali.gear.general.Off(Broadcast())
-            elif broadcast_command == "up":
-                command = dali.gear.general.Up(Broadcast())
-            elif broadcast_command == "down":
-                command = dali.gear.general.Down(Broadcast())
-            elif broadcast_command == "step_up":
-                command = dali.gear.general.StepUp(Broadcast())
-            elif broadcast_command == "step_down":
-                command = dali.gear.general.StepDown(Broadcast())
-            elif broadcast_command == "step_down_and_off":
-                command = dali.gear.general.StepDownAndOff(Broadcast())
-            elif broadcast_command == "turn_on_and_step_up":
-                command = dali.gear.general.OnAndStepUp(Broadcast())
-            elif broadcast_command == "DAPC" and broadcast_argument is not None:
-                if broadcast_argument == "MASK" or broadcast_argument == "OFF":
-                    command = dali.gear.general.DAPC(Broadcast(), broadcast_argument)
-                else:
-                    command = dali.gear.general.DAPC(Broadcast(), int(broadcast_argument))
-            elif broadcast_command == "reset":
-                command = dali.gear.general.Reset(Broadcast())
-            elif broadcast_command == "identify_device":
-                command = dali.gear.general.IdentifyDevice(Broadcast())
-            elif broadcast_command == "DTR0":
-                command = dali.gear.general.DTR0(int(broadcast_argument))
-            elif broadcast_command == "DTR1":
-                command = dali.gear.general.DTR1(int(broadcast_argument))
-            elif broadcast_command == "DTR2":
-                command = dali.gear.general.DTR2(int(broadcast_argument))
-            else:
-                raise Exception("Invalid lighting broadcast command: %d" % broadcast_command)
-            self.light_driver.logger = logger
-            self.light_driver.debug = True
-            print('Response: {}'.format(self.light_driver.send(command)))
-        elif group_command is not None:
-            if group_command == "recall_max_level":
-                command = dali.gear.general.RecallMaxLevel(Group(group_address))
-            elif group_command == "recall_min_level":
-                command = dali.gear.general.RecallMinLevel(Group(group_address))
-            elif group_command == "off":
-                command = dali.gear.general.Off(Group(group_address))
-            elif group_command == "up":
-                command = dali.gear.general.Up(Group(group_address))
-            elif group_command == "down":
-                command = dali.gear.general.Down(Group(group_address))
-            elif group_command == "step_up":
-                command = dali.gear.general.StepUp(Group(group_address))
-            elif group_command == "step_down":
-                command = dali.gear.general.StepDown(Group(group_address))
-            elif group_command == "step_down_and_off":
-                command = dali.gear.general.StepDownAndOff(Group(group_address))
-            elif group_command == "turn_on_and_step_up":
-                command = dali.gear.general.OnAndStepUp(Group(group_address))
-            elif group_command == "DAPC" and group_argument is not None:
-                if group_argument == "MASK" or group_argument == "OFF":
-                    command = dali.gear.general.DAPC(Group(group_address), group_argument)
-                else:
-                    command = dali.gear.general.DAPC(Group(group_address), int(group_argument))
-            elif group_command == "reset":
-                command = dali.gear.general.Reset(Group(group_address))
-            elif group_command == "identify_device":
-                command = dali.gear.general.IdentifyDevice(Group(group_address))
-            else:
-                raise Exception("Invalid lighting broadcast command (and/or required argument was not provided): %d" % group_command)
-            self.light_driver.logger = logger
-            self.light_driver.debug = True
-            print('Response: {}'.format(self.light_driver.send(command)))
-        return self.full()
-
-
 
 class Watchdog(object):
     def __init__(self, circuit, arm, post, reg, timeout_reg, nv_save_coil=-1, reset_coil=-1, wd_reset_ro_coil=-1, dev_id=0, major_group=0, legacy_mode=True):
@@ -1084,7 +942,7 @@ class Watchdog(object):
         ret = {'dev': 'wd',
                'circuit': self.circuit,
                'value': self.value,
-               'timeout': self.timeout[0],
+               'timeout': self.timeout,
                'was_wd_reset': self.was_wd_boot_value,
                'nv_save' :self.nvsavvalue,
                'glob_dev_id': self.dev_id}
@@ -1114,7 +972,7 @@ class Watchdog(object):
     @property
     def timeout(self):
         try:
-            if self.timeoutvalue(): return self.timeoutvalue()
+            if self.timeoutvalue(): return self.timeoutvalue()[0]
         except:
             pass
         return 0
