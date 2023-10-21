@@ -187,7 +187,7 @@ def create_devices(evok_config: EvokConfig, hw_config: dict, hw_dict):
                     unipig = Unipig(circuit, evok_config, hw_dict, device_model)
                     Devices.register_device(MODBUS_SLAVE, unipig)
                 elif device_type == 'MODBUS_SLAVE':
-                    from neuron import TcpModbusSlave
+                    from modbus_slave import TcpModbusSlave
                     dev_counter += 1
                     modbus_server = device_data.get("modbus_server", "127.0.0.1")
                     modbus_port = device_data.get("modbus_port", 502)

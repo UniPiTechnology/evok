@@ -2059,10 +2059,10 @@ def main():
     for device in Devices.by_int(ADCHIP):
         device.switch_to_async(mainLoop)
 
-    for neuron in Devices.by_int(MODBUS_SLAVE):
-        neuron.switch_to_async(mainLoop, alias_dict)
-        if neuron.scan_enabled:
-            neuron.start_scanning()
+    for modbus_slave in Devices.by_int(MODBUS_SLAVE):
+        modbus_slave.switch_to_async(mainLoop, alias_dict)
+        if modbus_slave.scan_enabled:
+            modbus_slave.start_scanning()
 
     def sig_handler(sig, frame):
         if sig in (signal.SIGTERM, signal.SIGINT):
