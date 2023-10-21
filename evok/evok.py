@@ -1909,8 +1909,6 @@ def main():
     define("modbus_port", default=-1, help="Modbus/TCP listening port, 0 disables modbus", type=int)
     tornado.options.parse_command_line()
 
-    config.read_config()
-
     # tornado.httpclient.AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
     log_file = Config.getstringdef("MAIN", "log_file", "./evok.log")
     log_level = Config.getstringdef("MAIN", "log_level", "INFO").upper()

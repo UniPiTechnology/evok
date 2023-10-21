@@ -14,26 +14,8 @@ try:
 except:
     pass
 
-up_globals = {
-    'version': "UniPi 1.0",
-    'devices': {
-        'ai': {
-            '1': 5.564920867,
-            '2': 5.564920867,
-        }
-    },
-    'version1': None,
-    'version2': None,
-}
 
-
-def read_config():
-    global up_globals
-    up_globals['model'] = 'S103'
-    up_globals['serial'] = 2535
-
-
-class HWDict():
+class HWDict:
     def __init__(self, dir_paths: List[str] = None, paths: List[str] = None):
         """
         :param dir_paths: path to dir for load
@@ -50,14 +32,14 @@ class HWDict():
             raise ValueError(f"HWDict: no scope!")
         for file_path in scope:
             if file_path.endswith(".yaml"):
-                try:
-                    with open(file_path, 'r') as yfile:
-                        self.definitions += [yaml.load(yfile, Loader=yaml.SafeLoader)]
-                        logger.info("YAML Definition loaded: %s, type: %s, definition count %d", file_path,
-                                    len(self.definitions[len(self.definitions) - 1]), len(self.definitions) - 1)
-                except Exception as E:
-                    raise E
-                    pass
+                with open(file_path, 'r') as yfile:
+                    ydata = yaml.load(yfile, Loader=yaml.SafeLoader)
+                    if ydata is None:
+                        logger.warning(f"Empty Definition file '{file_path}'! skipping...")
+                        continue
+                    self.definitions.append(ydata)
+                    logger.info(f"YAML Definition loaded: {file_path}, type: {len(self.definitions[-1])}, "
+                                f"definition count {len(self.definitions) - 1}")
 
 
 class OWBusDevice():
@@ -212,11 +194,12 @@ def create_devices(evok_config: EvokConfig, hw_config: dict, hw_dict):
                     modbus_address = device_data.get("slave-id", 1)
                     scanfreq = device_data.get("scan_frequency", 1)
                     scan_enabled = device_data.get("scan_enabled", True)
-                    circuit = device_name
                     device_model = device_data["model"]
+                    circuit = device_name
+                    major_group = device_name
                     neuron = TcpModbusSlave(circuit, evok_config, modbus_server, modbus_port, scanfreq, scan_enabled,
                                             hw_dict, device_model=device_model, modbus_address=modbus_address,
-                                            dev_id=dev_counter, major_group=device_name)
+                                            dev_id=dev_counter, major_group=major_group)
                     Devices.register_device(MODBUS_SLAVE, neuron)
                 else:
                     logger.error(f"Unknown device type: '{device_type}'! skipping...")
