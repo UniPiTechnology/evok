@@ -133,42 +133,29 @@ class EvokConfig:
         return ret
 
     def configtojson(self):
-        return dict(
-            (section,
-             dict(
-                 (option,
-                  self.get(section, option)
-                  ) for option in self.options(section))
-             ) for section in self.sections())
+        return self.main  # TODO: zkontrolovat!!
 
-    def getintdef(self, section, key, default):
+    def getintdef(self, key, default):
         try:
-            return self.getint(section, key)
+            return int(self.main[key])
         except:
             return default
 
-    def getfloatdef(self, section, key, default):
+    def getfloatdef(self, key, default):
         try:
-            return self.getfloat(section, key)
+            return float(self.main[key])
         except:
             return default
 
-    def getbooldef(self, section, key, default):
-        true_booleans = ['yes', 'true', '1']
-        false_booleans = ['no', 'false', '0']
+    def getbooldef(self, key, default):
         try:
-            val = self.get(section, key).lower()
-            if val in true_booleans:
-                return True
-            if val in false_booleans:
-                return False
-            return default
+            return bool(self.main[key])
         except:
             return default
 
-    def getstringdef(self, section, key, default):
+    def getstringdef(self, key, default):
         try:
-            return self.get(section, key)
+            return str(self.main[key])
         except:
             return default
 

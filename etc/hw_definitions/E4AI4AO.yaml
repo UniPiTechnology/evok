@@ -61,9 +61,9 @@ modbus_features:
   - type        : WD
     count       : 1
     val_reg     : 14
-    timeout_reg : 1108
-    nv_sav_coil : 1103
-    reset_coil  : 1102
+    timeout_reg : 1008
+    nv_sav_coil : 1003
+    reset_coil  : 1002
   - type        : UART
     parity_modes :
       - None
