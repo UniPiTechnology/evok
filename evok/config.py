@@ -234,8 +234,8 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                 elif device_type == 'UNIPIG':
                     dev_counter += 1
                     device_model = device_data["model"]
-                    unipig = Unipig(circuit, evok_config, hw_dict, device_model)
-                    Devices.register_device(MODBUS_SLAVE, unipig)
+                    _unipig = Unipig(circuit, evok_config, hw_dict, device_model=device_model, dev_id=dev_counter)
+                    Devices.register_device(UNIPIG, _unipig)
                 elif device_type == 'MODBUS_SLAVE':
                     dev_counter += 1
                     modbus_server = device_data.get("modbus_server", "127.0.0.1")

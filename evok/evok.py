@@ -2058,6 +2058,10 @@ def main():
         if modbus_slave.scan_enabled:
             modbus_slave.start_scanning()
 
+    for device in Devices.by_int(UNIPIG):
+        device.switch_to_async(mainLoop, alias_dict)
+
+
     def sig_handler(sig, frame):
         if sig in (signal.SIGTERM, signal.SIGINT):
             tornado.ioloop.IOLoop.instance().add_callback_from_signal(shutdown)

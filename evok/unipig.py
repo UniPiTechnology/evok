@@ -11,7 +11,7 @@ from math import isnan, floor
 
 #from tornado import gen
 from tornado.ioloop import IOLoop
-import pigpio
+#import pigpio
 from devices import *
 import config
 from log import *
@@ -21,22 +21,23 @@ class Unipig:
     """
     Class for unipig control
     """
-    def __init__(self, circuit, Config, hw_dict, device_model='unspecified'):
+    def __init__(self, circuit, evok_conf, hw_dict, device_model='unspecified' , dev_id=0):
         self.alias = ""
         self.circuit = circuit
+        self.dev_id = dev_id
         self.devtype = MODBUS_SLAVE
         self.modbus_cache_map = None
         self.datadeps = {}
         self.boards = list()
         self.hw_dict = hw_dict
         self.device_model = device_model
-        self.Config = Config
+        self.evok_conf = evok_conf
         self.do_scanning = False
         self.is_scanning = False
         self.scanning_error_triggered = False
         self.hw_board_dict = {}
         self.versions = []
-        self.logfile = Config.getstringdef("log_file", "/var/log/evok.log")
+        self.logfile = evok_conf.getstringdef("log_file", "/var/log/evok.log")
 
     def get(self):
         return self.full()
@@ -45,15 +46,13 @@ class Unipig:
         return ""
 
     async def readboards(self, alias_dict):
-        logger.info(f"Reading the Modbus board on Modbus address {self.modbus_address}")
-        await self.client.connect()
         self.boards = list()
         try:
             for defin in self.hw_dict.definitions:
                 if defin and (defin['type'] == self.device_model):
                     self.hw_board_dict = defin
                     break
-            board = Board(self.Config, self.circuit, self)
+            board = Board(self.evok_conf, self.circuit, self)
             await board.parse_definition(self.hw_dict)
             self.boards.append(board)
             await config.add_aliases(alias_dict)
@@ -68,10 +67,10 @@ class Unipig:
 
 
 class Board(object):
-    def __init__(self, Config, circuit, unipig: Unipig):
+    def __init__(self, evok_conf, circuit, unipig: Unipig):
         self.alias = ""
         self.devtype = BOARD
-        self.Config = Config
+        self.evok_conf = evok_conf
         self.circuit = circuit
         self.unipig: Unipig = unipig
 
@@ -81,113 +80,125 @@ class Board(object):
                 self.alias = alias
         return await self.full()
 
-    def parse_feature_ro(self, feature):
+    def parse_feature_ro(self, feature: dict):
         # Relays on MCP
-        mcp = Config.get(section, "mcp")
+        mcp = feature.get("mcp")
         mcp = Devices.by_int(MCP, mcp)
-        pin = Config.getint(section, "pin")
-        r = unipig.Relay(circuit, mcp, pin, dev_id=0)
+        pin = feature.get("pin")
+        circuit = feature.get("circuit")
+        r = Relay(circuit, mcp, pin, dev_id=0)
         Devices.register_device(RELAY, r)
 
-    def parse_feature_ai(self, feature):
-        chip = Config.get(section, "chip")
-        channel = Config.getint(section, "channel")
-        interval = Config.getfloatdef(section, "interval", 0)
-        bits = Config.getintdef(section, "bits", 14)
-        gain = Config.getintdef(section, "gain", 1)
+    def parse_feature_ai(self, feature: dict):
+        chip = feature.get("chip")
+        channel = feature.get("channel")
+        interval = feature.get("interval", 0)
+        bits = feature.get("bits", 14)
+        gain = feature.get("gain", 1)
+        circuit = feature.get("circuit")
         if circuit in ('1', '2'):
-            correction = Config.getfloatdef(section, "correction", up_globals['devices']['ai'][circuit])
+            correction = feature.get("correction")
         else:
-            correction = Config.getfloatdef(section, "correction", 5.564920867)
+            correction = feature.get("correction", 5.564920867)
         mcai = Devices.by_int(ADCHIP, chip)
         try:
-            corr_rom = Config.get(section, "corr_rom")
+            circuit = feature.get("circuit")
+            corr_rom = feature.get("corr_rom")
             eeprom = Devices.by_int(EE, corr_rom)
-            corr_addr = hexint(Config.get(section, "corr_addr"))
-            ai = unipig.AnalogInput(circuit, mcai, channel, bits=bits, gain=gain,
-                                    continuous=False, interval=interval, correction=correction, rom=eeprom,
-                                    corr_addr=corr_addr, dev_id=0)
+            corr_addr = int(feature.get("corr_addr"))
+            ai = AnalogInput(circuit, mcai, channel, bits=bits, gain=gain,
+                                continuous=False, interval=interval, correction=correction, rom=eeprom,
+                                corr_addr=corr_addr, dev_id=0)
         except:
-            ai = unipig.AnalogInput(circuit, mcai, channel, bits=bits, gain=gain,
-                                    continuous=False, interval=interval, correction=correction, dev_id=0)
+            ai = AnalogInput(circuit, mcai, channel, bits=bits, gain=gain,
+                                continuous=False, interval=interval, correction=correction, dev_id=0)
         Devices.register_device(AI, ai)
 
-    def parse_feature_ao(self, feature):
+    def parse_feature_ao(self, feature: dict):
         try:
             # analog output on PCA9685
-            pca = Config.get(section, "pca")
-            channel = Config.getint(section, "channel")
+            pca = feature.get("pca")
+            channel = feature.get("channel")
+            circuit = feature.get("circuit")
             # value = Config.getfloatdef(section, "value", 0)
             driver = Devices.by_int(PCA9685, pca)
-            ao = unipig.AnalogOutputPCA(circuit, driver, channel, dev_id=0)
+            ao = AnalogOutputPCA(circuit, driver, channel, dev_id=0)
         except:
             # analog output (PWM) on GPIO via pigpio daemon
-            gpiobus = Config.get(section, "gpiobus")
+            gpiobus = feature.get("gpiobus")
             bus = (Devices.by_int(GPIOBUS, gpiobus)).bus_driver
-            frequency = Config.getintdef(section, "frequency", 100)
-            value = Config.getfloatdef(section, "value", 0)
-            ao = unipig.AnalogOutputGPIO(bus, circuit, frequency=frequency, value=value, dev_id=0)
+            frequency = feature.get("frequency", 100)
+            value = feature.get("value", 0)
+            circuit = feature.get("circuit")
+            ao = AnalogOutputGPIO(bus, circuit, frequency=frequency, value=value, dev_id=0)
         Devices.register_device(AO, ao)
 
-    def parse_feature_di(self, feature):
+    def parse_feature_di(self, feature: dict):
         # digital inputs on GPIO via pigpio daemon
-        gpiobus = Config.get(section, "gpiobus")
+        gpiobus = feature.get("gpiobus")
         bus = (Devices.by_int(GPIOBUS, gpiobus)).bus_driver
-        pin = Config.getint(section, "pin")
-        debounce = Config.getintdef(section, "debounce", 0)
-        counter_mode = Config.getstringdef(section, "counter_mode", "disabled")
-        inp = unipig.Input(bus, circuit, pin, debounce=debounce, counter_mode=counter_mode, dev_id=0)
+        pin = feature.get("pin")
+        debounce = feature.get("debounce", 0)
+        counter_mode = feature.get("counter_mode", "disabled")
+        circuit = feature.get("circuit")
+        inp = Input(bus, circuit, pin, debounce=debounce, counter_mode=counter_mode, dev_id=0)
         Devices.register_device(INPUT, inp)
 
-    def parse_feature_mcp(self, feature):
+    def parse_feature_mcp(self, feature: dict):
         # MCP on I2c
-        i2cbus = Config.get(section, "i2cbus")
-        address = hexint(Config.get(section, "address"))
+        i2cbus = feature.get("i2cbus")
+        address = int(feature.get("address"))
+        circuit = feature.get("circuit")
         bus = (Devices.by_int(I2CBUS, i2cbus)).bus_driver
         mcp = UnipiMcp(bus, circuit, address=address, dev_id=0)
         Devices.register_device(MCP, mcp)
 
-    def parse_feature_eeprom(self, feature):
-        i2cbus = Config.get(section, "i2cbus")
-        address = hexint(Config.get(section, "address"))
-        size = Config.getintdef(section, "size", 256)
+    def parse_feature_eeprom(self, feature: dict):
+        i2cbus = feature.get("i2cbus")
+        address = int(feature.get("address"))
+        size = feature.get("size", 256)
+        circuit = feature.get("circuit")
         bus = (Devices.by_int(I2CBUS, i2cbus)).bus_driver
-        ee = unipig.Eprom(bus, circuit, size=size, address=address, dev_id=0)
+        ee = Eprom(bus, circuit, size=size, address=address, dev_id=0)
         Devices.register_device(EE, ee)
 
-    def parse_feature_aichip(self, feature):
-        i2cbus = Config.get(section, "i2cbus")
-        address = hexint(Config.get(section, "address"))
+    def parse_feature_aichip(self, feature: dict):
+        i2cbus = feature.get("i2cbus")
+        address = int(feature.get("address"))
+        circuit = feature.get("circuit")
         bus = (Devices.by_int(I2CBUS, i2cbus)).bus_driver
-        mcai = unipig.UnipiMCP342x(bus, circuit, address=address, dev_id=0)
+        mcai = UnipiMCP342x(bus, circuit, address=address, dev_id=0)
         Devices.register_device(ADCHIP, mcai)
 
-    def parse_feature_pca9685(self, feature):
+    def parse_feature_pca9685(self, feature: dict):
         # PCA9685 on I2C
-        i2cbus = Config.get(section, "i2cbus")
-        address = hexint(Config.get(section, "address"))
-        frequency = Config.getintdef(section, "frequency", 400)
+        i2cbus = feature.get("i2cbus")
+        address = int(feature.get("address"))
+        frequency = feature.get("frequency", 400)
+        circuit = feature.get("circuit")
         bus = (Devices.by_int(I2CBUS, i2cbus)).bus_driver
-        pca = unipig.UnipiPCA9685(bus, int(circuit), address=address, frequency=frequency, dev_id=0)
+        pca = UnipiPCA9685(bus, circuit, address=address, frequency=frequency, dev_id=0)
         Devices.register_device(PCA9685, pca)
 
-    def parse_feature_1w_relay(self, feature):
+    def parse_feature_1w_relay(self, feature: dict):
         # Relays on DS2404
-        sensor = Config.get(section, "sensor")
+        sensor = feature.get("sensor")
         sensor = (Devices.by_int(SENSOR, sensor)).sensor_dev
-        pin = Config.getint(section, "pin")
-        r = unipig.DS2408_relay(circuit, sensor, pin, dev_id=0)
+        pin = feature.get("pin")
+        circuit = feature.get("circuit")
+        r = DS2408_relay(circuit, sensor, pin, dev_id=0)
         Devices.register_device(RELAY, r)
 
-    def parse_feature_1w_input(self, feature):
+    def parse_feature_1w_input(self, feature: dict):
         # Inputs on DS2404
-        sensor = Config.get(section, "sensor")
+        sensor = feature.get("sensor")
         sensor = (Devices.by_int(SENSOR, sensor)).sensor_dev
-        pin = Config.getint(section, "pin")
-        i = unipig.DS2408_input(circuit, sensor, pin, dev_id=0)
+        pin = feature.get("pin")
+        circuit = feature.get("circuit")
+        i = DS2408_input(circuit, sensor, pin, dev_id=0)
         Devices.register_device(INPUT, i)
 
-    def parse_feature(self, feature):
+    def parse_feature(self, feature: dict):
         if feature['type'] == 'DI':
             self.parse_feature_di(feature)
         elif feature['type'] == 'RELAY':
@@ -218,7 +229,10 @@ class Board(object):
         self.volt_ref = 3.3
         for defin in hw_dict.definitions:
             if defin and (self.unipig.device_model == defin['type']):
-                for feature in defin['features']:
+                for name, feature in defin.items():
+                    if type(feature) is not dict:
+                        continue
+                    feature['type'], feature['circuit'] = name.split('_')
                     self.parse_feature(feature)
                 return
         logging.error(f"Not found type '{self.unipig.device_model}' in loaded hw-definitions.")
