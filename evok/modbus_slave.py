@@ -34,9 +34,9 @@ class ENoBoard(Exception):
 
 class ModbusCacheMap(object):
     last_comm_time = 0
-    def __init__(self, modbus_reg_map, neuron):
+    def __init__(self, modbus_reg_map, modbus_slave):
         self.modbus_reg_map = modbus_reg_map
-        self.neuron = neuron
+        self.modbus_slave = modbus_slave
         self.sem = Semaphore(1)
         self.registered = {}
         self.registered_input = {}
@@ -90,23 +90,23 @@ class ModbusCacheMap(object):
                 try:
                     val = None
                     if 'type' in m_reg_group and m_reg_group['type'] == 'input':
-                        val = await self.neuron.client.read_input_registers(m_reg_group['start_reg'], m_reg_group['count'], slave=slave)
+                        val = await self.modbus_slave.client.read_input_registers(m_reg_group['start_reg'], m_reg_group['count'], slave=slave)
                     else:
-                        val = await self.neuron.client.read_holding_registers(m_reg_group['start_reg'], m_reg_group['count'], slave=slave)
+                        val = await self.modbus_slave.client.read_holding_registers(m_reg_group['start_reg'], m_reg_group['count'], slave=slave)
                     if not isinstance(val, ExceptionResponse) and not isinstance(val, ModbusIOException) and not isinstance(val, ExceptionResponse):
                         self.last_comm_time = time.time()
                         if 'type' in m_reg_group and m_reg_group['type'] == 'input':
                             for index in range(m_reg_group['count']):
-                                if (m_reg_group['start_reg'] + index) in self.neuron.datadeps and self.registered_input[(m_reg_group['start_reg'] + index)] != val.registers[index]:
-                                    for ddep in self.neuron.datadeps[m_reg_group['start_reg'] + index]:
+                                if (m_reg_group['start_reg'] + index) in self.modbus_slave.datadeps and self.registered_input[(m_reg_group['start_reg'] + index)] != val.registers[index]:
+                                    for ddep in self.modbus_slave.datadeps[m_reg_group['start_reg'] + index]:
                                         if (not ((isinstance(ddep, Input) or isinstance(ddep, ULED)))) or ddep.value_delta(val.registers[index]):
                                             changeset += [ddep]
                                 self.registered_input[(m_reg_group['start_reg'] + index)] = val.registers[index]
                                 self.frequency[m_reg_group['start_reg']] = 1
                         else:
                             for index in range(m_reg_group['count']):
-                                if (m_reg_group['start_reg'] + index) in self.neuron.datadeps and self.registered[(m_reg_group['start_reg'] + index)] != val.registers[index]:
-                                    for ddep in self.neuron.datadeps[m_reg_group['start_reg'] + index]:
+                                if (m_reg_group['start_reg'] + index) in self.modbus_slave.datadeps and self.registered[(m_reg_group['start_reg'] + index)] != val.registers[index]:
+                                    for ddep in self.modbus_slave.datadeps[m_reg_group['start_reg'] + index]:
                                         if (not ((isinstance(ddep, Input) or isinstance(ddep, ULED) or isinstance(ddep, Relay) or isinstance(ddep, Watchdog)))) or ddep.value_delta(val.registers[index]):
                                             changeset += [ddep]
                                 self.registered[(m_reg_group['start_reg'] + index)] = val.registers[index]
@@ -128,12 +128,12 @@ class ModbusCacheMap(object):
             if is_input:
                 if index + counter not in self.registered_input:
                     raise Exception('Unknown register %d' % index + counter)
-                await self.neuron.client.write_register(index + counter, 1, inp[counter], slave=slave)
+                await self.modbus_slave.client.write_register(index + counter, 1, inp[counter], slave=slave)
                 self.registered_input[index + counter] = inp[counter]
             else:
                 if index + counter not in self.registered:
                     raise Exception('Unknown register %d' % index + counter)
-                await self.neuron.client.write_register(index + counter, 1, inp[counter], slave=slave)
+                await self.modbus_slave.client.write_register(index + counter, 1, inp[counter], slave=slave)
                 self.registered[index + counter] = inp[counter]
 
     def has_register(self, index, is_input=False):
@@ -147,12 +147,12 @@ class ModbusCacheMap(object):
             for counter in range(index,count+index):
                 if counter not in self.registered_input:
                     raise Exception('Unknown register')
-            val = await self.neuron.client.read_input_registers(index, count, slave=slave)
+            val = await self.modbus_slave.client.read_input_registers(index, count, slave=slave)
         else:
             for counter in range(index,count+index):
                 if counter not in self.registered:
                     raise Exception('Unknown register')
-            val = await self.neuron.client.read_holding_registers(index, count, slave=slave)
+            val = await self.modbus_slave.client.read_holding_registers(index, count, slave=slave)
         for counter in range(len(val.registers)):
             self.registered[index+counter] = val.registers[counter]
         return val.registers
@@ -165,7 +165,7 @@ class ModbusCacheMap(object):
             for counter in range(count):
                 if index + counter not in self.registered_input:
                     raise Exception('Unknown register')
-                await self.neuron.client.write_register(index + counter, 1, inp[counter], slave=slave)
+                await self.modbus_slave.client.write_register(index + counter, 1, inp[counter], slave=slave)
                 self.registered_input[index + counter] = inp[counter]
         else:
             if len(inp) < count:
@@ -173,7 +173,7 @@ class ModbusCacheMap(object):
             for counter in range(count):
                 if index + counter not in self.registered:
                     raise Exception('Unknown register')
-                await self.neuron.client.write_register(index + counter, 1, inp[counter], slave=slave)
+                await self.modbus_slave.client.write_register(index + counter, 1, inp[counter], slave=slave)
                 self.registered[index + counter] = inp[counter]
 
 
@@ -274,7 +274,7 @@ class UartModbusSlave(ModbusSlave):
 
     def __init__(self, circuit, Config, port, scan_freq, scan_enabled, hw_dict,
                  baud_rate=19200, parity='N', stopbits=1, uart_address=15, major_group=1,
-                 device_model='unspecified', neuron_uart_circuit="None", dev_id=0):
+                 device_model='unspecified', modbus_slave_uart_circuit="None", dev_id=0):
         ModbusSlave.__init__(self, circuit, Config, scan_freq, scan_enabled, hw_dict, uart_address,
                              major_group, device_model, dev_id)
         self.circuit = "UART_" + str(uart_address) + "_" + str(circuit)
@@ -282,7 +282,7 @@ class UartModbusSlave(ModbusSlave):
         self.baud_rate = baud_rate
         self.parity = parity
         self.stopbits = stopbits
-        self.neuron_uart_circuit = neuron_uart_circuit
+        self.modbus_slave_uart_circuit = modbus_slave_uart_circuit
 
     def switch_to_async(self, loop, alias_dict):
         self.loop = loop
@@ -298,7 +298,7 @@ class UartModbusSlave(ModbusSlave):
         ret = {'dev': 'extension',
                 'circuit': self.circuit,
                 'model': self.device_model,
-                'uart_circuit': self.neuron_uart_circuit,
+                'uart_circuit': self.modbus_slave_uart_circuit,
                 'uart_port': self.port,
                 'glob_dev_id': self.dev_id,
                 'last_comm': 0x7fffffff}
@@ -355,14 +355,14 @@ class Proxy(object):
 
 
 class Board(object):
-    def __init__(self, Config, circuit, modbus_address, neuron: ModbusSlave, versions, major_group=1, dev_id=0):
+    def __init__(self, Config, circuit, modbus_address, modbus_slave: ModbusSlave, versions, major_group=1, dev_id=0):
         self.alias = ""
         self.devtype = BOARD
         self.dev_id = dev_id
         self.Config = Config
         self.circuit = circuit
         self.legacy_mode = not (Config.getbooldef('MAIN','use_experimental_api', False))
-        self.neuron: ModbusSlave = neuron
+        self.modbus_slave: ModbusSlave = modbus_slave
         self.major_group = major_group
         self.modbus_address = modbus_address
         self.sw = versions[0]
@@ -384,16 +384,16 @@ class Board(object):
         return await self.full()
 
     async def initialise_cache(self, cache_definition):
-        if cache_definition and (self.neuron.device_model == cache_definition['type']):
+        if cache_definition and (self.modbus_slave.device_model == cache_definition['type']):
             if 'modbus_register_blocks' in cache_definition:
-                if self.neuron.modbus_cache_map == None:
-                    self.neuron.modbus_cache_map = ModbusCacheMap(cache_definition['modbus_register_blocks'], self.neuron)
-                    await self.neuron.modbus_cache_map.do_scan(initial=True, slave=self.modbus_address)
-                    await self.neuron.modbus_cache_map.sem.acquire()
-                    self.neuron.modbus_cache_map.sem.release()
+                if self.modbus_slave.modbus_cache_map == None:
+                    self.modbus_slave.modbus_cache_map = ModbusCacheMap(cache_definition['modbus_register_blocks'], self.modbus_slave)
+                    await self.modbus_slave.modbus_cache_map.do_scan(initial=True, slave=self.modbus_address)
+                    await self.modbus_slave.modbus_cache_map.sem.acquire()
+                    self.modbus_slave.modbus_cache_map.sem.release()
                 else:
-                    await self.neuron.modbus_cache_map.sem.acquire()
-                    self.neuron.modbus_cache_map.sem.release()
+                    await self.modbus_slave.modbus_cache_map.sem.acquire()
+                    self.modbus_slave.modbus_cache_map.sem.release()
             else:
                 raise Exception("HW Definition %s requires Modbus register blocks to be specified" % cache_definition['type'])
 
@@ -415,14 +415,14 @@ class Board(object):
                 _inp = Input("%s_%02d" % (self.circuit, counter + 1 + start_index), self, board_val_reg, 0x1 << (counter % 16),
                              regdebounce=board_deboun_reg + counter, major_group=0, regcounter=board_counter_reg + (2 * counter), modes=m_feature['modes'],
                              dev_id=self.dev_id, legacy_mode=self.legacy_mode)
-            if board_val_reg in self.neuron.datadeps:
-                self.neuron.datadeps[board_val_reg]+=[_inp]
+            if board_val_reg in self.modbus_slave.datadeps:
+                self.modbus_slave.datadeps[board_val_reg]+=[_inp]
             else:
-                self.neuron.datadeps[board_val_reg] = [_inp]
-            if (board_counter_reg + (2 * counter)) in self.neuron.datadeps:
-                self.neuron.datadeps[board_counter_reg + (2 * counter)]+=[_inp]
+                self.modbus_slave.datadeps[board_val_reg] = [_inp]
+            if (board_counter_reg + (2 * counter)) in self.modbus_slave.datadeps:
+                self.modbus_slave.datadeps[board_counter_reg + (2 * counter)]+=[_inp]
             else:
-                self.neuron.datadeps[board_counter_reg + (2 * counter)] = [_inp]
+                self.modbus_slave.datadeps[board_counter_reg + (2 * counter)] = [_inp]
             Devices.register_device(INPUT, _inp)
             counter+=1
 
@@ -442,10 +442,10 @@ class Board(object):
             else:
                     _r = Relay("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
                                dev_id=self.dev_id, major_group=0, legacy_mode=self.legacy_mode)
-            if board_val_reg in self.neuron.datadeps:
-                self.neuron.datadeps[board_val_reg]+=[_r]
+            if board_val_reg in self.modbus_slave.datadeps:
+                self.modbus_slave.datadeps[board_val_reg]+=[_r]
             else:
-                self.neuron.datadeps[board_val_reg] = [_r]
+                self.modbus_slave.datadeps[board_val_reg] = [_r]
             Devices.register_device(RELAY, _r)
             counter+=1
 
@@ -455,10 +455,10 @@ class Board(object):
             board_val_reg = m_feature['val_reg']
             _led = ULED("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg, 0x1 << (counter % 16), m_feature['val_coil'] + counter,
                         dev_id=self.dev_id, major_group=0, legacy_mode=self.legacy_mode)
-            if (board_val_reg + counter) in self.neuron.datadeps:
-                self.neuron.datadeps[board_val_reg] += [_led]
+            if (board_val_reg + counter) in self.modbus_slave.datadeps:
+                self.modbus_slave.datadeps[board_val_reg] += [_led]
             else:
-                self.neuron.datadeps[board_val_reg] = [_led]
+                self.modbus_slave.datadeps[board_val_reg] = [_led]
             Devices.register_device(LED, _led)
             counter+=1
 
@@ -470,10 +470,10 @@ class Board(object):
             _wd = Watchdog("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg + counter, board_timeout_reg + counter,
                            dev_id=self.dev_id, major_group=0, nv_save_coil=m_feature['nv_sav_coil'], reset_coil=m_feature['reset_coil'],
                            legacy_mode=self.legacy_mode)
-            if (board_val_reg + counter) in self.neuron.datadeps:
-                self.neuron.datadeps[board_val_reg + counter]+=[_wd]
+            if (board_val_reg + counter) in self.modbus_slave.datadeps:
+                self.modbus_slave.datadeps[board_val_reg + counter]+=[_wd]
             else:
-                self.neuron.datadeps[board_val_reg + counter] = [_wd]
+                self.modbus_slave.datadeps[board_val_reg + counter] = [_wd]
             Devices.register_device(WATCHDOG, _wd)
             counter+=1
 
@@ -488,10 +488,10 @@ class Board(object):
             else:
                 _ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, dev_id=self.dev_id,
                                    major_group=0, legacy_mode=self.legacy_mode)
-            if (board_val_reg + counter) in self.neuron.datadeps:
-                self.neuron.datadeps[board_val_reg + counter]+=[_ao]
+            if (board_val_reg + counter) in self.modbus_slave.datadeps:
+                self.modbus_slave.datadeps[board_val_reg + counter]+=[_ao]
             else:
-                self.neuron.datadeps[board_val_reg + counter] = [_ao]
+                self.modbus_slave.datadeps[board_val_reg + counter] = [_ao]
             Devices.register_device(AO, _ao)
             counter+=1
 
@@ -503,10 +503,10 @@ class Board(object):
             _ai = AnalogInput18(circuit, self, value_reg, regmode=mode_reg+i,
                                 dev_id=self.dev_id, major_group=0, modes=m_feature['modes'])
 
-            if value_reg in self.neuron.datadeps:
-                self.neuron.datadeps[value_reg]+=[_ai]
+            if value_reg in self.modbus_slave.datadeps:
+                self.modbus_slave.datadeps[value_reg]+=[_ai]
             else:
-                self.neuron.datadeps[value_reg] = [_ai]
+                self.modbus_slave.datadeps[value_reg] = [_ai]
             Devices.register_device(AI, _ai)
             value_reg += 2;
 
@@ -533,10 +533,10 @@ class Board(object):
                                   regmode=m_feature['mode_reg'] + counter, 
                                   dev_id=self.dev_id, major_group=0, tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
 
-            if board_val_reg in self.neuron.datadeps:
-                self.neuron.datadeps[board_val_reg]+=[_ai]
+            if board_val_reg in self.modbus_slave.datadeps:
+                self.modbus_slave.datadeps[board_val_reg]+=[_ai]
             else:
-                self.neuron.datadeps[board_val_reg] = [_ai]
+                self.modbus_slave.datadeps[board_val_reg] = [_ai]
             Devices.register_device(AI, _ai)
             counter+=1
 
@@ -550,10 +550,10 @@ class Board(object):
             else:
                 _reg = Register("%s_%d" % (self.circuit, board_val_reg + counter), self, counter, board_val_reg + counter, dev_id=self.dev_id,
                                 major_group=0, legacy_mode=self.legacy_mode)
-            if board_val_reg and ((board_val_reg + counter) in self.neuron.datadeps):
-                self.neuron.datadeps[board_val_reg + counter] += [_reg]
+            if board_val_reg and ((board_val_reg + counter) in self.modbus_slave.datadeps):
+                self.modbus_slave.datadeps[board_val_reg + counter] += [_reg]
             elif board_val_reg:
-                self.neuron.datadeps[board_val_reg + counter] = [_reg]
+                self.modbus_slave.datadeps[board_val_reg + counter] = [_reg]
             Devices.register_device(REGISTER, _reg)
             counter+=1
 
@@ -644,12 +644,12 @@ class Board(object):
         self.volt_refx = 33000
         self.volt_ref = 3.3
         for defin in hw_dict.definitions:
-            if defin and (self.neuron.device_model == defin['type']):
+            if defin and (self.modbus_slave.device_model == defin['type']):
                 await self.initialise_cache(defin);
                 for m_feature in defin['modbus_features']:
                     self.parse_feature(m_feature)
                 return
-        logging.error(f"Not found type '{self.neuron.device_model}' in loaded hw-definitions.")
+        logging.error(f"Not found type '{self.modbus_slave.device_model}' in loaded hw-definitions.")
 
     def get(self):
         return self.full()
@@ -678,11 +678,11 @@ class Relay(object):
         self.coil = coil
         self.valreg = reg
         self.bitmask = mask
-        self.regvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1,self.valreg, slave=self.arm.modbus_address)[0]
+        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address)[0]
         if self.pwmdutyreg >= 0: # This instance supports PWM mode
-            self.pwm_duty_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.pwmdutyreg, slave=self.arm.modbus_address))[0]
-            self.pwm_cycle_val = ((self.arm.neuron.modbus_cache_map.get_register(1, self.pwmcyclereg, slave=self.arm.modbus_address))[0] + 1)
-            self.pwm_prescale_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.pwmprescalereg, slave=self.arm.modbus_address))[0]
+            self.pwm_duty_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmdutyreg, slave=self.arm.modbus_address))[0]
+            self.pwm_cycle_val = ((self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmcyclereg, slave=self.arm.modbus_address))[0] + 1)
+            self.pwm_prescale_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmprescalereg, slave=self.arm.modbus_address))[0]
             if (self.pwm_cycle_val > 0) and (self.pwm_prescale_val > 0):
                 self.pwm_freq = 48000000 / (self.pwm_cycle_val * self.pwm_prescale_val)
             else:
@@ -698,7 +698,7 @@ class Relay(object):
         else: # This RELAY instance does not support PWM mode (no pwmdutyreg given)
             self.mode = 'Simple'
 
-        self.forced_changes = arm.neuron.Config.getbooldef("MAIN", "force_immediate_state_changes", False)
+        self.forced_changes = arm.modbus_slave.evok_config.getbooldef("MAIN", "force_immediate_state_changes", False)
 
     def full(self, forced_value=None):
         ret =  {'dev': 'relay',
@@ -745,7 +745,7 @@ class Relay(object):
         if self.pending_id:
             IOLoop.instance().remove_timeout(self.pending_id)
             self.pending_id = None
-        await self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, slave=self.arm.modbus_address)
+        await self.arm.modbus_slave.client.write_coil(self.coil, 1 if value else 0, slave=self.arm.modbus_address)
         return 1 if value else 0
 
     def value_delta(self, new_val):
@@ -784,9 +784,6 @@ class Relay(object):
 
             if self.pwm_duty > 0:
                 self.pwm_duty_val = float(self.pwm_cycle_val) * float(float(self.pwm_duty) / 100.0)
-            #else:
-            #    self.pwm_duty_val = 0
-            #    self.arm.neuron.client.write_register(self.pwmdutyreg, self.pwm_duty_val, slave=self.arm.modbus_address)
 
             other_devs = Devices.by_int(RELAY, major_group=self.major_group)  # All PWM outs in the same group share this registers
             for other_dev in other_devs:
@@ -797,9 +794,9 @@ class Relay(object):
                     other_dev.pwm_prescale_val = self.pwm_prescale_val
                     await other_dev.set(pwm_duty=other_dev.pwm_duty)
 
-            await self.arm.neuron.client.write_register(self.pwmcyclereg, self.pwm_cycle_val - 1, slave=self.arm.modbus_address)
-            await self.arm.neuron.client.write_register(self.pwmprescalereg, self.pwm_prescale_val, slave=self.arm.modbus_address)
-            await self.arm.neuron.client.write_register(self.pwmdutyreg, self.pwm_duty_val, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_register(self.pwmcyclereg, self.pwm_cycle_val - 1, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_register(self.pwmprescalereg, self.pwm_prescale_val, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_register(self.pwmdutyreg, self.pwm_duty_val, slave=self.arm.modbus_address)
 
         # Set Binary value
         if value is not None:
@@ -816,18 +813,18 @@ class Relay(object):
                 timeout = float(timeout)
 
             self.mode = 'Simple'
-            await self.arm.neuron.client.write_coil(self.coil, parsed_value, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_coil(self.coil, parsed_value, slave=self.arm.modbus_address)
             if self.pwm_duty != 0:
                 self.pwm_duty = 0
-                await self.arm.neuron.client.write_register(self.pwmdutyreg, self.pwm_duty, slave=self.arm.modbus_address) # Turn off PWM
+                await self.arm.modbus_slave.client.write_register(self.pwmdutyreg, self.pwm_duty, slave=self.arm.modbus_address) # Turn off PWM
 
         # Set PWM Duty
         elif pwm_duty is not None and float(pwm_duty) >= 0.0 and float(pwm_duty) <= 100.0:
             self.pwm_duty = pwm_duty
             self.pwm_duty_val = float(self.pwm_cycle_val) * float(float(self.pwm_duty) / 100.0)
             if self.value != 0:
-                self.arm.neuron.client.write_coil(self.coil, 0, slave=self.arm.modbus_address)
-            await self.arm.neuron.client.write_register(self.pwmdutyreg, self.pwm_duty_val, slave=self.arm.modbus_address)
+                self.arm.modbus_slave.client.write_coil(self.coil, 0, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_register(self.pwmdutyreg, self.pwm_duty_val, slave=self.arm.modbus_address)
             self.mode = 'PWM'
 
         if alias is not None:
@@ -842,7 +839,7 @@ class Relay(object):
 
         async def timercallback():
             self.pending_id = None
-            await self.arm.neuron.client.write_coil(self.coil, 0 if value else 1, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_coil(self.coil, 0 if value else 1, slave=self.arm.modbus_address)
 
         self.pending_id = IOLoop.instance().add_timeout(
             datetime.timedelta(seconds=float(timeout)), timercallback)
@@ -866,7 +863,7 @@ class ULED(object):
         self.legacy_mode = legacy_mode
         self.bitmask = mask
         self.valreg = reg
-        self.regvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address)[0]
+        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address)[0]
         self.coil = coil
 
     def full(self):
@@ -900,7 +897,7 @@ class ULED(object):
     async def set_state(self, value):
         """ Sets new on/off status. Disable pending timeouts
         """
-        await self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, slave=self.arm.modbus_address)
+        await self.arm.modbus_slave.client.write_coil(self.coil, 1 if value else 0, slave=self.arm.modbus_address)
         return 1 if value else 0
 
     async def set(self, value=None, alias=None):
@@ -911,7 +908,7 @@ class ULED(object):
                 self.alias = alias
         if value is not None:
             value = int(value)
-            await self.arm.neuron.client.write_coil(self.coil, 1 if value else 0, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_coil(self.coil, 1 if value else 0, slave=self.arm.modbus_address)
         return self.full()
 
     def get(self):
@@ -927,8 +924,8 @@ class Watchdog(object):
         self.arm = arm
         self.major_group = major_group
         self.legacy_mode = legacy_mode
-        self.timeoutvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.toreg, slave=self.arm.modbus_address)
-        self.regvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.toreg, slave=self.arm.modbus_address)[0]
+        self.timeoutvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.toreg, slave=self.arm.modbus_address)
+        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.toreg, slave=self.arm.modbus_address)[0]
         self.nvsavvalue = 0
         self.resetvalue = 0
         self.nv_save_coil = nv_save_coil
@@ -995,7 +992,7 @@ class Watchdog(object):
     async def set_state(self, value):
         """ Sets new on/off status. Disable pending timeouts
         """
-        await self.arm.neuron.client.write_register(self.valreg, 1 if value else 0, slave=self.arm.modbus_address)
+        await self.arm.modbus_slave.client.write_register(self.valreg, 1 if value else 0, slave=self.arm.modbus_address)
         return 1 if value else 0
 
     async def set(self, value=None, timeout=None, reset=None, nv_save=None, alias=None):
@@ -1010,23 +1007,23 @@ class Watchdog(object):
                 self.nvsavvalue = 1
             else:
                 self.nvsavvalue = 0
-            await self.arm.neuron.client.write_coil(self.nv_save_coil, 1, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_coil(self.nv_save_coil, 1, slave=self.arm.modbus_address)
         if value is not None:
             value = int(value)
 
 
-        await self.arm.neuron.client.write_register(self.valreg, 1 if value else 0, slave=self.arm.modbus_address)
+        await self.arm.modbus_slave.client.write_register(self.valreg, 1 if value else 0, slave=self.arm.modbus_address)
 
         if not (timeout is None):
             timeout = int(timeout)
             if timeout > 65535:
                 timeout = 65535
-            await self.arm.neuron.client.write_register(self.toreg, timeout, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_register(self.toreg, timeout, slave=self.arm.modbus_address)
 
         if self.reset_coil >= 0 and reset is not None:
             if reset != 0:
                 self.nvsavvalue = 0
-                await self.arm.neuron.client.write_coil(self.reset_coil, 1, slave=self.arm.modbus_address)
+                await self.arm.modbus_slave.client.write_coil(self.reset_coil, 1, slave=self.arm.modbus_address)
                 logger.info("Performed reset of board %s" % self.circuit)
 
         return self.full()
@@ -1076,12 +1073,12 @@ class ExtConfig(object):
                 'circuit': self.circuit}
 
         for (param, reg_addr) in self._params.items():
-            ret[param] = self._arm.neuron.modbus_cache_map.get_register(1, reg_addr, slave=self._arm.modbus_address, is_input=False)[0]
+            ret[param] = self._arm.modbus_slave.modbus_cache_map.get_register(1, reg_addr, slave=self._arm.modbus_address, is_input=False)[0]
 
         return ret
 
     def get_param(self, par_name):
-        return self._arm.neuron.modbus_cache_map.get_register(1, self._params[par_name], slave=self._arm.modbus_address, is_input=False)[0]
+        return self._arm.modbus_slave.modbus_cache_map.get_register(1, self._params[par_name], slave=self._arm.modbus_address, is_input=False)[0]
 
     def get(self):
         return self.full()
@@ -1102,11 +1099,11 @@ class ExtConfig(object):
         if len(kwargs) > 0:
 
             for param, value in kwargs.items():
-                await self._arm.neuron.client.write_register(self._params[param], int(value), slave=self._arm.modbus_address)
+                await self._arm.modbus_slave.client.write_register(self._params[param], int(value), slave=self._arm.modbus_address)
 
             if isinstance(self.post_write, list):
                 for coil in self.post_write:
-                    await self._arm.neuron.client.write_coil(coil, 1, slave=self._arm.modbus_address)
+                    await self._arm.modbus_slave.client.write_coil(coil, 1, slave=self._arm.modbus_address)
 
         return self.full()
 
@@ -1135,20 +1132,20 @@ class UnitRegister():
             _is_iput = False
 
         if valid_mask is not None:
-            self.valid_mask = lambda: self.arm.neuron.modbus_cache_map.get_register(1, valid_mask, slave=self.arm.modbus_address, is_input=_is_iput)[0]
+            self.valid_mask = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, valid_mask, slave=self.arm.modbus_address, is_input=_is_iput)[0]
         else:
             self.valid_mask = None
 
         if self.datatype is None:
             if factor == 1 and offset == 0: # Reading RAW value - save some CPU time
-                self.regvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address, is_input=_is_iput)[0]
+                self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address, is_input=_is_iput)[0]
             else:
-                self.regvalue = lambda: (self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address, is_input=_is_iput)[0] * self.factor) + self.offset
+                self.regvalue = lambda: (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address, is_input=_is_iput)[0] * self.factor) + self.offset
 
         elif datatype == "float32":
 
             # TODO - add factor and offset version
-            self.regvalue = lambda: self.__parse_float32(self.arm.neuron.modbus_cache_map.get_register(2, self.valreg, slave=self.arm.modbus_address, is_input=_is_iput))
+            self.regvalue = lambda: self.__parse_float32(self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg, slave=self.arm.modbus_address, is_input=_is_iput))
 
 
     def __parse_float32(self, raw_regs):
@@ -1175,27 +1172,11 @@ class UnitRegister():
 
         if value is not None:
 
-            self.arm.neuron.client.write_register(self.valreg, int(value), slave=self.arm.modbus_address)
+            self.arm.modbus_slave.client.write_register(self.valreg, int(value), slave=self.arm.modbus_address)
 
             if isinstance(self.post_write, list):
                 for coil in self.post_write:
-                    self.arm.neuron.client.write_coil(coil, 1, slave=self.arm.modbus_address)
-
-        """
-        self.arm.neuron.client.write_register(self.valreg, 1 if value else 0, slave=self.arm.modbus_address)
-
-        if not (timeout is None):
-            timeout = int(timeout)
-            if timeout > 65535:
-                timeout = 65535
-            self.arm.neuron.client.write_register(self.toreg, timeout, slave=self.arm.modbus_address)
-
-        if self.reset_coil >= 0 and reset is not None:
-            if reset != 0:
-                self.nvsavvalue = 0
-                self.arm.neuron.client.write_coil(self.reset_coil, 1, slave=self.arm.modbus_address)
-                logger.info("Performed reset of board %s" % self.circuit)
-        """
+                    self.arm.modbus_slave.client.write_coil(coil, 1, slave=self.arm.modbus_address)
 
 
 
@@ -1256,9 +1237,9 @@ class Register():
         self.valreg = reg
         self.reg_type = reg_type
         if reg_type == "input":
-            self.regvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address, is_input=True)[0]
+            self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address, is_input=True)[0]
         else:
-            self.regvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address, is_input=False)[0]
+            self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address, is_input=False)[0]
 
     def full(self):
         ret = {'dev': 'register',
@@ -1297,7 +1278,7 @@ class Register():
     async def set_state(self, value):
         """ Sets new on/off status. Disable pending timeouts
         """
-        await self.arm.neuron.client.write_register(self.valreg, value if value else 0, slave=self.arm.modbus_address)
+        await self.arm.modbus_slave.client.write_register(self.valreg, value if value else 0, slave=self.arm.modbus_address)
         return value if value else 0
 
     async def set(self, value=None, alias=None):
@@ -1308,7 +1289,7 @@ class Register():
                 self.alias = alias
         if value is not None:
             value = int(value)
-            await self.arm.neuron.client.write_register(self.valreg, value if value else 0, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_register(self.valreg, value if value else 0, slave=self.arm.modbus_address)
 
         return self.full()
 
@@ -1332,18 +1313,18 @@ class Input():
         self.regtoggle = regtoggle
         self.regpolarity = regpolarity
         self.reg = reg
-        self.regvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.reg, slave=self.arm.modbus_address)[0]
+        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.reg, slave=self.arm.modbus_address)[0]
         self.regcountervalue = self.regdebouncevalue = lambda: None
-        if not (regcounter is None): self.regcountervalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, regcounter, slave=self.arm.modbus_address)[0] + (self.arm.neuron.modbus_cache_map.get_register(1, regcounter + 1, slave=self.arm.modbus_address)[0] << 16)
-        if not (regdebounce is None): self.regdebouncevalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, regdebounce, slave=self.arm.modbus_address)[0]
+        if not (regcounter is None): self.regcountervalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, regcounter, slave=self.arm.modbus_address)[0] + (self.arm.modbus_slave.modbus_cache_map.get_register(1, regcounter + 1, slave=self.arm.modbus_address)[0] << 16)
+        if not (regdebounce is None): self.regdebouncevalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, regdebounce, slave=self.arm.modbus_address)[0]
         self.mode = 'Simple'
         self.ds_mode = 'Simple'
         if 'DirectSwitch' in self.modes:
-            curr_ds = self.arm.neuron.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0]
+            curr_ds = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0]
             if (curr_ds & self.bitmask) > 0:
                 self.mode = 'DirectSwitch'
-                curr_ds_pol = self.arm.neuron.modbus_cache_map.get_register(1, self.regpolarity, slave=self.arm.modbus_address)[0]
-                curr_ds_tgl = self.arm.neuron.modbus_cache_map.get_register(1, self.regtoggle, slave=self.arm.modbus_address)[0]
+                curr_ds_pol = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regpolarity, slave=self.arm.modbus_address)[0]
+                curr_ds_tgl = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regtoggle, slave=self.arm.modbus_address)[0]
                 if (curr_ds_pol & self.bitmask):
                     self.ds_mode = 'Inverted'
                 elif (curr_ds_tgl & self.bitmask):
@@ -1414,20 +1395,20 @@ class Input():
         if mode is not None and mode != self.mode and mode in self.modes:
             self.mode = mode
             if self.mode == 'DirectSwitch':
-                curr_ds = await self.arm.neuron.modbus_cache_map.get_register_async(1, self.regmode, slave=self.arm.modbus_address)
+                curr_ds = await self.arm.modbus_slave.modbus_cache_map.get_register_async(1, self.regmode, slave=self.arm.modbus_address)
                 curr_ds_val = curr_ds[0]
                 curr_ds_val = curr_ds_val | int(self.bitmask)
-                await self.arm.neuron.client.write_register(self.regmode, curr_ds_val, slave=self.arm.modbus_address)
+                await self.arm.modbus_slave.client.write_register(self.regmode, curr_ds_val, slave=self.arm.modbus_address)
             else:
-                curr_ds = await self.arm.neuron.modbus_cache_map.get_register_async(1, self.regmode, slave=self.arm.modbus_address)
+                curr_ds = await self.arm.modbus_slave.modbus_cache_map.get_register_async(1, self.regmode, slave=self.arm.modbus_address)
                 curr_ds_val = curr_ds[0]
                 curr_ds_val = curr_ds_val & (~int(self.bitmask))
-                await self.arm.neuron.client.write_register(self.regmode, curr_ds_val, slave=self.arm.modbus_address)
+                await self.arm.modbus_slave.client.write_register(self.regmode, curr_ds_val, slave=self.arm.modbus_address)
 
         if self.mode == 'DirectSwitch' and ds_mode is not None and ds_mode in self.ds_modes:
             self.ds_mode = ds_mode
-            curr_ds_pol = await self.arm.neuron.modbus_cache_map.get_register_async(1, self.regpolarity, slave=self.arm.modbus_address)
-            curr_ds_tgl = await self.arm.neuron.modbus_cache_map.get_register_async(1, self.regtoggle, slave=self.arm.modbus_address)
+            curr_ds_pol = await self.arm.modbus_slave.modbus_cache_map.get_register_async(1, self.regpolarity, slave=self.arm.modbus_address)
+            curr_ds_tgl = await self.arm.modbus_slave.modbus_cache_map.get_register_async(1, self.regtoggle, slave=self.arm.modbus_address)
             curr_ds_pol_val = curr_ds_pol[0]
             curr_ds_tgl_val = curr_ds_tgl[0]
             if self.ds_mode == 'Inverted':
@@ -1439,18 +1420,18 @@ class Input():
             else:
                 curr_ds_pol_val = curr_ds_pol_val & (~self.bitmask)
                 curr_ds_tgl_val = curr_ds_tgl_val & (~self.bitmask)
-            await self.arm.neuron.client.write_register(self.regpolarity, curr_ds_pol_val, slave=self.arm.modbus_address)
-            await self.arm.neuron.client.write_register(self.regtoggle, curr_ds_tgl_val, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_register(self.regpolarity, curr_ds_pol_val, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_register(self.regtoggle, curr_ds_tgl_val, slave=self.arm.modbus_address)
 
         if counter_mode is not None and counter_mode in self.counter_modes and counter_mode != self.counter_mode:
             self.counter_mode = counter_mode
 
         if debounce is not None:
             if self.regdebounce is not None:
-                await self.arm.neuron.client.write_register(self.regdebounce, int(float(debounce)), slave=self.arm.modbus_address)
+                await self.arm.modbus_slave.client.write_register(self.regdebounce, int(float(debounce)), slave=self.arm.modbus_address)
         if counter is not None:
             if self.regcounter is not None:
-                await self.arm.neuron.client.write_registers(self.regcounter, ((int(float(counter)) & 0xFFFF), (int(float(counter)) >> 16) & 0xFFFF), slave=self.arm.modbus_address)
+                await self.arm.modbus_slave.client.write_registers(self.regcounter, ((int(float(counter)) & 0xFFFF), (int(float(counter)) >> 16) & 0xFFFF), slave=self.arm.modbus_address)
         return self.full()
 
     def get(self):
@@ -1482,13 +1463,13 @@ class Uart():
         self.major_group = major_group
         self.valreg = reg
         self.address_reg = address_reg
-        self.regvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address)[0]
-        parity_mode_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address)[0]) & self.parity_mask
-        speed_mode_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address)[0]) & self.speed_mask
-        stopb_mode_val = (self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address)[0]) & self.stopb_mask
+        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address)[0]
+        parity_mode_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address)[0]) & self.parity_mask
+        speed_mode_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address)[0]) & self.speed_mask
+        stopb_mode_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address)[0]) & self.stopb_mask
         if self.address_reg != -1:
-            self.address_val = self.arm.neuron.modbus_cache_map.get_register(1, self.address_reg, slave=self.arm.modbus_address)[0]
-            self.addressvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.address_reg, slave=self.arm.modbus_address)[0]
+            self.address_val = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.address_reg, slave=self.arm.modbus_address)[0]
+            self.addressvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.address_reg, slave=self.arm.modbus_address)[0]
         else:
             self.address_val = 0
             self.addressvalue = None
@@ -1554,7 +1535,7 @@ class Uart():
     async def set(self, conf_value=None, parity_mode=None, speed_mode=None, stopb_mode=None, sw_address=None, alias=None):
         val = self.regvalue()
         if conf_value is not None:
-            self.arm.neuron.client.write_register(self.valreg, conf_value, slave=self.arm.modbus_address)
+            self.arm.modbus_slave.client.write_register(self.valreg, conf_value, slave=self.arm.modbus_address)
         if parity_mode is not None and parity_mode in self.parity_modes and parity_mode != self.parity_mode:
             val &= ~self.parity_mask
             if parity_mode == 'None':
@@ -1565,7 +1546,7 @@ class Uart():
                 val |= 0x00000200
             else:
                 val = val
-            self.arm.neuron.client.write_register(self.valreg, val, slave=self.arm.modbus_address)
+            self.arm.modbus_slave.client.write_register(self.valreg, val, slave=self.arm.modbus_address)
             self.parity_mode = parity_mode
 
         if speed_mode is not None and speed_mode in self.speed_modes and speed_mode != self.speed_mode:
@@ -1586,7 +1567,7 @@ class Uart():
                 val    |= 0x00010002
             else:
                 val |= 0x0000000e
-            await self.arm.neuron.client.write_register(self.valreg, val, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_register(self.valreg, val, slave=self.arm.modbus_address)
             self.speed_mode = speed_mode
 
         if stopb_mode is not None and stopb_mode in self.stopb_modes and stopb_mode != self.stopb_mode:
@@ -1595,11 +1576,11 @@ class Uart():
                 val = val
             elif stopb_mode == 'Two':
                 val |= 0x00000040
-            await self.arm.neuron.client.write_register(self.valreg, val, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_register(self.valreg, val, slave=self.arm.modbus_address)
             self.stopb_mode = stopb_mode
 
         if sw_address is not None and self.address_val != 0:
-            await self.arm.neuron.client.write_register(self.address_reg, sw_address, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_register(self.address_reg, sw_address, slave=self.arm.modbus_address)
 
         if alias is not None:
             if Devices.add_alias(alias, self, file_update=True):
@@ -1714,32 +1695,32 @@ class AnalogOutput():
         self.dev_id = dev_id
         self.circuit = circuit
         self.reg = reg
-        self.regvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.reg, slave=self.arm.modbus_address)[0]
+        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.reg, slave=self.arm.modbus_address)[0]
         self.regcal = regcal
         self.regmode = regmode
         self.legacy_mode = legacy_mode
         self.reg_res = reg_res
-        self.regresvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.reg_res, slave=self.arm.modbus_address)[0]
+        self.regresvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.reg_res, slave=self.arm.modbus_address)[0]
         self.modes = modes
         self.arm = arm
         self.major_group = major_group
         if regcal >= 0:
-            self.offset = (uint16_to_int(self.arm.neuron.modbus_cache_map.get_register(1, self.regcal + 1, slave=self.arm.modbus_address)[0]) / 10000.0)
+            self.offset = (uint16_to_int(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regcal + 1, slave=self.arm.modbus_address)[0]) / 10000.0)
         else:
             self.offset = 0
         self.is_voltage = lambda: True
         if circuit == '1_01' and regcal >= 0:
-            self.is_voltage = lambda: bool(self.arm.neuron.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0] == 0)
+            self.is_voltage = lambda: bool(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0] == 0)
         if self.is_voltage():
             self.mode = 'Voltage'
-        elif self.arm.neuron.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0] == 1:
+        elif self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0] == 1:
             self.mode = 'Current'
         else:
             self.mode = 'Resistance'
         self.reg_shift = 2 if self.is_voltage() else 0
         if self.circuit == '1_01':
-            self.factor = arm.volt_ref / 4095 * (1 + uint16_to_int(self.arm.neuron.modbus_cache_map.get_register(1, regcal + self.reg_shift, slave=self.arm.modbus_address)[0]) / 10000.0)
-            self.factorx = arm.volt_refx / 4095 * (1 + uint16_to_int(self.arm.neuron.modbus_cache_map.get_register(1, regcal + self.reg_shift, slave=self.arm.modbus_address)[0]) / 10000.0)
+            self.factor = arm.volt_ref / 4095 * (1 + uint16_to_int(self.arm.modbus_slave.modbus_cache_map.get_register(1, regcal + self.reg_shift, slave=self.arm.modbus_address)[0]) / 10000.0)
+            self.factorx = arm.volt_refx / 4095 * (1 + uint16_to_int(self.arm.modbus_slave.modbus_cache_map.get_register(1, regcal + self.reg_shift, slave=self.arm.modbus_address)[0]) / 10000.0)
         else:
             self.factor = arm.volt_ref / 4095 * (1 / 10000.0)
             self.factorx = arm.volt_refx / 4095 * (1 / 10000.0)
@@ -1805,7 +1786,7 @@ class AnalogOutput():
             valuei = 0
         elif valuei > 4095:
             valuei = 4095
-        await self.arm.neuron.client.write_register(self.reg, valuei, slave=self.arm.modbus_address)
+        await self.arm.modbus_slave.client.write_register(self.reg, valuei, slave=self.arm.modbus_address)
         if self.circuit == '1_01':
             return float(valuei) * self.factor + self.offset
         else:
@@ -1816,7 +1797,7 @@ class AnalogOutput():
             if Devices.add_alias(alias, self, file_update=True):
                 self.alias = alias
         if mode is not None and mode in self.modes and self.regmode != -1:
-            val = self.arm.neuron.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0]
+            val = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0]
             cur_val = self.value
             if mode == "Voltage":
                 val = 0
@@ -1829,7 +1810,7 @@ class AnalogOutput():
             elif mode == "Resistance":
                 val = 3
             self.mode = mode
-            await self.arm.neuron.client.write_register(self.regmode, val, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_register(self.regmode, val, slave=self.arm.modbus_address)
             if mode == "Voltage" or mode == "Current":
                 await self.set_value(cur_val)        # Restore original value (i.e. 1.5V becomes 1.5mA)
         if not (value is None):
@@ -1841,7 +1822,7 @@ class AnalogOutput():
                 valuei = 0
             elif valuei > 4095:
                 valuei = 4095
-            await self.arm.neuron.client.write_register(self.reg, valuei, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_register(self.reg, valuei, slave=self.arm.modbus_address)
         return self.full()
 
     def get(self):
@@ -1857,7 +1838,7 @@ class AnalogInput():
         self.circuit = circuit
         self.valreg = reg
         self.arm = arm
-        self.regvalue = lambda: self.arm.neuron.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address)[0]
+        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address)[0]
         self.regcal = regcal
         self.legacy_mode = legacy_mode
         self.regmode = regmode
@@ -1867,13 +1848,13 @@ class AnalogInput():
         self.tolerances = tolerances
         self.sec_ai_mode = 0
         if self.tolerances == '500series':
-            self.sec_ai_mode = self.arm.neuron.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0]
+            self.sec_ai_mode = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0]
             self.mode = self.get_500_series_mode()
             self.unit_name = self.internal_unit
         self.major_group = major_group
         self.is_voltage = lambda: True
         if self.tolerances == 'brain' and regcal >= 0:
-            self.is_voltage = lambda: bool(self.arm.neuron.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0] == 0)
+            self.is_voltage = lambda: bool(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0] == 0)
             if self.is_voltage():
                 self.mode = "Voltage"
             else:
@@ -1882,9 +1863,9 @@ class AnalogInput():
         self.tolerance_mode = self.get_tolerance_mode()
         self.reg_shift = 2 if self.is_voltage() else 0
         if regcal >= 0:
-            self.vfactor = arm.volt_ref / 4095 * (1 + uint16_to_int(self.arm.neuron.modbus_cache_map.get_register(1, regcal + self.reg_shift + 1, slave=self.arm.modbus_address)[0]) / 10000.0)
-            self.vfactorx = arm.volt_refx / 4095 * (1 + uint16_to_int(self.arm.neuron.modbus_cache_map.get_register(1, regcal + self.reg_shift + 1, slave=self.arm.modbus_address)[0]) / 10000.0)
-            self.voffset = (uint16_to_int(self.arm.neuron.modbus_cache_map.get_register(1, regcal + self.reg_shift + 2, slave=self.arm.modbus_address)[0]) / 10000.0)
+            self.vfactor = arm.volt_ref / 4095 * (1 + uint16_to_int(self.arm.modbus_slave.modbus_cache_map.get_register(1, regcal + self.reg_shift + 1, slave=self.arm.modbus_address)[0]) / 10000.0)
+            self.vfactorx = arm.volt_refx / 4095 * (1 + uint16_to_int(self.arm.modbus_slave.modbus_cache_map.get_register(1, regcal + self.reg_shift + 1, slave=self.arm.modbus_address)[0]) / 10000.0)
+            self.voffset = (uint16_to_int(self.arm.modbus_slave.modbus_cache_map.get_register(1, regcal + self.reg_shift + 2, slave=self.arm.modbus_address)[0]) / 10000.0)
         else:
             self.vfactor = arm.volt_ref / 4095 * (1 / 10000.0)
             self.vfactorx = arm.volt_refx / 4095 * (1 / 10000.0)
@@ -1913,8 +1894,8 @@ class AnalogInput():
                 byte_arr = bytearray(4)
                 byte_arr[2] = (self.regvalue() >> 8) & 255
                 byte_arr[3] = self.regvalue() & 255
-                byte_arr[0] = (self.arm.neuron.modbus_cache_map.get_register(1, self.valreg + 1, slave=self.arm.modbus_address)[0] >> 8) & 255
-                byte_arr[1] = self.arm.neuron.modbus_cache_map.get_register(1, self.valreg + 1, slave=self.arm.modbus_address)[0] & 255
+                byte_arr[0] = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg + 1, slave=self.arm.modbus_address)[0] >> 8) & 255
+                byte_arr[1] = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg + 1, slave=self.arm.modbus_address)[0] & 255
                 return struct.unpack('>f', byte_arr)[0]
         except Exception as E:
             logger.exception(str(E))
@@ -1995,15 +1976,15 @@ class AnalogInput():
                 self.mode = mode
                 if self.mode == "Voltage":
                     self.unit_name = unit_names[VOLT]
-                    await self.arm.neuron.client.write_register(self.regmode, 0, slave=self.arm.modbus_address)
+                    await self.arm.modbus_slave.client.write_register(self.regmode, 0, slave=self.arm.modbus_address)
                 elif self.mode == "Current":
                     self.unit_name = unit_names[AMPERE]
-                    await self.arm.neuron.client.write_register(self.regmode, 1, slave=self.arm.modbus_address)
+                    await self.arm.modbus_slave.client.write_register(self.regmode, 1, slave=self.arm.modbus_address)
                 self.reg_shift = 2 if self.mode == "Voltage" else 0
                 if self.regcal >= 0:
-                    self.vfactor = self.arm.volt_ref / 4095 * (1 + uint16_to_int(self.arm.neuron.modbus_cache_map.get_register(1, self.regcal + self.reg_shift + 1, slave=self.arm.modbus_address)[0]) / 10000.0)
-                    self.vfactorx = self.arm.volt_refx / 4095 * (1 + uint16_to_int(self.arm.neuron.modbus_cache_map.get_register(1, self.regcal + self.reg_shift + 1, slave=self.arm.modbus_address)[0]) / 10000.0)
-                    self.voffset = (uint16_to_int(self.arm.neuron.modbus_cache_map.get_register(1, self.regcal + self.reg_shift + 2, slave=self.arm.modbus_address)[0]) / 10000.0)
+                    self.vfactor = self.arm.volt_ref / 4095 * (1 + uint16_to_int(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regcal + self.reg_shift + 1, slave=self.arm.modbus_address)[0]) / 10000.0)
+                    self.vfactorx = self.arm.volt_refx / 4095 * (1 + uint16_to_int(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regcal + self.reg_shift + 1, slave=self.arm.modbus_address)[0]) / 10000.0)
+                    self.voffset = (uint16_to_int(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regcal + self.reg_shift + 2, slave=self.arm.modbus_address)[0]) / 10000.0)
                 else:
                     self.vfactor = self.arm.volt_ref / 4095 * (1 / 10000.0)
                     self.vfactorx = self.arm.volt_refx / 4095 * (1 / 10000.0)
@@ -2027,7 +2008,7 @@ class AnalogInput():
                     self.unit_name = unit_names[OHM]
                     self.sec_ai_mode = 4
                 self.tolerance_mode = self.get_tolerance_mode()
-                await self.arm.neuron.client.write_register(self.regmode, self.sec_ai_mode, slave=self.arm.modbus_address)
+                await self.arm.modbus_slave.client.write_register(self.regmode, self.sec_ai_mode, slave=self.arm.modbus_address)
         if self.tolerances == '500series' and range is not None and range in self.get_tolerance_modes():
             if self.mode == "Voltage":
                 self.unit_name = unit_names[VOLT]
@@ -2037,7 +2018,7 @@ class AnalogInput():
                 self.unit_name = unit_names[OHM]
             self.tolerance_mode = range
             self.sec_ai_mode = self.get_500_series_sec_mode()
-            await self.arm.neuron.client.write_register(self.regmode, self.sec_ai_mode, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_register(self.regmode, self.sec_ai_mode, slave=self.arm.modbus_address)
         return self.full()
 
     def full(self):
@@ -2091,7 +2072,7 @@ class AnalogInput18():
         self.unit_name = ''
         self.tolerances = ["Integer 18bit", "Float"]
         self.tolerance_mode = "Integer 18bit"
-        self.raw_mode = self.arm.neuron.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0]
+        self.raw_mode = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0]
         self.mode = self.get_mode()
         self.major_group = major_group
         self.calibration = {'Voltage': 10.0/(1<<18)/0.9772, 'Current': 40.0/(1<<18)}
@@ -2100,7 +2081,7 @@ class AnalogInput18():
     @property
     def value(self):
         try:
-            U32 = self.arm.neuron.modbus_cache_map.get_register(2, self.valreg, slave=self.arm.modbus_address)
+            U32 = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg, slave=self.arm.modbus_address)
             raw_value = U32[0] | (U32[1] << 16)
             return raw_value if self.tolerance_mode == "Integer 18bit" else float(raw_value)*self.calibration[self.mode]
         except Exception as E:
@@ -2124,7 +2105,7 @@ class AnalogInput18():
                     self.raw_mode = 0
             elif self.mode == "Current":
                     self.raw_mode = 1
-            await self.arm.neuron.client.write_register(self.regmode, self.raw_mode, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_register(self.regmode, self.raw_mode, slave=self.arm.modbus_address)
 
         if range is not None and range in self.tolerances:
             self.tolerance_mode = range
