@@ -2006,7 +2006,7 @@ def main():
     else:
         modbus_context = None
 
-    if evok_config.getbooldef("soap_server_enabled", False):
+    if evok_config.getbooldef("soap_server_enabled", False):  # TODO: zachranit??
         soap_services = [
             ('UniPiQueryService', UniPiQueryService),
             ('UniPiCommandService', UniPiCommandService)

@@ -75,7 +75,6 @@ class DeviceList(dict):
         if circuit is None:
             return devdict.values()
         try:
-            print(devtype, devdict)
             return devdict[circuit]
         except KeyError:
             if circuit in self.alias_dict:

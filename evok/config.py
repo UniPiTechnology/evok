@@ -1,7 +1,20 @@
+import logging
 import os
 import multiprocessing
-import configparser as ConfigParser
 from typing import List, Dict
+
+try:
+    from unipig import Unipig
+except ImportError:
+    pass
+try:
+    from modbus_slave import TcpModbusSlave
+except ImportError:
+    pass
+try:
+    import owclient
+except ImportError:
+    pass
 
 import yaml
 from devices import *
@@ -181,7 +194,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
             logging.info(f"^ Creating device '{device_name}' with type '{device_type}'")
             try:
                 if device_type == 'OWBUS':
-                    import owclient
+                    dev_counter += 1
                     bus = device_data.get("owbus")
                     interval = device_data.get("interval")
                     scan_interval = device_data.get("scan_interval")
@@ -193,6 +206,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                     owbus = OWBusDevice(bus_driver, dev_id=0)
                     Devices.register_device(OWBUS, owbus)
                 elif device_type == 'SENSOR' or device_type == '1WDEVICE':
+                    dev_counter += 1
                     # permanent thermometer
                     bus = device_type.get("bus")
                     owbus = (Devices.by_int(OWBUS, bus)).bus_driver
@@ -205,23 +219,24 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                         sensor = OWSensorDevice(sensor, dev_id=0)
                     Devices.register_device(SENSOR, sensor)
                 elif device_type == 'I2CBUS':
+                    dev_counter += 1
                     # I2C bus on /dev/i2c-1 via pigpio daemon
                     busid = device_data.get("busid")
                     bus_driver = I2cBus(circuit=circuit, busid=busid)
                     i2cbus = I2CBusDevice(bus_driver, 0)
                     Devices.register_device(I2CBUS, i2cbus)
                 elif device_type == 'GPIOBUS':
+                    dev_counter += 1
                     # access to GPIO via pigpio daemon
                     bus_driver = GpioBus(circuit=circuit)
                     gpio_bus = GPIOBusDevice(bus_driver, 0)
                     Devices.register_device(GPIOBUS, gpio_bus)
                 elif device_type == 'UNIPIG':
-                    from unipig import Unipig
+                    dev_counter += 1
                     device_model = device_data["model"]
                     unipig = Unipig(circuit, evok_config, hw_dict, device_model)
                     Devices.register_device(MODBUS_SLAVE, unipig)
                 elif device_type == 'MODBUS_SLAVE':
-                    from modbus_slave import TcpModbusSlave
                     dev_counter += 1
                     modbus_server = device_data.get("modbus_server", "127.0.0.1")
                     modbus_port = device_data.get("modbus_port", 502)
