@@ -1,33 +1,26 @@
-'''
+"""
   Code specific to Neuron devices
 ------------------------------------------
-'''
+"""
+
 import logging
 import struct
 import datetime
-#from dali.bus import Bus
-#import dali.gear.general
 from math import sqrt
 from typing import Union
 
-#from tornado import gen
 from tornado.ioloop import IOLoop
 from pymodbus.client import AsyncModbusTcpClient, AsyncModbusSerialClient
-#from modbusclient_tornado import ModbusClientProtocol, StartClient
 from pymodbus.pdu import ExceptionResponse
 from pymodbus.exceptions import ModbusIOException, ConnectionException
 from tornado.locks import Semaphore
-#import modbusclient_rs485
 
 from devices import *
 from log import *
 import config
 import time
 
-#from modbusclient_rs485 import AsyncErrorResponse
 import subprocess
-#from unipidali import SyncUnipiDALIDriver
-#from dali.address import Broadcast, Group
 
 class ENoBoard(Exception):
     pass
@@ -179,7 +172,7 @@ class ModbusCacheMap(object):
 
 class ModbusSlave(object):
 
-    def __init__(self, circuit, Config, scan_freq, scan_enabled, hw_dict, modbus_address=15,
+    def __init__(self, circuit, evok_config, scan_freq, scan_enabled, hw_dict, modbus_address=15,
                  major_group=1, device_model='unspecified', dev_id=0):
         self.alias = ""
         self.devtype = MODBUS_SLAVE
@@ -190,7 +183,7 @@ class ModbusSlave(object):
         self.hw_dict = hw_dict
         self.modbus_address = modbus_address
         self.device_model = device_model
-        self.Config = Config
+        self.evok_config = evok_config
         self.do_scanning = False
         self.is_scanning = False
         self.scanning_error_triggered = False
@@ -202,11 +195,18 @@ class ModbusSlave(object):
             self.scan_interval = 1.0 / scan_freq
         self.scan_enabled = scan_enabled
         self.versions = []
-        self.logfile = Config.getstringdef("MAIN", "log_file", "/var/log/evok.log")
+        self.logfile = evok_config.getstringdef("MAIN", "log_file", "/var/log/evok.log")
         self.client: Union[None, AsyncModbusTcpClient, AsyncModbusSerialClient] = None
+        self.loop: Union[None, IOLoop] = None
 
     def get(self):
         return self.full()
+
+    def switch_to_async(self, loop: IOLoop, alias_dict: dict):
+        raise Exception(f"Interface method 'switch_to_async' not overwrite!")
+
+    def full(self):
+        raise Exception(f"Interface method 'full' not overwrite!")
 
     async def set(self, print_log=None):
         if print_log is not None and print_log != 0:
@@ -231,7 +231,7 @@ class ModbusSlave(object):
             else:
                 self.versions = self.versions.registers
 
-            board = Board(self.Config, self.circuit, self.modbus_address, self, self.versions, dev_id=self.dev_id)
+            board = Board(self.evok_config, self.circuit, self.modbus_address, self, self.versions, dev_id=self.dev_id)
             await board.parse_definition(self.hw_dict)
             self.boards.append(board)
             await config.add_aliases(alias_dict)
@@ -272,10 +272,10 @@ class ModbusSlave(object):
 
 class UartModbusSlave(ModbusSlave):
 
-    def __init__(self, circuit, Config, port, scan_freq, scan_enabled, hw_dict,
+    def __init__(self, circuit, evok_config, port, scan_freq, scan_enabled, hw_dict,
                  baud_rate=19200, parity='N', stopbits=1, uart_address=15, major_group=1,
                  device_model='unspecified', modbus_slave_uart_circuit="None", dev_id=0):
-        ModbusSlave.__init__(self, circuit, Config, scan_freq, scan_enabled, hw_dict, uart_address,
+        ModbusSlave.__init__(self, circuit, evok_config, scan_freq, scan_enabled, hw_dict, uart_address,
                              major_group, device_model, dev_id)
         self.circuit = "UART_" + str(uart_address) + "_" + str(circuit)
         self.port = port
@@ -286,13 +286,9 @@ class UartModbusSlave(ModbusSlave):
 
     def switch_to_async(self, loop, alias_dict):
         self.loop = loop
-        if self.port in modbusclient_rs485.client_dict:
-            self.client = modbusclient_rs485.client_dict[self.port]
-        else:
-            self.client = modbusclient_rs485.AsyncModbusGeneratorClient(method='rtu', stopbits=self.stopbits, bytesize=8, parity=self.parity, baudrate=self.baud_rate, timeout=1.5, port=self.port)
-            modbusclient_rs485.client_dict[self.port] = self.client
-        loop.add_callback(lambda: modbusclient_rs485.UartStartClient(self, self.readboards, callback_args=alias_dict))
-
+        self.client = AsyncModbusSerialClient(port=self.port, baudrate=self.baud_rate, parity=self.parity,
+                                              stopbits=self.stopbits)
+        loop.add_callback(lambda: self.readboards(alias_dict))
 
     def full(self):
         ret = {'dev': 'extension',
@@ -311,20 +307,18 @@ class UartModbusSlave(ModbusSlave):
 
 class TcpModbusSlave(ModbusSlave):
 
-    def __init__(self, circuit, Config, modbus_server, modbus_port, scan_freq, scan_enabled, hw_dict,
+    def __init__(self, circuit, evok_config, modbus_server, modbus_port, scan_freq, scan_enabled, hw_dict,
                  modbus_address=1, major_group=1, device_model='unspecified', dev_id=0):
-        ModbusSlave.__init__(self, circuit, Config, scan_freq, scan_enabled, hw_dict, modbus_address,
+        ModbusSlave.__init__(self, circuit, evok_config, scan_freq, scan_enabled, hw_dict, modbus_address,
                              major_group, device_model, dev_id)
         self.circuit = circuit
         self.modbus_server = modbus_server
         self.modbus_port = modbus_port
 
-    def switch_to_async(self, loop, alias_dict):
+    def switch_to_async(self, loop , alias_dict):
         self.loop = loop
         self.client = AsyncModbusTcpClient(host=self.modbus_server, port=self.modbus_port)
         loop.add_callback(lambda: self.readboards(alias_dict))
-        #StartClient(self.client, self.modbus_server, self.modbus_port,
-                                              #self.readboards, callback_args=alias_dict))
 
     def full(self):
         ret = {'dev': 'extension',
@@ -355,13 +349,13 @@ class Proxy(object):
 
 
 class Board(object):
-    def __init__(self, Config, circuit, modbus_address, modbus_slave: ModbusSlave, versions, major_group=1, dev_id=0):
+    def __init__(self, evok_config, circuit, modbus_address, modbus_slave: ModbusSlave, versions, major_group=1, dev_id=0):
         self.alias = ""
         self.devtype = BOARD
         self.dev_id = dev_id
-        self.Config = Config
+        self.evok_config = evok_config
         self.circuit = circuit
-        self.legacy_mode = not (Config.getbooldef('MAIN','use_experimental_api', False))
+        self.legacy_mode = not (evok_config.getbooldef('MAIN', 'use_experimental_api', False))
         self.modbus_slave: ModbusSlave = modbus_slave
         self.major_group = major_group
         self.modbus_address = modbus_address
