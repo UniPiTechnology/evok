@@ -478,7 +478,7 @@ class Board(object):
             if 'cal_reg' in m_feature:
                 _ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, regcal=m_feature['cal_reg'],
                                    regmode=m_feature['mode_reg'], reg_res=m_feature['res_val_reg'], modes=m_feature['modes'],
-                                   dev_id=self.dev_id, major_group=m_feature['major_group'], legacy_mode=self.legacy_mode)
+                                   dev_id=self.dev_id, major_group=self.major_group, legacy_mode=self.legacy_mode)
             else:
                 _ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, dev_id=self.dev_id,
                                    major_group=0, legacy_mode=self.legacy_mode)

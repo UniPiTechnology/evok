@@ -1,18 +1,15 @@
 ---
-type: E16DI14RO
+type: E6DI8RO
 modbus_register_blocks:
-  - board_index : 1
-    start_reg   : 0
-    count       : 35
+  - start_reg   : 0
+    count       : 19
     frequency   : 1
-  - board_index : 1
-    start_reg   : 1000
-    count       : 29
+  - start_reg   : 1000
+    count       : 21
     frequency   : 5
 modbus_features:
   - type        : DI
-    count       : 16
-    major_group : 1
+    count       : 8
     modes       :
       - Simple
       - DirectSwitch
@@ -24,29 +21,25 @@ modbus_features:
     max_v       : 24
     val_reg     : 0
     counter_reg : 3
-    direct_reg  : 1026
+    direct_reg  : 1018
     deboun_reg  : 1010
-    polar_reg   : 1027
-    toggle_reg  : 1028
+    polar_reg   : 1019
+    toggle_reg  : 1020
   - type        : RO
-    major_group : 1
-    count       : 14
+    count       : 8
     val_reg     : 1
     val_coil    : 0
     modes       :
       - Simple
   - type        : WD
     count       : 1
-    major_group : 1
     val_reg     : 2
     timeout_reg : 1008
     nv_sav_coil : 1003
     reset_coil  : 1002
   - type        : REGISTER
-    major_group : 1
-    count       : 35
+    count       : 19
     start_reg   : 0
   - type        : REGISTER
-    major_group : 1
-    count       : 29
+    count       : 21
     start_reg   : 1000

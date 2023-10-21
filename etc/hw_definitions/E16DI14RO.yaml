@@ -1,18 +1,15 @@
 ---
-type: E14DI14RO
+type: E16DI14RO
 modbus_register_blocks:
-  - board_index : 1
-    start_reg   : 0
-    count       : 31
+  - start_reg   : 0
+    count       : 35
     frequency   : 1
-  - board_index : 1
-    start_reg   : 1000
-    count       : 27
+  - start_reg   : 1000
+    count       : 29
     frequency   : 5
 modbus_features:
   - type        : DI
-    count       : 14
-    major_group : 1
+    count       : 16
     modes       :
       - Simple
       - DirectSwitch
@@ -24,12 +21,11 @@ modbus_features:
     max_v       : 24
     val_reg     : 0
     counter_reg : 3
-    direct_reg  : 1024
+    direct_reg  : 1026
     deboun_reg  : 1010
-    polar_reg   : 1025
-    toggle_reg  : 1026
+    polar_reg   : 1027
+    toggle_reg  : 1028
   - type        : RO
-    major_group : 1
     count       : 14
     val_reg     : 1
     val_coil    : 0
@@ -37,16 +33,13 @@ modbus_features:
       - Simple
   - type        : WD
     count       : 1
-    major_group : 1
     val_reg     : 2
     timeout_reg : 1008
     nv_sav_coil : 1003
     reset_coil  : 1002
   - type        : REGISTER
-    major_group : 1
-    count       : 31
+    count       : 35
     start_reg   : 0
   - type        : REGISTER
-    major_group : 1
-    count       : 27
+    count       : 29
     start_reg   : 1000
