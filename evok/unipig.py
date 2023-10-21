@@ -36,7 +36,7 @@ class Unipig:
         self.scanning_error_triggered = False
         self.hw_board_dict = {}
         self.versions = []
-        self.logfile = Config.getstringdef("MAIN", "log_file", "/var/log/evok.log")
+        self.logfile = Config.getstringdef("log_file", "/var/log/evok.log")
 
     def get(self):
         return self.full()

@@ -59,8 +59,8 @@ evok_config = config.EvokConfig(config_path)
 wh = None
 cors = False
 corsdomains = '*'
-use_output_schema = evok_config.getbooldef('MAIN', 'use_schema_verification', False)
-allow_unsafe_configuration_handlers = evok_config.getbooldef('MAIN', 'allow_unsafe_configuration_handlers', False)
+use_output_schema = evok_config.getbooldef('use_schema_verification', False)
+allow_unsafe_configuration_handlers = evok_config.getbooldef('allow_unsafe_configuration_handlers', False)
 
 import rpc_handler
 
@@ -200,7 +200,7 @@ class WsHandler(websocket.WebSocketHandler):
                 result = []
                 # devices = [INPUT, RELAY, AI, AO, SENSOR, UNIT_REGISTER]
                 devices = [INPUT, RELAY, AI, AO, SENSOR]
-                if evok_config.getbooldef("MAIN", "websocket_all_filtered", False):
+                if evok_config.getbooldef("websocket_all_filtered", False):
                     if (len(self.filter) == 1 and self.filter[0] == "default"):
                         for dev in devices:
                             result += map(lambda dev: dev.full(), Devices.by_int(dev))
@@ -1908,8 +1908,8 @@ def main():
     tornado.options.parse_command_line()
 
     # tornado.httpclient.AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
-    log_file = evok_config.getstringdef("MAIN", "log_file", "./evok.log")
-    log_level = evok_config.getstringdef("MAIN", "log_level", "INFO").upper()
+    log_file = evok_config.getstringdef("log_file", "./evok.log")
+    log_level = evok_config.getstringdef("log_level", "INFO").upper()
 
     # rotating file handler
     filelog_handler = logging.handlers.TimedRotatingFileHandler(filename=log_file, when='D', backupCount=7)
@@ -1924,14 +1924,14 @@ def main():
     alias_dict = (config.HWDict(dir_paths=['/home/unipi/remote_evok/var/'])).definitions
 
     cors = True
-    corsdomains = evok_config.getstringdef("MAIN", "cors_domains", "*")
+    corsdomains = evok_config.getstringdef("cors_domains", "*")
     define("cors", default=True, help="enable CORS support", type=bool)
-    port = evok_config.getintdef("MAIN", "port", 8080)
+    port = evok_config.getintdef("port", 8080)
     if options.as_dict()['port'] != -1:
         port = options.as_dict()['port']  # use command-line option instead of config option
 
-    modbus_address = evok_config.getstringdef("MAIN", "modbus_address", '')
-    modbus_port = evok_config.getintdef("MAIN", "modbus_port", 0)
+    modbus_address = evok_config.getstringdef("modbus_address", '')
+    modbus_port = evok_config.getintdef("modbus_port", 0)
 
     if options.as_dict()['modbus_port'] != -1:
         modbus_port = options.as_dict()['modbus_port']  # use command-line option instead of config option
@@ -2006,22 +2006,22 @@ def main():
     else:
         modbus_context = None
 
-    if evok_config.getbooldef("MAIN", "soap_server_enabled", False):
+    if evok_config.getbooldef("soap_server_enabled", False):
         soap_services = [
             ('UniPiQueryService', UniPiQueryService),
             ('UniPiCommandService', UniPiCommandService)
         ]
         soap_app = webservices.WebService(soap_services)
         soap_server = tornado.httpserver.HTTPServer(soap_app)
-        soap_port = evok_config.getintdef("MAIN", "soap_server_port", 8081)
+        soap_port = evok_config.getintdef("soap_server_port", 8081)
         soap_server.listen(soap_port)
         logger.info("Starting SOAP server on %d", soap_port)
 
-    if evok_config.getbooldef("MAIN", "webhook_enabled", False):
+    if evok_config.getbooldef("webhook_enabled", False):
         wh_types = json.loads(
-            evok_config.getstringdef("MAIN", "webhook_device_mask", '["input", "sensor", "uart", "watchdog"]'))
-        wh_complex = evok_config.getbooldef("MAIN", "webhook_complex_events", False)
-        wh = WhHandler(evok_config.getstringdef("MAIN", "webhook_address", "http://127.0.0.1:80/index.html"), wh_types,
+            evok_config.getstringdef("webhook_device_mask", '["input", "sensor", "uart", "watchdog"]'))
+        wh_complex = evok_config.getbooldef("webhook_complex_events", False)
+        wh = WhHandler(evok_config.getstringdef("webhook_address", "http://127.0.0.1:80/index.html"), wh_types,
                        wh_complex)
         wh.open()
 
@@ -2034,7 +2034,7 @@ def main():
 
     # create hw devices
     config.create_devices(evok_config, hw_dict)
-    if evok_config.getbooldef("MAIN", "wifi_control_enabled", False):
+    if evok_config.getbooldef("wifi_control_enabled", False):
         config.add_wifi()
     '''
     """ Setting the '_server' attribute if not set - simple link to mainloop"""
