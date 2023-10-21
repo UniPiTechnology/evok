@@ -50,12 +50,11 @@ from tornado_json.exceptions import APIError
 # from tornadows import complextypes
 
 # Read config during initialisation
-evok_config = config.EvokConfig()  # ConfigParser.RawConfigParser()
-evok_config.add_section('MAIN')
-config_path = '/etc/evok.conf'
-if not os.path.isfile(config_path):
-    config_path = os.path.dirname(os.path.realpath(__file__)) + '/evok.conf'
-evok_config.read(config_path)
+config_path = '/etc/evok.d'
+if not os.path.isdir(config_path):
+    config_path = os.path.dirname(os.path.realpath(__file__)) + '/evok.d'
+    os.mkdir(config_path) if not os.path.exists(config_path) else None
+evok_config = config.EvokConfig(config_path)
 
 wh = None
 cors = False
@@ -64,7 +63,6 @@ use_output_schema = evok_config.getbooldef('MAIN', 'use_schema_verification', Fa
 allow_unsafe_configuration_handlers = evok_config.getbooldef('MAIN', 'allow_unsafe_configuration_handlers', False)
 
 import rpc_handler
-import neuron
 
 
 class UserCookieHelper():
@@ -1920,7 +1918,7 @@ def main():
     filelog_handler.setLevel(log_level)
     logger.addHandler(filelog_handler)
 
-    logger.info("Starting using config file %s", config_path)
+    logger.info(f"Starting using config file {config_path}")
 
     # hw_dict = config.HWDict(dir_paths=['../etc/hw_definitions/', '../etc/hw_definitions/BuiltIn/'])  # TODO: dynamic
     hw_dict = config.HWDict(dir_paths=['../etc/hw_definitions/slaves/'])  # TODO: dynamic
@@ -2036,10 +2034,7 @@ def main():
     devents.register_status_cb(gener_status_cb(mainLoop, modbus_context))
 
     # create hw devices
-    hw_conf_path = evok_config.getstringdef("MAIN", "hwconf_path", "/etc/evok.yaml")
-    with open(hw_conf_path, 'r') as f:
-        hw_conf = yaml.load(stream=f, Loader=yaml.Loader)
-    config.create_devices(evok_config, hw_conf, hw_dict)
+    config.create_devices(evok_config, hw_dict)
     if evok_config.getbooldef("MAIN", "wifi_control_enabled", False):
         config.add_wifi()
     '''

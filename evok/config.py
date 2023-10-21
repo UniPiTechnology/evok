@@ -1,7 +1,7 @@
 import os
 import multiprocessing
 import configparser as ConfigParser
-from typing import List
+from typing import List, Dict
 
 import yaml
 from devices import *
@@ -82,10 +82,55 @@ class GPIOBusDevice():
         return None
 
 
-class EvokConfig(ConfigParser.RawConfigParser):
+class EvokConfig:
 
-    def __init__(self):
-        ConfigParser.RawConfigParser.__init__(self, inline_comment_prefixes=(';'))
+    def __init__(self, dir_path: str):
+        data = self.__get_final_conf(dir_path=dir_path)
+        self.main: dict = self.__get_main_conf(data)
+        self.hw_tree: dict = self.__get_hw_tree(data)
+
+    def __get_final_conf(self, dir_path) -> dict:
+        final_conf = {}
+        for path in self.__get_sorted_confs(dir_path=dir_path):
+            with open(path, 'r') as f:
+                ydata: dict = yaml.load(f, Loader=yaml.Loader)
+            for name, value in ydata.items():
+                final_conf[name] = value  # TODO: zahloubeni (neztracet data, pouze expandovat)
+        return final_conf
+
+    @staticmethod
+    def __get_sorted_confs(dir_path) -> List[str]:
+        data: Dict[int, List[str]] = {}
+        for filename in os.listdir(dir_path):
+            file_path = dir_path + '/' + filename
+            key: int
+            if '-' not in filename:
+                key = 0
+            else:
+                try:
+                    key, _ = filename.split('-')
+                    key = int(key)
+                except Exception as E:
+                    raise KeyError(f"Invalid filename in evok configuration! ({filename}:{E})")
+            data[key] = [file_path] if key not in data else data[key].append(file_path)
+        ret = list()
+        for key in sorted(data.keys()):
+            ret.extend(data[key])
+        return ret
+
+    @staticmethod
+    def __get_main_conf(data: dict) -> dict:
+        if 'main' not in data:
+            raise KeyError(f"Missing 'main' section in evok configuration!")
+        return data['main']
+
+    @staticmethod
+    def __get_hw_tree(data: dict) -> dict:
+        ret = {}
+        for name, value in data.items():
+            if name not in ['main']:
+                ret[name] = value
+        return ret
 
     def configtojson(self):
         return dict(
@@ -127,6 +172,9 @@ class EvokConfig(ConfigParser.RawConfigParser):
         except:
             return default
 
+    def get_hw_tree(self) -> dict:
+        return self.hw_tree
+
 
 def hexint(value):
     if value.startswith('0x'):
@@ -134,10 +182,9 @@ def hexint(value):
     return int(value)
 
 
-def create_devices(evok_config: EvokConfig, hw_config: dict, hw_dict):
+def create_devices(evok_config: EvokConfig, hw_dict):
     dev_counter = 0
-    # Config.hw_dict = hw_dict
-    for bus_name, bus_data in hw_config.items():
+    for bus_name, bus_data in evok_config.get_hw_tree().items():
         bus_data: dict
         # split section name ITEM123 or ITEM_123 or ITEM-123 into device=ITEM and circuit=123
         bus_type = bus_data['type']
