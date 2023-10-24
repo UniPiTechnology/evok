@@ -2046,6 +2046,9 @@ def main():
                 urlspec.handler_class._server = mainLoop
     '''
     # switch buses to async mode, start processes, plan some actions
+    for device in Devices.by_int(UNIPIG):
+        device.readboards(alias_dict)
+
     for bustype in (I2CBUS, GPIOBUS, OWBUS):
         for device in Devices.by_int(bustype):
             device.bus_driver.switch_to_async(mainLoop)
@@ -2057,9 +2060,6 @@ def main():
         modbus_slave.switch_to_async(mainLoop, alias_dict)
         if modbus_slave.scan_enabled:
             modbus_slave.start_scanning()
-
-    for device in Devices.by_int(UNIPIG):
-        device.switch_to_async(mainLoop, alias_dict)
 
 
     def sig_handler(sig, frame):

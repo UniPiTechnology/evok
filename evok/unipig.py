@@ -67,7 +67,7 @@ class Unipig:
     async def set(self, print_log=None):
         return ""
 
-    async def readboards(self, alias_dict):
+    def readboards(self, alias_dict):
         self.boards = list()
         try:
             for defin in self.hw_dict.definitions:
@@ -75,17 +75,13 @@ class Unipig:
                     self.hw_board_dict = defin
                     break
             board = Board(self.evok_conf, self.circuit, self)
-            await board.parse_definition(self.hw_dict)
+            board.parse_definition(self.hw_dict)
             self.boards.append(board)
-            await config.add_aliases(alias_dict)
+            config.add_aliases(alias_dict)
         except Exception as E:
             Devices.remove_global_device(0)
             logger.exception(str(E))
             pass
-
-    def switch_to_async(self, loop, alias_dict):
-        self.loop = loop
-        loop.add_callback(lambda: self.readboards(alias_dict))
 
 
 class Board(object):
@@ -108,7 +104,7 @@ class Board(object):
         mcp = Devices.by_int(MCP, mcp)
         pin = feature.get("pin")
         circuit = feature.get("circuit")
-        r = Relay(circuit, mcp, pin, dev_id=0)
+        r = Relay(circuit, mcp, pin, dev_id=int(circuit))
         Devices.register_device(RELAY, r)
 
     def parse_feature_ai(self, feature: dict):
@@ -239,7 +235,7 @@ class Board(object):
         else:
             logging.error("Unknown feature: " + str(feature) + " at UNIPIG")
 
-    async def parse_definition(self, hw_dict):
+    def parse_definition(self, hw_dict):
         self.volt_refx = 33000
         self.volt_ref = 3.3
         for defin in hw_dict.definitions:
@@ -554,7 +550,6 @@ class UnipiMCP342x(object):
 
 
     async def measure_loop(self, mainloop):
-        # print("Entering measure loop")
         #mainloop = IOLoop.instance()
         try:
             next = None
@@ -921,7 +916,7 @@ class AnalogOutputGPIO():
             value = 10.0
         elif value < 0:
             value = 0.0
-        if config.up_globals['version'] == "UniPi 1.0":
+        if False:  # TODO: config.up_globals['version'] == "UniPi 1.0"
             return int(round((10 - value) * 100))
         else:
             return int(round(value * 100))

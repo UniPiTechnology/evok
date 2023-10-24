@@ -40,6 +40,7 @@ class DeviceList(dict):
                 del (self[devtype_name])[value.circuit]
 
     def by_int(self, devtypeid, circuit=None, major_group=None):
+        circuit = str(circuit) if circuit is not None else None
         devdict = self._arr[devtypeid]
         if circuit is None:
             if major_group is not None:
@@ -65,9 +66,10 @@ class DeviceList(dict):
             if circuit in self.alias_dict:
                 return self.alias_dict[circuit]
             else:
-                raise Exception('Invalid device circuit number %s' % str(circuit))
+                raise Exception(f'Invalid device circuit number {str(circuit)} with deftypeid {devtypeid}')
 
     def by_name(self, devtype, circuit=None):
+        circuit = str(circuit) if circuit is not None else None
         try:
             devdict = self[devtype]
         except KeyError:
@@ -80,7 +82,7 @@ class DeviceList(dict):
             if circuit in self.alias_dict:
                 return self.alias_dict[circuit]
             else:
-                raise Exception('Invalid device circuit number %s' % str(circuit))
+                raise Exception(f'Invalid device circuit number {str(circuit)} with deftype {devtype}')
 
     def register_device(self, devtype, device):
         """ can be called with devtype = INTEGER or NAME
@@ -93,6 +95,7 @@ class DeviceList(dict):
             devdict = self[devtype]
         devdict[str(device.circuit)] = device
         devents.config(device)
+        logging.info(f"Registed new device '{devtype_names[devtype]}' with circuit {device.circuit} \t ({device})")
 
     def add_alias(self, alias_key, device, file_update=False):
         if (not (alias_key.startswith("al_")) or (len(re.findall(r"[A-Za-z0-9\-\._]*", alias_key)) > 2)):

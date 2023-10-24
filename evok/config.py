@@ -225,7 +225,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                 logger.exception(f"Error in config section '{bus_type}:{device_name}' - {str(E)}")
 
 
-async def add_aliases(alias_conf):
+def add_aliases(alias_conf):
     if alias_conf is not None:
         for alias_conf_single in alias_conf:
             if alias_conf_single is not None:
