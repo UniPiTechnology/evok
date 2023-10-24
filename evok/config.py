@@ -75,26 +75,6 @@ class OWSensorDevice():
         return self.sensor_dev.full()
 
 
-class I2CBusDevice():
-    def __init__(self, bus_driver, dev_id):
-        self.dev_id = dev_id
-        self.bus_driver = bus_driver
-        self.circuit = bus_driver.circuit
-
-    def full(self):
-        return None
-
-
-class GPIOBusDevice():
-    def __init__(self, bus_driver, dev_id):
-        self.dev_id = dev_id
-        self.bus_driver = bus_driver
-        self.circuit = bus_driver.circuit
-
-    def full(self):
-        return None
-
-
 class EvokConfig:
 
     def __init__(self, dir_path: str):
@@ -218,19 +198,6 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                     if ow_type in ["DS2408", "DS2406", "DS2404", "DS2413"]:
                         sensor = OWSensorDevice(sensor, dev_id=0)
                     Devices.register_device(SENSOR, sensor)
-                elif device_type == 'I2CBUS':
-                    dev_counter += 1
-                    # I2C bus on /dev/i2c-1 via pigpio daemon
-                    busid = device_data.get("busid")
-                    bus_driver = I2cBus(circuit=circuit, busid=busid)
-                    i2cbus = I2CBusDevice(bus_driver, 0)
-                    Devices.register_device(I2CBUS, i2cbus)
-                elif device_type == 'GPIOBUS':
-                    dev_counter += 1
-                    # access to GPIO via pigpio daemon
-                    bus_driver = GpioBus(circuit=circuit)
-                    gpio_bus = GPIOBusDevice(bus_driver, 0)
-                    Devices.register_device(GPIOBUS, gpio_bus)
                 elif device_type == 'UNIPIG':
                     dev_counter += 1
                     device_model = device_data["model"]

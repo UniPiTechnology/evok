@@ -12,34 +12,14 @@ from math import isnan, floor
 
 #from tornado import gen
 from tornado.ioloop import IOLoop
-#import pigpio
+import pigpio
 from devices import *
 import config
-from evok import owclient
-from evok.apigpio import GpioBus, I2cBus
+from apigpio import GpioBus, I2cBus
 from log import *
 
-class OWBusDevice():
-    def __init__(self, bus_driver, dev_id):
-        self.dev_id = dev_id
-        self.bus_driver = bus_driver
-        self.circuit = bus_driver.circuit
 
-    def full(self):
-        return self.bus_driver.full()
-
-
-class OWSensorDevice():
-    def __init__(self, sensor_dev, dev_id):
-        self.dev_id = dev_id
-        self.sensor_dev = sensor_dev
-        self.circuit = sensor_dev.circuit
-
-    def full(self):
-        return self.sensor_dev.full()
-
-
-class I2CBusDevice():
+class I2CBusDevice:
     def __init__(self, bus_driver, dev_id):
         self.dev_id = dev_id
         self.bus_driver = bus_driver
@@ -49,7 +29,7 @@ class I2CBusDevice():
         return None
 
 
-class GPIOBusDevice():
+class GPIOBusDevice:
     def __init__(self, bus_driver, dev_id):
         self.dev_id = dev_id
         self.bus_driver = bus_driver
@@ -222,24 +202,6 @@ class Board(object):
         pca = UnipiPCA9685(bus, circuit, address=address, frequency=frequency, dev_id=0)
         Devices.register_device(PCA9685, pca)
 
-    def parse_feature_1w_relay(self, feature: dict):
-        # Relays on DS2404
-        sensor = feature.get("sensor")
-        sensor = (Devices.by_int(SENSOR, sensor)).sensor_dev
-        pin = feature.get("pin")
-        circuit = feature.get("circuit")
-        r = DS2408_relay(circuit, sensor, pin, dev_id=0)
-        Devices.register_device(RELAY, r)
-
-    def parse_feature_1w_input(self, feature: dict):
-        # Inputs on DS2404
-        sensor = feature.get("sensor")
-        sensor = (Devices.by_int(SENSOR, sensor)).sensor_dev
-        pin = feature.get("pin")
-        circuit = feature.get("circuit")
-        i = DS2408_input(circuit, sensor, pin, dev_id=0)
-        Devices.register_device(INPUT, i)
-
     def parse_feature_i2cbus(self, feature: dict):
         busid = feature.get("busid")
         bus_driver = I2cBus(circuit=feature.get('circuit'), busid=busid)
@@ -250,19 +212,6 @@ class Board(object):
         bus_driver = GpioBus(circuit=feature.get('circuit'))
         gpio_bus = GPIOBusDevice(bus_driver, 0)
         Devices.register_device(GPIOBUS, gpio_bus)
-
-    def parse_feature_owbus(self, feature: dict):
-        bus = feature.get("owbus")
-        interval = feature.get("interval")
-        scan_interval = feature.get("scan_interval")
-        circuit = feature.get('circuit')
-
-        resultPipe = multiprocessing.Pipe()
-        taskPipe = multiprocessing.Pipe()
-        bus_driver = owclient.OwBusDriver(circuit, taskPipe, resultPipe, bus=bus,
-                                          interval=interval, scan_interval=scan_interval)
-        owbus = OWBusDevice(bus_driver, dev_id=0)
-        Devices.register_device(OWBUS, owbus)
 
     def parse_feature(self, feature: dict):
         if feature['type'] == 'DI':
@@ -283,16 +232,10 @@ class Board(object):
             self.parse_feature_ai(feature)
         elif feature['type'] == 'PCA9685':
             self.parse_feature_pca9685(feature)
-        elif feature['type'] == '1WRELAY':
-            self.parse_feature_1w_relay(feature)
-        elif feature['type'] == '1WINPUT':
-            self.parse_feature_1w_input(feature)
         elif feature['type'] == 'GPIOBUS':
             self.parse_feature_gpiobus(feature)
         elif feature['type'] == 'I2CBUS':
             self.parse_feature_i2cbus(feature)
-        elif feature['type'] == 'OWBUS':
-            self.parse_feature_owbus(feature)
         else:
             logging.error("Unknown feature: " + str(feature) + " at UNIPIG")
 
