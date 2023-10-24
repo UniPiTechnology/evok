@@ -1921,7 +1921,7 @@ def main():
     logger.info(f"Starting using config file {config_path}")
 
     hw_dict = config.HWDict(dir_paths=['../etc/hw_definitions/'])  # TODO: dynamic
-    alias_dict = (config.HWDict(dir_paths=['/home/unipi/remote_evok/var/'])).definitions
+    alias_dict = (config.HWDict(dir_paths=['../var/'])).definitions
 
     cors = True
     corsdomains = evok_config.getstringdef("cors_domains", "*")
