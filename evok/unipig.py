@@ -3,6 +3,7 @@
 '''
 
 import asyncio
+import multiprocessing
 import struct
 import time
 import datetime
@@ -14,7 +15,48 @@ from tornado.ioloop import IOLoop
 #import pigpio
 from devices import *
 import config
+from evok import owclient
+from evok.apigpio import GpioBus, I2cBus
 from log import *
+
+class OWBusDevice():
+    def __init__(self, bus_driver, dev_id):
+        self.dev_id = dev_id
+        self.bus_driver = bus_driver
+        self.circuit = bus_driver.circuit
+
+    def full(self):
+        return self.bus_driver.full()
+
+
+class OWSensorDevice():
+    def __init__(self, sensor_dev, dev_id):
+        self.dev_id = dev_id
+        self.sensor_dev = sensor_dev
+        self.circuit = sensor_dev.circuit
+
+    def full(self):
+        return self.sensor_dev.full()
+
+
+class I2CBusDevice():
+    def __init__(self, bus_driver, dev_id):
+        self.dev_id = dev_id
+        self.bus_driver = bus_driver
+        self.circuit = bus_driver.circuit
+
+    def full(self):
+        return None
+
+
+class GPIOBusDevice():
+    def __init__(self, bus_driver, dev_id):
+        self.dev_id = dev_id
+        self.bus_driver = bus_driver
+        self.circuit = bus_driver.circuit
+
+    def full(self):
+        return None
 
 
 class Unipig:
@@ -198,6 +240,30 @@ class Board(object):
         i = DS2408_input(circuit, sensor, pin, dev_id=0)
         Devices.register_device(INPUT, i)
 
+    def parse_feature_i2cbus(self, feature: dict):
+        busid = feature.get("busid")
+        bus_driver = I2cBus(circuit=feature.get('circuit'), busid=busid)
+        i2cbus = I2CBusDevice(bus_driver, 0)
+        Devices.register_device(I2CBUS, i2cbus)
+
+    def parse_feature_gpiobus(self, feature: dict):
+        bus_driver = GpioBus(circuit=feature.get('circuit'))
+        gpio_bus = GPIOBusDevice(bus_driver, 0)
+        Devices.register_device(GPIOBUS, gpio_bus)
+
+    def parse_feature_owbus(self, feature: dict):
+        bus = feature.get("owbus")
+        interval = feature.get("interval")
+        scan_interval = feature.get("scan_interval")
+        circuit = feature.get('circuit')
+
+        resultPipe = multiprocessing.Pipe()
+        taskPipe = multiprocessing.Pipe()
+        bus_driver = owclient.OwBusDriver(circuit, taskPipe, resultPipe, bus=bus,
+                                          interval=interval, scan_interval=scan_interval)
+        owbus = OWBusDevice(bus_driver, dev_id=0)
+        Devices.register_device(OWBUS, owbus)
+
     def parse_feature(self, feature: dict):
         if feature['type'] == 'DI':
             self.parse_feature_di(feature)
@@ -221,6 +287,12 @@ class Board(object):
             self.parse_feature_1w_relay(feature)
         elif feature['type'] == '1WINPUT':
             self.parse_feature_1w_input(feature)
+        elif feature['type'] == 'GPIOBUS':
+            self.parse_feature_gpiobus(feature)
+        elif feature['type'] == 'I2CBUS':
+            self.parse_feature_i2cbus(feature)
+        elif feature['type'] == 'OWBUS':
+            self.parse_feature_owbus(feature)
         else:
             logging.error("Unknown feature: " + str(feature) + " at UNIPIG")
 
@@ -444,7 +516,7 @@ class Relay(object):
             self.pending_id = None
             await self.mcp.set_masked_value(self._mask, not value)
             #global _lastt
-            #t = IOLoop.instance().time()           
+            #t = IOLoop.instance().time()
             #print "%s %s" % (t-_lastt,t)
             #_lastt = t
 
@@ -976,7 +1048,7 @@ class Input():
 
     def full(self):
         return {'dev': 'input', 'circuit': self.circuit, 'value': self.value,
-                'bitvalue' : self.__value, 
+                'bitvalue' : self.__value,
                 'time': self.tick, 'debounce': self.debounce,
                 'counter_mode': self.counter_mode == 'rising' or self.counter_mode == 'falling',
                 'glob_dev_id': self.dev_id}
@@ -1064,7 +1136,7 @@ class DS2408_pio(object):
 
     def full(self):
         return None
-    
+
     def simple(self):
         pass
 

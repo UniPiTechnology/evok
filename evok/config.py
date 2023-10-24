@@ -234,6 +234,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                 elif device_type == 'UNIPIG':
                     dev_counter += 1
                     device_model = device_data["model"]
+                    circuit = device_model
                     _unipig = Unipig(circuit, evok_config, hw_dict, device_model=device_model, dev_id=dev_counter)
                     Devices.register_device(UNIPIG, _unipig)
                 elif device_type == 'MODBUS_SLAVE':
