@@ -1709,19 +1709,19 @@ class JSONBulkHandler(APIHandler):
                         all_devs_filtered = []
                         for single_dev in all_devs:
                             if single_dev.arm.major_group == single_query['group']:
-                                all_devs_filtered += single_dev
+                                all_devs_filtered.append(single_dev)
                         all_devs = all_devs_filtered
                     if 'device_circuits' in single_query:
                         all_devs_filtered = []
                         for single_dev in all_devs:
                             if single_dev.circuit in single_query['device_circuits']:
-                                all_devs_filtered += single_dev
+                                all_devs_filtered.append(single_dev)
                         all_devs = all_devs_filtered
                     if 'global_device_id' in single_query:
                         all_devs_filtered = []
                         for single_dev in all_devs:
                             if single_dev.dev_id == single_query['global_device_id']:
-                                all_devs_filtered += single_dev
+                                all_devs_filtered.append(single_dev)
                         all_devs = all_devs_filtered
                     if 'group_queries' in result:
                         result['group_queries'] += [map(methodcaller('full'), all_devs)]
@@ -1734,19 +1734,19 @@ class JSONBulkHandler(APIHandler):
                         all_devs_filtered = []
                         for single_dev in all_devs:
                             if single_dev.arm.major_group == single_command['group']:
-                                all_devs_filtered += single_dev
+                                all_devs_filtered.append(single_dev)
                         all_devs = all_devs_filtered
                     if 'device_circuits' in single_command:
                         all_devs_filtered = []
                         for single_dev in all_devs:
                             if single_dev.circuit in single_command['device_circuits']:
-                                all_devs_filtered += single_dev
+                                all_devs_filtered.append(single_dev)
                         all_devs = all_devs_filtered
                     if 'global_device_id' in single_command:
                         all_devs_filtered = []
                         for single_dev in all_devs:
                             if single_dev.dev_id == single_command['global_device_id']:
-                                all_devs_filtered += single_dev
+                                all_devs_filtered.append(single_dev)
                         all_devs = all_devs_filtered
                     for i in range(len(all_devs)):
                         outp = all_devs[i].set(**(single_command['assigned_values']))
