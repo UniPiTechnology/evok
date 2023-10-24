@@ -234,7 +234,7 @@ class ModbusSlave(object):
             board = Board(self.evok_config, self.circuit, self.modbus_address, self, self.versions, dev_id=self.dev_id)
             await board.parse_definition(self.hw_dict)
             self.boards.append(board)
-            await config.add_aliases(alias_dict)
+            config.add_aliases(alias_dict)
         except (ENoBoard, ConnectionException) as E:
             logger.error(f"No board detected on Modbus {self.modbus_address}\t({type(E).__name__}:{E})")
         except Exception as E:

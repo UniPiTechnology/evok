@@ -20,7 +20,7 @@ def set_blocking(fd):
     fcntl.fcntl(fd, fcntl.F_SETFL, flags & ~os.O_NONBLOCK)
 
 
-class _PigBus(object, pigpio.pi):
+class _PigBus(pigpio.pi):
     """
         Common class for I2cBus and GpioBus
     """
@@ -37,7 +37,7 @@ class _PigBus(object, pigpio.pi):
         pigpio.pi.__init__(self, host, port)
         self.iolock = asyncio.Lock()
         # dispose _notify thread
-        self._notify.stop()
+        # self._notify.stop()
         self._notify = None
 
     # def stop(self):
