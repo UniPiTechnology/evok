@@ -1352,7 +1352,8 @@ class ULED(object):
         """ Sets new on/off status. Disable pending timeouts
         """
         if alias is not None:
-            if Devices.add_alias(alias, self):
+            
+            if Devices.add_alias(alias, self, file_update=True):
                 self.alias = alias
         if value is not None:
             value = int(value)
