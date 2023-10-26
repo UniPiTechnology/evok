@@ -4,10 +4,6 @@ import multiprocessing
 from typing import List, Dict
 
 try:
-    from unipig import Unipig
-except ImportError:
-    pass
-try:
     from modbus_slave import TcpModbusSlave
 except ImportError:
     pass
@@ -198,12 +194,6 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                     if ow_type in ["DS2408", "DS2406", "DS2404", "DS2413"]:
                         sensor = OWSensorDevice(sensor, dev_id=0)
                     Devices.register_device(SENSOR, sensor)
-                elif device_type == 'UNIPIG':
-                    dev_counter += 1
-                    device_model = device_data["model"]
-                    circuit = device_model
-                    _unipig = Unipig(circuit, evok_config, hw_dict, device_model=device_model, dev_id=dev_counter)
-                    Devices.register_device(UNIPIG, _unipig)
                 elif device_type == 'MODBUS_SLAVE':
                     dev_counter += 1
                     modbus_server = device_data.get("modbus_server", "127.0.0.1")

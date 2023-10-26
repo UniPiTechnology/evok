@@ -158,7 +158,6 @@ LIGHT_CHANNEL = 22
 LIGHT_DEVICE = 23
 UNIT_REGISTER = 24
 EXT_CONFIG = 25
-UNIPIG = 26
 
 # # corresponding device types names !! ORDER IS IMPORTANT
 devtype_names = (
@@ -188,7 +187,6 @@ devtype_names = (
     'light_device',
     'unit_register',
     'ext_config',
-    'unipig'
 )
 
 devtype_altnames = {
