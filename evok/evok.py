@@ -50,9 +50,9 @@ from tornado_json.exceptions import APIError
 # from tornadows import complextypes
 
 # Read config during initialisation
-config_path = '/etc/evok.d'
+config_path = '/etc/evok'
 if not os.path.isdir(config_path):
-    config_path = os.path.dirname(os.path.realpath(__file__)) + '/evok.d'
+    config_path = os.path.dirname(os.path.realpath(__file__)) + '/evok'
     os.mkdir(config_path) if not os.path.exists(config_path) else None
 evok_config = config.EvokConfig(config_path)
 
@@ -1920,7 +1920,7 @@ def main():
 
     logger.info(f"Starting using config file {config_path}")
 
-    hw_dict = config.HWDict(dir_paths=['../etc/hw_definitions/'])  # TODO: dynamic
+    hw_dict = config.HWDict(dir_paths=[f'{config_path}/hw_definitions/'])
     alias_dict = (config.HWDict(dir_paths=['../var/'])).definitions
 
     cors = True
@@ -2046,9 +2046,6 @@ def main():
                 urlspec.handler_class._server = mainLoop
     '''
     # switch buses to async mode, start processes, plan some actions
-    for device in Devices.by_int(UNIPIG):
-        device.readboards(alias_dict)
-
     for bustype in (I2CBUS, GPIOBUS, OWBUS):
         for device in Devices.by_int(bustype):
             device.bus_driver.switch_to_async(mainLoop)
