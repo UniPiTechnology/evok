@@ -24,6 +24,10 @@ except:
     pass
 
 
+class EvokConfigError(Exception):
+    pass
+
+
 class HWDict:
     def __init__(self, dir_paths: List[str] = None, paths: List[str] = None):
         """
@@ -51,7 +55,7 @@ class HWDict:
                                 f"definition count {len(self.definitions) - 1}")
 
 
-class OWBusDevice():
+class OWBusDevice:
     def __init__(self, bus_driver, dev_id):
         self.dev_id = dev_id
         self.bus_driver = bus_driver
@@ -61,7 +65,7 @@ class OWBusDevice():
         return self.bus_driver.full()
 
 
-class OWSensorDevice():
+class OWSensorDevice:
     def __init__(self, sensor_dev, dev_id):
         self.dev_id = dev_id
         self.sensor_dev = sensor_dev
@@ -73,14 +77,19 @@ class OWSensorDevice():
 
 class EvokConfig:
 
-    def __init__(self, dir_path: str):
-        data = self.__get_final_conf(dir_path=dir_path)
+    def __init__(self, conf_dir_path: str):
+        data = self.__get_final_conf(conf_dir_path=conf_dir_path)
         self.main: dict = self.__get_main_conf(data)
         self.hw_tree: dict = self.__get_hw_tree(data)
 
-    def __get_final_conf(self, dir_path) -> dict:
+    @staticmethod
+    def __get_final_conf(conf_dir_path) -> dict:
+        files = os.listdir(conf_dir_path)
+        if 'config.yaml' not in files:
+            raise EvokConfigError(f"Missing 'config.yaml' in evok configuration directory ({conf_dir_path})")
+        scope = [conf_dir_path+'/config.yaml']
         final_conf = {}
-        for path in self.__get_sorted_confs(dir_path=dir_path):
+        for path in scope:
             with open(path, 'r') as f:
                 ydata: dict = yaml.load(f, Loader=yaml.Loader)
             for name, value in ydata.items():
@@ -88,37 +97,18 @@ class EvokConfig:
         return final_conf
 
     @staticmethod
-    def __get_sorted_confs(dir_path) -> List[str]:
-        data: Dict[int, List[str]] = {}
-        for filename in os.listdir(dir_path):
-            file_path = dir_path + '/' + filename
-            key: int
-            if '-' not in filename:
-                key = 0
-            else:
-                try:
-                    key, _ = filename.split('-')
-                    key = int(key)
-                except Exception as E:
-                    raise KeyError(f"Invalid filename in evok configuration! ({filename}:{E})")
-            data[key] = [file_path] if key not in data else data[key].append(file_path)
-        ret = list()
-        for key in sorted(data.keys()):
-            ret.extend(data[key])
-        return ret
-
-    @staticmethod
     def __get_main_conf(data: dict) -> dict:
-        if 'main' not in data:
-            raise KeyError(f"Missing 'main' section in evok configuration!")
-        return data['main']
+        ret = {}
+        for name, value in data.items():
+            if name not in ['hw_tree']:
+                ret[name] = value
+        return ret
 
     @staticmethod
     def __get_hw_tree(data: dict) -> dict:
         ret = {}
-        for name, value in data.items():
-            if name not in ['main']:
-                ret[name] = value
+        for name, value in data['hw_tree'].items():
+            ret[name] = value
         return ret
 
     def configtojson(self):
