@@ -54,7 +54,12 @@ class MySensor(object):
     def get(self):
         return (self.value, self.lost, self.time, self.interval)
 
-    def set(self, interval=None):
+    def set(self, interval=None, alias=None):
+
+        if alias is not None:
+            if devices.Devices.add_alias(alias, self, file_update=True):
+                self.alias = alias
+
         if not (interval is None):
             self.__bus.taskWr.send((OWCMD_INTERVAL, self.circuit, interval))
             self.interval = interval
@@ -111,7 +116,7 @@ class MySensor(object):
 
 class DS18B20(MySensor):  # thermometer
     def full(self):
-        return {'dev': 'temp',
+        ret = {'dev': 'temp',
                 'circuit': self.circuit,
                 'address': self.address,
                 'value': self.value,
@@ -119,6 +124,11 @@ class DS18B20(MySensor):  # thermometer
                 'time': self.time,
                 'interval': self.interval,
                 'typ': self.type}
+
+        if self.alias != '':
+            ret['alias'] = self.alias
+
+        return ret
 
 
     def simple(self):
@@ -140,7 +150,7 @@ class DS2438(MySensor):  # vdd + vad + thermometer
     def full(self):
         if not (type(self.value) is tuple):
             self.value = (None, None, None)
-        return {'dev': '1wdevice',
+        ret = {'dev': '1wdevice',
                 'circuit': self.circuit,
                 'humidity': (((((float(self.value[1]) / float(self.value[0])) - 0.1515)) / 0.00636) / (1.0546 - 0.00216 * float(self.value[2]))),
                 'vdd': self.value[0],
@@ -151,6 +161,12 @@ class DS2438(MySensor):  # vdd + vad + thermometer
                 'time': self.time,
                 'interval': self.interval,
                 'typ': self.type}
+
+        if self.alias != '':
+            ret['alias'] = self.alias
+
+        return ret
+
 
     def simple(self):
         if not (type(self.value) is tuple):
@@ -194,11 +210,17 @@ class DS2408(MySensor):
         self.value = pios_values
 
     def full(self):
-        return {'dev': '1wdevice',
+        ret = {'dev': '1wdevice',
                 'circuit': self.circuit,
                 'address': self.address,
                 'value': None,
                 'typ': self.type}
+
+        if self.alias != '':
+            ret['alias'] = self.alias
+
+        return ret
+
 
     def simple(self):
         return self.full()
