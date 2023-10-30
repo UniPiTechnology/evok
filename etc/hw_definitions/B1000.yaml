@@ -13,6 +13,9 @@ modbus_register_blocks:
   - start_reg   : 1000
     count       : 32
     frequency   : 5
+  - start_reg   : 3000
+    count       : 6
+    frequency   : 10
 modbus_features:
   - type        : AO
     count       : 1
@@ -26,9 +29,8 @@ modbus_features:
     max_c       : 0.020
     min_r       : 0
     max_r       : 2000
-    val_reg     : 2
-    res_val_reg : 4
-    cal_reg     : 1024
+    val_reg     : 3000
+    res_val_reg : 3004
     mode_reg    : 1019
   - type        : AI
     count       : 1
@@ -40,8 +42,7 @@ modbus_features:
     max_v       : 10
     min_c       : 0
     max_c       : 0.020
-    val_reg     : 3
-    cal_reg     : 1024
+    val_reg     : 3002
     mode_reg    : 1024
   - type        : DO
     count       : 4
