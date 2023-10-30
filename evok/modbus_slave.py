@@ -13,6 +13,8 @@ from tornado.ioloop import IOLoop
 from pymodbus.client import AsyncModbusTcpClient, AsyncModbusSerialClient
 from pymodbus.pdu import ExceptionResponse
 from pymodbus.exceptions import ModbusIOException, ConnectionException
+from pymodbus.payload import BinaryPayloadDecoder, BinaryPayloadBuilder
+from pymodbus.constants import Endian
 from tornado.locks import Semaphore
 
 from devices import *
@@ -464,9 +466,9 @@ class Board(object):
         counter = 0
         while counter < max_count:
             board_val_reg = m_feature['val_reg']
-            if 'cal_reg' in m_feature:
-                _ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, regcal=m_feature['cal_reg'],
-                                   regmode=m_feature['mode_reg'], reg_res=m_feature['res_val_reg'], modes=m_feature['modes'],
+            if 'res_val_reg' in m_feature:
+                _ao = AnalogOutputBrain("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter,
+                                   regmode=m_feature['mode_reg'], reg_res=m_feature['res_val_reg'],
                                    dev_id=self.dev_id, major_group=self.major_group, legacy_mode=self.legacy_mode)
             else:
                 _ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, dev_id=self.dev_id,
@@ -500,9 +502,9 @@ class Board(object):
             board_val_reg = m_feature['val_reg']
             tolerances = m_feature.get('tolerances')
             circuit = "%s_%02d" % (self.circuit, counter + 1)
-            if 'cal_reg' in m_feature:
+            if m_feature.get('tolerance', None) == 'brain':
                 board_val_reg = m_feature['val_reg'] + counter
-                _ai = AnalogInput(circuit, self, board_val_reg, regcal=m_feature['cal_reg'],
+                _ai = AnalogInput(circuit, self, board_val_reg,
                                   regmode=m_feature['mode_reg'],
                                   dev_id=self.dev_id, major_group=0, tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
             elif (m_feature.get('type') == "AI18" ):
@@ -1672,66 +1674,42 @@ class WiFiAdapter():
         return self.full()
 
 
-class AnalogOutput():
-    def __init__(self, circuit, arm, reg, regcal=-1, regmode=-1, reg_res=0, dev_id=0, modes=['Voltage'], major_group=0, legacy_mode=True):
+class AnalogOutputBrain:
+    def __init__(self, circuit, arm, reg, regmode=-1, reg_res=0, dev_id=0, major_group=0, legacy_mode=True):
         self.alias = ""
         self.devtype = AO
         self.dev_id = dev_id
         self.circuit = circuit
         self.reg = reg
-        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.reg, slave=self.arm.modbus_address)[0]
-        self.regcal = regcal
         self.regmode = regmode
         self.legacy_mode = legacy_mode
         self.reg_res = reg_res
-        self.regresvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.reg_res, slave=self.arm.modbus_address)[0]
-        self.modes = modes
+        self.modes = ['Voltage', 'Current', 'Resistance']
         self.arm = arm
         self.major_group = major_group
-        if regcal >= 0:
-            self.offset = (uint16_to_int(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regcal + 1, slave=self.arm.modbus_address)[0]) / 10000.0)
-        else:
-            self.offset = 0
-        self.is_voltage = lambda: True
-        if circuit == '1_01' and regcal >= 0:
-            self.is_voltage = lambda: bool(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0] == 0)
+        self.is_voltage = lambda: bool(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0] == 0)
         if self.is_voltage():
             self.mode = 'Voltage'
         elif self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0] == 1:
             self.mode = 'Current'
         else:
             self.mode = 'Resistance'
-        self.reg_shift = 2 if self.is_voltage() else 0
-        if self.circuit == '1_01':
-            self.factor = arm.volt_ref / 4095 * (1 + uint16_to_int(self.arm.modbus_slave.modbus_cache_map.get_register(1, regcal + self.reg_shift, slave=self.arm.modbus_address)[0]) / 10000.0)
-            self.factorx = arm.volt_refx / 4095 * (1 + uint16_to_int(self.arm.modbus_slave.modbus_cache_map.get_register(1, regcal + self.reg_shift, slave=self.arm.modbus_address)[0]) / 10000.0)
-        else:
-            self.factor = arm.volt_ref / 4095 * (1 / 10000.0)
-            self.factorx = arm.volt_refx / 4095 * (1 / 10000.0)
-        if self.is_voltage():
-            self.factor *= 3
-            self.factorx *= 3
-        else:
-            self.factor *= 10
-            self.factorx *= 10
 
     @property
     def value(self):
         try:
-            if self.circuit == '1_01':
-                return self.regvalue() * self.factor + self.offset
-            else:
-                return self.regvalue() * 0.0025
+            ret = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.reg, slave=self.arm.modbus_address)
+            BinaryPayloadDecoder.fromRegisters(ret, Endian.BIG, Endian.LITTLE).decode_32bit_float()
+            return float(ret)
         except:
             return 0
 
     @property
     def res_value(self):
         try:
-            if self.circuit == '1_01':
-                return float(self.regresvalue()) / 10.0
-            else:
-                return float(self.regvalue()) * 0.0025
+            ret = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.reg_res, slave=self.arm.modbus_address)
+            BinaryPayloadDecoder.fromRegisters(ret, Endian.BIG, Endian.LITTLE).decode_32bit_float()
+            return float(ret)
         except:
             return 0
 
@@ -1762,19 +1740,100 @@ class AnalogOutput():
                     'value': self.value}
 
     async def set_value(self, value):
-        if self.circuit == '1_01':
-            valuei = int((float(value) - self.offset) / self.factor)
+        if value < 0:
+            value = 0
+        # TODO: omezenit horni hodnoty!!!
+
+        builder = BinaryPayloadBuilder(byteorder=Endian.BIG, wordorder=Endian.LITTLE)
+        builder.add_32bit_float(float(value))
+        value_set = builder.to_registers()
+
+        await self.arm.modbus_slave.client.write_registers(self.reg, values=value_set, slave=self.arm.modbus_address)
+        return value
+
+    async def set(self, value=None, mode=None, alias=None):
+        if alias is not None:
+            if Devices.add_alias(alias, self, file_update=True):
+                self.alias = alias
+        if mode is not None and mode in self.modes and self.regmode != -1:
+            val = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0]
+            cur_val = self.value
+            if mode == "Voltage":
+                val = 0
+            elif mode == "Current":
+                val = 1
+            elif mode == "Resistance":
+                val = 3
+            self.mode = mode
+            await self.arm.modbus_slave.client.write_register(self.regmode, val, slave=self.arm.modbus_address)
+            if mode == "Voltage" or mode == "Current":
+                await self.set_value(cur_val)        # Restore original value (i.e. 1.5V becomes 1.5mA)
+        if not (value is None):
+            await self.set_value(value)  # Restore original value (i.e. 1.5V becomes 1.5mA)
+        return self.full()
+
+    def get(self):
+        return self.full()
+
+class AnalogOutput():
+    def __init__(self, circuit, arm, reg, regmode=-1, dev_id=0, modes=['Voltage'], major_group=0, legacy_mode=True):
+        self.alias = ""
+        self.devtype = AO
+        self.dev_id = dev_id
+        self.circuit = circuit
+        self.reg = reg
+        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.reg, slave=self.arm.modbus_address)[0]
+        self.regmode = regmode
+        self.legacy_mode = legacy_mode
+        self.modes = modes
+        self.arm = arm
+        self.major_group = major_group
+        self.offset = 0
+        self.is_voltage = lambda: True
+        if self.is_voltage():
+            self.mode = 'Voltage'
         else:
-            valuei = int((float(value) / 0.0025))
+            self.mode = 'Current'
+
+    @property
+    def value(self):
+        try:
+            return self.regvalue() * 0.0025
+        except:
+            return 0
+
+    @property
+    def res_value(self):
+        try:
+            return float(self.regvalue()) * 0.0025
+        except:
+            return 0
+
+    def full(self):
+        ret = {'dev': 'ao',
+               'circuit': self.circuit,
+               'mode': self.mode,
+               'modes': self.modes,
+               'glob_dev_id': self.dev_id}
+        ret['value'] = self.value
+        ret['unit'] = (unit_names[VOLT]) if self.is_voltage() else (unit_names[AMPERE])
+        if self.alias != '':
+            ret['alias'] = self.alias
+        return ret
+
+    def simple(self):
+        return {'dev': 'ao',
+                'circuit': self.circuit,
+                'value': self.value}
+
+    async def set_value(self, value):
+        valuei = int((float(value) / 0.0025))
         if valuei < 0:
             valuei = 0
         elif valuei > 4095:
             valuei = 4095
         await self.arm.modbus_slave.client.write_register(self.reg, valuei, slave=self.arm.modbus_address)
-        if self.circuit == '1_01':
-            return float(valuei) * self.factor + self.offset
-        else:
-            return float(valuei) * 0.0025
+        return float(valuei) * 0.0025
 
     async def set(self, value=None, mode=None, alias=None):
         if alias is not None:
@@ -1798,15 +1857,7 @@ class AnalogOutput():
             if mode == "Voltage" or mode == "Current":
                 await self.set_value(cur_val)        # Restore original value (i.e. 1.5V becomes 1.5mA)
         if not (value is None):
-            if self.circuit == '1_01':
-                valuei = int((float(value) - self.offset) / self.factor)
-            else:
-                valuei = int((float(value) / 0.0025))
-            if valuei < 0:
-                valuei = 0
-            elif valuei > 4095:
-                valuei = 4095
-            await self.arm.modbus_slave.client.write_register(self.reg, valuei, slave=self.arm.modbus_address)
+            await self.set_value(value)
         return self.full()
 
     def get(self):
@@ -1815,15 +1866,13 @@ class AnalogOutput():
 
 
 class AnalogInput():
-    def __init__(self, circuit, arm, reg, regcal=-1, regmode=-1, dev_id=0, major_group=0, legacy_mode=True, tolerances='brain', modes=['Voltage']):
+    def __init__(self, circuit, arm, reg, regmode=-1, dev_id=0, major_group=0, legacy_mode=True, tolerances='brain', modes=['Voltage']):
         self.alias = ""
         self.devtype = AI
         self.dev_id = dev_id
         self.circuit = circuit
         self.valreg = reg
         self.arm = arm
-        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address)[0]
-        self.regcal = regcal
         self.legacy_mode = legacy_mode
         self.regmode = regmode
         self.modes = modes
@@ -1837,7 +1886,7 @@ class AnalogInput():
             self.unit_name = self.internal_unit
         self.major_group = major_group
         self.is_voltage = lambda: True
-        if self.tolerances == 'brain' and regcal >= 0:
+        if self.tolerances == 'brain':
             self.is_voltage = lambda: bool(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0] == 0)
             if self.is_voltage():
                 self.mode = "Voltage"
@@ -1845,46 +1894,16 @@ class AnalogInput():
                 self.mode = "Current"
                 self.unit_name = unit_names[AMPERE]
         self.tolerance_mode = self.get_tolerance_mode()
-        self.reg_shift = 2 if self.is_voltage() else 0
-        if regcal >= 0:
-            self.vfactor = arm.volt_ref / 4095 * (1 + uint16_to_int(self.arm.modbus_slave.modbus_cache_map.get_register(1, regcal + self.reg_shift + 1, slave=self.arm.modbus_address)[0]) / 10000.0)
-            self.vfactorx = arm.volt_refx / 4095 * (1 + uint16_to_int(self.arm.modbus_slave.modbus_cache_map.get_register(1, regcal + self.reg_shift + 1, slave=self.arm.modbus_address)[0]) / 10000.0)
-            self.voffset = (uint16_to_int(self.arm.modbus_slave.modbus_cache_map.get_register(1, regcal + self.reg_shift + 2, slave=self.arm.modbus_address)[0]) / 10000.0)
-        else:
-            self.vfactor = arm.volt_ref / 4095 * (1 / 10000.0)
-            self.vfactorx = arm.volt_refx / 4095 * (1 / 10000.0)
-            self.voffset = 0
-        if self.is_voltage():
-            self.vfactor *= 3
-            self.vfactorx *= 3
-        else:
-            self.vfactor *= 10
-            self.vfactorx *= 10
 
     @property
     def value(self):
         try:
-            if self.circuit == '1_01':
-                raw_val = self.regvalue()
-
-                if raw_val == 0 or raw_val == 65535:
-                    return 0
-
-                if raw_val > 32768: # Negative value present
-                    raw_val = raw_val - 65536
-
-                return (raw_val * self.vfactor) + self.voffset
-            else:
-                byte_arr = bytearray(4)
-                byte_arr[2] = (self.regvalue() >> 8) & 255
-                byte_arr[3] = self.regvalue() & 255
-                byte_arr[0] = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg + 1, slave=self.arm.modbus_address)[0] >> 8) & 255
-                byte_arr[1] = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg + 1, slave=self.arm.modbus_address)[0] & 255
-                return struct.unpack('>f', byte_arr)[0]
+            ret = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg, slave=self.arm.modbus_address)
+            BinaryPayloadDecoder.fromRegisters(ret, Endian.BIG, Endian.LITTLE).decode_32bit_float()
+            return float(ret)
         except Exception as E:
             logger.exception(str(E))
             return 0
-
 
     def get_tolerance_modes(self):
         if self.tolerances == 'brain':
@@ -1964,21 +1983,6 @@ class AnalogInput():
                 elif self.mode == "Current":
                     self.unit_name = unit_names[AMPERE]
                     await self.arm.modbus_slave.client.write_register(self.regmode, 1, slave=self.arm.modbus_address)
-                self.reg_shift = 2 if self.mode == "Voltage" else 0
-                if self.regcal >= 0:
-                    self.vfactor = self.arm.volt_ref / 4095 * (1 + uint16_to_int(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regcal + self.reg_shift + 1, slave=self.arm.modbus_address)[0]) / 10000.0)
-                    self.vfactorx = self.arm.volt_refx / 4095 * (1 + uint16_to_int(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regcal + self.reg_shift + 1, slave=self.arm.modbus_address)[0]) / 10000.0)
-                    self.voffset = (uint16_to_int(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regcal + self.reg_shift + 2, slave=self.arm.modbus_address)[0]) / 10000.0)
-                else:
-                    self.vfactor = self.arm.volt_ref / 4095 * (1 / 10000.0)
-                    self.vfactorx = self.arm.volt_refx / 4095 * (1 / 10000.0)
-                    self.voffset = 0
-                if self.mode == "Voltage":
-                    self.vfactor *= 3
-                    self.vfactorx *= 3
-                else:
-                    self.vfactor *= 10
-                    self.vfactorx *= 10
                 self.tolerance_mode = self.get_tolerance_mode()
             elif self.tolerances == "500series":
                 self.mode = mode
