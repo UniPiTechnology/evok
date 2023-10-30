@@ -189,7 +189,7 @@ def main():
         try:
             _logger.setLevel(logging.DEBUG)
         except Exception:
-            print "Logging is not supported on this system"
+            print("Logging is not supported on this system")
 
     # Create store context
     store = ModbusSlaveContext(
