@@ -22,8 +22,14 @@ import time
 
 import subprocess
 
-class ENoBoard(Exception):
+
+class ModbusSlaveError(Exception):
     pass
+
+
+class ENoCacheRegister(ModbusSlaveError):
+    pass
+
 
 class ModbusCacheMap(object):
     last_comm_time = 0
@@ -46,7 +52,7 @@ class ModbusCacheMap(object):
 
         def raiseifNull(val, register):
             if val!=None: return val
-            raise Exception('No cached value of register %d' % register)
+            raise ENoCacheRegister(f"No cached value of register {register}")
 
         try:
             if is_input:
@@ -198,6 +204,7 @@ class ModbusSlave(object):
         self.logfile = evok_config.getstringdef( "log_file", "/var/log/evok.log")
         self.client: Union[None, AsyncModbusTcpClient, AsyncModbusSerialClient] = None
         self.loop: Union[None, IOLoop] = None
+        self.circuit: Union[None, str] = None
 
     def get(self):
         return self.full()
@@ -224,18 +231,11 @@ class ModbusSlave(object):
                 if defin and (defin['type'] == self.device_model):
                     self.hw_board_dict = defin
                     break
-            self.versions = await self.client.read_input_registers(1000, 10, slave=self.modbus_address)
-            # TODO: ^^ toto lze pouzit pouze u unipi jednotek ... co s tim?
-            if isinstance(self.versions, ExceptionResponse):
-                self.versions = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-            else:
-                self.versions = self.versions.registers
-
-            board = Board(self.evok_config, self.circuit, self.modbus_address, self, self.versions, dev_id=self.dev_id)
+            board = Board(self.evok_config, self.circuit, self.modbus_address, self, dev_id=self.dev_id)
             await board.parse_definition(self.hw_dict)
             self.boards.append(board)
             config.add_aliases(alias_dict)
-        except (ENoBoard, ConnectionException) as E:
+        except ConnectionException as E:
             logger.error(f"No board detected on Modbus {self.modbus_address}\t({type(E).__name__}:{E})")
         except Exception as E:
             Devices.remove_global_device(self.dev_id)
@@ -349,7 +349,7 @@ class Proxy(object):
 
 
 class Board(object):
-    def __init__(self, evok_config, circuit, modbus_address, modbus_slave: ModbusSlave, versions, major_group=1, dev_id=0):
+    def __init__(self, evok_config, circuit, modbus_address, modbus_slave: ModbusSlave, major_group=1, dev_id=0):
         self.alias = ""
         self.devtype = BOARD
         self.dev_id = dev_id
@@ -359,17 +359,6 @@ class Board(object):
         self.modbus_slave: ModbusSlave = modbus_slave
         self.major_group = major_group
         self.modbus_address = modbus_address
-        self.sw = versions[0]
-        self.ndi = (versions[1] & 0xff00) >> 8
-        self.ndo = (versions[1] & 0x00ff)
-        self.nai = (versions[2] & 0xff00) >> 8
-        self.nao = (versions[2] & 0x00f0) >> 4
-        self.nuart = (versions[2] & 0x000f)
-        self.hw = (versions[3] & 0xff00) >> 8
-        self.hwv = (versions[3] & 0x00ff)
-        self.serial = versions[5] + (versions[6] << 16)
-        self.nai1 = self.nai if self.hw != 0 else 1  # full featured AI (with switched V/A)
-        self.nai2 = 0 if self.hw != 0 else 1           # Voltage only AI
 
     async def set(self, alias=None):
         if not alias is None:
@@ -514,17 +503,17 @@ class Board(object):
             if 'cal_reg' in m_feature:
                 board_val_reg = m_feature['val_reg'] + counter
                 _ai = AnalogInput(circuit, self, board_val_reg, regcal=m_feature['cal_reg'],
-                                  regmode=m_feature['mode_reg'], 
+                                  regmode=m_feature['mode_reg'],
                                   dev_id=self.dev_id, major_group=0, tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
             elif (m_feature.get('type') == "AI18" ):
                 board_val_reg = m_feature['val_reg'] + counter * 2
                 _ai = AnalogInput18(circuit, self, board_val_reg,
-                                  regmode=m_feature['mode_reg'] + counter, 
+                                  regmode=m_feature['mode_reg'] + counter,
                                   dev_id=self.dev_id, major_group=0, modes=m_feature['modes'])
             else:
                 board_val_reg = m_feature['val_reg'] + counter * 2
                 _ai = AnalogInput(circuit, self, board_val_reg,
-                                  regmode=m_feature['mode_reg'] + counter, 
+                                  regmode=m_feature['mode_reg'] + counter,
                                   dev_id=self.dev_id, major_group=0, tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
 
             if board_val_reg in self.modbus_slave.datadeps:
@@ -635,15 +624,16 @@ class Board(object):
             logging.error("Unknown feature: " + str(m_feature) + " at board id: " + str(board_id))
 
     async def parse_definition(self, hw_dict):
-        self.volt_refx = 33000
-        self.volt_ref = 3.3
-        for defin in hw_dict.definitions:
-            if defin and (self.modbus_slave.device_model == defin['type']):
-                await self.initialise_cache(defin);
-                for m_feature in defin['modbus_features']:
-                    self.parse_feature(m_feature)
-                return
-        logging.error(f"Not found type '{self.modbus_slave.device_model}' in loaded hw-definitions.")
+        try:
+            for defin in hw_dict.definitions:
+                if defin and (self.modbus_slave.device_model == defin['type']):
+                    await self.initialise_cache(defin);
+                    for m_feature in defin['modbus_features']:
+                        self.parse_feature(m_feature)
+                    return
+            logging.error(f"Not found type '{self.modbus_slave.device_model}' in loaded hw-definitions.")
+        except ENoCacheRegister as E:
+            raise ModbusSlaveError(f"Error while parsing HW definition. ({E}) \t Please check your configuration file.")
 
     def get(self):
         return self.full()
