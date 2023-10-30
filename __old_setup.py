@@ -16,8 +16,6 @@ setup(
     url='https://github.com/UniPiTechnology/evok',
     packages=[
         'evok',
-	'tornadorpc_evok',
-	'UnipiDali'
     ],
     classifiers=[
 		'Development Status :: 5 - Production/Stable',

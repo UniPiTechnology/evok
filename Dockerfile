@@ -17,12 +17,10 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt && \
     rm requirements.txt && \
     mkdir -p /evok && \
-    mkdir -p /evok/tornadorpc_evok && \
     mkdir -p /etc/hw_definitions && \
     mkdir -p /var/evok
 
 COPY evok /evok
-COPY tornadorpc_evok /evok/tornadorpc_evok
 COPY etc/hw_definitions /etc/hw_definitions
 COPY var/evok-alias.yaml /var/evok
 
