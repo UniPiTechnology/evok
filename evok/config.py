@@ -107,6 +107,9 @@ class EvokConfig:
     @staticmethod
     def __get_hw_tree(data: dict) -> dict:
         ret = {}
+        if 'hw_tree' not in data:
+            logger.warning("Section 'hw_tree' not in configuration!")
+            return ret
         for name, value in data['hw_tree'].items():
             ret[name] = value
         return ret

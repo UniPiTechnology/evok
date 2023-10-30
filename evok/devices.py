@@ -31,13 +31,16 @@ class DeviceList(dict):
         del (self[devtype_names[key]])[value.circuit]
 
     def remove_global_device(self, glob_dev_id):
-        for devtype_name in devtype_names:
-            to_delete = []
-            for dev_name in self[devtype_name]:
-                if ((self[devtype_name])[dev_name]).dev_id == glob_dev_id:
-                    to_delete += [(self[devtype_name])[dev_name]]
-            for value in to_delete:
-                del (self[devtype_name])[value.circuit]
+        try:
+            for devtype_name in devtype_names:
+                to_delete = []
+                for dev_name in self[devtype_name]:
+                    if ((self[devtype_name])[dev_name]).dev_id == glob_dev_id:
+                        to_delete += [(self[devtype_name])[dev_name]]
+                for value in to_delete:
+                    del (self[devtype_name])[value.circuit]
+        except KeyError as E:
+            logger.warning(f"Trying to remove non-existing global device ({E})")
 
     def by_int(self, devtypeid, circuit=None, major_group=None):
         circuit = str(circuit) if circuit is not None else None
