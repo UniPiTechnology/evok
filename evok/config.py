@@ -4,7 +4,7 @@ import configparser as ConfigParser
 from typing import List
 
 import yaml
-from devices import *
+from .devices import *
 
 # from neuron import WiFiAdapter
 

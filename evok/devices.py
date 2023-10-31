@@ -1,7 +1,7 @@
-import devents
+from . import devents
 import yaml
 import re
-from log import *
+from .log import *
 
 """
    Structured dict/dict of all devices in the system

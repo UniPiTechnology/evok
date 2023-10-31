@@ -10,9 +10,9 @@ import time
 import datetime
 import json
 
-import config
+from . import config
 
-from devices import *
+from .devices import *
 
 
 class userBasicHelper():

@@ -19,9 +19,9 @@ from pymodbus.exceptions import ModbusIOException, ConnectionException
 from tornado.locks import Semaphore
 #import modbusclient_rs485
 
-from devices import *
-from log import *
-import config
+from .devices import *
+from .log import *
+from . import config
 import time
 
 #from modbusclient_rs485 import AsyncErrorResponse

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import asyncio
-
+import time
 import os
 from collections import OrderedDict
 import configparser as ConfigParser
@@ -11,7 +11,7 @@ import tornado.ioloop
 import tornado.web
 import yaml
 
-import schemas
+from . import schemas
 
 from operator import methodcaller
 from tornado import gen
@@ -24,7 +24,7 @@ from tornado.gen import Return
 from tornado.process import Subprocess  # not sure about it
 import subprocess  # not sure about it
 
-from log import *
+from .log import *
 # from tornadows import soaphandler, webservices
 # from tornadows.soaphandler import webservice
 # from __builtin__ import str
@@ -40,8 +40,8 @@ except ImportError:
 import signal
 
 import json
-import config
-from devices import *
+from . import config
+from .devices import *
 
 from tornado_json.requesthandlers import APIHandler
 from tornado_json import schema
@@ -63,8 +63,8 @@ corsdomains = '*'
 use_output_schema = Config.getbooldef('MAIN', 'use_schema_verification', False)
 allow_unsafe_configuration_handlers = Config.getbooldef('MAIN', 'allow_unsafe_configuration_handlers', False)
 
-import rpc_handler
-import neuron
+from . import rpc_handler
+from . import neuron
 
 
 class UserCookieHelper():
@@ -1924,6 +1924,10 @@ def main():
 
     logger.info("Starting using config file %s", config_path)
 
+    while True:
+        time.sleep(2)
+        logger.info("Evok is working...log")
+        print("Evok is working...stdout")
     # hw_dict = config.HWDict(dir_paths=['../etc/hw_definitions/', '../etc/hw_definitions/BuiltIn/'])  # TODO: dynamic
     hw_dict = config.HWDict(dir_paths=['../etc/hw_definitions/slaves/'])  # TODO: dynamic
     alias_dict = (config.HWDict(dir_paths=['/home/unipi/remote_evok/var/'])).definitions

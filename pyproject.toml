@@ -26,6 +26,9 @@ dependencies = [
 [tool.setuptools]
 packages = ["evok"]
 
+[project.scripts]
+evok = "evok.evok:main"
+
 [project.urls]
 "Homepage" = "https://github.com/pypa/sampleproject"
 "Bug Tracker" = "https://github.com/pypa/sampleproject/issues"
