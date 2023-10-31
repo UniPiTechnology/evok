@@ -157,22 +157,43 @@ def create_devices(evok_config: EvokConfig, hw_dict):
         bus_data: dict
         # split section name ITEM123 or ITEM_123 or ITEM-123 into device=ITEM and circuit=123
         bus_type = bus_data['type']
-        logging.info(f"Creating bus '{bus_name}' with type '{bus_type}'")
+
+        ow_bus = None
+        if bus_type == 'OWBUS':
+            bus = bus_data.get("dev_path")
+            interval = bus_data.get("interval")
+            scan_interval = bus_data.get("scan_interval")
+            result_pipe = multiprocessing.Pipe()
+            task_pipe = multiprocessing.Pipe()
+
+            circuit = bus_name
+            ow_bus_driver = owclient.OwBusDriver(circuit, task_pipe, result_pipe, bus=bus,
+                                                 interval=interval, scan_interval=scan_interval)
+            ow_bus = OWBusDevice(ow_bus_driver, dev_id=dev_counter)
+            Devices.register_device(OWBUS, ow_bus)
+            dev_counter += 1
+
+        if 'devices' not in bus_data:
+            logging.info(f"Creating bus '{bus_name}' with type '{bus_type}'.")
+            continue
+
+        logging.info(f"Creating bus '{bus_name}' with type '{bus_type}' with devices.")
         for device_name, device_data in bus_data['devices'].items():
             logging.info(f"^ Creating device '{device_name}' with type '{bus_type}'")
             try:
                 dev_counter += 1
                 if bus_type == 'OWBUS':
-                    # permanent thermometer
                     ow_type = device_data.get("type")
                     address = device_data.get("address")
                     interval = device_data.getintdef("interval", 15)
-                    owbus = None  # TODO: vytvorit, pokud neexistuje!!
-                    sensor = owclient.MySensorFabric(address, ow_type, owbus, interval=interval, circuit=circuit,
+
+                    circuit = device_name
+                    sensor = owclient.MySensorFabric(address, ow_type, ow_bus, interval=interval, circuit=circuit,
                                                      is_static=True)
                     if ow_type in ["DS2408", "DS2406", "DS2404", "DS2413"]:
-                        sensor = OWSensorDevice(sensor, dev_id=0)
+                        sensor = OWSensorDevice(sensor, dev_id=dev_counter)
                     Devices.register_device(SENSOR, sensor)
+
                 elif bus_type == 'MODBUSTCP':
                     modbus_server = bus_data.get("modbus_server", "127.0.0.1")
                     modbus_port = bus_data.get("port", 502)
@@ -188,6 +209,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                                            hw_dict, device_model=device_model, slave_id=slave_id,
                                            dev_id=dev_counter, major_group=major_group)
                     Devices.register_device(MODBUS_SLAVE, slave)
+
                 elif bus_type == "MODBUSRTU":
                     serial_port = bus_data["port"]
                     serial_baud_rate = bus_data.get("baudrate", 19200)
