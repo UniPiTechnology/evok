@@ -206,7 +206,7 @@ class ModbusSlave(object):
         self.logfile = evok_config.getstringdef( "log_file", "/var/log/evok.log")
         self.client: Union[None, AsyncModbusTcpClient, AsyncModbusSerialClient] = None
         self.loop: Union[None, IOLoop] = None
-        self.circuit: Union[None, str] = None
+        self.circuit: Union[None, str] = circuit
 
     def get(self):
         return self.full()
@@ -225,7 +225,7 @@ class ModbusSlave(object):
             return ""
 
     async def readboards(self, alias_dict):
-        logger.info(f"Reading the Modbus board on Modbus address {self.modbus_address}")
+        logger.info(f"Reading the Modbus board on Modbus address {self.modbus_address}\t({self.circuit})")
         await self.client.connect()
         self.boards = list()
         try:
@@ -275,11 +275,10 @@ class ModbusSlave(object):
 class UartModbusSlave(ModbusSlave):
 
     def __init__(self, circuit, evok_config, port, scan_freq, scan_enabled, hw_dict,
-                 baud_rate=19200, parity='N', stopbits=1, uart_address=15, major_group=1,
+                 baud_rate=19200, parity='N', stopbits=1, slave_id=15, major_group=1,
                  device_model='unspecified', modbus_slave_uart_circuit="None", dev_id=0):
-        ModbusSlave.__init__(self, circuit, evok_config, scan_freq, scan_enabled, hw_dict, uart_address,
+        ModbusSlave.__init__(self, circuit, evok_config, scan_freq, scan_enabled, hw_dict, slave_id,
                              major_group, device_model, dev_id)
-        self.circuit = "UART_" + str(uart_address) + "_" + str(circuit)
         self.port = port
         self.baud_rate = baud_rate
         self.parity = parity
@@ -310,10 +309,9 @@ class UartModbusSlave(ModbusSlave):
 class TcpModbusSlave(ModbusSlave):
 
     def __init__(self, circuit, evok_config, modbus_server, modbus_port, scan_freq, scan_enabled, hw_dict,
-                 modbus_address=1, major_group=1, device_model='unspecified', dev_id=0):
-        ModbusSlave.__init__(self, circuit, evok_config, scan_freq, scan_enabled, hw_dict, modbus_address,
+                 slave_id=1, major_group=1, device_model='unspecified', dev_id=0):
+        ModbusSlave.__init__(self, circuit, evok_config, scan_freq, scan_enabled, hw_dict, slave_id,
                              major_group, device_model, dev_id)
-        self.circuit = circuit
         self.modbus_server = modbus_server
         self.modbus_port = modbus_port
 
@@ -1694,7 +1692,6 @@ class AnalogOutputBrain:
             self.mode = 'Current'
         else:
             self.mode = 'Resistance'
-        print("Vytvarim AOB")
 
     @property
     def value(self):
@@ -1745,12 +1742,9 @@ class AnalogOutputBrain:
             value = 0
         # TODO: omezenit horni hodnoty!!!
 
-        print(f"AOB: setting value: {value}")
         builder = BinaryPayloadBuilder(byteorder=Endian.BIG, wordorder=Endian.LITTLE)
         builder.add_32bit_float(float(value))
         value_set = builder.to_registers()
-        print(f"AOB: setting value (reg): {value_set}")
-        print(f"self.reg: {self.reg} \t slave: {self.arm.modbus_address}")
 
         await self.arm.modbus_slave.client.write_registers(self.reg, values=value_set, slave=self.arm.modbus_address)
         return value
