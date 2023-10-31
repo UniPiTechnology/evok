@@ -1694,12 +1694,13 @@ class AnalogOutputBrain:
             self.mode = 'Current'
         else:
             self.mode = 'Resistance'
+        print("Vytvarim AOB")
 
     @property
     def value(self):
         try:
             ret = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.reg, slave=self.arm.modbus_address)
-            BinaryPayloadDecoder.fromRegisters(ret, Endian.BIG, Endian.LITTLE).decode_32bit_float()
+            ret = BinaryPayloadDecoder.fromRegisters(ret, Endian.BIG, Endian.LITTLE).decode_32bit_float()
             return float(ret)
         except:
             return 0
@@ -1708,7 +1709,7 @@ class AnalogOutputBrain:
     def res_value(self):
         try:
             ret = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.reg_res, slave=self.arm.modbus_address)
-            BinaryPayloadDecoder.fromRegisters(ret, Endian.BIG, Endian.LITTLE).decode_32bit_float()
+            ret = BinaryPayloadDecoder.fromRegisters(ret, Endian.BIG, Endian.LITTLE).decode_32bit_float()
             return float(ret)
         except:
             return 0
@@ -1744,9 +1745,12 @@ class AnalogOutputBrain:
             value = 0
         # TODO: omezenit horni hodnoty!!!
 
+        print(f"AOB: setting value: {value}")
         builder = BinaryPayloadBuilder(byteorder=Endian.BIG, wordorder=Endian.LITTLE)
         builder.add_32bit_float(float(value))
         value_set = builder.to_registers()
+        print(f"AOB: setting value (reg): {value_set}")
+        print(f"self.reg: {self.reg} \t slave: {self.arm.modbus_address}")
 
         await self.arm.modbus_slave.client.write_registers(self.reg, values=value_set, slave=self.arm.modbus_address)
         return value
@@ -1769,7 +1773,7 @@ class AnalogOutputBrain:
             if mode == "Voltage" or mode == "Current":
                 await self.set_value(cur_val)        # Restore original value (i.e. 1.5V becomes 1.5mA)
         if not (value is None):
-            await self.set_value(value)  # Restore original value (i.e. 1.5V becomes 1.5mA)
+            await self.set_value(float(value))  # Restore original value (i.e. 1.5V becomes 1.5mA)
         return self.full()
 
     def get(self):
@@ -1899,7 +1903,7 @@ class AnalogInput():
     def value(self):
         try:
             ret = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg, slave=self.arm.modbus_address)
-            BinaryPayloadDecoder.fromRegisters(ret, Endian.BIG, Endian.LITTLE).decode_32bit_float()
+            ret = BinaryPayloadDecoder.fromRegisters(ret, Endian.BIG, Endian.LITTLE).decode_32bit_float()
             return float(ret)
         except Exception as E:
             logger.exception(str(E))
