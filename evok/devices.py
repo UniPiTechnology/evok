@@ -98,7 +98,7 @@ class DeviceList(dict):
             devdict = self[devtype]
         devdict[str(device.circuit)] = device
         devents.config(device)
-        logging.info(f"Registed new device '{devtype_names[devtype]}' with circuit {device.circuit} \t ({device})")
+        logging.debug(f"Registed new device '{devtype_names[devtype]}' with circuit {device.circuit} \t ({device})")
 
     def add_alias(self, alias_key, device, file_update=False):
         if (not (alias_key.startswith("al_")) or (len(re.findall(r"[A-Za-z0-9\-\._]*", alias_key)) > 2)):
