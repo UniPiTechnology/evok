@@ -10,7 +10,7 @@ from math import sqrt
 from typing import Union
 
 from tornado.ioloop import IOLoop
-from pymodbus.client import AsyncModbusTcpClient, AsyncModbusSerialClient
+from pymodbus.client import AsyncModbusTcpClient
 from pymodbus.pdu import ExceptionResponse
 from pymodbus.exceptions import ModbusIOException, ConnectionException
 from pymodbus.payload import BinaryPayloadDecoder, BinaryPayloadBuilder
@@ -18,6 +18,7 @@ from pymodbus.constants import Endian
 from tornado.locks import Semaphore
 
 from devices import *
+from modbus_unipi import DualAsyncModbusSerialClient
 from log import *
 import config
 import time
@@ -37,7 +38,7 @@ class ModbusCacheMap(object):
     last_comm_time = 0
     def __init__(self, modbus_reg_map, modbus_slave):
         self.modbus_reg_map = modbus_reg_map
-        self.modbus_slave = modbus_slave
+        self.modbus_slave: ModbusSlave = modbus_slave
         self.sem = Semaphore(1)
         self.registered = {}
         self.registered_input = {}
@@ -94,7 +95,7 @@ class ModbusCacheMap(object):
                         val = await self.modbus_slave.client.read_input_registers(m_reg_group['start_reg'], m_reg_group['count'], slave=slave)
                     else:
                         val = await self.modbus_slave.client.read_holding_registers(m_reg_group['start_reg'], m_reg_group['count'], slave=slave)
-                    if not isinstance(val, ExceptionResponse) and not isinstance(val, ModbusIOException) and not isinstance(val, ExceptionResponse):
+                    if not isinstance(val, ExceptionResponse) and not isinstance(val, ModbusIOException) and not isinstance(val, ExceptionResponse) and val is not None:
                         self.last_comm_time = time.time()
                         if 'type' in m_reg_group and m_reg_group['type'] == 'input':
                             for index in range(m_reg_group['count']):
@@ -113,7 +114,7 @@ class ModbusCacheMap(object):
                                 self.registered[(m_reg_group['start_reg'] + index)] = val.registers[index]
                                 self.frequency[m_reg_group['start_reg']] = 1
                 except Exception as E:
-                    logger.debug(str(E))
+                    logger.warning(E)
             else:
                 self.frequency[m_reg_group['start_reg']] += 1
         if len(changeset) > 0:
@@ -204,7 +205,7 @@ class ModbusSlave(object):
         self.scan_enabled = scan_enabled
         self.versions = []
         self.logfile = evok_config.getstringdef( "log_file", "/var/log/evok.log")
-        self.client: Union[None, AsyncModbusTcpClient, AsyncModbusSerialClient] = None
+        self.client: Union[None, AsyncModbusTcpClient, DualAsyncModbusSerialClient] = None
         self.loop: Union[None, IOLoop] = None
         self.circuit: Union[None, str] = circuit
 
@@ -287,8 +288,8 @@ class UartModbusSlave(ModbusSlave):
 
     def switch_to_async(self, loop, alias_dict):
         self.loop = loop
-        self.client = AsyncModbusSerialClient(port=self.port, baudrate=self.baud_rate, parity=self.parity,
-                                              stopbits=self.stopbits)
+        self.client = DualAsyncModbusSerialClient(port=self.port, baudrate=self.baud_rate, parity=self.parity,
+                                                  stopbits=self.stopbits)
         loop.add_callback(lambda: self.readboards(alias_dict))
 
     def full(self):

@@ -1,13 +1,37 @@
+import asyncio
+from typing import Any, Callable, Type
+
+from pymodbus.client import AsyncModbusSerialClient
 from pymodbus.datastore import ModbusServerContext
 from pymodbus.datastore import ModbusSlaveContext
 from pymodbus.datastore import ModbusSequentialDataBlock
 from pymodbus.datastore.store import BaseModbusDataBlock
 from pymodbus.device import ModbusDeviceIdentification
+from pymodbus.framer import ModbusRtuFramer, ModbusFramer
 
 #---------------------------------------------------------------------------#
 # Logging
 #---------------------------------------------------------------------------#
 from log import *
+
+
+class DualAsyncModbusSerialClient(AsyncModbusSerialClient):
+
+    def __init__(self, port: str, framer: Type[ModbusFramer] = ModbusRtuFramer, baudrate: int = 19200,
+                 bytesize: int = 8, parity: str = "N", stopbits: int = 1, **kwargs: Any) -> None:
+        super().__init__(port, framer, baudrate, bytesize, parity, stopbits, **kwargs)
+        self.counter = 0
+        self.lock = asyncio.Lock()
+        for method_name in ['read_holding_registers', 'read_input_registers', 'write_register', 'write_coil']:
+            setattr(self, method_name, self.__block(getattr(self, method_name)))
+
+    def __block(self, operation: Callable):
+        async def ret(*args, **kwargs):
+            async with self.lock:
+                return await operation(*args, **kwargs)
+        return ret
+
+
 
 #---------------------------------------------------------------------------#
 # Data type transformations
