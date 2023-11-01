@@ -181,7 +181,8 @@ class ModbusCacheMap(object):
 
 class ModbusSlave(object):
 
-    def __init__(self, circuit, evok_config, scan_freq, scan_enabled, hw_dict, modbus_address=15,
+    def __init__(self, client: Union[AsyncModbusTcpClient, DualAsyncModbusSerialClient],
+                 circuit, evok_config, scan_freq, scan_enabled, hw_dict, slave_id=1,
                  major_group=1, device_model='unspecified', dev_id=0):
         self.alias = ""
         self.devtype = MODBUS_SLAVE
@@ -190,7 +191,7 @@ class ModbusSlave(object):
         self.boards = list()
         self.dev_id = dev_id
         self.hw_dict = hw_dict
-        self.modbus_address = modbus_address
+        self.modbus_address = slave_id
         self.device_model = device_model
         self.evok_config = evok_config
         self.do_scanning = False
@@ -205,18 +206,16 @@ class ModbusSlave(object):
         self.scan_enabled = scan_enabled
         self.versions = []
         self.logfile = evok_config.getstringdef( "log_file", "/var/log/evok.log")
-        self.client: Union[None, AsyncModbusTcpClient, DualAsyncModbusSerialClient] = None
+        self.client: Union[AsyncModbusTcpClient, DualAsyncModbusSerialClient] = client
         self.loop: Union[None, IOLoop] = None
         self.circuit: Union[None, str] = circuit
 
     def get(self):
         return self.full()
 
-    def switch_to_async(self, loop: IOLoop, alias_dict: dict):
-        raise Exception(f"Interface method 'switch_to_async' not overwrite!")
-
-    def full(self):
-        raise Exception(f"Interface method 'full' not overwrite!")
+    def switch_to_async(self, loop , alias_dict):
+        self.loop = loop
+        loop.add_callback(lambda: self.readboards(alias_dict))
 
     async def set(self, print_log=None):
         if print_log is not None and print_log != 0:
@@ -272,63 +271,23 @@ class ModbusSlave(object):
         else:
             self.is_scanning = False
 
-
-class UartModbusSlave(ModbusSlave):
-
-    def __init__(self, circuit, evok_config, port, scan_freq, scan_enabled, hw_dict,
-                 baud_rate=19200, parity='N', stopbits=1, slave_id=15, major_group=1,
-                 device_model='unspecified', modbus_slave_uart_circuit="None", dev_id=0):
-        ModbusSlave.__init__(self, circuit, evok_config, scan_freq, scan_enabled, hw_dict, slave_id,
-                             major_group, device_model, dev_id)
-        self.port = port
-        self.baud_rate = baud_rate
-        self.parity = parity
-        self.stopbits = stopbits
-        self.modbus_slave_uart_circuit = modbus_slave_uart_circuit
-
-    def switch_to_async(self, loop, alias_dict):
-        self.loop = loop
-        self.client = DualAsyncModbusSerialClient(port=self.port, baudrate=self.baud_rate, parity=self.parity,
-                                                  stopbits=self.stopbits)
-        loop.add_callback(lambda: self.readboards(alias_dict))
-
     def full(self):
         ret = {'dev': 'extension',
                 'circuit': self.circuit,
                 'model': self.device_model,
-                'uart_circuit': self.modbus_slave_uart_circuit,
-                'uart_port': self.port,
                 'glob_dev_id': self.dev_id,
                 'last_comm': 0x7fffffff}
         if self.alias != '':
             ret['alias'] = self.alias
         if self.modbus_cache_map is not None:
             ret['last_comm'] = time.time() - self.modbus_cache_map.last_comm_time
-        return ret
 
+        # TODO: zkontrolovat, jestli existruji v 'self.client'
+        'modbus_server'
+        'modbus_port'
+        'uart_circuit'
+        'uart_port'
 
-class TcpModbusSlave(ModbusSlave):
-
-    def __init__(self, circuit, evok_config, modbus_server, modbus_port, scan_freq, scan_enabled, hw_dict,
-                 slave_id=1, major_group=1, device_model='unspecified', dev_id=0):
-        ModbusSlave.__init__(self, circuit, evok_config, scan_freq, scan_enabled, hw_dict, slave_id,
-                             major_group, device_model, dev_id)
-        self.modbus_server = modbus_server
-        self.modbus_port = modbus_port
-
-    def switch_to_async(self, loop , alias_dict):
-        self.loop = loop
-        self.client = AsyncModbusTcpClient(host=self.modbus_server, port=self.modbus_port)
-        loop.add_callback(lambda: self.readboards(alias_dict))
-
-    def full(self):
-        ret = {'dev': 'extension',
-                'circuit': self.circuit,
-                'model': self.device_model,
-                'modbus_server': self.modbus_server,
-                'modbus_port': self.modbus_port,
-                'glob_dev_id': self.dev_id,
-                'last_comm': 0x7fffffff}
         if self.alias != '':
             ret['alias'] = self.alias
         if self.modbus_cache_map is not None:

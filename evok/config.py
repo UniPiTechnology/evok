@@ -3,8 +3,12 @@ import os
 import multiprocessing
 from typing import List, Dict
 
+from pymodbus.client import AsyncModbusTcpClient
+
+from modbus_unipi import DualAsyncModbusSerialClient
+
 try:
-    from modbus_slave import TcpModbusSlave, UartModbusSlave
+    from modbus_slave import ModbusSlave
 except ImportError:
     pass
 try:
@@ -158,8 +162,9 @@ def create_devices(evok_config: EvokConfig, hw_dict):
         # split section name ITEM123 or ITEM_123 or ITEM-123 into device=ITEM and circuit=123
         bus_type = bus_data['type']
 
-        ow_bus = None
+        bus = None
         if bus_type == 'OWBUS':
+            dev_counter += 1
             bus = bus_data.get("dev_path")
             interval = bus_data.get("interval")
             scan_interval = bus_data.get("scan_interval")
@@ -169,9 +174,21 @@ def create_devices(evok_config: EvokConfig, hw_dict):
             circuit = bus_name
             ow_bus_driver = owclient.OwBusDriver(circuit, task_pipe, result_pipe, bus=bus,
                                                  interval=interval, scan_interval=scan_interval)
-            ow_bus = OWBusDevice(ow_bus_driver, dev_id=dev_counter)
-            Devices.register_device(OWBUS, ow_bus)
-            dev_counter += 1
+            bus = OWBusDevice(ow_bus_driver, dev_id=dev_counter)
+            Devices.register_device(OWBUS, bus)
+
+        elif bus_type == 'MODBUSTCP':
+            modbus_server = bus_data.get("hostname", "127.0.0.1")
+            modbus_port = bus_data.get("port", 502)
+            bus = AsyncModbusTcpClient(host=modbus_server, port=modbus_port)
+
+        elif bus_type == "MODBUSRTU":
+            serial_port = bus_data["port"]
+            serial_baud_rate = bus_data.get("baudrate", 19200)
+            serial_parity = bus_data.get("parity", 'N')
+            serial_stopbits = bus_data.get("stopbits", 1)
+            bus = DualAsyncModbusSerialClient(port=serial_port, baudrate=serial_baud_rate, parity=serial_parity,
+                                              stopbits=serial_stopbits)
 
         if 'devices' not in bus_data:
             logging.info(f"Creating bus '{bus_name}' with type '{bus_type}'.")
@@ -188,16 +205,13 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                     interval = device_data.getintdef("interval", 15)
 
                     circuit = device_name
-                    sensor = owclient.MySensorFabric(address, ow_type, ow_bus, interval=interval, circuit=circuit,
+                    sensor = owclient.MySensorFabric(address, ow_type, bus, interval=interval, circuit=circuit,
                                                      is_static=True)
                     if ow_type in ["DS2408", "DS2406", "DS2404", "DS2413"]:
                         sensor = OWSensorDevice(sensor, dev_id=dev_counter)
                     Devices.register_device(SENSOR, sensor)
 
-                elif bus_type == 'MODBUSTCP':
-                    modbus_server = bus_data.get("modbus_server", "127.0.0.1")
-                    modbus_port = bus_data.get("port", 502)
-
+                elif bus_type in ['MODBUSTCP', 'MODBUSRTU']:
                     slave_id = device_data.get("slave-id", 1)
                     scanfreq = device_data.get("scan_frequency", 1)
                     scan_enabled = device_data.get("scan_enabled", True)
@@ -205,30 +219,14 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                     circuit = device_name
                     major_group = device_name
 
-                    slave = TcpModbusSlave(circuit, evok_config, modbus_server, modbus_port, scanfreq, scan_enabled,
-                                           hw_dict, device_model=device_model, slave_id=slave_id,
-                                           dev_id=dev_counter, major_group=major_group)
+                    slave = ModbusSlave(bus, circuit, evok_config, scanfreq, scan_enabled,
+                                        hw_dict, device_model=device_model, slave_id=slave_id,
+                                        dev_id=dev_counter, major_group=major_group)
                     Devices.register_device(MODBUS_SLAVE, slave)
 
-                elif bus_type == "MODBUSRTU":
-                    serial_port = bus_data["port"]
-                    serial_baud_rate = bus_data.get("baudrate", 19200)
-                    serial_parity = bus_data.get("parity", 'N')
-
-                    slave_id = device_data.get("slave-id", 1)
-                    scanfreq = device_data.get("scan_frequency", 1)
-                    scan_enabled = device_data.get("scan_enabled", True)
-                    device_model = device_data["model"]
-                    circuit = device_name
-                    major_group = device_name
-
-                    slave = UartModbusSlave(circuit, evok_config, serial_port, scanfreq, scan_enabled, hw_dict,
-                                            baud_rate=serial_baud_rate, parity=serial_parity, slave_id=slave_id,
-                                            device_model=device_model, dev_id=dev_counter, major_group=major_group)
-                    Devices.register_device(MODBUS_SLAVE, slave)
                 else:
                     dev_counter -= 1
-                    logger.error(f"Unknown device type: '{device_type}'! skipping...")
+                    logger.error(f"Unknown bus type: '{bus_type}'! skipping...")
 
             except Exception as E:
                 logger.exception(f"Error in config section '{bus_type}:{device_name}' - {str(E)}")
