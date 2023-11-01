@@ -1917,6 +1917,7 @@ def main():
     filelog_handler.setFormatter(log_formatter)
     filelog_handler.setLevel(log_level)
     logger.addHandler(filelog_handler)
+    # logging.getLogger('pymodbus').setLevel(logging.DEBUG)
 
     logger.info(f"Starting using config file {config_path}")
 
