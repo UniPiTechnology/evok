@@ -4,6 +4,7 @@
 """
 
 import logging
+import math
 import struct
 import datetime
 from math import sqrt
@@ -1093,15 +1094,8 @@ class UnitRegister():
 
 
     def __parse_float32(self, raw_regs):
-
-
-        datal = bytearray(4)
-        datal[1] = raw_regs[0] & 0xFF
-        datal[0] = (raw_regs[0] >> 8) & 0xFF
-        datal[3] = raw_regs[1] & 0xFF
-        datal[2] = (raw_regs[1] >> 8) & 0xFF
-
-        return struct.unpack_from('>f', datal)[0]
+        ret = float(BinaryPayloadDecoder.fromRegisters(raw_regs, Endian.BIG, Endian.BIG).decode_32bit_float())
+        return ret if not math.isnan(ret) else 'NaN'
 
     async def set(self, value=None, alias=None, **kwargs):
         """ Sets new on/off status. Disable pending timeouts """
