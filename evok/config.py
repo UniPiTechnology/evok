@@ -159,7 +159,9 @@ def create_devices(evok_config: EvokConfig, hw_dict):
     dev_counter = 0
     for bus_name, bus_data in evok_config.get_hw_tree().items():
         bus_data: dict
-        # split section name ITEM123 or ITEM_123 or ITEM-123 into device=ITEM and circuit=123
+        if not bus_data.get("enabled", True):
+            logger.info(f"Skipping disabled bus '{bus_name}'")
+            continue
         bus_type = bus_data['type']
 
         bus = None
@@ -196,6 +198,9 @@ def create_devices(evok_config: EvokConfig, hw_dict):
 
         logging.info(f"Creating bus '{bus_name}' with type '{bus_type}' with devices.")
         for device_name, device_data in bus_data['devices'].items():
+            if not device_data.get("enabled", True):
+                logger.info(f"^ Skipping disabled device '{device_name}'")
+                continue
             logging.info(f"^ Creating device '{device_name}' with type '{bus_type}'")
             try:
                 dev_counter += 1
