@@ -190,7 +190,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
             serial_parity = bus_data.get("parity", 'N')
             serial_stopbits = bus_data.get("stopbits", 1)
             bus = DualAsyncModbusSerialClient(port=serial_port, baudrate=serial_baud_rate, parity=serial_parity,
-                                              stopbits=serial_stopbits)
+                                              stopbits=serial_stopbits, timeout=1)
 
         if 'devices' not in bus_data:
             logging.info(f"Creating bus '{bus_name}' with type '{bus_type}'.")
