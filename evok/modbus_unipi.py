@@ -1,4 +1,5 @@
 import asyncio
+import time
 from typing import Any, Callable, Type
 
 from pymodbus.client import AsyncModbusSerialClient
@@ -24,11 +25,24 @@ class DualAsyncModbusSerialClient(AsyncModbusSerialClient):
         self.lock = asyncio.Lock()
         for method_name in ['read_holding_registers', 'read_input_registers', 'write_register', 'write_coil']:
             setattr(self, method_name, self.__block(getattr(self, method_name)))
+        self.stime = time.time()
+        self.block_count = 0
+
+    def __runtime(self):
+        return int((time.time()-self.stime)*1000)
 
     def __block(self, operation: Callable):
         async def ret(*args, **kwargs):
+            # opname = str(operation).split(' of ')[0].split(' ')[-1]
+            # opname = opname.split('.')[1] if '.' in opname else opname
+            # print(f"{self.block_count}\toperation prepare:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
+            # self.block_count += 1
             async with self.lock:
-                return await operation(*args, **kwargs)
+                # self.block_count -= 1
+                # print(f"{self.block_count}\toperation   start:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
+                aret = await operation(*args, **kwargs)
+                # print(f"{self.block_count}\toperation    done:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
+                return aret
         return ret
 
 

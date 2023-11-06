@@ -7,6 +7,7 @@ import logging
 import math
 import struct
 import datetime
+import traceback
 from math import sqrt
 from typing import Union
 
@@ -116,6 +117,7 @@ class ModbusCacheMap(object):
                                 self.frequency[m_reg_group['start_reg']] = 1
                 except Exception as E:
                     logger.warning(E)
+                    traceback.print_exc()
             else:
                 self.frequency[m_reg_group['start_reg']] += 1
         if len(changeset) > 0:
