@@ -17,9 +17,13 @@ from log import *
 
 
 class DualAsyncModbusSerialClient(AsyncModbusSerialClient):
+    instance_counter = 0
 
     def __init__(self, port: str, framer: Type[ModbusFramer] = ModbusRtuFramer, baudrate: int = 19200,
                  bytesize: int = 8, parity: str = "N", stopbits: int = 1, **kwargs: Any) -> None:
+        if DualAsyncModbusSerialClient.instance_counter > 0:
+            raise Exception(f"DualAsyncModbusSerialClient: trying constructing multiple singleton object.")
+        DualAsyncModbusSerialClient.instance_counter += 1
         super().__init__(port, framer, baudrate, bytesize, parity, stopbits, **kwargs)
         self.counter = 0
         self.lock = asyncio.Lock()
@@ -33,15 +37,20 @@ class DualAsyncModbusSerialClient(AsyncModbusSerialClient):
 
     def __block(self, operation: Callable):
         async def ret(*args, **kwargs):
-            # opname = str(operation).split(' of ')[0].split(' ')[-1]
-            # opname = opname.split('.')[1] if '.' in opname else opname
-            # print(f"{self.block_count}\toperation prepare:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
-            # self.block_count += 1
+            opname = str(operation).split(' of ')[0].split(' ')[-1]
+            opname = opname.split('.')[1] if '.' in opname else opname
+            print(f"{self.block_count}\toperation prepare:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
+            self.block_count += 1
             async with self.lock:
-                # self.block_count -= 1
-                # print(f"{self.block_count}\toperation   start:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
-                aret = await operation(*args, **kwargs)
-                # print(f"{self.block_count}\toperation    done:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
+                self.block_count -= 1
+                print(f"{self.block_count}\toperation   start:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
+                try:
+                    aret = await operation(*args, **kwargs)
+                    print(f"{self.block_count}\toperation    done:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
+                except Exception as E:
+                    print(f"{self.block_count}\toperation   error:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
+                    await asyncio.sleep(0.03)
+                    raise E
                 return aret
         return ret
 
