@@ -335,7 +335,7 @@ class LegacyRestHandler(UserCookieHelper, tornado.web.RequestHandler):
     async def post(self, dev, circuit, prop):
         try:
             device = Devices.by_name(dev, circuit)
-            kw = dict([(k, v[0]) for (k, v) in self.request.body_arguments.items()])
+            kw = dict([(k, v[0].decode()) for (k, v) in self.request.body_arguments.items()])
             result = await device.set(**kw)
             self.write(json.dumps({'success': True, 'result': result}))
         except Exception as E:
