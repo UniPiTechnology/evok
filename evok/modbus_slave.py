@@ -3,9 +3,7 @@
 ------------------------------------------
 """
 
-import logging
 import math
-import struct
 import datetime
 import traceback
 from math import sqrt
@@ -20,7 +18,7 @@ from pymodbus.constants import Endian
 from tornado.locks import Semaphore
 
 from devices import *
-from modbus_unipi import DualAsyncModbusSerialClient
+from modbus_unipi import EvokModbusSerialClient
 from log import *
 import config
 import time
@@ -184,7 +182,7 @@ class ModbusCacheMap(object):
 
 class ModbusSlave(object):
 
-    def __init__(self, client: Union[AsyncModbusTcpClient, DualAsyncModbusSerialClient],
+    def __init__(self, client: Union[AsyncModbusTcpClient, EvokModbusSerialClient],
                  circuit, evok_config, scan_freq, scan_enabled, hw_dict, slave_id=1,
                  major_group=1, device_model='unspecified', dev_id=0):
         self.alias = ""
@@ -209,14 +207,14 @@ class ModbusSlave(object):
         self.scan_enabled = scan_enabled
         self.versions = []
         self.logfile = evok_config.getstringdef( "log_file", "/var/log/evok.log")
-        self.client: Union[AsyncModbusTcpClient, DualAsyncModbusSerialClient] = client
+        self.client: Union[AsyncModbusTcpClient, EvokModbusSerialClient] = client
         self.loop: Union[None, IOLoop] = None
         self.circuit: Union[None, str] = circuit
 
     def get(self):
         return self.full()
 
-    def switch_to_async(self, loop , alias_dict):
+    def switch_to_async(self, loop: IOLoop, alias_dict):
         self.loop = loop
         loop.add_callback(lambda: self.readboards(alias_dict))
 
@@ -229,7 +227,6 @@ class ModbusSlave(object):
 
     async def readboards(self, alias_dict):
         logger.info(f"Reading the Modbus board on Modbus address {self.modbus_address}\t({self.circuit})")
-        await self.client.connect()
         self.boards = list()
         try:
             for defin in self.hw_dict.definitions:

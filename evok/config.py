@@ -4,13 +4,11 @@ import multiprocessing
 from typing import List, Dict
 
 from pymodbus.client import AsyncModbusTcpClient
+from tornado.ioloop import IOLoop
 
-from modbus_unipi import DualAsyncModbusSerialClient
+from modbus_unipi import EvokModbusSerialClient
 
-try:
-    from modbus_slave import ModbusSlave
-except ImportError:
-    pass
+from modbus_slave import ModbusSlave
 try:
     import owclient
 except ImportError:
@@ -77,6 +75,26 @@ class OWSensorDevice:
 
     def full(self):
         return self.sensor_dev.full()
+
+
+class TcpBusDevice:
+    def __init__(self, circuit: str, bus_driver: AsyncModbusTcpClient, dev_id):
+        self.dev_id = dev_id
+        self.bus_driver = bus_driver
+        self.circuit = circuit
+
+    def switch_to_async(self, loop: IOLoop):
+        loop.add_callback(lambda: self.bus_driver.connect())
+
+
+class SerialBusDevice:
+    def __init__(self, circuit: str,  bus_driver: EvokModbusSerialClient, dev_id):
+        self.dev_id = dev_id
+        self.bus_driver = bus_driver
+        self.circuit = circuit
+
+    def switch_to_async(self, loop: IOLoop):
+        loop.add_callback(lambda: self.bus_driver.connect())
 
 
 class EvokConfig:
@@ -180,17 +198,23 @@ def create_devices(evok_config: EvokConfig, hw_dict):
             Devices.register_device(OWBUS, bus)
 
         elif bus_type == 'MODBUSTCP':
+            dev_counter += 1
             modbus_server = bus_data.get("hostname", "127.0.0.1")
             modbus_port = bus_data.get("port", 502)
-            bus = AsyncModbusTcpClient(host=modbus_server, port=modbus_port)
+            bus_driver = AsyncModbusTcpClient(host=modbus_server, port=modbus_port)
+            bus = TcpBusDevice(circuit=bus_name, bus_driver=bus_driver, dev_id=dev_counter)
+            Devices.register_device(TCPBUS, bus)
 
         elif bus_type == "MODBUSRTU":
+            dev_counter += 1
             serial_port = bus_data["port"]
             serial_baud_rate = bus_data.get("baudrate", 19200)
             serial_parity = bus_data.get("parity", 'N')
             serial_stopbits = bus_data.get("stopbits", 1)
-            bus = DualAsyncModbusSerialClient(port=serial_port, baudrate=serial_baud_rate, parity=serial_parity,
-                                              stopbits=serial_stopbits, timeout=1)
+            bus_driver = EvokModbusSerialClient(port=serial_port, baudrate=serial_baud_rate, parity=serial_parity,
+                                                stopbits=serial_stopbits, timeout=1)
+            bus = SerialBusDevice(circuit=bus_name, bus_driver=bus_driver, dev_id=dev_counter)
+            Devices.register_device(SERIALBUS, bus)
 
         if 'devices' not in bus_data:
             logging.info(f"Creating bus '{bus_name}' with type '{bus_type}'.")

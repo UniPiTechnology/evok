@@ -2051,8 +2051,9 @@ def main():
         for device in Devices.by_int(bustype):
             device.bus_driver.switch_to_async(mainLoop)
 
-    for device in Devices.by_int(ADCHIP):
-        device.switch_to_async(mainLoop)
+    for bustype in (ADCHIP, TCPBUS, SERIALBUS):
+        for device in Devices.by_int(bustype):
+            device.switch_to_async(mainLoop)
 
     for modbus_slave in Devices.by_int(MODBUS_SLAVE):
         modbus_slave.switch_to_async(mainLoop, alias_dict)
