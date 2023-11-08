@@ -1,6 +1,5 @@
 import logging
 import os
-import multiprocessing
 from typing import List, Dict
 
 from pymodbus.client import AsyncModbusTcpClient
@@ -9,10 +8,9 @@ from tornado.ioloop import IOLoop
 from modbus_unipi import EvokModbusSerialClient
 
 from modbus_slave import ModbusSlave
-try:
-    import owclient
-except ImportError:
-    pass
+
+import owdevice
+#import owclient as owdevice
 
 import yaml
 from devices import *
@@ -189,11 +187,9 @@ def create_devices(evok_config: EvokConfig, hw_dict):
             bus = bus_data.get("dev_path")
             interval = bus_data.get("interval")
             scan_interval = bus_data.get("scan_interval")
-            result_pipe = multiprocessing.Pipe()
-            task_pipe = multiprocessing.Pipe()
 
             circuit = bus_name
-            ow_bus_driver = owclient.OwBusDriver(circuit, task_pipe, result_pipe, bus=bus,
+            ow_bus_driver = owdevice.OwBusDriver(circuit, bus=bus,
                                                  interval=interval, scan_interval=scan_interval)
             bus = OWBusDevice(ow_bus_driver, dev_id=dev_counter)
             Devices.register_device(OWBUS, bus)
