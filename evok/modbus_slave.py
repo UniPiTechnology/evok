@@ -89,8 +89,8 @@ class ModbusCacheMap(object):
         changeset = []
         for m_reg_group in self.modbus_reg_map:
             if (self.frequency[m_reg_group['start_reg']] >= m_reg_group['frequency']) or (self.frequency[m_reg_group['start_reg']] == 0):    # only read once for every [frequency] cycles
+                val = None
                 try:
-                    val = None
                     if 'type' in m_reg_group and m_reg_group['type'] == 'input':
                         val = await self.modbus_slave.client.read_input_registers(m_reg_group['start_reg'], m_reg_group['count'], slave=slave)
                     else:
@@ -115,7 +115,7 @@ class ModbusCacheMap(object):
                                 self.frequency[m_reg_group['start_reg']] = 1
                 except Exception as E:
                     logger.warning(E)
-                    traceback.print_exc()
+                    print(f"val: {val} \t {val.registers if hasattr(val, 'registers') else None}", flush=True)
             else:
                 self.frequency[m_reg_group['start_reg']] += 1
         if len(changeset) > 0:

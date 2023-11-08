@@ -1,5 +1,6 @@
 import asyncio
 import time
+import traceback
 from typing import Any, Callable, Type
 
 from pymodbus.client import AsyncModbusSerialClient
@@ -15,7 +16,6 @@ from pymodbus.framer import ModbusRtuFramer, ModbusFramer
 #---------------------------------------------------------------------------#
 from log import *
 
-
 class EvokModbusSerialClient(AsyncModbusSerialClient):
     instance_counter = 0
 
@@ -24,8 +24,8 @@ class EvokModbusSerialClient(AsyncModbusSerialClient):
         if EvokModbusSerialClient.instance_counter > 0:
             raise Exception(f"DualAsyncModbusSerialClient: trying constructing multiple singleton object.")
         EvokModbusSerialClient.instance_counter += 1
-        super().__init__(port, framer, baudrate, bytesize, parity, stopbits, **kwargs)
-        for method_name in ['read_holding_registers', 'read_input_registers', 'write_register', 'write_coil']:
+        super().__init__(port, framer, baudrate, bytesize, parity, stopbits, reconnect_delay=None, retries=1, **kwargs)
+        for method_name in ['read_holding_registers', 'read_input_registers', 'write_register', 'write_coil', 'connect']:
             setattr(self, method_name, self.__block(getattr(self, method_name)))
         self.lock = asyncio.Lock()
         self.stime = time.time()
@@ -46,12 +46,13 @@ class EvokModbusSerialClient(AsyncModbusSerialClient):
                 try:
                     aret = await operation(*args, **kwargs)
                     print(f"{self.block_count}\toperation    done:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
+                    return aret
                 except Exception as E:
                     print(f"{self.block_count}\toperation   error:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
-                    await asyncio.sleep(0.03)
+                    traceback.print_exc()
                     raise E
-                return aret
         return ret
+
 
 
 

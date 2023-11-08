@@ -94,6 +94,7 @@ class SerialBusDevice:
         self.circuit = circuit
 
     def switch_to_async(self, loop: IOLoop):
+        self.bus_driver.ioloop = loop
         loop.add_callback(lambda: self.bus_driver.connect())
 
 
@@ -248,7 +249,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                     circuit = device_name
                     major_group = device_name
 
-                    slave = ModbusSlave(bus, circuit, evok_config, scanfreq, scan_enabled,
+                    slave = ModbusSlave(bus.bus_driver, circuit, evok_config, scanfreq, scan_enabled,
                                         hw_dict, device_model=device_model, slave_id=slave_id,
                                         dev_id=dev_counter, major_group=major_group)
                     Devices.register_device(MODBUS_SLAVE, slave)
