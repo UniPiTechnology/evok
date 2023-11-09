@@ -17,13 +17,6 @@ from devices import *
 
 # from neuron import WiFiAdapter
 
-try:
-    import unipig
-    from apigpio import I2cBus, GpioBus
-except:
-    pass
-
-
 class EvokConfigError(Exception):
     pass
 
@@ -184,13 +177,11 @@ def create_devices(evok_config: EvokConfig, hw_dict):
         bus = None
         if bus_type == 'OWBUS':
             dev_counter += 1
-            bus = bus_data.get("dev_path")
-            interval = bus_data.get("interval")
-            scan_interval = bus_data.get("scan_interval")
+            interval = bus_data.get("interval", 60)
+            scan_interval = bus_data.get("scan_interval", 300)
 
             circuit = bus_name
-            ow_bus_driver = owdevice.OwBusDriver(circuit, bus=bus,
-                                                 interval=interval, scan_interval=scan_interval)
+            ow_bus_driver = owdevice.OwBusDriver(circuit, interval=interval, scan_interval=scan_interval)
             bus = OWBusDevice(ow_bus_driver, dev_id=dev_counter)
             Devices.register_device(OWBUS, bus)
 
@@ -231,7 +222,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                     interval = device_data.getintdef("interval", 15)
 
                     circuit = device_name
-                    sensor = owclient.MySensorFabric(address, ow_type, bus, interval=interval, circuit=circuit,
+                    sensor = owdevice.MySensorFabric(address, ow_type, bus, interval=interval, circuit=circuit,
                                                      is_static=True)
                     if ow_type in ["DS2408", "DS2406", "DS2404", "DS2413"]:
                         sensor = OWSensorDevice(sensor, dev_id=dev_counter)

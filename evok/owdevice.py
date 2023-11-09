@@ -5,10 +5,6 @@ from log import *
 import anyio
 from asyncowfs import OWFS
 from asyncowfs import event
-from asyncowfs import error
-
-#from pymodbus.client import ModbusTcpClient as ModbusClient
-#from pymodbus.exceptions import ConnectionException
 
 MAX_LOSTINTERVAL = 300  # 5 minutes
 
@@ -20,7 +16,7 @@ class MySensor(object):
         self.alias = ""
         self.devtype = devices.SENSOR
         self.type = typ
-        self.circuit = circuit if circuit != None else addr.replace('.','')
+        self.circuit = circuit if circuit is not None else addr.replace('.', '')
         self.major_group = major_group
         self.address = addr
         self.interval = bus.interval if interval is None else interval  # seconds
@@ -225,8 +221,7 @@ def MySensorFabric(address, typ, bus, interval=None, dynamic=True, circuit=None,
 
 class OwBusDriver:
 
-    def __init__(self, circuit, interval=60, scan_interval=300, major_group=1, bus='--i2c=/dev/i2c-1:ALL'):
-        #multiprocessing.Process.__init__(self)
+    def __init__(self, circuit, interval=60, scan_interval=300, major_group=1):
         self.devtype = devices.OWBUS
         self.circuit = circuit
         self.major_group = major_group
@@ -234,15 +229,13 @@ class OwBusDriver:
         self.interval = interval
         self.scanned = set()
         self.mysensors = list()
-        self.bus = bus
-        # ow.init(bus)
         self.ow = None
 
 
     def full(self):
         return {'dev': 'owbus',
                 'circuit': self.circuit,
-                'bus': self.bus,
+                'bus': 'via OWFS',
                 'scan_interval': self.scan_interval,
                 'interval': self.interval,
                 'do_scan' : False,
@@ -345,7 +338,6 @@ class OwBusDriver:
                 # Store last read time
                 mysensor.lost = False 
                 mysensor.readtime = t1
-            #except (ExceptionGroup, error.OWFSReplyError, AttributeError, TypeError):
             except Exception:
                 if not mysensor.lost: # Catch the edge
                     mysensor.set_lost()
