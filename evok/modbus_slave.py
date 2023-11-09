@@ -5,7 +5,6 @@
 
 import math
 import datetime
-import traceback
 from math import sqrt
 from typing import Union
 
@@ -18,20 +17,13 @@ from pymodbus.constants import Endian
 from tornado.locks import Semaphore
 
 from devices import *
+from errors import ENoCacheRegister, ModbusSlaveError
 from modbus_unipi import EvokModbusSerialClient
 from log import *
 import config
 import time
 
 import subprocess
-
-
-class ModbusSlaveError(Exception):
-    pass
-
-
-class ENoCacheRegister(ModbusSlaveError):
-    pass
 
 
 class ModbusCacheMap(object):
@@ -65,23 +57,6 @@ class ModbusCacheMap(object):
             return list(_slice)
         except KeyError as E:
             raise Exception('Unknown register %d' % E.args[0])
-        '''
-        ret = []
-        for counter in range(index,count+index):
-            if is_input:
-                if counter not in self.registered_input:
-                    raise Exception('Unknown register %d' % counter)
-                elif self.registered_input[counter] is None:
-                    raise Exception('No cached value of register %d on unit %d - read error' % (counter, slave))
-                ret += [self.registered_input[counter]]
-            else:
-                if counter not in self.registered:
-                    raise Exception('Unknown register %d' % counter)
-                elif self.registered[counter] is None:
-                    raise Exception('No cached value of register %d on unit %d - read error' % (counter, slave))
-                ret += [self.registered[counter]]
-        return ret
-        '''
 
     async def do_scan(self, slave=0, initial=False):
         if initial:
