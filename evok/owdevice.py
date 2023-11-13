@@ -1,5 +1,5 @@
-import devents
 import devices
+from devices import *
 from log import *
 
 import anyio
@@ -43,11 +43,14 @@ class MySensor(object):
         '''
         return (self.value, self.lost, self.readtime, self.interval)
 
-    def set(self, interval=None):
-        if not (interval is None):
+    async def set(self, interval=None, alias=None):
+        if interval is not None:
             self.interval = interval
-            self.time = anyio.current_time() + mysensor.calc_interval()
+            self.time = anyio.current_time() + self.calc_interval()
             devents.config(self)
+        if alias is not None:
+            if Devices.add_alias(alias, self, file_update=True):
+                self.alias = alias
 
 
     async def read_val_from_sens(self, sens):
