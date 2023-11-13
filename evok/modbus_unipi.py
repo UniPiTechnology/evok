@@ -36,19 +36,19 @@ class EvokModbusSerialClient(AsyncModbusSerialClient):
 
     def __block(self, operation: Callable):
         async def ret(*args, **kwargs):
-            opname = str(operation).split(' of ')[0].split(' ')[-1]
-            opname = opname.split('.')[1] if '.' in opname else opname
-            print(f"{self.block_count}\toperation prepare:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
+            # opname = str(operation).split(' of ')[0].split(' ')[-1]
+            # opname = opname.split('.')[1] if '.' in opname else opname
+            # print(f"{self.block_count}\toperation prepare:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
             self.block_count += 1
             async with self.lock:
                 self.block_count -= 1
-                print(f"{self.block_count}\toperation   start:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
+                # print(f"{self.block_count}\toperation   start:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
                 try:
                     aret = await operation(*args, **kwargs)
-                    print(f"{self.block_count}\toperation    done:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
+                    # print(f"{self.block_count}\toperation    done:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
                     return aret
                 except Exception as E:
-                    print(f"{self.block_count}\toperation   error:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
+                    # print(f"{self.block_count}\toperation   error:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
                     traceback.print_exc()
                     raise E
         return ret
