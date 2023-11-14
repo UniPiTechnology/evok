@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import sys
-from typing import List
+from typing import List, Union
 
 import yaml
 
@@ -17,6 +17,7 @@ E30RO = "E30RO"
 E4AI4AO6DI = "E4AI4AO6DI"
 E8DI8DO = ""
 UNIPI11 = "UNIPI11"
+UNIPI11LITE = "UNIPI11LITE"
 
 E4AI4AO4DI5RO = E4AI4AO
 E4AI4AO6DI5RO = E4AI4AO6DI
@@ -56,32 +57,37 @@ hw_data = {
 
     0x0001: [UNIPI11],  # UNIPI10
     0x0101: [UNIPI11],  # UNIPI11
-    0x1101: [UNIPI11LITE],  # UNIPI11
+    0x1101: [UNIPI11LITE],  # UNIPI11LITE
 }
 
 
-def generate_config(boards: List[str]):
+def generate_config(boards: List[str], defaults: Union[None, dict] = None):
+    defaults = defaults if defaults is not None else dict()
+    port = defaults.get('port', 502)
+    hostname = defaults.get('hostname', '127.0.0.1')
+    names = defaults.get('names', [i for i in range(1, len(boards)+1)])
+    slave_ids = defaults.get('slave-ids', [i for i in range(1, len(boards)+1)])
+
     ret = {
         'hw_tree': {
-            'TCP': {
+            'LOCAL_TCP': {
                 'type': 'MODBUSTCP',
-                'hostname': '127.0.0.1',
-                'port': 502,
+                'hostname': hostname,
+                'port': port,
                 'devices': {},
             }
         }
     }
 
     for i in range(len(boards)):
-        slave_id = i+1
-        ret['hw_tree']['TCP']['devices'][slave_id] = {
-            'slave-id': slave_id,
+        ret['hw_tree']['LOCAL_TCP']['devices'][names[i]] = {
+            'slave-id': slave_ids[i],
             'model': boards[i]
         }
     return ret
 
 
-if __name__ == '__main__':
+def run():
     product_data = os_configurator.get_product_info()
     platform_id = int(os_configurator.get_product_info().id)
     model_name = product_data.name
@@ -89,8 +95,18 @@ if __name__ == '__main__':
 
     print(f"Detect device {model_name} ({hex(platform_id)}) with boards {boards}")
 
-    autogen_conf = generate_config(boards)
+    defaults = dict()
+
+    if platform_id in [0x0001, 0x0101, 0x1101]:
+        defaults['port'] = 503
+        defaults['names'] = ['UNIPI1']
+        defaults['slave-ids'] = [0]
+
+    autogen_conf = generate_config(boards, defaults=defaults)
 
     with open('/etc/evok/autogen.yaml', 'w') as f:
-        autogen_raw = yaml.dump(data=autogen_conf, stream=f)
+        yaml.dump(data=autogen_conf, stream=f)
 
+
+if __name__ == '__main__':
+    run()
