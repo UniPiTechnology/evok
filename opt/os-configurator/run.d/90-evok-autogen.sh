@@ -16,6 +16,7 @@ E16DI14RO = "E16DI14RO"
 E30RO = "E30RO"
 E4AI4AO6DI = "E4AI4AO6DI"
 E8DI8DO = ""
+UNIPI11 = "UNIPI11"
 
 E4AI4AO4DI5RO = E4AI4AO
 E4AI4AO6DI5RO = E4AI4AO6DI
@@ -38,8 +39,8 @@ hw_data = {
     0x0c03: [BRAIN, E4AI4AO6DI5RO],  # M503
     # 0x0d03: [BRAIN],  # M603
     0x0e03: [BRAIN, E30DI, E30DI],  # L303
-    0X0F03: [BRAIN, E4AI4AO6DI5RO, E14DI14RO],  # L503
-    0X1003: [BRAIN, E4AI4AO6DI5RO, E4AI4AO6DI5RO],  # L513
+    0x0F03: [BRAIN, E4AI4AO6DI5RO, E14DI14RO],  # L503
+    0x1003: [BRAIN, E4AI4AO6DI5RO, E4AI4AO6DI5RO],  # L513
 
     0x0107: [BRAIN],  # S107
     0x0707: [BRAIN],  # S117
@@ -47,11 +48,15 @@ hw_data = {
     0x0207: [E8DI8DO],  # S207
     0x0b07: [E8DI8DO],  # S227
     0x0307: [BRAIN, E16DI14RO],  # M207
-    0X0407: [BRAIN, E4AI4AO4DI5RO],  # M527
-    0X0507: [BRAIN, E16DI14RO, E16DI14RO],  # L207
-    0X0607: [BRAIN, E4AI4AO4DI5RO, E16DI14RO],  # L527
-    0X0807: [BRAIN, E16DI14RO],  # M267
-    0X0907: [BRAIN, E4AI4AO4DI5RO],  # M567
+    0x0407: [BRAIN, E4AI4AO4DI5RO],  # M527
+    0x0507: [BRAIN, E16DI14RO, E16DI14RO],  # L207
+    0x0607: [BRAIN, E4AI4AO4DI5RO, E16DI14RO],  # L527
+    0x0807: [BRAIN, E16DI14RO],  # M267
+    0x0907: [BRAIN, E4AI4AO4DI5RO],  # M567
+
+    0x0001: [UNIPI11],  # UNIPI10
+    0x0101: [UNIPI11],  # UNIPI11
+    0x1101: [UNIPI11LITE],  # UNIPI11
 }
 
 
@@ -82,7 +87,7 @@ if __name__ == '__main__':
     model_name = product_data.name
     boards: List[str] = hw_data.get(platform_id, [])
 
-    # print(f"Detect device {model_name} ({hex(platform_id)}) with boards {boards}")
+    print(f"Detect device {model_name} ({hex(platform_id)}) with boards {boards}")
 
     autogen_conf = generate_config(boards)
 

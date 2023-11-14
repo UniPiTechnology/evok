@@ -448,7 +448,7 @@ class Board(object):
             else:
                 board_val_reg = m_feature['val_reg'] + counter * 2
                 _ai = AnalogInput(circuit, self, board_val_reg,
-                                  regmode=m_feature['mode_reg'] + counter,
+                                  regmode=m_feature['mode_reg'] + counter if m_feature.get('mode_reg', None) is not None else None,
                                   dev_id=self.dev_id, major_group=0, tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
 
             if board_val_reg in self.modbus_slave.datadeps:
@@ -1792,7 +1792,7 @@ class AnalogOutput():
 
 
 class AnalogInput():
-    def __init__(self, circuit, arm, reg, regmode=-1, dev_id=0, major_group=0, legacy_mode=True, tolerances='brain', modes=['Voltage']):
+    def __init__(self, circuit, arm, reg, regmode=None, dev_id=0, major_group=0, legacy_mode=True, tolerances='brain', modes=['Voltage']):
         self.alias = ""
         self.devtype = AI
         self.dev_id = dev_id
@@ -1819,6 +1819,8 @@ class AnalogInput():
             else:
                 self.mode = "Current"
                 self.unit_name = unit_names[AMPERE]
+        if self.tolerances == "simple":
+            pass
         self.tolerance_mode = self.get_tolerance_mode()
 
     @property
@@ -1844,10 +1846,12 @@ class AnalogInput():
                 return ["20.0"]
             elif self.mode == "Resistance":
                 return ["1960.0", "100.0"]
+        elif self.tolerances == 'simple':
+            return ["10.0"]
 
     def get_tolerance_mode(self):
         if self.tolerances == 'brain':
-            if self.mode == 'Voltage':
+            if self.mode == 'voltage':
                 return "10.0"
             else:
                 return "20.0"
@@ -1864,6 +1868,8 @@ class AnalogInput():
                 return "1960.0"
             elif self.sec_ai_mode == 5:
                 return "100.0"
+        if self.tolerances == 'simple':
+            return "10.0"
 
     def get_500_series_mode(self):
         if self.sec_ai_mode == 0:
