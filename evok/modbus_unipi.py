@@ -1,20 +1,21 @@
 import asyncio
 import time
 import traceback
-from typing import Any, Callable, Type
+from typing import Any, Callable, Type, Tuple
 
-from pymodbus.client import AsyncModbusSerialClient
+from pymodbus.client import AsyncModbusSerialClient, AsyncModbusTcpClient
 from pymodbus.datastore import ModbusServerContext
 from pymodbus.datastore import ModbusSlaveContext
 from pymodbus.datastore import ModbusSequentialDataBlock
 from pymodbus.datastore.store import BaseModbusDataBlock
 from pymodbus.device import ModbusDeviceIdentification
-from pymodbus.framer import ModbusRtuFramer, ModbusFramer
+from pymodbus.framer import ModbusRtuFramer, ModbusFramer, ModbusSocketFramer
 
 #---------------------------------------------------------------------------#
 # Logging
 #---------------------------------------------------------------------------#
 from log import *
+
 
 class EvokModbusSerialClient(AsyncModbusSerialClient):
     instance_counter = 0
@@ -53,6 +54,32 @@ class EvokModbusSerialClient(AsyncModbusSerialClient):
                     raise E
         return ret
 
+
+class EvokModbusTcpClient(AsyncModbusTcpClient):
+    instance_counter = 0
+
+    def __init__(self, host: str, port: int = 502, framer: Type[ModbusFramer] = ModbusSocketFramer,
+                 source_address: Tuple[str, int] = None, **kwargs: Any) -> None:
+        EvokModbusTcpClient.instance_counter += 1
+        super().__init__(host, port, framer, source_address, **kwargs)
+        for method_name in ['read_holding_registers', 'read_input_registers', 'write_register', 'write_coil', 'connect']:
+            setattr(self, method_name, self.__block(getattr(self, method_name)))
+        self.lock = asyncio.Lock()
+        self.stime = time.time()
+        self.block_count = 0
+
+    def __block(self, operation: Callable):
+        async def ret(*args, **kwargs):
+            self.block_count += 1
+            async with self.lock:
+                self.block_count -= 1
+                try:
+                    aret = await operation(*args, **kwargs)
+                    return aret
+                except Exception as E:
+                    traceback.print_exc()
+                    raise E
+        return ret
 
 
 
@@ -125,21 +152,21 @@ class RelayHandle(DevHandle):
                 self is stored to device._modbus_handle
                 device is registered to proxymaps for write_regs/write_coils functions
         """
-        index -= 1   # relay are counted from 1 
+        index -= 1   # relay are counted from 1
         device.__modbus_mask = 1 << ((index % 16))
         device.__bitindex = index + self.bitoffset + (index / 16) # position in bit_data_block
         device.__regindex = self.regoffset + (index / 16)         # position in register_data_block
-        device._modbus_handle = self 
+        device._modbus_handle = self
         # can be changed by write_coil(s)
         proxybits.map[device.__bitindex] = device
         # and also by write_reg(s) - need device set (multiple devices on one register)
         devset = proxyregs.map[device.__regindex]
         if not devset:
             devset = Devset()
-            devset._modbus_handle = self 
+            devset._modbus_handle = self
             proxyregs.map[device.__regindex] = devset
         devset.add(device)
-    
+
 
     def sync(self, device, bits, regs):
         bits.setValues(device.__bitindex, device.value)
@@ -181,23 +208,23 @@ class InputHandle(DevHandle):
         # one coil
         # one bit in register
         # one 32-bit counter register
-        index -= 1              # counted from 1 
+        index -= 1              # counted from 1
         device.__modbus_mask = 1 << ((index % 16))
         device.__bitindex = self.bitoffset + index + (index / 16)       # position in bit_data_block
         device.__regindex = self.regoffset + (index / 16)               # position in register_data_block
         device.__counterindex = self.counter_regoffset + (2*index)      # position of counter in register_data_block
         device.__highvalue = None
-        device._modbus_handle = self 
+        device._modbus_handle = self
         # counters is writeable  32bits register
         proxyregs.map[device.__counterindex] = device
         proxyregs.map[device.__counterindex+1] = device
-    
+
 
     def sync(self, device, bits, regs):
         bits.setValues(device.__bitindex, device.bitvalue)
         """ set/reset bit in register store"""
         svalue = regs.getValues(device.__regindex)[0]
-        if device.bitvalue: 
+        if device.bitvalue:
             svalue |= device.__modbus_mask
         else:
             svalue &= ~device.__modbus_mask
@@ -225,9 +252,9 @@ class AoHandle(DevHandle):
         self.regoffset = regoffset
 
     def join(self, index, device, proxybits, proxyregs):
-        index -= 1              # counted from 1 
+        index -= 1              # counted from 1
         device.__regindex = self.regoffset + index       # position in register_data_block
-        device._modbus_handle = self 
+        device._modbus_handle = self
         #  single register to write
         proxyregs.map[device.__regindex] = device
 
@@ -249,11 +276,11 @@ class AiHandle(DevHandle):
 
     def join(self, index, device, proxybits, proxyregs):
         # one 32-bit register
-        index = index - 1                             # counted from 1 
+        index = index - 1                             # counted from 1
         device.__regindex = self.regoffset + 2*index  # position in register_data_block
-        device._modbus_handle = self 
+        device._modbus_handle = self
         #  no register to write
-    
+
     def sync(self, device, bits, regs):
         """ store float into 2 registers
                 Lower reg is int part (16 bit) of value
@@ -273,9 +300,9 @@ class TempHandle(DevHandle):
 
     def join(self, index, device, proxybits, proxyregs):
         # one 16-bit register
-        index = index - 1   # inputs are counted from 1 
+        index = index - 1   # inputs are counted from 1
         device.__regindex = self.regoffset + (index)       # position in register_data_block
-    
+
     def sync(self, device, bits, regs):
         """ store float into 16bit register as value*256 """
         regs.setValues(device.__regindex,float_to_16(device.value))
@@ -301,7 +328,7 @@ class ProxyDataBlock(BaseModbusDataBlock):
     @property
     def default_value(self):
         return self._block.default_value
-    
+
     def validate(self, address, count=1):
         return self._block.validate(address, count)
 
@@ -356,7 +383,7 @@ class UnipiContext(ModbusServerContext):
         regs = ModbusSequentialDataBlock(1, [0]*(1+1+2+2*2+20+16*2))
         proxybits = UnipiCoilBlock(bits)
         proxyregs = UnipiRegsBlock(regs)
-        store = ModbusSlaveContext(di = bits, co = proxybits, 
+        store = ModbusSlaveContext(di = bits, co = proxybits,
                                    ir = regs, hr = proxyregs)
         ModbusServerContext.__init__(self,slaves=store, single=True)
         self.bits = bits
@@ -402,7 +429,7 @@ class UnipiContext(ModbusServerContext):
 ## small version of Modbus map, limited to Gpio devices
 class UnipiContextGpio(UnipiContext):
 
-    devicemap = { # count coil-pos reg-pos  alt-reg-pos 
+    devicemap = { # count coil-pos reg-pos  alt-reg-pos
     'ao'    : (AoHandle   (1,      0,      1),),
     'input' : (InputHandle(14,     1,      2,      3),),
     }

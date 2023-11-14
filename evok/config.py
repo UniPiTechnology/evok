@@ -1,11 +1,10 @@
 import logging
 import os
-from typing import List, Dict
+from typing import List, Dict, Union
 
-from pymodbus.client import AsyncModbusTcpClient
 from tornado.ioloop import IOLoop
 
-from modbus_unipi import EvokModbusSerialClient
+from modbus_unipi import EvokModbusSerialClient, EvokModbusTcpClient
 
 from modbus_slave import ModbusSlave
 
@@ -69,7 +68,7 @@ class OWSensorDevice:
 
 
 class TcpBusDevice:
-    def __init__(self, circuit: str, bus_driver: AsyncModbusTcpClient, dev_id):
+    def __init__(self, circuit: str, bus_driver: EvokModbusTcpClient, dev_id):
         self.dev_id = dev_id
         self.bus_driver = bus_driver
         self.circuit = circuit
@@ -92,22 +91,34 @@ class SerialBusDevice:
 class EvokConfig:
 
     def __init__(self, conf_dir_path: str):
-        data = self.__get_final_conf(conf_dir_path=conf_dir_path)
+        data = self.__get_final_conf(scope=[conf_dir_path+'/config.yaml'])
         self.main: dict = self.__get_main_conf(data)
         self.hw_tree: dict = self.__get_hw_tree(data)
 
-    @staticmethod
-    def __get_final_conf(conf_dir_path) -> dict:
-        files = os.listdir(conf_dir_path)
-        if 'config.yaml' not in files:
-            raise EvokConfigError(f"Missing 'config.yaml' in evok configuration directory ({conf_dir_path})")
-        scope = [conf_dir_path+'/config.yaml']
+    def __merge_data(self, source: dict, append: dict):
+        for key in append:
+            if key in source and type(source[key]) == dict and type(append[key]) == dict:
+                source[key] = self.__merge_data(source[key], append[key])
+            else:
+                source[key] = append[key]
+        return source
+
+    def __get_final_conf(self, conf_dir_path: Union[None, str] = None,
+                         scope: Union[None, List[str]] = None,
+                         check_autogen: bool = True) -> dict:
+        if scope is None:
+            files = os.listdir(conf_dir_path)
+            if 'config.yaml' not in files:
+                raise EvokConfigError(f"Missing 'config.yaml' in evok configuration directory ({conf_dir_path})")
+            scope = files
         final_conf = {}
         for path in scope:
             with open(path, 'r') as f:
                 ydata: dict = yaml.load(f, Loader=yaml.Loader)
-            for name, value in ydata.items():
-                final_conf[name] = value  # TODO: zahloubeni (neztracet data, pouze expandovat)
+            self.__merge_data(final_conf, ydata)
+        if check_autogen and final_conf.get('autogen', False):
+            logger.info(f"Including autogen....")
+            return self.__get_final_conf(scope=['/etc/evok/autogen.yaml', *scope], check_autogen=False)
         return final_conf
 
     @staticmethod
@@ -189,7 +200,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
             dev_counter += 1
             modbus_server = bus_data.get("hostname", "127.0.0.1")
             modbus_port = bus_data.get("port", 502)
-            bus_driver = AsyncModbusTcpClient(host=modbus_server, port=modbus_port)
+            bus_driver = EvokModbusTcpClient(host=modbus_server, port=modbus_port)
             bus = TcpBusDevice(circuit=bus_name, bus_driver=bus_driver, dev_id=dev_counter)
             Devices.register_device(TCPBUS, bus)
 
