@@ -1,0 +1,34 @@
+---
+type: E30RO
+modbus_register_blocks:
+  - start_reg   : 0
+    count       : 3
+    frequency   : 1
+  - start_reg   : 1000
+    count       : 10
+    frequency   : 5
+modbus_features:
+  - type        : RO
+    count       : 16
+    val_reg     : 0
+    val_coil    : 0
+    modes       :
+      - Simple
+  - type        : RO
+    count       : 12
+    val_reg     : 1
+    val_coil    : 16
+    modes       :
+      - Simple
+  - type        : WD
+    count       : 1
+    val_reg     : 2
+    timeout_reg : 1008
+    nv_sav_coil : 1003
+    reset_coil  : 1002
+  - type        : REGISTER
+    count       : 3
+    start_reg   : 0
+  - type        : REGISTER
+    count       : 10
+    start_reg   : 1000

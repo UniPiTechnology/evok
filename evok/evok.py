@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import asyncio
-import time
+
 import os
 from collections import OrderedDict
 import configparser as ConfigParser
@@ -50,21 +50,19 @@ from tornado_json.exceptions import APIError
 # from tornadows import complextypes
 
 # Read config during initialisation
-Config = config.EvokConfig()  # ConfigParser.RawConfigParser()
-Config.add_section('MAIN')
-config_path = '/etc/evok.conf'
-if not os.path.isfile(config_path):
-    config_path = os.path.dirname(os.path.realpath(__file__)) + '/evok.conf'
-Config.read(config_path)
+config_path = '/etc/evok'
+if not os.path.isdir(config_path):
+    config_path = os.path.dirname(os.path.realpath(__file__)) + '/evok'
+    os.mkdir(config_path) if not os.path.exists(config_path) else None
+evok_config = config.EvokConfig(config_path)
 
 wh = None
 cors = False
 corsdomains = '*'
-use_output_schema = Config.getbooldef('MAIN', 'use_schema_verification', False)
-allow_unsafe_configuration_handlers = Config.getbooldef('MAIN', 'allow_unsafe_configuration_handlers', False)
+use_output_schema = evok_config.getbooldef('use_schema_verification', False)
+allow_unsafe_configuration_handlers = evok_config.getbooldef('allow_unsafe_configuration_handlers', False)
 
 from . import rpc_handler
-from . import neuron
 
 
 class UserCookieHelper():
@@ -202,7 +200,7 @@ class WsHandler(websocket.WebSocketHandler):
                 result = []
                 # devices = [INPUT, RELAY, AI, AO, SENSOR, UNIT_REGISTER]
                 devices = [INPUT, RELAY, AI, AO, SENSOR]
-                if Config.getbooldef("MAIN", "websocket_all_filtered", False):
+                if evok_config.getbooldef("websocket_all_filtered", False):
                     if (len(self.filter) == 1 and self.filter[0] == "default"):
                         for dev in devices:
                             result += map(lambda dev: dev.full(), Devices.by_int(dev))
@@ -337,7 +335,7 @@ class LegacyRestHandler(UserCookieHelper, tornado.web.RequestHandler):
     async def post(self, dev, circuit, prop):
         try:
             device = Devices.by_name(dev, circuit)
-            kw = dict([(k, v[0]) for (k, v) in self.request.body_arguments.items()])
+            kw = dict([(k, v[0].decode()) for (k, v) in self.request.body_arguments.items()])
             result = await device.set(**kw)
             self.write(json.dumps({'success': True, 'result': result}))
         except Exception as E:
@@ -1473,7 +1471,7 @@ class ConfigHandler(UserCookieHelper, tornado.web.RequestHandler):
 
     @tornado.web.authenticated
     def get(self):
-        self.write(Config.configtojson())
+        self.write(evok_config.configtojson())
         self.finish()
 
     @tornado.gen.coroutine
@@ -1909,11 +1907,9 @@ def main():
     define("modbus_port", default=-1, help="Modbus/TCP listening port, 0 disables modbus", type=int)
     tornado.options.parse_command_line()
 
-    config.read_config()
-
     # tornado.httpclient.AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
-    log_file = Config.getstringdef("MAIN", "log_file", "./evok.log")
-    log_level = Config.getstringdef("MAIN", "log_level", "INFO").upper()
+    log_file = evok_config.getstringdef("log_file", "./evok.log")
+    log_level = evok_config.getstringdef("log_level", "INFO").upper()
 
     # rotating file handler
     filelog_handler = logging.handlers.TimedRotatingFileHandler(filename=log_file, when='D', backupCount=7)
@@ -1921,26 +1917,22 @@ def main():
     filelog_handler.setFormatter(log_formatter)
     filelog_handler.setLevel(log_level)
     logger.addHandler(filelog_handler)
+    # logging.getLogger('pymodbus').setLevel(logging.DEBUG)
 
-    logger.info("Starting using config file %s", config_path)
+    logger.info(f"Starting using config file {config_path}")
 
-    while True:
-        time.sleep(2)
-        logger.info("Evok is working...log")
-        print("Evok is working...stdout")
-    # hw_dict = config.HWDict(dir_paths=['../etc/hw_definitions/', '../etc/hw_definitions/BuiltIn/'])  # TODO: dynamic
-    hw_dict = config.HWDict(dir_paths=['../etc/hw_definitions/slaves/'])  # TODO: dynamic
-    alias_dict = (config.HWDict(dir_paths=['/home/unipi/remote_evok/var/'])).definitions
+    hw_dict = config.HWDict(dir_paths=[f'{config_path}/hw_definitions/'])
+    alias_dict = (config.HWDict(dir_paths=['../var/'])).definitions
 
     cors = True
-    corsdomains = Config.getstringdef("MAIN", "cors_domains", "*")
+    corsdomains = evok_config.getstringdef("cors_domains", "*")
     define("cors", default=True, help="enable CORS support", type=bool)
-    port = Config.getintdef("MAIN", "port", 8080)
+    port = evok_config.getintdef("port", 8080)
     if options.as_dict()['port'] != -1:
         port = options.as_dict()['port']  # use command-line option instead of config option
 
-    modbus_address = Config.getstringdef("MAIN", "modbus_address", '')
-    modbus_port = Config.getintdef("MAIN", "modbus_port", 0)
+    modbus_address = evok_config.getstringdef("modbus_address", '')
+    modbus_port = evok_config.getintdef("modbus_port", 0)
 
     if options.as_dict()['modbus_port'] != -1:
         modbus_port = options.as_dict()['modbus_port']  # use command-line option instead of config option
@@ -2015,22 +2007,22 @@ def main():
     else:
         modbus_context = None
 
-    if Config.getbooldef("MAIN", "soap_server_enabled", False):
+    if evok_config.getbooldef("soap_server_enabled", False):  # TODO: zachranit??
         soap_services = [
             ('UniPiQueryService', UniPiQueryService),
             ('UniPiCommandService', UniPiCommandService)
         ]
         soap_app = webservices.WebService(soap_services)
         soap_server = tornado.httpserver.HTTPServer(soap_app)
-        soap_port = Config.getintdef("MAIN", "soap_server_port", 8081)
+        soap_port = evok_config.getintdef("soap_server_port", 8081)
         soap_server.listen(soap_port)
         logger.info("Starting SOAP server on %d", soap_port)
 
-    if Config.getbooldef("MAIN", "webhook_enabled", False):
+    if evok_config.getbooldef("webhook_enabled", False):
         wh_types = json.loads(
-            Config.getstringdef("MAIN", "webhook_device_mask", '["input", "sensor", "uart", "watchdog"]'))
-        wh_complex = Config.getbooldef("MAIN", "webhook_complex_events", False)
-        wh = WhHandler(Config.getstringdef("MAIN", "webhook_address", "http://127.0.0.1:80/index.html"), wh_types,
+            evok_config.getstringdef("webhook_device_mask", '["input", "sensor", "uart", "watchdog"]'))
+        wh_complex = evok_config.getbooldef("webhook_complex_events", False)
+        wh = WhHandler(evok_config.getstringdef("webhook_address", "http://127.0.0.1:80/index.html"), wh_types,
                        wh_complex)
         wh.open()
 
@@ -2042,11 +2034,8 @@ def main():
     devents.register_status_cb(gener_status_cb(mainLoop, modbus_context))
 
     # create hw devices
-    hw_conf_path = Config.getstringdef("MAIN", "hwconf_path", "/etc/evok.yaml")
-    with open(hw_conf_path, 'r') as f:
-        hw_conf = yaml.load(stream=f, Loader=yaml.Loader)
-    config.create_devices(Config, hw_conf, hw_dict)
-    if Config.getbooldef("MAIN", "wifi_control_enabled", False):
+    config.create_devices(evok_config, hw_dict)
+    if evok_config.getbooldef("wifi_control_enabled", False):
         config.add_wifi()
     '''
     """ Setting the '_server' attribute if not set - simple link to mainloop"""
@@ -2062,13 +2051,15 @@ def main():
         for device in Devices.by_int(bustype):
             device.bus_driver.switch_to_async(mainLoop)
 
-    for device in Devices.by_int(ADCHIP):
-        device.switch_to_async(mainLoop)
+    for bustype in (ADCHIP, TCPBUS, SERIALBUS):
+        for device in Devices.by_int(bustype):
+            device.switch_to_async(mainLoop)
 
-    for neuron in Devices.by_int(MODBUS_SLAVE):
-        neuron.switch_to_async(mainLoop, alias_dict)
-        if neuron.scan_enabled:
-            neuron.start_scanning()
+    for modbus_slave in Devices.by_int(MODBUS_SLAVE):
+        modbus_slave.switch_to_async(mainLoop, alias_dict)
+        if modbus_slave.scan_enabled:
+            modbus_slave.start_scanning()
+
 
     def sig_handler(sig, frame):
         if sig in (signal.SIGTERM, signal.SIGINT):
