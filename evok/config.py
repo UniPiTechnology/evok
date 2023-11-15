@@ -4,12 +4,11 @@ from typing import List, Dict, Union
 
 from tornado.ioloop import IOLoop
 
-from modbus_unipi import EvokModbusSerialClient, EvokModbusTcpClient
+from .modbus_unipi import EvokModbusSerialClient, EvokModbusTcpClient
 
-from modbus_slave import ModbusSlave
+from .modbus_slave import ModbusSlave
 
-import owdevice
-#import owclient as owdevice
+from . import owdevice
 
 import yaml
 from .devices import *

@@ -1922,7 +1922,7 @@ def main():
     logger.info(f"Starting using config file {config_path}")
 
     hw_dict = config.HWDict(dir_paths=[f'{config_path}/hw_definitions/'])
-    alias_dict = (config.HWDict(dir_paths=['../var/'])).definitions
+    alias_dict = (config.HWDict(dir_paths=['/var/evok/'])).definitions
 
     cors = True
     corsdomains = evok_config.getstringdef("cors_domains", "*")

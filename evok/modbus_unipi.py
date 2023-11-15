@@ -14,7 +14,7 @@ from pymodbus.framer import ModbusRtuFramer, ModbusFramer, ModbusSocketFramer
 #---------------------------------------------------------------------------#
 # Logging
 #---------------------------------------------------------------------------#
-from log import *
+from .log import *
 
 
 class EvokModbusSerialClient(AsyncModbusSerialClient):

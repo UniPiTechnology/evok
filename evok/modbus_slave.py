@@ -16,11 +16,11 @@ from pymodbus.payload import BinaryPayloadDecoder, BinaryPayloadBuilder
 from pymodbus.constants import Endian
 from tornado.locks import Semaphore
 
-from devices import *
-from errors import ENoCacheRegister, ModbusSlaveError
-from modbus_unipi import EvokModbusSerialClient
-from log import *
-import config
+from .devices import *
+from .errors import ENoCacheRegister, ModbusSlaveError
+from .modbus_unipi import EvokModbusSerialClient
+from .log import *
+from . import config
 import time
 
 import subprocess

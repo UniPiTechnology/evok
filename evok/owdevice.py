@@ -1,6 +1,6 @@
-import devices
-from devices import *
-from log import *
+from . import devices
+from .devices import *
+from .log import *
 
 import anyio
 from asyncowfs import OWFS
