@@ -1,39 +1,26 @@
+import logging
 import os
-import multiprocessing
-import configparser as ConfigParser
-from typing import List
+from typing import List, Dict, Union
+
+from tornado.ioloop import IOLoop
+
+from modbus_unipi import EvokModbusSerialClient, EvokModbusTcpClient
+
+from modbus_slave import ModbusSlave
+
+import owdevice
+#import owclient as owdevice
 
 import yaml
 from .devices import *
 
 # from neuron import WiFiAdapter
 
-try:
-    import unipig
-    from apigpio import I2cBus, GpioBus
-except:
+class EvokConfigError(Exception):
     pass
 
-up_globals = {
-    'version': "UniPi 1.0",
-    'devices': {
-        'ai': {
-            '1': 5.564920867,
-            '2': 5.564920867,
-        }
-    },
-    'version1': None,
-    'version2': None,
-}
 
-
-def read_config():
-    global up_globals
-    up_globals['model'] = 'S103'
-    up_globals['serial'] = 2535
-
-
-class HWDict():
+class HWDict:
     def __init__(self, dir_paths: List[str] = None, paths: List[str] = None):
         """
         :param dir_paths: path to dir for load
@@ -50,17 +37,17 @@ class HWDict():
             raise ValueError(f"HWDict: no scope!")
         for file_path in scope:
             if file_path.endswith(".yaml"):
-                try:
-                    with open(file_path, 'r') as yfile:
-                        self.definitions += [yaml.load(yfile, Loader=yaml.SafeLoader)]
-                        logger.info("YAML Definition loaded: %s, type: %s, definition count %d", file_path,
-                                    len(self.definitions[len(self.definitions) - 1]), len(self.definitions) - 1)
-                except Exception as E:
-                    raise E
-                    pass
+                with open(file_path, 'r') as yfile:
+                    ydata = yaml.load(yfile, Loader=yaml.SafeLoader)
+                    if ydata is None:
+                        logger.warning(f"Empty Definition file '{file_path}'! skipping...")
+                        continue
+                    self.definitions.append(ydata)
+                    logger.info(f"YAML Definition loaded: {file_path}, type: {len(self.definitions[-1])}, "
+                                f"definition count {len(self.definitions) - 1}")
 
 
-class OWBusDevice():
+class OWBusDevice:
     def __init__(self, bus_driver, dev_id):
         self.dev_id = dev_id
         self.bus_driver = bus_driver
@@ -70,7 +57,7 @@ class OWBusDevice():
         return self.bus_driver.full()
 
 
-class OWSensorDevice():
+class OWSensorDevice:
     def __init__(self, sensor_dev, dev_id):
         self.dev_id = dev_id
         self.sensor_dev = sensor_dev
@@ -80,70 +67,107 @@ class OWSensorDevice():
         return self.sensor_dev.full()
 
 
-class I2CBusDevice():
-    def __init__(self, bus_driver, dev_id):
+class TcpBusDevice:
+    def __init__(self, circuit: str, bus_driver: EvokModbusTcpClient, dev_id):
         self.dev_id = dev_id
         self.bus_driver = bus_driver
-        self.circuit = bus_driver.circuit
+        self.circuit = circuit
 
-    def full(self):
-        return None
+    def switch_to_async(self, loop: IOLoop):
+        loop.add_callback(lambda: self.bus_driver.connect())
 
 
-class GPIOBusDevice():
-    def __init__(self, bus_driver, dev_id):
+class SerialBusDevice:
+    def __init__(self, circuit: str,  bus_driver: EvokModbusSerialClient, dev_id):
         self.dev_id = dev_id
         self.bus_driver = bus_driver
-        self.circuit = bus_driver.circuit
+        self.circuit = circuit
 
-    def full(self):
-        return None
+    def switch_to_async(self, loop: IOLoop):
+        self.bus_driver.ioloop = loop
+        loop.add_callback(lambda: self.bus_driver.connect())
 
 
-class EvokConfig(ConfigParser.RawConfigParser):
+class EvokConfig:
 
-    def __init__(self):
-        ConfigParser.RawConfigParser.__init__(self, inline_comment_prefixes=(';'))
+    def __init__(self, conf_dir_path: str):
+        data = self.__get_final_conf(scope=[conf_dir_path+'/config.yaml'])
+        self.main: dict = self.__get_main_conf(data)
+        self.hw_tree: dict = self.__get_hw_tree(data)
+
+    def __merge_data(self, source: dict, append: dict):
+        for key in append:
+            if key in source and type(source[key]) == dict and type(append[key]) == dict:
+                source[key] = self.__merge_data(source[key], append[key])
+            else:
+                source[key] = append[key]
+        return source
+
+    def __get_final_conf(self, conf_dir_path: Union[None, str] = None,
+                         scope: Union[None, List[str]] = None,
+                         check_autogen: bool = True) -> dict:
+        if scope is None:
+            files = os.listdir(conf_dir_path)
+            if 'config.yaml' not in files:
+                raise EvokConfigError(f"Missing 'config.yaml' in evok configuration directory ({conf_dir_path})")
+            scope = files
+        final_conf = {}
+        for path in scope:
+            with open(path, 'r') as f:
+                ydata: dict = yaml.load(f, Loader=yaml.Loader)
+            self.__merge_data(final_conf, ydata)
+        if check_autogen and final_conf.get('autogen', False):
+            logger.info(f"Including autogen....")
+            return self.__get_final_conf(scope=['/etc/evok/autogen.yaml', *scope], check_autogen=False)
+        return final_conf
+
+    @staticmethod
+    def __get_main_conf(data: dict) -> dict:
+        ret = {}
+        for name, value in data.items():
+            if name not in ['hw_tree']:
+                ret[name] = value
+        return ret
+
+    @staticmethod
+    def __get_hw_tree(data: dict) -> dict:
+        ret = {}
+        if 'hw_tree' not in data:
+            logger.warning("Section 'hw_tree' not in configuration!")
+            return ret
+        for name, value in data['hw_tree'].items():
+            ret[name] = value
+        return ret
 
     def configtojson(self):
-        return dict(
-            (section,
-             dict(
-                 (option,
-                  self.get(section, option)
-                  ) for option in self.options(section))
-             ) for section in self.sections())
+        return self.main  # TODO: zkontrolovat!!
 
-    def getintdef(self, section, key, default):
+    def getintdef(self, key, default):
         try:
-            return self.getint(section, key)
+            return int(self.main[key])
         except:
             return default
 
-    def getfloatdef(self, section, key, default):
+    def getfloatdef(self, key, default):
         try:
-            return self.getfloat(section, key)
+            return float(self.main[key])
         except:
             return default
 
-    def getbooldef(self, section, key, default):
-        true_booleans = ['yes', 'true', '1']
-        false_booleans = ['no', 'false', '0']
+    def getbooldef(self, key, default):
         try:
-            val = self.get(section, key).lower()
-            if val in true_booleans:
-                return True
-            if val in false_booleans:
-                return False
-            return default
+            return bool(self.main[key])
         except:
             return default
 
-    def getstringdef(self, section, key, default):
+    def getstringdef(self, key, default):
         try:
-            return self.get(section, key)
+            return str(self.main[key])
         except:
             return default
+
+    def get_hw_tree(self) -> dict:
+        return self.hw_tree
 
 
 def hexint(value):
@@ -152,80 +176,91 @@ def hexint(value):
     return int(value)
 
 
-def create_devices(evok_config: EvokConfig, hw_config: dict, hw_dict):
+def create_devices(evok_config: EvokConfig, hw_dict):
     dev_counter = 0
-    # Config.hw_dict = hw_dict
-    for bus_name, bus_data in hw_config.items():
+    for bus_name, bus_data in evok_config.get_hw_tree().items():
         bus_data: dict
-        # split section name ITEM123 or ITEM_123 or ITEM-123 into device=ITEM and circuit=123
+        if not bus_data.get("enabled", True):
+            logger.info(f"Skipping disabled bus '{bus_name}'")
+            continue
         bus_type = bus_data['type']
-        logging.info(f"Creating bus '{bus_name}' with type '{bus_type}'")
+
+        bus = None
+        if bus_type == 'OWBUS':
+            dev_counter += 1
+            interval = bus_data.get("interval", 60)
+            scan_interval = bus_data.get("scan_interval", 300)
+
+            circuit = bus_name
+            ow_bus_driver = owdevice.OwBusDriver(circuit, interval=interval, scan_interval=scan_interval)
+            bus = OWBusDevice(ow_bus_driver, dev_id=dev_counter)
+            Devices.register_device(OWBUS, bus)
+
+        elif bus_type == 'MODBUSTCP':
+            dev_counter += 1
+            modbus_server = bus_data.get("hostname", "127.0.0.1")
+            modbus_port = bus_data.get("port", 502)
+            bus_driver = EvokModbusTcpClient(host=modbus_server, port=modbus_port)
+            bus = TcpBusDevice(circuit=bus_name, bus_driver=bus_driver, dev_id=dev_counter)
+            Devices.register_device(TCPBUS, bus)
+
+        elif bus_type == "MODBUSRTU":
+            dev_counter += 1
+            serial_port = bus_data["port"]
+            serial_baud_rate = bus_data.get("baudrate", 19200)
+            serial_parity = bus_data.get("parity", 'N')
+            serial_stopbits = bus_data.get("stopbits", 1)
+            bus_driver = EvokModbusSerialClient(port=serial_port, baudrate=serial_baud_rate, parity=serial_parity,
+                                                stopbits=serial_stopbits, timeout=1)
+            bus = SerialBusDevice(circuit=bus_name, bus_driver=bus_driver, dev_id=dev_counter)
+            Devices.register_device(SERIALBUS, bus)
+
+        if 'devices' not in bus_data:
+            logging.info(f"Creating bus '{bus_name}' with type '{bus_type}'.")
+            continue
+
+        logging.info(f"Creating bus '{bus_name}' with type '{bus_type}' with devices.")
         for device_name, device_data in bus_data['devices'].items():
-            device_type = device_data['type']
-            logging.info(f"^ Creating device '{device_name}' with type '{device_type}'")
+            if not device_data.get("enabled", True):
+                logger.info(f"^ Skipping disabled device '{device_name}'")
+                continue
+            logging.info(f"^ Creating device '{device_name}' with type '{bus_type}'")
             try:
-                if device_type == 'OWBUS':
-                    import owclient
-                    bus = device_data.get("owbus")
-                    interval = device_data.get("interval")
-                    scan_interval = device_data.get("scan_interval")
-                    #### prepare 1wire process ##### (using thread affects timing!)
-                    resultPipe = multiprocessing.Pipe()
-                    taskPipe = multiprocessing.Pipe()
-                    bus_driver = owclient.OwBusDriver(circuit, taskPipe, resultPipe, bus=bus,
-                                                      interval=interval, scan_interval=scan_interval)
-                    owbus = OWBusDevice(bus_driver, dev_id=0)
-                    Devices.register_device(OWBUS, owbus)
-                elif device_type == 'SENSOR' or device_type == '1WDEVICE':
-                    # permanent thermometer
-                    bus = device_type.get("bus")
-                    owbus = (Devices.by_int(OWBUS, bus)).bus_driver
+                dev_counter += 1
+                if bus_type == 'OWBUS':
                     ow_type = device_data.get("type")
                     address = device_data.get("address")
                     interval = device_data.getintdef("interval", 15)
-                    sensor = owclient.MySensorFabric(address, ow_type, owbus, interval=interval, circuit=circuit,
+
+                    circuit = device_name
+                    sensor = owdevice.MySensorFabric(address, ow_type, bus, interval=interval, circuit=circuit,
                                                      is_static=True)
                     if ow_type in ["DS2408", "DS2406", "DS2404", "DS2413"]:
-                        sensor = OWSensorDevice(sensor, dev_id=0)
+                        sensor = OWSensorDevice(sensor, dev_id=dev_counter)
                     Devices.register_device(SENSOR, sensor)
-                elif device_type == 'I2CBUS':
-                    # I2C bus on /dev/i2c-1 via pigpio daemon
-                    busid = device_data.get("busid")
-                    bus_driver = I2cBus(circuit=circuit, busid=busid)
-                    i2cbus = I2CBusDevice(bus_driver, 0)
-                    Devices.register_device(I2CBUS, i2cbus)
-                elif device_type == 'GPIOBUS':
-                    # access to GPIO via pigpio daemon
-                    bus_driver = GpioBus(circuit=circuit)
-                    gpio_bus = GPIOBusDevice(bus_driver, 0)
-                    Devices.register_device(GPIOBUS, gpio_bus)
-                elif device_type == 'UNIPIG':
-                    from unipig import Unipig
-                    device_model = device_data["model"]
-                    unipig = Unipig(circuit, evok_config, hw_dict, device_model)
-                    Devices.register_device(MODBUS_SLAVE, unipig)
-                elif device_type == 'MODBUS_SLAVE':
-                    from neuron import TcpModbusSlave
-                    dev_counter += 1
-                    modbus_server = device_data.get("modbus_server", "127.0.0.1")
-                    modbus_port = device_data.get("modbus_port", 502)
-                    modbus_address = device_data.get("slave-id", 1)
+
+                elif bus_type in ['MODBUSTCP', 'MODBUSRTU']:
+                    slave_id = device_data.get("slave-id", 1)
                     scanfreq = device_data.get("scan_frequency", 1)
                     scan_enabled = device_data.get("scan_enabled", True)
-                    circuit = device_name
                     device_model = device_data["model"]
-                    neuron = TcpModbusSlave(circuit, evok_config, modbus_server, modbus_port, scanfreq, scan_enabled,
-                                            hw_dict, device_model=device_model, modbus_address=modbus_address,
-                                            dev_id=dev_counter, major_group=device_name)
-                    Devices.register_device(MODBUS_SLAVE, neuron)
+                    circuit = device_name
+                    major_group = device_name
+
+                    slave = ModbusSlave(bus.bus_driver, circuit, evok_config, scanfreq, scan_enabled,
+                                        hw_dict, device_model=device_model, slave_id=slave_id,
+                                        dev_id=dev_counter, major_group=major_group)
+                    Devices.register_device(MODBUS_SLAVE, slave)
+
                 else:
-                    logger.error(f"Unknown device type: '{device_type}'! skipping...")
+                    dev_counter -= 1
+                    logger.error(f"Unknown bus type: '{bus_type}'! skipping...")
 
             except Exception as E:
                 logger.exception(f"Error in config section '{bus_type}:{device_name}' - {str(E)}")
 
 
-async def add_aliases(alias_conf):
+def add_aliases(alias_conf):
     if alias_conf is not None:
         for alias_conf_single in alias_conf:
             if alias_conf_single is not None:

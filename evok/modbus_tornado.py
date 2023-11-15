@@ -4,13 +4,12 @@ Implementation of a Tornado Modbus Server
 
 """
 from binascii import b2a_hex
+from pymodbus.framer import ModbusFramer
 from tornado import ioloop, tcpserver, gen
-from pymodbus.constants import Defaults
 from pymodbus.factory import ServerDecoder
 from pymodbus.datastore import ModbusServerContext, ModbusSlaveContext, ModbusSequentialDataBlock
-from pymodbus.device import ModbusControlBlock, ModbusAccessControl, ModbusDeviceIdentification
+from pymodbus.device import ModbusControlBlock, ModbusDeviceIdentification
 from pymodbus.transaction import ModbusSocketFramer
-from pymodbus.interfaces import IModbusFramer
 from pymodbus.pdu import ModbusExceptions as merror
 
 __all__ = [ "StartTcpServer" ]
@@ -137,7 +136,7 @@ class ModbusApplication(object):
 
         """
         self.decoder = ServerDecoder()
-        if isinstance(framer, IModbusFramer):
+        if isinstance(framer, ModbusFramer):
             self.framer = framer
         else: self.framer = ModbusSocketFramer
 
@@ -146,7 +145,6 @@ class ModbusApplication(object):
         else: self.store = ModbusServerContext()
 
         self.control = ModbusControlBlock()
-        self.access = ModbusAccessControl()
 
         if isinstance(identity, ModbusDeviceIdentification):
             self.control.Identity.update(identity)
@@ -154,12 +152,11 @@ class ModbusApplication(object):
 #---------------------------------------------------------------------------# 
 # Starting Factory
 #---------------------------------------------------------------------------# 
-def StartTcpServer(context, identity=None, address=None):
+def StartTcpServer(context, address, identity=None):
     """ Helper method to start the Modbus Async TCP server
     :param context: The server data context
     :param identify: The server identity to use
     """
-    address = address or ("", Defaults.Port)
     framer = ModbusSocketFramer
     modbus_server = ModbusServer(ModbusApplication(store=context, framer=framer, identity=identity))
     _logger.info("Starting Modbus TCP Server on %s:%s" % address)
@@ -188,8 +185,8 @@ def main():
     if opt.debug:
         try:
             _logger.setLevel(logging.DEBUG)
-        except Exception:
-            print("Logging is not supported on this system")
+        except Exception as E:
+            print(f"Logging is not supported on this system: {E}")
 
     # Create store context
     store = ModbusSlaveContext(

@@ -31,15 +31,19 @@ class DeviceList(dict):
         del (self[devtype_names[key]])[value.circuit]
 
     def remove_global_device(self, glob_dev_id):
-        for devtype_name in devtype_names:
-            to_delete = []
-            for dev_name in self[devtype_name]:
-                if ((self[devtype_name])[dev_name]).dev_id == glob_dev_id:
-                    to_delete += [(self[devtype_name])[dev_name]]
-            for value in to_delete:
-                del (self[devtype_name])[value.circuit]
+        try:
+            for devtype_name in devtype_names:
+                to_delete = []
+                for dev_name in self[devtype_name]:
+                    if ((self[devtype_name])[dev_name]).dev_id == glob_dev_id:
+                        to_delete += [(self[devtype_name])[dev_name]]
+                for value in to_delete:
+                    del (self[devtype_name])[value.circuit]
+        except KeyError as E:
+            logger.warning(f"Trying to remove non-existing global device ({E})")
 
     def by_int(self, devtypeid, circuit=None, major_group=None):
+        circuit = str(circuit) if circuit is not None else None
         devdict = self._arr[devtypeid]
         if circuit is None:
             if major_group is not None:
@@ -65,9 +69,10 @@ class DeviceList(dict):
             if circuit in self.alias_dict:
                 return self.alias_dict[circuit]
             else:
-                raise Exception('Invalid device circuit number %s' % str(circuit))
+                raise Exception(f'Invalid device circuit number {str(circuit)} with deftypeid {devtypeid}')
 
     def by_name(self, devtype, circuit=None):
+        circuit = str(circuit) if circuit is not None else None
         try:
             devdict = self[devtype]
         except KeyError:
@@ -80,7 +85,7 @@ class DeviceList(dict):
             if circuit in self.alias_dict:
                 return self.alias_dict[circuit]
             else:
-                raise Exception('Invalid device circuit number %s' % str(circuit))
+                raise Exception(f'Invalid device circuit number {str(circuit)} with deftype {devtype}')
 
     def register_device(self, devtype, device):
         """ can be called with devtype = INTEGER or NAME
@@ -93,6 +98,7 @@ class DeviceList(dict):
             devdict = self[devtype]
         devdict[str(device.circuit)] = device
         devents.config(device)
+        logging.debug(f"Registed new device '{devtype_names[devtype]}' with circuit {device.circuit} \t ({device})")
 
     def add_alias(self, alias_key, device, file_update=False):
         if (not (alias_key.startswith("al_")) or (len(re.findall(r"[A-Za-z0-9\-\._]*", alias_key)) > 2)):
@@ -155,7 +161,8 @@ LIGHT_CHANNEL = 22
 LIGHT_DEVICE = 23
 UNIT_REGISTER = 24
 EXT_CONFIG = 25
-UNIPIG = 26
+TCPBUS = 26
+SERIALBUS = 27
 
 # # corresponding device types names !! ORDER IS IMPORTANT
 devtype_names = (
@@ -185,7 +192,8 @@ devtype_names = (
     'light_device',
     'unit_register',
     'ext_config',
-    'unipig'
+    'tcp_bus',
+    'serial_bus',
 )
 
 devtype_altnames = {
