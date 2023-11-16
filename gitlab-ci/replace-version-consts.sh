@@ -15,6 +15,7 @@ sed -i "s/version=.*/version=\\'${PACKAGE_VERSION}\\',/" setup.py
 sed -i "s/\\/evok\\/archive.*/\\/evok\\/archive\\/${PACKAGE_VERSION}.zip/" README.md
 sed -i "s/unzip.*/unzip ${PACKAGE_VERSION}.zip/" README.md
 sed -i "s/cd evok-.*/cd evok-${PACKAGE_VERSION}/" README.md
+sed -i "s/version =.*/version = \"${PACKAGE_VERSION}\"/" pyproject.toml
 
 #File for displaying version on http://<ip address>:<port>/version
 echo "${PACKAGE_VERSION}" > version.txt
