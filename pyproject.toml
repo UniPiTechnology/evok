@@ -7,6 +7,8 @@ name = "evok"
 version = "2.5.8"
 authors = [
   { name="Martin Triska", email="triska@unipi.technology" },
+  { name="Miroslav Ondra", email="bokula@unipi.technology" },
+  { name="Patrik Kratochvil", email="kratochvil@unipi.technology" },
 ]
 description = "Web service bridge for Unipi PLCs"
 readme = "README.md"
@@ -21,11 +23,12 @@ dependencies = [
     'pymodbus == 3.5.4',
     'tornado == 6.3.3',
     'jsonschema == 2.6.0',
-    'anyio >=3',
+    'asyncowfs@git+https://github.com/UniPiTechnology/asyncowfs'
+#    'asyncowfs@file:///home/unipi/packages/evok-internal/asyncowfs'
 ]
 
 [tool.setuptools]
-packages = ["evok", "asyncowfs"]
+packages = ["evok"]
 
 [project.scripts]
 evok = "evok.evok:main"

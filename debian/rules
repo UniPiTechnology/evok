@@ -28,8 +28,13 @@ export PYBUILD_NAME=evok
 	dh $@ --with python-virtualenv
 
 
-#override_dh_virtualenv:
-#	dh_virtualenv --break-system-packages
+override_dh_virtualenv:
+	dh_virtualenv
+	sed 's#/opt/evok/bin/python#debian/evok/opt/evok/bin/python#' -i debian/evok/opt/evok/bin/pip3
+	debian/evok/opt/evok/bin/pip3 uninstall -y setuptools wheel pip
+
+#	dh_virtualenv --extra-virtualenv-arg=--no-pip --pip-tool=/usr/bin/pip3
+#	dh_virtualenv --extra-virtualenv-arg=--no-pip --pip-tool=/usr/bin/pip3
 
 override_dh_installinit:
 	dh_installinit --no-start
