@@ -751,10 +751,7 @@ class Relay(object):
                 self.alias = alias
 
         if timeout is None:
-            if (value is not None) and self.forced_changes:
-                return self.full(forced_value=parsed_value)
-            else:
-                return self.full()
+            return self.full()
 
         async def timercallback():
             self.pending_id = None
@@ -763,10 +760,7 @@ class Relay(object):
         self.pending_id = IOLoop.instance().add_timeout(
             datetime.timedelta(seconds=float(timeout)), timercallback)
 
-        if (value is not None) and self.forced_changes:
-            return self.full(forced_value=parsed_value)
-        else:
-            return self.full()
+        return self.full()
 
     def get(self):
         return self.full()

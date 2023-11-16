@@ -59,7 +59,7 @@ evok_config = config.EvokConfig(config_path)
 wh = None
 cors = False
 corsdomains = '*'
-use_output_schema = evok_config.getbooldef('use_schema_verification', False)
+use_output_schema = evok_config.getbooldef('use_schema_verification', False)  # TODO: odstranit!
 allow_unsafe_configuration_handlers = evok_config.getbooldef('allow_unsafe_configuration_handlers', False)
 
 from . import rpc_handler
