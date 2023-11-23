@@ -43,10 +43,6 @@ import json
 from . import config
 from .devices import *
 
-from tornado_json.requesthandlers import APIHandler
-from tornado_json import schema
-from tornado_json.exceptions import APIError
-
 # from tornadows import complextypes
 
 # Read config during initialisation
@@ -64,7 +60,7 @@ allow_unsafe_configuration_handlers = evok_config.getbooldef('allow_unsafe_confi
 from . import rpc_handler
 
 
-class UserCookieHelper():
+class UserCookieHelper:
     _passwords = []
 
     def get_current_user(self):
@@ -120,7 +116,7 @@ def enable_cors(handler):
 registered_ws = {}
 
 
-class WhHandler():
+class WhHandler:
     def __init__(self, url, allowed_types, complex_events):
         self.http_client = tornado.httpclient.AsyncHTTPClient()
         self.url = url
@@ -186,8 +182,7 @@ class WsHandler(websocket.WebSocketHandler):
             logger.error("Exc: %s", str(e))
             pass
 
-    @tornado.gen.coroutine
-    def on_message(self, message):
+    async def on_message(self, message):
         try:
             message = json.loads(message)
             try:
@@ -217,7 +212,7 @@ class WsHandler(websocket.WebSocketHandler):
                         for added_result in added_results:
                             if added_result != '':
                                 result.append(added_result)
-                self.write_message(json.dumps(result))
+                await self.write_message(json.dumps(result))
             # set device state
             elif cmd == "filter":
                 devices = []
@@ -245,19 +240,17 @@ class WsHandler(websocket.WebSocketHandler):
                     func = getattr(device, cmd)
                     if value is not None:
                         if type(value) == dict:
-                            result = func(**value)
+                            result = await func(**value)
                         else:
-                            result = func(value)
+                            result = await func(value)
                     else:
                         # Set other property than "value" (e.g. counter of an input)
                         funcdata = {key: value for (key, value) in message.items() if
                                     key not in ("circuit", "value", "cmd", "dev")}
                         if len(funcdata) > 0:
-                            result = func(**funcdata)
+                            result = await func(**funcdata)
                         else:
-                            result = func()
-                    if is_future(result):
-                        result = yield result
+                            result = await func()
                     if cmd == "full":
                         self.write_message(json.dumps(result))
                     # send response only to the modbusclient_rs485 requesting full info
@@ -347,7 +340,7 @@ class LegacyRestHandler(UserCookieHelper, tornado.web.RequestHandler):
         self.finish()
 
 
-class RestOWireHandler(UserCookieHelper, APIHandler):
+class LegacyJsonHandler(UserCookieHelper, tornado.web.RequestHandler):
     def initialize(self):
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
@@ -358,49 +351,8 @@ class RestOWireHandler(UserCookieHelper, APIHandler):
     #        or
     #        GET /rest/DEVICE/CIRCUIT/PROPERTY
     @tornado.web.authenticated
-    @schema.validate()
-    def get(self, circuit, prop):
-        device = Devices.by_name("sensor", circuit)
-        if prop:
-            if prop[0] in ('_'): raise Exception('Invalid property name')
-            result = {prop: getattr(device, prop)}
-        else:
-            result = device.full()
-        return result
-    @schema.validate(input_schema=schemas.owire_post_inp_schema, input_example=schemas.owire_post_inp_example)
-    @tornado.gen.coroutine
-    def post(self, circuit, prop):
-        try:
-            device = Devices.by_name("sensor", circuit)
-            js_dict = json.loads(self.request.body)
-            result = device.set(**js_dict)
-            if is_future(result):
-                result = yield result
-            raise Return({'result': result})
-        except Return as E:
-            raise E
-        except Exception as E:
-            raise Return({'errors': str(E)})
-
-    def options(self):
-        self.set_status(204)
-        self.finish()
-
-
-class RestUARTHandler(UserCookieHelper, APIHandler):
-    def initialize(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-        enable_cors(self)
-
-    # usage: GET /rest/DEVICE/CIRCUIT
-    #        or
-    #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    @tornado.web.authenticated
-    @schema.validate()
-    def get(self, circuit, prop):
-        device = Devices.by_name("uart", circuit)
+    def get(self, dev, circuit, prop):
+        device = Devices.by_name(dev, circuit)
         if prop:
             if prop[0] in ('_'): raise Exception('Invalid property name')
             result = {prop: getattr(device, prop)}
@@ -410,95 +362,9 @@ class RestUARTHandler(UserCookieHelper, APIHandler):
 
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
-    @schema.validate(input_schema=schemas.uart_post_inp_schema, input_example=schemas.uart_post_inp_example)
-    @tornado.gen.coroutine
-    def post(self, circuit, prop):
+    async def post(self, dev, circuit, prop):
         try:
-            device = Devices.by_name("uart", circuit)
-            js_dict = json.loads(self.request.body)
-            result = device.set(**js_dict)
-            if is_future(result):
-                result = yield result
-            raise Return({'result': result})
-        except Return as E:
-            raise E
-        except Exception as E:
-            raise Return({'errors': str(E)})
-
-    def options(self):
-        self.set_status(204)
-        self.finish()
-
-
-class RestNeuronHandler(UserCookieHelper, APIHandler):
-    def initialize(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-        enable_cors(self)
-
-    # usage: GET /rest/DEVICE/CIRCUIT
-    #        or
-    #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    @tornado.web.authenticated
-    @schema.validate()
-    def get(self, circuit, prop):
-        device = Devices.by_name("neuron", circuit)
-        if prop:
-            if prop[0] in ('_'): raise Exception('Invalid property name')
-            result = {prop: getattr(device, prop)}
-        else:
-            result = device.full()
-        return result
-
-    # usage: POST /rest/DEVICE/CIRCUIT
-    #          post-data: prop1=value1&prop2=value2...
-    @schema.validate(input_schema=schemas.neuron_post_inp_schema, input_example=schemas.neuron_post_inp_example)
-    @tornado.gen.coroutine
-    def post(self, circuit, prop):
-        try:
-            device = Devices.by_name("neuron", circuit)
-            js_dict = json.loads(self.request.body)
-            result = device.set(**js_dict)
-            if is_future(result):
-                result = yield result
-            raise Return({'result': result})
-        except Return as E:
-            raise E
-        except Exception as E:
-            raise Return({'errors': str(E)})
-
-    def options(self):
-        self.set_status(204)
-        self.finish()
-
-
-class RestLEDHandler(UserCookieHelper, tornado.web.RequestHandler):
-    def initialize(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-        enable_cors(self)
-
-    # usage: GET /rest/DEVICE/CIRCUIT
-    #        or
-    #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    @tornado.web.authenticated
-    def get(self, circuit, prop):
-        device = Devices.by_name("led", circuit)
-        if prop:
-            if prop[0] in ('_'): raise Exception('Invalid property name')
-            result = {prop: getattr(device, prop)}
-        else:
-            result = device.full()
-        return result
-
-    # usage: POST /rest/DEVICE/CIRCUIT
-    #          post-data: prop1=value1&prop2=value2...
-    #@schema.validate(input_schema=schemas.led_post_inp_schema, input_example=schemas.led_post_inp_example)
-    async def post(self, circuit, prop):
-        try:
-            device = Devices.by_name("led", circuit)
+            device = Devices.by_name(dev, circuit)
             kw = json.loads(self.request.body)
             result = await device.set(**kw)
             self.write(json.dumps({'success': True, 'result': result}))
@@ -507,7 +373,7 @@ class RestLEDHandler(UserCookieHelper, tornado.web.RequestHandler):
         self.set_header('Content-Type', 'application/json')
         await self.finish()
 
-    def success(self, output: str):
+    def success(self, output: str):  # TODO!!
         print(f"Co to je???: {output}")
 
     def options(self):
@@ -515,453 +381,7 @@ class RestLEDHandler(UserCookieHelper, tornado.web.RequestHandler):
         self.finish()
 
 
-class RestWatchdogHandler(UserCookieHelper, APIHandler):
-    def initialize(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-        enable_cors(self)
-
-    # usage: GET /rest/DEVICE/CIRCUIT
-    #        or
-    #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    @tornado.web.authenticated
-    @schema.validate()
-    def get(self, circuit, prop):
-        device = Devices.by_name("watchdog", circuit)
-        if prop:
-            if prop[0] in ('_'): raise Exception('Invalid property name')
-            result = {prop: getattr(device, prop)}
-        else:
-            result = device.full()
-        return result
-
-    # usage: POST /rest/DEVICE/CIRCUIT
-    #          post-data: prop1=value1&prop2=value2...
-    @schema.validate(input_schema=schemas.wd_post_inp_schema, input_example=schemas.wd_post_inp_example)
-    @tornado.gen.coroutine
-    def post(self, circuit, prop):
-        try:
-            device = Devices.by_name("watchdog", circuit)
-            js_dict = json.loads(self.request.body)
-            result = device.set(**js_dict)
-            if is_future(result):
-                result = yield result
-            raise Return({'result': result})
-        except Return as E:
-            raise E
-        except Exception as E:
-            raise Return({'errors': str(E)})
-
-    def options(self):
-        self.set_status(204)
-        self.finish()
-
-
-class RestRegisterHandler(UserCookieHelper, APIHandler):
-    def initialize(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-        enable_cors(self)
-
-    # usage: GET /rest/DEVICE/CIRCUIT
-    #        or
-    #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    @tornado.web.authenticated
-    @schema.validate()
-    def get(self, circuit, prop):
-        device = Devices.by_name("register", circuit)
-        if prop:
-            if prop[0] in ('_'): raise Exception('Invalid property name')
-            result = {prop: getattr(device, prop)}
-        else:
-            result = device.full()
-        return result
-
-    # usage: POST /rest/DEVICE/CIRCUIT
-    #          post-data: prop1=value1&prop2=value2...
-    # @tornado.web.authenticated
-    @schema.validate(input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
-    @tornado.gen.coroutine
-    def post(self, circuit, prop):
-        try:
-            device = Devices.by_name("register", circuit)
-            js_dict = json.loads(self.request.body)
-            result = device.set(**js_dict)
-            if is_future(result):
-                result = yield result
-            raise Return({'result': result})
-        except Return as E:
-            raise E
-        except Exception as E:
-            raise Return({'errors': str(E)})
-
-    def options(self):
-        self.set_status(204)
-        self.finish()
-
-
-class RestExtConfigHandler(UserCookieHelper, APIHandler):
-    def initialize(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-        enable_cors(self)
-
-    # usage: GET /rest/DEVICE/CIRCUIT
-    #        or
-    #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    @tornado.web.authenticated
-    @schema.validate()
-    def get(self, circuit, prop):
-        device = Devices.by_name("ext_config", circuit)
-        if prop:
-            if prop[0] in ('_'): raise Exception('Invalid property name')
-            result = {prop: getattr(device, prop)}
-        else:
-            result = device.full()
-        return result
-
-    # usage: POST /rest/DEVICE/CIRCUIT
-    #          post-data: prop1=value1&prop2=value2...
-    # @tornado.web.authenticated
-    @schema.validate(input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
-    @tornado.gen.coroutine
-    def post(self, circuit, prop):
-        try:
-            device = Devices.by_name("ext_config", circuit)
-            js_dict = json.loads(self.request.body)
-            result = device.set(**js_dict)
-            if is_future(result):
-                result = yield result
-            raise Return({'result': result})
-        except Return as E:
-            raise E
-        except Exception as E:
-            raise Return({'errors': str(E)})
-
-    def options(self):
-        self.set_status(204)
-        self.finish()
-
-
-class RestUnitRegisterHandler(UserCookieHelper, APIHandler):
-    def initialize(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-        enable_cors(self)
-
-    # usage: GET /rest/DEVICE/CIRCUIT
-    #        or
-    #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    @tornado.web.authenticated
-    @schema.validate()
-    def get(self, circuit, prop):
-        device = Devices.by_name("unit_register", circuit)
-        if prop:
-            if prop[0] in ('_'): raise Exception('Invalid property name')
-            result = {prop: getattr(device, prop)}
-        else:
-            result = device.full()
-        return result
-
-    # usage: POST /rest/DEVICE/CIRCUIT
-    #          post-data: prop1=value1&prop2=value2...
-    # @tornado.web.authenticated
-    @schema.validate(input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
-    @tornado.gen.coroutine
-    def post(self, circuit, prop):
-        try:
-            device = Devices.by_name("unit_register", circuit)
-            js_dict = json.loads(self.request.body)
-            result = device.set(**js_dict)
-            if is_future(result):
-                result = yield result
-            raise Return({'result': result})
-        except Return as E:
-            raise E
-        except Exception as E:
-            raise APIError(status_code=400, log_message=str(E))
-
-    def options(self):
-        self.set_status(204)
-        self.finish()
-
-
-class RestDIHandler(UserCookieHelper, APIHandler):
-    post_out_example = {"result": 1, "success": True}
-
-    def initialize(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-        enable_cors(self)
-
-    # usage: GET /rest/DEVICE/CIRCUIT
-    #        or
-    #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    @tornado.web.authenticated
-    @schema.validate()
-    def get(self, circuit, prop):
-        device = Devices.by_name("input", circuit)
-        if prop:
-            if prop[0] in ('_'): raise Exception('Invalid property name')
-            result = {prop: getattr(device, prop)}
-        else:
-            result = device.full()
-        return result
-
-    # usage: POST /rest/DEVICE/CIRCUIT
-    #          post-data: prop1=value1&prop2=value2...
-    @schema.validate(input_schema=schemas.di_post_inp_schema, input_example=schemas.di_post_inp_example)
-    @tornado.gen.coroutine
-    def post(self, circuit, prop):
-        try:
-            device = Devices.by_name("input", circuit)
-            js_dict = json.loads(self.request.body)
-            result = device.set(**js_dict)
-            if is_future(result):
-                result = yield result
-            raise Return({'result': result})
-        except Return as E:
-            raise E
-        except Exception as E:
-            raise Return({'errors': str(E)})
-
-    def options(self):
-        self.set_status(204)
-        self.finish()
-
-
-class RestOwbusHandler(UserCookieHelper, APIHandler):
-    def initialize(self):
-        enable_cors(self)
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-
-    # usage: GET /rest/DEVICE/CIRCUIT
-    #        or
-    #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-
-    @tornado.web.authenticated
-    @schema.validate()
-    def get(self, circuit, prop):
-        device = Devices.by_name("owbus", circuit)
-        if prop:
-            if prop[0] in ('_'): raise Exception('Invalid property name')
-            result = {prop: getattr(device, prop)}
-        else:
-            result = device.full()
-        return result
-
-    # usage: POST /rest/DEVICE/CIRCUIT
-    #          post-data: prop1=value1&prop2=value2...
-    @schema.validate()
-    @tornado.gen.coroutine
-    def post(self, circuit, prop):
-        try:
-            device = Devices.by_name("owbus", circuit)
-            js_dict = json.loads(self.request.body)
-            result = device.bus_driver.set(**js_dict)
-            if is_future(result):
-                result = yield result
-            raise Return({'result': result})
-        except Return as E:
-            raise E
-        except Exception as E:
-            raise Return({'errors': str(E)})
-
-    def options(self):
-        # no body
-        self.set_status(204)
-        self.finish()
-
-
-class RestDOHandler(UserCookieHelper, APIHandler):
-    def initialize(self):
-        enable_cors(self)
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-
-    # usage: GET /rest/DEVICE/CIRCUIT
-    #        or
-    #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-
-    @tornado.web.authenticated
-    @schema.validate(output_schema=schemas.relay_get_out_schema, output_example=schemas.relay_get_out_example)
-    def get(self, circuit, prop):
-        device = Devices.by_name("output", circuit)
-        if prop:
-            if prop[0] in ('_'): raise Exception('Invalid property name')
-            result = {prop: getattr(device, prop)}
-        else:
-            result = device.full()
-        return result
-
-    # usage: POST /rest/DEVICE/CIRCUIT
-    #          post-data: prop1=value1&prop2=value2...
-    @schema.validate(input_schema=schemas.relay_post_inp_schema, input_example=schemas.relay_post_inp_example)
-    @tornado.gen.coroutine
-    def post(self, circuit, prop):
-        try:
-            device = Devices.by_name("output", circuit)
-            js_dict = json.loads(self.request.body)
-            result = device.set(**js_dict)
-            if is_future(result):
-                result = yield result
-            raise Return({'result': result})
-        except Return as E:
-            raise E
-        except Exception as E:
-            raise Return({'errors': str(E)})
-
-    def options(self):
-        # no body
-        self.set_status(204)
-        self.finish()
-
-
-
-class RestAIHandler(UserCookieHelper, APIHandler):
-    def initialize(self):
-        enable_cors(self)
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-
-    # usage: GET /rest/DEVICE/CIRCUIT
-    #        or
-    #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    @tornado.web.authenticated
-    @schema.validate()
-    def get(self, circuit, prop):
-        device = Devices.by_name("ai", circuit)
-        if prop:
-            if prop[0] in ('_'): raise Exception('Invalid property name')
-            result = {prop: getattr(device, prop)}
-        else:
-            result = device.full()
-        return result
-
-    # usage: POST /rest/DEVICE/CIRCUIT
-    #          post-data: prop1=value1&prop2=value2...
-    @schema.validate(input_schema=schemas.ai_post_inp_schema, input_example=schemas.ai_post_inp_example)
-    @tornado.gen.coroutine
-    def post(self, circuit, prop):
-        try:
-            device = Devices.by_name("ai", circuit)
-            js_dict = json.loads(self.request.body)
-            result = device.set(**js_dict)
-            if is_future(result):
-                result = yield result
-            raise Return({'result': result})
-        except Return as E:
-            raise E
-        except Exception as E:
-            raise Return({'errors': str(E)})
-
-    def options(self):
-        self.set_status(204)
-        self.finish()
-
-
-class RestAOHandler(UserCookieHelper, APIHandler):
-    def initialize(self):
-        enable_cors(self)
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-
-    # usage: GET /rest/DEVICE/CIRCUIT
-    #        or
-    #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    @tornado.web.authenticated
-    @schema.validate()
-    def get(self, circuit, prop):
-        device = Devices.by_name("ao", circuit)
-        if prop:
-            if prop[0] in ('_'): raise Exception('Invalid property name')
-            result = {prop: getattr(device, prop)}
-        else:
-            result = device.full()
-        return result
-
-    # usage: POST /rest/DEVICE/CIRCUIT
-    #          post-data: prop1=value1&prop2=value2...
-    @schema.validate(input_schema=schemas.ao_post_inp_schema, input_example=schemas.ao_post_inp_example)
-    @tornado.gen.coroutine
-    def post(self, circuit, prop):
-        try:
-            device = Devices.by_name("ao", circuit)
-            js_dict = json.loads(self.request.body)
-            result = device.set(**js_dict)
-            if is_future(result):
-                result = yield result
-            raise Return({'result': result})
-        except Return as E:
-            raise E
-        except Exception as E:
-            raise Return({'errors': str(E)})
-
-    def options(self):
-        # no body
-        self.set_status(204)
-        self.finish()
-
-
-class RemoteCMDHandler(UserCookieHelper, tornado.web.RequestHandler):  # ToDo CHECK
-    def initialize(self):
-        enable_cors(self)
-
-    @tornado.gen.coroutine
-    @tornado.web.authenticated
-    def post(self):
-        service = self.get_argument('service', '')
-        status = self.get_argument('status', '')
-        if service in ('ssh', 'sshd'):
-            if status in ('start', 'stop', 'enable', 'disable'):
-                yield call_shell_subprocess('service %s %s' % (service, status))
-        if service == 'pw':
-            yield call_shell_subprocess('echo -e "%s\\n%s" | passwd root' % (status, status))
-        self.finish()
-
-
-class ConfigHandler(UserCookieHelper, tornado.web.RequestHandler):
-    def initialize(self):
-        enable_cors(self)
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-
-    @tornado.web.authenticated
-    def get(self):
-        self.write(evok_config.configtojson())
-        self.finish()
-
-    @tornado.gen.coroutine
-    @tornado.web.authenticated
-    def post(self):
-        conf = ConfigParser.ConfigParser()
-        # make sure it it saved in the received order
-        from collections import OrderedDict
-        data = json.loads(self.request.body, object_pairs_hook=OrderedDict)
-        for key in data:
-            conf.add_section(key)
-            for param in data[key]:
-                val = data[key][param]
-                conf.set(key, param, val)
-        cfgfile = open(config.config_path, 'w')
-        conf.write(cfgfile)
-        cfgfile.close()
-        yield call_shell_subprocess('service evok restart')
-        self.finish()
-
-
-class VersionHandler(UserCookieHelper, APIHandler):
+class VersionHandler(UserCookieHelper,  tornado.web.RequestHandler):
     version = 'Unspecified'
 
     def initialize(self):
@@ -969,50 +389,20 @@ class VersionHandler(UserCookieHelper, APIHandler):
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
         self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-        with open('version.txt', 'r') as f:
-            self.version = f.read(255)
+        # TODO: ziskat verzy!!
 
     def get(self):
         self.write(self.version)
         self.finish()
 
 
-@gen.coroutine
-def call_shell_subprocess(cmd, stdin_data=None, stdin_async=False):
-    """
-    Wrapper around subprocess call using Tornado's Subprocess class.
-    """
-    stdin = Subprocess.STREAM if stdin_async else subprocess.PIPE
-
-    sub_process = tornado.process.Subprocess(
-        cmd, stdin=stdin, stdout=Subprocess.STREAM, stderr=Subprocess.STREAM, shell=True
-    )
-
-    if stdin_data:
-        if stdin_async:
-            yield Subprocess.Task(sub_process.stdin.write, stdin_data)
-        else:
-            sub_process.stdin.write(stdin_data)
-
-    if stdin_async or stdin_data:
-        sub_process.stdin.close()
-
-    result, error = yield [
-        gen.Task(sub_process.stdout.read_until_close),
-        gen.Task(sub_process.stderr.read_until_close)
-    ]
-
-    raise gen.Return((result, error))
-
-
-class JSONLoadAllHandler(UserCookieHelper, APIHandler):
+class JSONLoadAllHandler(UserCookieHelper,  tornado.web.RequestHandler):
     def initialize(self):
         enable_cors(self)
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
         self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
 
-    # @schema.validate(output_schema=schemas.all_get_out_schema)
     async def get(self):
         """This function returns a heterogeneous list of all devices exposed via the REST API"""
         result = list(map(lambda dev: dev.full(), Devices.by_int(INPUT)))
@@ -1038,7 +428,7 @@ class JSONLoadAllHandler(UserCookieHelper, APIHandler):
         self.finish()
 
 
-class RestLoadAllHandler(UserCookieHelper, APIHandler):
+class RestLoadAllHandler(UserCookieHelper,  tornado.web.RequestHandler):
     def initialize(self):
         enable_cors(self)
         self.set_header("Access-Control-Allow-Origin", "*")
@@ -1073,7 +463,7 @@ class RestLoadAllHandler(UserCookieHelper, APIHandler):
         self.finish()
 
 
-class JSONBulkHandler(APIHandler):
+class JSONBulkHandler(tornado.web.RequestHandler):
     def initialize(self):
         # enable_cors(self)
         self.set_header("Content-Type", "application/json")
@@ -1086,9 +476,7 @@ class JSONBulkHandler(APIHandler):
         self.set_status(204)
         self.finish()
 
-    @schema.validate()
-    @tornado.gen.coroutine
-    def post(self):
+    async def post(self):
         """This function returns a heterogeneous list of all devices exposed via the REST API"""
         result = {}
         js_dict = json.loads(self.request.body)
@@ -1139,11 +527,7 @@ class JSONBulkHandler(APIHandler):
                     for single_dev in all_devs:
                         if single_dev.dev_id == single_command['global_device_id']:
                             all_devs_filtered += single_dev
-                    all_devs = all_devs_filtered
-                for i in range(len(all_devs)):
-                    outp = all_devs[i].set(**(single_command['assigned_values']))
-                    if is_future(outp):
-                        yield outp
+                    outp = await all_devs[i].set(**(single_command['assigned_values']))
                 if 'group_assignments' in result:
                     result['group_assignments'] += [map(methodcaller('full'), all_devs)]
                 else:
@@ -1151,9 +535,7 @@ class JSONBulkHandler(APIHandler):
         if 'individual_assignments' in js_dict:
             for single_command in js_dict['individual_assignments']:
                 outp = Devices.by_name(single_command['device_type'], circuit=single_command['device_circuit'])
-                outp = outp.set(**(single_command['assigned_values']))
-                if is_future(outp):
-                    outp = yield outp
+                outp = await outp.set(**(single_command['assigned_values']))
                 if 'individual_assignments' in result:
                     result['individual_assignments'] += [outp]
                 else:
@@ -1237,28 +619,7 @@ def main():
         (r"/rest/([^/]+)/([^/]+)/?([^/]+)?/?", LegacyRestHandler),
         (r"/bulk/?", JSONBulkHandler),
         (r"/json/all/?", JSONLoadAllHandler),
-        (r"/json/input/?([^/]+)/?([^/]+)?/?", RestDIHandler),
-        (r"/json/di/?([^/]+)/?([^/]+)?/?", RestDIHandler),
-        (r"/json/output/?([^/]+)/?([^/]+)?/?", RestDOHandler),
-        (r"/json/do/?([^/]+)/?([^/]+)?/?", RestDOHandler),
-        (r"/json/relay/?([^/]+)/?([^/]+)?/?", RestDOHandler),
-        (r"/json/register/?([^/]+)/?([^/]+)?/?", RestRegisterHandler),
-        (r"/json/ai/?([^/]+)/?([^/]+)?/?", RestAIHandler),
-        (r"/json/analoginput/?([^/]+)/?([^/]+)?/?", RestAIHandler),
-        (r"/json/ao/?([^/]+)/?([^/]+)?/?", RestAOHandler),
-        (r"/json/analogoutput/?([^/]+)/?([^/]+)?/?", RestAOHandler),
-        (r"/json/led/?([^/]+)/?([^/]+)?/?", RestLEDHandler),
-        (r"/json/watchdog/?([^/]+)/?([^/]+)?/?", RestWatchdogHandler),
-        (r"/json/wd/?([^/]+)/?([^/]+)?/?", RestWatchdogHandler),
-        (r"/json/neuron/?([^/]+)/?([^/]+)?/?", RestNeuronHandler),
-        (r"/json/rs485/?([^/]+)/?([^/]+)?/?", RestUARTHandler),
-        (r"/json/uart/?([^/]+)/?([^/]+)?/?", RestUARTHandler),
-        (r"/json/temp/?([^/]+)/?([^/]+)?/?", RestOWireHandler),
-        (r"/json/sensor/?([^/]+)/?([^/]+)?/?", RestOWireHandler),
-        (r"/json/1wdevice/?([^/]+)/?([^/]+)?/?", RestOWireHandler),
-        (r"/json/owbus/?([^/]+)/?([^/]+)?/?", RestOwbusHandler),
-        (r"/json/unit_register/?([^/]+)/?([^/]+)?/?", RestUnitRegisterHandler),
-        (r"/json/ext_config/?([^/]+)/?([^/]+)?/?", RestExtConfigHandler),
+        (r"/json/([^/]+)/([^/]+)/?([^/]+)?/?", LegacyJsonHandler),
         (r"/version/?", VersionHandler),
         (r"/ws/?", WsHandler),
         (r"/(.*)", tornado.web.StaticFileHandler, {
@@ -1266,10 +627,6 @@ def main():
             "default_filename": "index.html"
         })
     ]
-
-    if allow_unsafe_configuration_handlers:
-        app_routes.append((r"/config/?", ConfigHandler))
-        app_routes.append((r"/config/cmd/?", RemoteCMDHandler))
 
     app = tornado.web.Application(
         handlers=app_routes
