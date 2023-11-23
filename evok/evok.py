@@ -59,7 +59,6 @@ evok_config = config.EvokConfig(config_path)
 wh = None
 cors = False
 corsdomains = '*'
-use_output_schema = evok_config.getbooldef('use_schema_verification', False)  # TODO: odstranit!
 allow_unsafe_configuration_handlers = evok_config.getbooldef('allow_unsafe_configuration_handlers', False)
 
 from . import rpc_handler
@@ -341,83 +340,7 @@ class LegacyRestHandler(UserCookieHelper, tornado.web.RequestHandler):
         except Exception as E:
             self.write(json.dumps({'success': False, 'errors': {'__all__': str(E)}}))
         self.set_header('Content-Type', 'application/json')
-        self.finish()
-
-    def options(self):
-        self.set_status(204)
-        self.finish()
-
-
-class RestLightChannelHandler(UserCookieHelper, APIHandler):
-    def initialize(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-        enable_cors(self)
-
-    # usage: GET /rest/DEVICE/CIRCUIT
-    #        or
-    #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    if not use_output_schema:
-        @tornado.web.authenticated
-        @schema.validate()
-        def get(self, circuit, prop):
-            device = Devices.by_name("light_channel", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
-    else:
-        @tornado.web.authenticated
-        @schema.validate(output_schema=schemas.light_channel_get_out_schema,
-                         output_example=schemas.light_channel_get_out_example)
-        def get(self, circuit, prop):
-            device = Devices.by_name("light_channel", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
-
-    # usage: POST /rest/DEVICE/CIRCUIT
-    #          post-data: prop1=value1&prop2=value2...
-    if not use_output_schema:
-        @schema.validate(input_schema=schemas.light_channel_post_inp_schema,
-                         input_example=schemas.light_channel_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("light_channel", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
-    else:
-        @schema.validate(output_schema=schemas.light_channel_post_out_schema,
-                         output_example=schemas.light_channel_post_out_example,
-                         input_schema=schemas.light_channel_post_inp_schema,
-                         input_example=schemas.light_channel_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("light_channel", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
+        await self.finish()
 
     def options(self):
         self.set_status(204)
@@ -434,62 +357,30 @@ class RestOWireHandler(UserCookieHelper, APIHandler):
     # usage: GET /rest/DEVICE/CIRCUIT
     #        or
     #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    if not use_output_schema:
-        @tornado.web.authenticated
-        @schema.validate()
-        def get(self, circuit, prop):
+    @tornado.web.authenticated
+    @schema.validate()
+    def get(self, circuit, prop):
+        device = Devices.by_name("sensor", circuit)
+        if prop:
+            if prop[0] in ('_'): raise Exception('Invalid property name')
+            result = {prop: getattr(device, prop)}
+        else:
+            result = device.full()
+        return result
+    @schema.validate(input_schema=schemas.owire_post_inp_schema, input_example=schemas.owire_post_inp_example)
+    @tornado.gen.coroutine
+    def post(self, circuit, prop):
+        try:
             device = Devices.by_name("sensor", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
-    else:
-        @tornado.web.authenticated
-        @schema.validate(output_schema=schemas.owire_get_out_schema, output_example=schemas.owire_get_out_example)
-        def get(self, circuit, prop):
-            device = Devices.by_name("sensor", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
-
-    # usage: POST /rest/DEVICE/CIRCUIT
-    #          post-data: prop1=value1&prop2=value2...
-    if not use_output_schema:
-        @schema.validate(input_schema=schemas.owire_post_inp_schema, input_example=schemas.owire_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("sensor", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
-    else:
-        @schema.validate(output_schema=schemas.owire_post_out_schema, output_example=schemas.owire_post_out_example,
-                         input_schema=schemas.owire_post_inp_schema, input_example=schemas.owire_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("sensor", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
+            js_dict = json.loads(self.request.body)
+            result = device.set(**js_dict)
+            if is_future(result):
+                result = yield result
+            raise Return({'result': result})
+        except Return as E:
+            raise E
+        except Exception as E:
+            raise Return({'errors': str(E)})
 
     def options(self):
         self.set_status(204)
@@ -506,62 +397,33 @@ class RestUARTHandler(UserCookieHelper, APIHandler):
     # usage: GET /rest/DEVICE/CIRCUIT
     #        or
     #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    if not use_output_schema:
-        @tornado.web.authenticated
-        @schema.validate()
-        def get(self, circuit, prop):
-            device = Devices.by_name("uart", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
-    else:
-        @tornado.web.authenticated
-        @schema.validate(output_schema=schemas.uart_get_out_schema, output_example=schemas.uart_get_out_example)
-        def get(self, circuit, prop):
-            device = Devices.by_name("uart", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
+    @tornado.web.authenticated
+    @schema.validate()
+    def get(self, circuit, prop):
+        device = Devices.by_name("uart", circuit)
+        if prop:
+            if prop[0] in ('_'): raise Exception('Invalid property name')
+            result = {prop: getattr(device, prop)}
+        else:
+            result = device.full()
+        return result
 
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
-    if not use_output_schema:
-        @schema.validate(input_schema=schemas.uart_post_inp_schema, input_example=schemas.uart_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("uart", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
-    else:
-        @schema.validate(output_schema=schemas.uart_post_out_schema, output_example=schemas.uart_post_out_example,
-                         input_schema=schemas.uart_post_inp_schema, input_example=schemas.uart_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("uart", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
+    @schema.validate(input_schema=schemas.uart_post_inp_schema, input_example=schemas.uart_post_inp_example)
+    @tornado.gen.coroutine
+    def post(self, circuit, prop):
+        try:
+            device = Devices.by_name("uart", circuit)
+            js_dict = json.loads(self.request.body)
+            result = device.set(**js_dict)
+            if is_future(result):
+                result = yield result
+            raise Return({'result': result})
+        except Return as E:
+            raise E
+        except Exception as E:
+            raise Return({'errors': str(E)})
 
     def options(self):
         self.set_status(204)
@@ -578,69 +440,40 @@ class RestNeuronHandler(UserCookieHelper, APIHandler):
     # usage: GET /rest/DEVICE/CIRCUIT
     #        or
     #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    if not use_output_schema:
-        @tornado.web.authenticated
-        @schema.validate()
-        def get(self, circuit, prop):
-            device = Devices.by_name("neuron", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
-    else:
-        @tornado.web.authenticated
-        @schema.validate(output_schema=schemas.neuron_get_out_schema, output_example=schemas.neuron_get_out_example)
-        def get(self, circuit, prop):
-            device = Devices.by_name("neuron", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
+    @tornado.web.authenticated
+    @schema.validate()
+    def get(self, circuit, prop):
+        device = Devices.by_name("neuron", circuit)
+        if prop:
+            if prop[0] in ('_'): raise Exception('Invalid property name')
+            result = {prop: getattr(device, prop)}
+        else:
+            result = device.full()
+        return result
 
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
-    if not use_output_schema:
-        @schema.validate(input_schema=schemas.neuron_post_inp_schema, input_example=schemas.neuron_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("neuron", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
-    else:
-        @schema.validate(output_schema=schemas.neuron_post_out_schema, output_example=schemas.neuron_post_out_example,
-                         input_schema=schemas.neuron_post_inp_schema, input_example=schemas.neuron_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("neuron", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
+    @schema.validate(input_schema=schemas.neuron_post_inp_schema, input_example=schemas.neuron_post_inp_example)
+    @tornado.gen.coroutine
+    def post(self, circuit, prop):
+        try:
+            device = Devices.by_name("neuron", circuit)
+            js_dict = json.loads(self.request.body)
+            result = device.set(**js_dict)
+            if is_future(result):
+                result = yield result
+            raise Return({'result': result})
+        except Return as E:
+            raise E
+        except Exception as E:
+            raise Return({'errors': str(E)})
 
     def options(self):
         self.set_status(204)
         self.finish()
 
 
-class RestLEDHandler(UserCookieHelper, APIHandler):
+class RestLEDHandler(UserCookieHelper, tornado.web.RequestHandler):
     def initialize(self):
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
@@ -650,62 +483,32 @@ class RestLEDHandler(UserCookieHelper, APIHandler):
     # usage: GET /rest/DEVICE/CIRCUIT
     #        or
     #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    if not use_output_schema:
-        @tornado.web.authenticated
-        @schema.validate()
-        def get(self, circuit, prop):
-            device = Devices.by_name("led", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
-    else:
-        @tornado.web.authenticated
-        @schema.validate(output_schema=schemas.led_get_out_schema, output_example=schemas.led_get_out_example)
-        def get(self, circuit, prop):
-            device = Devices.by_name("led", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
+    @tornado.web.authenticated
+    def get(self, circuit, prop):
+        device = Devices.by_name("led", circuit)
+        if prop:
+            if prop[0] in ('_'): raise Exception('Invalid property name')
+            result = {prop: getattr(device, prop)}
+        else:
+            result = device.full()
+        return result
 
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
-    if not use_output_schema:
-        @schema.validate(input_schema=schemas.led_post_inp_schema, input_example=schemas.led_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("led", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
-    else:
-        @schema.validate(output_schema=schemas.led_post_out_schema, output_example=schemas.led_post_out_example,
-                         input_schema=schemas.led_post_inp_schema, input_example=schemas.led_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("led", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
+    #@schema.validate(input_schema=schemas.led_post_inp_schema, input_example=schemas.led_post_inp_example)
+    async def post(self, circuit, prop):
+        try:
+            device = Devices.by_name("led", circuit)
+            kw = json.loads(self.request.body)
+            result = await device.set(**kw)
+            self.write(json.dumps({'success': True, 'result': result}))
+        except Exception as E:
+            self.write(json.dumps({'success': False, 'errors': {'__all__': str(E)}}))
+        self.set_header('Content-Type', 'application/json')
+        await self.finish()
+
+    def success(self, output: str):
+        print(f"Co to je???: {output}")
 
     def options(self):
         self.set_status(204)
@@ -722,62 +525,33 @@ class RestWatchdogHandler(UserCookieHelper, APIHandler):
     # usage: GET /rest/DEVICE/CIRCUIT
     #        or
     #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    if not use_output_schema:
-        @tornado.web.authenticated
-        @schema.validate()
-        def get(self, circuit, prop):
-            device = Devices.by_name("watchdog", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
-    else:
-        @tornado.web.authenticated
-        @schema.validate(output_schema=schemas.wd_get_out_schema, output_example=schemas.wd_get_out_example)
-        def get(self, circuit, prop):
-            device = Devices.by_name("watchdog", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
+    @tornado.web.authenticated
+    @schema.validate()
+    def get(self, circuit, prop):
+        device = Devices.by_name("watchdog", circuit)
+        if prop:
+            if prop[0] in ('_'): raise Exception('Invalid property name')
+            result = {prop: getattr(device, prop)}
+        else:
+            result = device.full()
+        return result
 
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
-    if not use_output_schema:
-        @schema.validate(input_schema=schemas.wd_post_inp_schema, input_example=schemas.wd_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("watchdog", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
-    else:
-        @schema.validate(output_schema=schemas.wd_post_out_schema, output_example=schemas.wd_post_out_example,
-                         input_schema=schemas.wd_post_inp_schema, input_example=schemas.wd_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("watchdog", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
+    @schema.validate(input_schema=schemas.wd_post_inp_schema, input_example=schemas.wd_post_inp_example)
+    @tornado.gen.coroutine
+    def post(self, circuit, prop):
+        try:
+            device = Devices.by_name("watchdog", circuit)
+            js_dict = json.loads(self.request.body)
+            result = device.set(**js_dict)
+            if is_future(result):
+                result = yield result
+            raise Return({'result': result})
+        except Return as E:
+            raise E
+        except Exception as E:
+            raise Return({'errors': str(E)})
 
     def options(self):
         self.set_status(204)
@@ -794,64 +568,34 @@ class RestRegisterHandler(UserCookieHelper, APIHandler):
     # usage: GET /rest/DEVICE/CIRCUIT
     #        or
     #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    if not use_output_schema:
-        @tornado.web.authenticated
-        @schema.validate()
-        def get(self, circuit, prop):
-            device = Devices.by_name("register", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
-    else:
-        @tornado.web.authenticated
-        @schema.validate(output_schema=schemas.register_get_out_schema, output_example=schemas.register_get_out_example)
-        def get(self, circuit, prop):
-            device = Devices.by_name("register", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
+    @tornado.web.authenticated
+    @schema.validate()
+    def get(self, circuit, prop):
+        device = Devices.by_name("register", circuit)
+        if prop:
+            if prop[0] in ('_'): raise Exception('Invalid property name')
+            result = {prop: getattr(device, prop)}
+        else:
+            result = device.full()
+        return result
 
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
     # @tornado.web.authenticated
-    if not use_output_schema:
-        @schema.validate(input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("register", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
-    else:
-        @schema.validate(output_schema=schemas.register_post_out_schema,
-                         output_example=schemas.register_post_out_example,
-                         input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("register", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
+    @schema.validate(input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
+    @tornado.gen.coroutine
+    def post(self, circuit, prop):
+        try:
+            device = Devices.by_name("register", circuit)
+            js_dict = json.loads(self.request.body)
+            result = device.set(**js_dict)
+            if is_future(result):
+                result = yield result
+            raise Return({'result': result})
+        except Return as E:
+            raise E
+        except Exception as E:
+            raise Return({'errors': str(E)})
 
     def options(self):
         self.set_status(204)
@@ -868,64 +612,34 @@ class RestExtConfigHandler(UserCookieHelper, APIHandler):
     # usage: GET /rest/DEVICE/CIRCUIT
     #        or
     #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    if not use_output_schema:
-        @tornado.web.authenticated
-        @schema.validate()
-        def get(self, circuit, prop):
-            device = Devices.by_name("ext_config", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
-    else:
-        @tornado.web.authenticated
-        @schema.validate(output_schema=schemas.register_get_out_schema, output_example=schemas.register_get_out_example)
-        def get(self, circuit, prop):
-            device = Devices.by_name("ext_config", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
+    @tornado.web.authenticated
+    @schema.validate()
+    def get(self, circuit, prop):
+        device = Devices.by_name("ext_config", circuit)
+        if prop:
+            if prop[0] in ('_'): raise Exception('Invalid property name')
+            result = {prop: getattr(device, prop)}
+        else:
+            result = device.full()
+        return result
 
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
     # @tornado.web.authenticated
-    if not use_output_schema:
-        @schema.validate(input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("ext_config", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
-    else:
-        @schema.validate(output_schema=schemas.register_post_out_schema,
-                         output_example=schemas.register_post_out_example,
-                         input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("ext_config", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
+    @schema.validate(input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
+    @tornado.gen.coroutine
+    def post(self, circuit, prop):
+        try:
+            device = Devices.by_name("ext_config", circuit)
+            js_dict = json.loads(self.request.body)
+            result = device.set(**js_dict)
+            if is_future(result):
+                result = yield result
+            raise Return({'result': result})
+        except Return as E:
+            raise E
+        except Exception as E:
+            raise Return({'errors': str(E)})
 
     def options(self):
         self.set_status(204)
@@ -942,64 +656,34 @@ class RestUnitRegisterHandler(UserCookieHelper, APIHandler):
     # usage: GET /rest/DEVICE/CIRCUIT
     #        or
     #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    if not use_output_schema:
-        @tornado.web.authenticated
-        @schema.validate()
-        def get(self, circuit, prop):
-            device = Devices.by_name("unit_register", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
-    else:
-        @tornado.web.authenticated
-        @schema.validate(output_schema=schemas.register_get_out_schema, output_example=schemas.register_get_out_example)
-        def get(self, circuit, prop):
-            device = Devices.by_name("unit_register", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
+    @tornado.web.authenticated
+    @schema.validate()
+    def get(self, circuit, prop):
+        device = Devices.by_name("unit_register", circuit)
+        if prop:
+            if prop[0] in ('_'): raise Exception('Invalid property name')
+            result = {prop: getattr(device, prop)}
+        else:
+            result = device.full()
+        return result
 
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
     # @tornado.web.authenticated
-    if not use_output_schema:
-        @schema.validate(input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("unit_register", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise APIError(status_code=400, log_message=str(E))
-    else:
-        @schema.validate(output_schema=schemas.register_post_out_schema,
-                         output_example=schemas.register_post_out_example,
-                         input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("unit_register", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise APIError(status_code=400, log_message=str(E))
+    @schema.validate(input_schema=schemas.register_post_inp_schema, input_example=schemas.register_post_inp_example)
+    @tornado.gen.coroutine
+    def post(self, circuit, prop):
+        try:
+            device = Devices.by_name("unit_register", circuit)
+            js_dict = json.loads(self.request.body)
+            result = device.set(**js_dict)
+            if is_future(result):
+                result = yield result
+            raise Return({'result': result})
+        except Return as E:
+            raise E
+        except Exception as E:
+            raise APIError(status_code=400, log_message=str(E))
 
     def options(self):
         self.set_status(204)
@@ -1018,62 +702,33 @@ class RestDIHandler(UserCookieHelper, APIHandler):
     # usage: GET /rest/DEVICE/CIRCUIT
     #        or
     #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    if not use_output_schema:
-        @tornado.web.authenticated
-        @schema.validate()
-        def get(self, circuit, prop):
-            device = Devices.by_name("input", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
-    else:
-        @tornado.web.authenticated
-        @schema.validate(output_schema=schemas.di_get_out_schema, output_example=schemas.di_get_out_example)
-        def get(self, circuit, prop):
-            device = Devices.by_name("input", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
+    @tornado.web.authenticated
+    @schema.validate()
+    def get(self, circuit, prop):
+        device = Devices.by_name("input", circuit)
+        if prop:
+            if prop[0] in ('_'): raise Exception('Invalid property name')
+            result = {prop: getattr(device, prop)}
+        else:
+            result = device.full()
+        return result
 
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
-    if not use_output_schema:
-        @schema.validate(input_schema=schemas.di_post_inp_schema, input_example=schemas.di_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("input", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
-    else:
-        @schema.validate(output_schema=schemas.di_post_out_schema, output_example=schemas.di_post_out_example,
-                         input_schema=schemas.di_post_inp_schema, input_example=schemas.di_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("input", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
+    @schema.validate(input_schema=schemas.di_post_inp_schema, input_example=schemas.di_post_inp_example)
+    @tornado.gen.coroutine
+    def post(self, circuit, prop):
+        try:
+            device = Devices.by_name("input", circuit)
+            js_dict = json.loads(self.request.body)
+            result = device.set(**js_dict)
+            if is_future(result):
+                result = yield result
+            raise Return({'result': result})
+        except Return as E:
+            raise E
+        except Exception as E:
+            raise Return({'errors': str(E)})
 
     def options(self):
         self.set_status(204)
@@ -1091,62 +746,33 @@ class RestOwbusHandler(UserCookieHelper, APIHandler):
     #        or
     #        GET /rest/DEVICE/CIRCUIT/PROPERTY
 
-    if not use_output_schema:
-        @tornado.web.authenticated
-        @schema.validate()
-        def get(self, circuit, prop):
-            device = Devices.by_name("owbus", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
-    else:
-        @tornado.web.authenticated
-        @schema.validate(output_schema=schemas.owbus_get_out_schema, output_example=schemas.owbus_get_out_example)
-        def get(self, circuit, prop):
-            device = Devices.by_name("owbus", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
+    @tornado.web.authenticated
+    @schema.validate()
+    def get(self, circuit, prop):
+        device = Devices.by_name("owbus", circuit)
+        if prop:
+            if prop[0] in ('_'): raise Exception('Invalid property name')
+            result = {prop: getattr(device, prop)}
+        else:
+            result = device.full()
+        return result
 
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
-    if not use_output_schema:
-        @schema.validate()
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("owbus", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.bus_driver.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
-    else:
-        @schema.validate(input_schema=schemas.owbus_post_inp_schema, input_example=schemas.owbus_post_inp_example,
-                         output_schema=schemas.owbus_post_out_schema, output_example=schemas.owbus_post_out_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("owbus", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.bus_driver.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
+    @schema.validate()
+    @tornado.gen.coroutine
+    def post(self, circuit, prop):
+        try:
+            device = Devices.by_name("owbus", circuit)
+            js_dict = json.loads(self.request.body)
+            result = device.bus_driver.set(**js_dict)
+            if is_future(result):
+                result = yield result
+            raise Return({'result': result})
+        except Return as E:
+            raise E
+        except Exception as E:
+            raise Return({'errors': str(E)})
 
     def options(self):
         # no body
@@ -1165,139 +791,39 @@ class RestDOHandler(UserCookieHelper, APIHandler):
     #        or
     #        GET /rest/DEVICE/CIRCUIT/PROPERTY
 
-    if not use_output_schema:
-        @tornado.web.authenticated
-        @schema.validate(output_schema=schemas.relay_get_out_schema, output_example=schemas.relay_get_out_example)
-        def get(self, circuit, prop):
-            device = Devices.by_name("output", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
-    else:
-        @tornado.web.authenticated
-        @schema.validate()
-        def get(self, circuit, prop):
-            device = Devices.by_name("output", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
+    @tornado.web.authenticated
+    @schema.validate(output_schema=schemas.relay_get_out_schema, output_example=schemas.relay_get_out_example)
+    def get(self, circuit, prop):
+        device = Devices.by_name("output", circuit)
+        if prop:
+            if prop[0] in ('_'): raise Exception('Invalid property name')
+            result = {prop: getattr(device, prop)}
+        else:
+            result = device.full()
+        return result
 
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
-    if not use_output_schema:
-        @schema.validate(input_schema=schemas.relay_post_inp_schema, input_example=schemas.relay_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("output", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
-    else:
-        @schema.validate(output_schema=schemas.relay_post_out_schema, output_example=schemas.relay_post_out_example,
-                         input_schema=schemas.relay_post_inp_schema, input_example=schemas.relay_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("output", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
+    @schema.validate(input_schema=schemas.relay_post_inp_schema, input_example=schemas.relay_post_inp_example)
+    @tornado.gen.coroutine
+    def post(self, circuit, prop):
+        try:
+            device = Devices.by_name("output", circuit)
+            js_dict = json.loads(self.request.body)
+            result = device.set(**js_dict)
+            if is_future(result):
+                result = yield result
+            raise Return({'result': result})
+        except Return as E:
+            raise E
+        except Exception as E:
+            raise Return({'errors': str(E)})
 
     def options(self):
         # no body
         self.set_status(204)
         self.finish()
 
-
-class RestWiFiHandler(UserCookieHelper, APIHandler):
-    def initialize(self):
-        enable_cors(self)
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-
-    # usage: GET /rest/DEVICE/CIRCUIT
-    #        or
-    #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    if not use_output_schema:
-        @tornado.web.authenticated
-        @schema.validate()
-        def get(self, circuit, prop):
-            device = Devices.by_name("wifi", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
-    else:
-        @tornado.web.authenticated
-        @schema.validate(output_schema=schemas.wifi_get_out_schema, output_example=schemas.wifi_get_out_example)
-        def get(self, circuit, prop):
-            device = Devices.by_name("wifi", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
-
-    # usage: POST /rest/DEVICE/CIRCUIT
-    #          post-data: prop1=value1&prop2=value2...
-    if not use_output_schema:
-        @schema.validate(input_schema=schemas.wifi_post_inp_schema, input_example=schemas.wifi_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("wifi", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
-    else:
-        @schema.validate(output_schema=schemas.wifi_post_out_schema, output_example=schemas.wifi_post_out_example,
-                         input_schema=schemas.wifi_post_inp_schema, input_example=schemas.wifi_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("wifi", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
-
-    def options(self):
-        self.set_status(204)
-        self.finish()
 
 
 class RestAIHandler(UserCookieHelper, APIHandler):
@@ -1310,62 +836,33 @@ class RestAIHandler(UserCookieHelper, APIHandler):
     # usage: GET /rest/DEVICE/CIRCUIT
     #        or
     #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    if not use_output_schema:
-        @tornado.web.authenticated
-        @schema.validate()
-        def get(self, circuit, prop):
-            device = Devices.by_name("ai", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
-    else:
-        @tornado.web.authenticated
-        @schema.validate(output_schema=schemas.ai_get_out_schema, output_example=schemas.ai_get_out_example)
-        def get(self, circuit, prop):
-            device = Devices.by_name("ai", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
+    @tornado.web.authenticated
+    @schema.validate()
+    def get(self, circuit, prop):
+        device = Devices.by_name("ai", circuit)
+        if prop:
+            if prop[0] in ('_'): raise Exception('Invalid property name')
+            result = {prop: getattr(device, prop)}
+        else:
+            result = device.full()
+        return result
 
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
-    if not use_output_schema:
-        @schema.validate(input_schema=schemas.ai_post_inp_schema, input_example=schemas.ai_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("ai", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
-    else:
-        @schema.validate(output_schema=schemas.ai_post_out_schema, output_example=schemas.ai_post_out_example,
-                         input_schema=schemas.ai_post_inp_schema, input_example=schemas.ai_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("ai", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
+    @schema.validate(input_schema=schemas.ai_post_inp_schema, input_example=schemas.ai_post_inp_example)
+    @tornado.gen.coroutine
+    def post(self, circuit, prop):
+        try:
+            device = Devices.by_name("ai", circuit)
+            js_dict = json.loads(self.request.body)
+            result = device.set(**js_dict)
+            if is_future(result):
+                result = yield result
+            raise Return({'result': result})
+        except Return as E:
+            raise E
+        except Exception as E:
+            raise Return({'errors': str(E)})
 
     def options(self):
         self.set_status(204)
@@ -1382,62 +879,33 @@ class RestAOHandler(UserCookieHelper, APIHandler):
     # usage: GET /rest/DEVICE/CIRCUIT
     #        or
     #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    if not use_output_schema:
-        @tornado.web.authenticated
-        @schema.validate()
-        def get(self, circuit, prop):
-            device = Devices.by_name("ao", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
-    else:
-        @tornado.web.authenticated
-        @schema.validate(output_schema=schemas.ao_get_out_schema, output_example=schemas.ao_get_out_example)
-        def get(self, circuit, prop):
-            device = Devices.by_name("ao", circuit)
-            if prop:
-                if prop[0] in ('_'): raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
-            else:
-                result = device.full()
-            return result
+    @tornado.web.authenticated
+    @schema.validate()
+    def get(self, circuit, prop):
+        device = Devices.by_name("ao", circuit)
+        if prop:
+            if prop[0] in ('_'): raise Exception('Invalid property name')
+            result = {prop: getattr(device, prop)}
+        else:
+            result = device.full()
+        return result
 
     # usage: POST /rest/DEVICE/CIRCUIT
     #          post-data: prop1=value1&prop2=value2...
-    if not use_output_schema:
-        @schema.validate(input_schema=schemas.ao_post_inp_schema, input_example=schemas.ao_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("ao", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
-    else:
-        @schema.validate(output_schema=schemas.ao_post_out_schema, output_example=schemas.ao_post_out_example,
-                         input_schema=schemas.ao_post_inp_schema, input_example=schemas.ao_post_inp_example)
-        @tornado.gen.coroutine
-        def post(self, circuit, prop):
-            try:
-                device = Devices.by_name("ao", circuit)
-                js_dict = json.loads(self.request.body)
-                result = device.set(**js_dict)
-                if is_future(result):
-                    result = yield result
-                raise Return({'result': result})
-            except Return as E:
-                raise E
-            except Exception as E:
-                raise Return({'errors': str(E)})
+    @schema.validate(input_schema=schemas.ao_post_inp_schema, input_example=schemas.ao_post_inp_example)
+    @tornado.gen.coroutine
+    def post(self, circuit, prop):
+        try:
+            device = Devices.by_name("ao", circuit)
+            js_dict = json.loads(self.request.body)
+            result = device.set(**js_dict)
+            if is_future(result):
+                result = yield result
+            raise Return({'result': result})
+        except Return as E:
+            raise E
+        except Exception as E:
+            raise Return({'errors': str(E)})
 
     def options(self):
         # no body
@@ -1544,47 +1012,25 @@ class JSONLoadAllHandler(UserCookieHelper, APIHandler):
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
         self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
 
-    if not use_output_schema:
-        # @schema.validate(output_schema=schemas.all_get_out_schema)
-        async def get(self):
-            """This function returns a heterogeneous list of all devices exposed via the REST API"""
-            result = list(map(lambda dev: dev.full(), Devices.by_int(INPUT)))
-            result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
-            result += map(lambda dev: dev.full(), Devices.by_int(OUTPUT))
-            result += map(lambda dev: dev.full(), Devices.by_int(AI))
-            result += map(lambda dev: dev.full(), Devices.by_int(AO))
-            result += map(lambda dev: dev.full(), Devices.by_int(SENSOR))
-            result += map(lambda dev: dev.full(), Devices.by_int(LED))
-            result += map(lambda dev: dev.full(), Devices.by_int(WATCHDOG))
-            result += map(lambda dev: dev.full(), Devices.by_int(MODBUS_SLAVE))
-            result += map(lambda dev: dev.full(), Devices.by_int(UART))
-            result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
-            result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
-            result += map(lambda dev: dev.full(), Devices.by_int(LIGHT_CHANNEL))
-            result += map(lambda dev: dev.full(), Devices.by_int(UNIT_REGISTER))
-            result += map(lambda dev: dev.full(), Devices.by_int(EXT_CONFIG))
-            self.success(result)
-
-    else:
-        # @schema.validate(output_schema=schemas.all_get_out_schema, output_example=schemas.all_get_out_example)
-        async def get(self):
-            """This function returns a heterogeneous list of all devices exposed via the REST API"""
-            result = list(map(lambda dev: dev.full(), Devices.by_int(INPUT)))
-            result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
-            result += map(lambda dev: dev.full(), Devices.by_int(OUTPUT))
-            result += map(lambda dev: dev.full(), Devices.by_int(AI))
-            result += map(lambda dev: dev.full(), Devices.by_int(AO))
-            result += map(lambda dev: dev.full(), Devices.by_int(SENSOR))
-            result += map(lambda dev: dev.full(), Devices.by_int(LED))
-            result += map(lambda dev: dev.full(), Devices.by_int(WATCHDOG))
-            result += map(lambda dev: dev.full(), Devices.by_int(MODBUS_SLAVE))
-            result += map(lambda dev: dev.full(), Devices.by_int(UART))
-            result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
-            result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
-            result += map(lambda dev: dev.full(), Devices.by_int(LIGHT_CHANNEL))
-            result += map(lambda dev: dev.full(), Devices.by_int(UNIT_REGISTER))
-            result += map(lambda dev: dev.full(), Devices.by_int(EXT_CONFIG))
-            self.success(result)
+    # @schema.validate(output_schema=schemas.all_get_out_schema)
+    async def get(self):
+        """This function returns a heterogeneous list of all devices exposed via the REST API"""
+        result = list(map(lambda dev: dev.full(), Devices.by_int(INPUT)))
+        result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
+        result += map(lambda dev: dev.full(), Devices.by_int(OUTPUT))
+        result += map(lambda dev: dev.full(), Devices.by_int(AI))
+        result += map(lambda dev: dev.full(), Devices.by_int(AO))
+        result += map(lambda dev: dev.full(), Devices.by_int(SENSOR))
+        result += map(lambda dev: dev.full(), Devices.by_int(LED))
+        result += map(lambda dev: dev.full(), Devices.by_int(WATCHDOG))
+        result += map(lambda dev: dev.full(), Devices.by_int(MODBUS_SLAVE))
+        result += map(lambda dev: dev.full(), Devices.by_int(UART))
+        result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
+        result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
+        result += map(lambda dev: dev.full(), Devices.by_int(LIGHT_CHANNEL))
+        result += map(lambda dev: dev.full(), Devices.by_int(UNIT_REGISTER))
+        result += map(lambda dev: dev.full(), Devices.by_int(EXT_CONFIG))
+        self.success(result)
 
     def options(self):
         # no body
@@ -1640,18 +1086,13 @@ class JSONBulkHandler(APIHandler):
         self.set_status(204)
         self.finish()
 
-    if use_output_schema:
-        @schema.validate(
-            #    input_schema=schemas.json_post_inp_schema,
-            #    input_example=schemas.json_post_inp_example,
-            output_schema=schemas.json_post_out_schema,
-            output_example=schemas.json_post_out_example
-        )
-        @tornado.gen.coroutine
-        def post(self):
-            """This function returns a heterogeneous list of all devices exposed via the REST API"""
-            result = {}
-            js_dict = json.loads(self.request.body)
+    @schema.validate()
+    @tornado.gen.coroutine
+    def post(self):
+        """This function returns a heterogeneous list of all devices exposed via the REST API"""
+        result = {}
+        js_dict = json.loads(self.request.body)
+        if 'group_queries' in js_dict:
             for single_query in js_dict['group_queries']:
                 all_devs = []
                 for device_type in single_query['device_types']:
@@ -1659,7 +1100,7 @@ class JSONBulkHandler(APIHandler):
                 if 'group' in single_query:
                     all_devs_filtered = []
                     for single_dev in all_devs:
-                        if hasattr(single_dev, 'arm') and single_dev.arm.major_group == single_query['group']:
+                        if single_dev.arm.major_group == single_query['group']:
                             all_devs_filtered += single_dev
                     all_devs = all_devs_filtered
                 if 'device_circuits' in single_query:
@@ -1678,6 +1119,7 @@ class JSONBulkHandler(APIHandler):
                     result['group_queries'] += [map(methodcaller('full'), all_devs)]
                 else:
                     result['group_queries'] = [map(methodcaller('full'), all_devs)]
+        if 'group_assignments' in js_dict:
             for single_command in js_dict['group_assignments']:
                 all_devs = Devices.by_name(single_command['device_type'])
                 if 'group' in single_command:
@@ -1706,6 +1148,7 @@ class JSONBulkHandler(APIHandler):
                     result['group_assignments'] += [map(methodcaller('full'), all_devs)]
                 else:
                     result['group_assignments'] = [map(methodcaller('full'), all_devs)]
+        if 'individual_assignments' in js_dict:
             for single_command in js_dict['individual_assignments']:
                 outp = Devices.by_name(single_command['device_type'], circuit=single_command['device_circuit'])
                 outp = outp.set(**(single_command['assigned_values']))
@@ -1715,157 +1158,8 @@ class JSONBulkHandler(APIHandler):
                     result['individual_assignments'] += [outp]
                 else:
                     result['individual_assignments'] = [outp]
-            raise gen.Return(result)
-    else:
-        @schema.validate()
-        @tornado.gen.coroutine
-        def post(self):
-            """This function returns a heterogeneous list of all devices exposed via the REST API"""
-            result = {}
-            js_dict = json.loads(self.request.body)
-            if 'group_queries' in js_dict:
-                for single_query in js_dict['group_queries']:
-                    all_devs = []
-                    for device_type in single_query['device_types']:
-                        all_devs += Devices.by_name(device_type)
-                    if 'group' in single_query:
-                        all_devs_filtered = []
-                        for single_dev in all_devs:
-                            if single_dev.arm.major_group == single_query['group']:
-                                all_devs_filtered += single_dev
-                        all_devs = all_devs_filtered
-                    if 'device_circuits' in single_query:
-                        all_devs_filtered = []
-                        for single_dev in all_devs:
-                            if single_dev.circuit in single_query['device_circuits']:
-                                all_devs_filtered += single_dev
-                        all_devs = all_devs_filtered
-                    if 'global_device_id' in single_query:
-                        all_devs_filtered = []
-                        for single_dev in all_devs:
-                            if single_dev.dev_id == single_query['global_device_id']:
-                                all_devs_filtered += single_dev
-                        all_devs = all_devs_filtered
-                    if 'group_queries' in result:
-                        result['group_queries'] += [map(methodcaller('full'), all_devs)]
-                    else:
-                        result['group_queries'] = [map(methodcaller('full'), all_devs)]
-            if 'group_assignments' in js_dict:
-                for single_command in js_dict['group_assignments']:
-                    all_devs = Devices.by_name(single_command['device_type'])
-                    if 'group' in single_command:
-                        all_devs_filtered = []
-                        for single_dev in all_devs:
-                            if single_dev.arm.major_group == single_command['group']:
-                                all_devs_filtered += single_dev
-                        all_devs = all_devs_filtered
-                    if 'device_circuits' in single_command:
-                        all_devs_filtered = []
-                        for single_dev in all_devs:
-                            if single_dev.circuit in single_command['device_circuits']:
-                                all_devs_filtered += single_dev
-                        all_devs = all_devs_filtered
-                    if 'global_device_id' in single_command:
-                        all_devs_filtered = []
-                        for single_dev in all_devs:
-                            if single_dev.dev_id == single_command['global_device_id']:
-                                all_devs_filtered += single_dev
-                        all_devs = all_devs_filtered
-                    for i in range(len(all_devs)):
-                        outp = all_devs[i].set(**(single_command['assigned_values']))
-                        if is_future(outp):
-                            yield outp
-                    if 'group_assignments' in result:
-                        result['group_assignments'] += [map(methodcaller('full'), all_devs)]
-                    else:
-                        result['group_assignments'] = [map(methodcaller('full'), all_devs)]
-            if 'individual_assignments' in js_dict:
-                for single_command in js_dict['individual_assignments']:
-                    outp = Devices.by_name(single_command['device_type'], circuit=single_command['device_circuit'])
-                    outp = outp.set(**(single_command['assigned_values']))
-                    if is_future(outp):
-                        outp = yield outp
-                    if 'individual_assignments' in result:
-                        result['individual_assignments'] += [outp]
-                    else:
-                        result['individual_assignments'] = [outp]
-            raise gen.Return(result)
+        raise gen.Return(result)
 
-
-'''
-class UniPiQueryService(soaphandler.SoapHandler):
-    """ Service which returns a list of values and keys for a given device id and type """
-    @tornado.gen.coroutine
-    @webservice(_params=SoapQueryInputList,_returns=SoapOutputList)
-    def performQueries(self, input_arr):
-        try:
-            results = []
-            for single_query in input_arr.single_query:
-                result = None
-                result_keys = []
-                result_properties = SoapPropertyList()
-                result_properties.device_circuit=single_query.device_circuit
-                result_properties.device_type=single_query.device_type
-                result_properties.property_list = []
-                try:
-                    outp = Devices.by_name(single_query.device_type, circuit=single_query.device_circuit)
-                    result = outp.full()
-                    result_keys += result
-                    for single_key in result_keys:
-                        prop = SoapProperty()
-                        prop.property_name = single_key
-                        prop.property_value = json.dumps(result[single_key])
-                        result_properties.property_item += [prop]
-                    results += [result_properties]
-                except KeyError:
-                    pass
-            outp = SoapOutputList()
-            outp.single_output = results
-            raise gen.Return(outp)
-        except gen.Return as E:
-            raise E
-        except Exception as E:
-            logger.exception(str(E))
-
-
-class UniPiCommandService(soaphandler.SoapHandler):
-    """ Service which sets a list of values for a given device id and type, returning a list of properties in response """
-    @tornado.gen.coroutine
-    @webservice(_params=SoapCommandInputList,_returns=SoapOutputList)
-    def performCommands(self, input_arr):
-        try:
-            results = []
-            for single_command in input_arr.single_command:
-                result_keys = []
-                result_properties = SoapPropertyList()
-                result_properties.device_circuit=single_command.device_circuit
-                result_properties.device_type=single_command.device_type
-                result_properties.property_list = []
-                values_to_set = {}
-                for single_value in single_command.property_item:
-                    values_to_set[single_value.property_name] = json.loads(single_value.property_value)
-                try:
-                    outp = Devices.by_name(single_command.device_type, circuit=single_command.device_circuit)
-                    outp = outp.set(**values_to_set)
-                    if is_future(outp):
-                        outp = yield outp
-                    result_keys += outp
-                    for single_key in result_keys:
-                        prop = SoapProperty()
-                        prop.property_name = single_key
-                        prop.property_value = json.dumps(outp[single_key])
-                        result_properties.property_list += [prop]
-                    results += [result_properties]
-                except Exception as E:
-                    logger.exception(str(E))
-            outp = SoapOutputList()
-            outp.output_list = results
-            raise gen.Return(outp)
-        except gen.Return as E:
-            raise E
-        except Exception as E:
-            logger.exception(str(E))
-'''
 
 
 # callback generators for devents
@@ -1954,7 +1248,6 @@ def main():
         (r"/json/ao/?([^/]+)/?([^/]+)?/?", RestAOHandler),
         (r"/json/analogoutput/?([^/]+)/?([^/]+)?/?", RestAOHandler),
         (r"/json/led/?([^/]+)/?([^/]+)?/?", RestLEDHandler),
-        (r"/json/wifi/?([^/]+)/?([^/]+)?/?", RestWiFiHandler),
         (r"/json/watchdog/?([^/]+)/?([^/]+)?/?", RestWatchdogHandler),
         (r"/json/wd/?([^/]+)/?([^/]+)?/?", RestWatchdogHandler),
         (r"/json/neuron/?([^/]+)/?([^/]+)?/?", RestNeuronHandler),
@@ -1962,7 +1255,6 @@ def main():
         (r"/json/uart/?([^/]+)/?([^/]+)?/?", RestUARTHandler),
         (r"/json/temp/?([^/]+)/?([^/]+)?/?", RestOWireHandler),
         (r"/json/sensor/?([^/]+)/?([^/]+)?/?", RestOWireHandler),
-        (r"/json/light_channel/?([^/]+)/?([^/]+)?/?", RestLightChannelHandler),
         (r"/json/1wdevice/?([^/]+)/?([^/]+)?/?", RestOWireHandler),
         (r"/json/owbus/?([^/]+)/?([^/]+)?/?", RestOwbusHandler),
         (r"/json/unit_register/?([^/]+)/?([^/]+)?/?", RestUnitRegisterHandler),
