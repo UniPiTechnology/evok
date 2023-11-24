@@ -3,7 +3,9 @@
 import asyncio
 
 import os
+from asyncio import Future
 from collections import OrderedDict
+from typing import Union, Optional
 
 import jsonschema
 import tornado.httpserver
@@ -65,16 +67,6 @@ def enable_cors(handler):
         handler.set_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
 
 
-# class IndexHandler(UserCookieHelper, tornado.web.RequestHandler):
-#
-#    def initialize(self, staticfiles):
-#        self.index = '%s/index.html' % staticfiles
-#        enable_cors(self)
-#
-#    @tornado.web.authenticated
-#    @tornado.gen.coroutine
-#    def get(self):
-#        self.render(self.index)
 registered_ws = {}
 
 
@@ -86,7 +78,7 @@ class WhHandler:
         self.complex_events = complex_events
 
     def open(self):
-        logger.debug("New WebSocket modbusclient_rs485 connected")
+        logger.debug(f"New WebHook connected {self.url}")
         if not ("all" in registered_ws):
             registered_ws["all"] = set()
 
@@ -263,12 +255,16 @@ class LoginHandler(tornado.web.RequestHandler):
         return False
 
 
-class LegacyRestHandler(UserCookieHelper, tornado.web.RequestHandler):
+class EvokWebHandlerBase(tornado.web.RequestHandler):
+
     def initialize(self):
         enable_cors(self)
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
         self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
+    def _get_kw(self) -> dict:
+        raise NotImplementedError("'_get_kw' not implemented!")
 
     # usage: GET /rest/DEVICE/CIRCUIT
     #        or
@@ -277,58 +273,19 @@ class LegacyRestHandler(UserCookieHelper, tornado.web.RequestHandler):
     def get(self, dev, circuit, prop):
         device = Devices.by_name(dev, circuit)
         if prop:
-            if prop[0] in ('_'): raise Exception('Invalid property name')
-            result = {prop: getattr(device, prop)}
-        else:
-            result = device.full()
-        self.write(json.dumps(result))
-        self.finish()
-
-    # usage: POST /rest/DEVICE/CIRCUIT
-    #          post-data: prop1=value1&prop2=value2...
-    async def post(self, dev, circuit, prop):
-        try:
-            device = Devices.by_name(dev, circuit)
-            kw = dict([(k, v[0].decode()) for (k, v) in self.request.body_arguments.items()])
-            result = await device.set(**kw)
-            self.write(json.dumps({'success': True, 'result': result}))
-        except Exception as E:
-            self.write(json.dumps({'success': False, 'errors': {'__all__': str(E)}}))
-        self.set_header('Content-Type', 'application/json')
-        await self.finish()
-
-    def options(self):
-        self.set_status(204)
-        self.finish()
-
-
-class LegacyJsonHandler(UserCookieHelper, tornado.web.RequestHandler):
-    def initialize(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-        enable_cors(self)
-
-    # usage: GET /rest/DEVICE/CIRCUIT
-    #        or
-    #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    @tornado.web.authenticated
-    def get(self, dev, circuit, prop):
-        device = Devices.by_name(dev, circuit)
-        if prop:
-            if prop[0] in ('_'): raise Exception('Invalid property name')
+            if prop[0] in ('_',):
+                raise Exception('Invalid property name')
             result = {prop: getattr(device, prop)}
         else:
             result = device.full()
         return result
 
-    # usage: POST /rest/DEVICE/CIRCUIT
-    #          post-data: prop1=value1&prop2=value2...
     async def post(self, dev, circuit, prop):
         try:
             device = Devices.by_name(dev, circuit)
             schema, example = schemas[dev]
-            kw = json.loads(self.request.body)
+            kw = self._get_kw()
+            print(kw)
             jsonschema.validate(instance=kw, schema=schema)
             result = await device.set(**kw)
             self.write(json.dumps({'success': True, 'result': result}))
@@ -342,7 +299,18 @@ class LegacyJsonHandler(UserCookieHelper, tornado.web.RequestHandler):
         self.finish()
 
 
-class VersionHandler(UserCookieHelper,  tornado.web.RequestHandler):
+class LegacyRestHandler(UserCookieHelper, EvokWebHandlerBase):
+
+    def _get_kw(self) -> dict:
+        return dict([(k, v[0].decode()) for (k, v) in self.request.body_arguments.items()])
+
+
+class LegacyJsonHandler(UserCookieHelper, EvokWebHandlerBase):
+    def _get_kw(self) -> dict:
+        return json.loads(self.request.body)
+
+
+class VersionHandler(UserCookieHelper, tornado.web.RequestHandler):
     version = 'Unspecified'
 
     def initialize(self):
@@ -357,7 +325,7 @@ class VersionHandler(UserCookieHelper,  tornado.web.RequestHandler):
         self.finish()
 
 
-class JSONLoadAllHandler(UserCookieHelper,  tornado.web.RequestHandler):
+class JSONLoadAllHandler(UserCookieHelper, tornado.web.RequestHandler):
     def initialize(self):
         enable_cors(self)
         self.set_header("Access-Control-Allow-Origin", "*")
@@ -389,7 +357,7 @@ class JSONLoadAllHandler(UserCookieHelper,  tornado.web.RequestHandler):
         self.finish()
 
 
-class RestLoadAllHandler(UserCookieHelper,  tornado.web.RequestHandler):
+class RestLoadAllHandler(UserCookieHelper, tornado.web.RequestHandler):
     def initialize(self):
         enable_cors(self)
         self.set_header("Access-Control-Allow-Origin", "*")
@@ -504,8 +472,6 @@ class JSONBulkHandler(tornado.web.RequestHandler):
         raise gen.Return(result)
 
 
-
-# callback generators for devents
 def gener_status_cb(mainloop, modbus_context):
     def status_cb_modbus(device, *kwargs):
         modbus_context.status_callback(device)
@@ -613,27 +579,15 @@ def main():
 
         modbus_server = ModbusServer(ModbusApplication(store=modbus_context, identity=modbus_unipi.identity))
         modbus_server.listen(modbus_port, address=modbus_address)
-        logger.info("Modbus/TCP server istening on port: %d", modbus_port)
+        logger.info("Modbus/TCP server listening on port: %d", modbus_port)
     else:
         modbus_context = None
 
-    if evok_config.getbooldef("soap_server_enabled", False):  # TODO: zachranit??
-        soap_services = [
-            ('UniPiQueryService', UniPiQueryService),
-            ('UniPiCommandService', UniPiCommandService)
-        ]
-        soap_app = webservices.WebService(soap_services)
-        soap_server = tornado.httpserver.HTTPServer(soap_app)
-        soap_port = evok_config.getintdef("soap_server_port", 8081)
-        soap_server.listen(soap_port)
-        logger.info("Starting SOAP server on %d", soap_port)
-
     if evok_config.getbooldef("webhook_enabled", False):
-        wh_types = json.loads(
-            evok_config.getstringdef("webhook_device_mask", '["input", "sensor", "uart", "watchdog"]'))
+        wh_address = evok_config.getstringdef("webhook_address", "http://127.0.0.1:80/index.html")
+        wh_types = evok_config.getstringdef("webhook_device_mask", ["input", "sensor", "uart", "watchdog"])
         wh_complex = evok_config.getbooldef("webhook_complex_events", False)
-        wh = WhHandler(evok_config.getstringdef("webhook_address", "http://127.0.0.1:80/index.html"), wh_types,
-                       wh_complex)
+        wh = WhHandler(wh_address, wh_types, wh_complex)
         wh.open()
 
     mainLoop = tornado.ioloop.IOLoop.instance()
@@ -669,7 +623,6 @@ def main():
         modbus_slave.switch_to_async(mainLoop, alias_dict)
         if modbus_slave.scan_enabled:
             modbus_slave.start_scanning()
-
 
     def sig_handler(sig, frame):
         if sig in (signal.SIGTERM, signal.SIGINT):
