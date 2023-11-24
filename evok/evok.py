@@ -4,33 +4,20 @@ import asyncio
 
 import os
 from collections import OrderedDict
-import configparser as ConfigParser
+
+import jsonschema
 import tornado.httpserver
 import tornado.httpclient
 import tornado.ioloop
 import tornado.web
-import yaml
 
-from . import schemas
+from .schemas import schemas
 
 from operator import methodcaller
 from tornado import gen
 from tornado.options import define, options
 from tornado import websocket
 from tornado import escape
-from tornado.concurrent import is_future
-from tornado.gen import Return
-
-from tornado.process import Subprocess  # not sure about it
-import subprocess  # not sure about it
-
-from .log import *
-# from tornadows import soaphandler, webservices
-# from tornadows.soaphandler import webservice
-# from __builtin__ import str
-from _ast import alias
-
-# from test.badsyntax_future3 import result
 
 try:
     from urllib.parse import urlparse  # py2
@@ -66,31 +53,6 @@ class UserCookieHelper:
     def get_current_user(self):
         if len(self._passwords) == 0: return True
         return self.get_secure_cookie("user")
-
-
-'''
-class SoapProperty(complextypes.ComplexType):
-    property_name = str
-    property_value = str
-
-class SoapPropertyList(complextypes.ComplexType):
-    device_type = str
-    device_circuit = str
-    property_item = [SoapProperty]
-
-class SoapQueryInput(complextypes.ComplexType):
-    device_type = str
-    device_circuit = str
-
-class SoapQueryInputList(complextypes.ComplexType):
-    single_query = [SoapQueryInput]
-
-class SoapCommandInputList(complextypes.ComplexType):
-    single_command = [SoapPropertyList]
-
-class SoapOutputList(complextypes.ComplexType):
-    single_output = [SoapPropertyList]
-'''
 
 
 def enable_cors(handler):
@@ -365,16 +327,15 @@ class LegacyJsonHandler(UserCookieHelper, tornado.web.RequestHandler):
     async def post(self, dev, circuit, prop):
         try:
             device = Devices.by_name(dev, circuit)
+            schema, example = schemas[dev]
             kw = json.loads(self.request.body)
+            jsonschema.validate(instance=kw, schema=schema)
             result = await device.set(**kw)
             self.write(json.dumps({'success': True, 'result': result}))
         except Exception as E:
-            self.write(json.dumps({'success': False, 'errors': {'__all__': str(E)}}))
+            self.write(json.dumps({'success': False, 'errors': {str(type(E).__name__): str(E)}}))
         self.set_header('Content-Type', 'application/json')
         await self.finish()
-
-    def success(self, output: str):  # TODO!!
-        print(f"Co to je???: {output}")
 
     def options(self):
         self.set_status(204)

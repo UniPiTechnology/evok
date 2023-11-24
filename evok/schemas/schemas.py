@@ -7,6 +7,7 @@ owire_get_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {}
 }
 
@@ -16,6 +17,7 @@ owire_post_inp_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {}
 }
 
@@ -25,6 +27,7 @@ owire_post_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "result": { "type": "object"},
         "error": { "type": "string"}
@@ -37,6 +40,7 @@ uart_get_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "dev": {
             "type": "string",
@@ -171,6 +175,7 @@ uart_post_inp_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "conf_value": {
             "type": "number",
@@ -219,6 +224,7 @@ uart_post_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "result": { "type": "object"},
         "error": { "type": "string"}
@@ -257,7 +263,8 @@ neuron_get_out_schema = {
         "$schema": "http://json-schema.org/draft-04/schema#",
         "title": "Neuron_Instruction",
         "type": "object",
-        "properties": {
+    "additionalProperties": False,
+    "properties": {
             "dev": {
                 "type": "string",
                 "enum": [
@@ -307,6 +314,7 @@ neuron_post_inp_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "print_log": {
             "type": "number",
@@ -325,6 +333,7 @@ neuron_post_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "result": { "type": "number"},
         "error": { "type": "array"},
@@ -339,6 +348,7 @@ led_get_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "dev": {
             "type": "string",
@@ -376,6 +386,8 @@ led_post_inp_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
+    "additionalProperties": False,
     "properties": {
         "value": { "type": "string"}
     },
@@ -387,6 +399,8 @@ led_post_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
+    "additionalProperties": False,
     "properties": {
         "result": { "type": "number"},
         "error": { "type": "array"},
@@ -403,6 +417,8 @@ all_get_out_schema = {
             "anyOf": [
                 {
                     "type": "object",
+                    "additionalProperties": False,
+                    "additionalProperties": False,
                     "properties": {
                         "dev": {
                             "type": "string",
@@ -504,6 +520,8 @@ all_get_out_schema = {
                 },
                 {
                     "type": "object",
+                    "additionalProperties": False,
+                    "additionalProperties": False,
                     "properties": {
                         "dev": {
                             "type": "string",
@@ -564,6 +582,8 @@ all_get_out_schema = {
                 },
                 {
                     "type": "object",
+                    "additionalProperties": False,
+                    "additionalProperties": False,
                     "properties": {
                         "dev": {
                             "type": "string",
@@ -662,6 +682,7 @@ all_get_out_schema = {
                 },
                 {
                     "type": "object",
+                    "additionalProperties": False,
                     "properties": {
                         "dev": {
                             "type": "string",
@@ -722,6 +743,8 @@ all_get_out_schema = {
                 },
                 {
                     "type": "object",
+                    "additionalProperties": False,
+                    "additionalProperties": False,
                     "properties": {
                         "dev": {
                             "type": "string",
@@ -758,6 +781,8 @@ all_get_out_schema = {
                 },
                 { 
                     "type": "object",
+                    "additionalProperties": False,
+                    "additionalProperties": False,
                     "properties": {
                         "dev": { 
                             "type": "string",
@@ -785,6 +810,8 @@ all_get_out_schema = {
                 },
                 {
                     "type": "object",
+                    "additionalProperties": False,
+                    "additionalProperties": False,
                     "properties": {
                         "dev": {
                             "type": "string",
@@ -822,6 +849,8 @@ all_get_out_schema = {
                 },
                 {
                     "type": "object",
+                    "additionalProperties": False,
+                    "additionalProperties": False,
                     "properties": {
                         "dev": {
                             "type": "string",
@@ -854,6 +883,7 @@ all_get_out_schema = {
                 },
                 {
                     "type": "object",
+                    "additionalProperties": False,
                     "properties": {
                         "dev": {
                             "type": "string",
@@ -903,6 +933,7 @@ all_get_out_schema = {
                 },
                 {
                     "type": "object",
+                    "additionalProperties": False,
                     "properties": {
                         "dev": {
                             "type": "string",
@@ -948,6 +979,7 @@ all_get_out_schema = {
                 },
                 {
                     "type": "object",
+                    "additionalProperties": False,
                     "properties": {
                         "dev": {
                             "type": "string",
@@ -980,6 +1012,7 @@ all_get_out_schema = {
                 },
                 {
                     "type": "object",
+                    "additionalProperties": False,
                     "properties": {
                         "dev": {
                             "type": "string",
@@ -995,6 +1028,7 @@ all_get_out_schema = {
                 },
                 {
                     "type": "object",
+                    "additionalProperties": False,
                     "properties": {
                         "dev": {
                             "type": "string",
@@ -1098,6 +1132,7 @@ all_get_out_schema = {
                 },
                 {
                     "type": "object",
+                    "additionalProperties": False,
                     "properties": {
                         "dev": {
                             "type": "string",
@@ -1140,6 +1175,7 @@ all_get_out_schema = {
                 },
                 {
                     "type": "object",
+                    "additionalProperties": False,
                     "properties": {
                         "dev": {
                             "type": "string",
@@ -1244,7 +1280,8 @@ json_post_inp_schema = {
         "$schema": "http://json-schema.org/draft-04/schema#",
         "title": "Neuron_Instruction",
         "type": "object",
-        "properties": {
+    "additionalProperties": False,
+    "properties": {
 
         }
 }
@@ -1253,6 +1290,7 @@ json_post_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "group_queries": {
             "type": "array",
@@ -1278,6 +1316,7 @@ relay_get_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "dev": {
             "type": "string",
@@ -1343,6 +1382,7 @@ relay_post_inp_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "value": { "type": "string"},
         "mode": {"type": "string"},
@@ -1359,6 +1399,7 @@ relay_post_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "result": { "type": "number"},
         "error": { "type": "array"},
@@ -1373,6 +1414,7 @@ light_channel_get_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "dev": {
             "type": "string",
@@ -1467,6 +1509,7 @@ light_channel_post_inp_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "broadcast_command": {
             "type": "string"
@@ -1504,6 +1547,7 @@ light_channel_post_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "result": { "type": "number"},
         "error": { "type": "array"},
@@ -1519,6 +1563,7 @@ ao_get_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "dev": {
             "type": "string",
@@ -1584,6 +1629,7 @@ ao_post_inp_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "value": {
             "type": "number",
@@ -1612,6 +1658,7 @@ ao_post_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "result": { "type": "number"},
         "error": { "type": "array"},
@@ -1626,6 +1673,7 @@ ai_get_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "dev": {
             "type": "string",
@@ -1729,6 +1777,7 @@ ai_post_inp_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "mode": {
             "type": "string",
@@ -1772,6 +1821,7 @@ ai_post_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "result": { "type": "object"},
         "error": { "type": "array"},
@@ -1785,6 +1835,7 @@ wifi_get_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "dev": {
             "type": "string",
@@ -1832,6 +1883,7 @@ wifi_post_inp_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "value": { "type": "string"},
         "mode": {"type": "string"}
@@ -1845,6 +1897,7 @@ wifi_post_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "result": { "type": "object"},
         "error": { "type": "array"},
@@ -1857,6 +1910,7 @@ di_get_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "dev": {
             "type": "string",
@@ -1964,6 +2018,7 @@ di_post_inp_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "value": { "type": "number"},
         "counter": {
@@ -1982,6 +2037,7 @@ di_post_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "result": { "type": "object"},
         "error": { "type": "array"},
@@ -1994,6 +2050,7 @@ register_get_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "dev": {
             "type": "string",
@@ -2031,6 +2088,7 @@ register_post_inp_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "value": {
             "type": "number",
@@ -2049,6 +2107,7 @@ register_post_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "result": { "type": "object"},
         "error": { "type": "array"},
@@ -2062,6 +2121,7 @@ wd_get_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "dev": {
             "type": "string",
@@ -2124,6 +2184,7 @@ wd_post_inp_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "value": {
             "type": "number"
@@ -2149,6 +2210,7 @@ wd_post_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "result": { "type": "object"},
         "error": { "type": "array"},
@@ -2162,6 +2224,7 @@ owbus_get_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "dev": {
             "type": "string",
@@ -2210,6 +2273,7 @@ owbus_post_inp_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "do_scan": {
             "type": "boolean"
@@ -2235,6 +2299,7 @@ owbus_post_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "result": { "type": "object",
             "properties" : {"bus" : {"type": "string"},
