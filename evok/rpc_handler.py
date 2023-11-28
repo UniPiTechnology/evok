@@ -1,22 +1,55 @@
 #!/usr/bin/python
+import base64
+import functools
+import inspect
+from typing import Awaitable, Optional
 
-import tornado
 import tornado.ioloop
 
 from tornado_jsonrpc2 import JSONRPCHandler
-#from tornado import gen
-
-import time
-import datetime
-import json
-
-from . import config
+from tornado_jsonrpc2.exceptions import MethodNotFound
 
 from .devices import *
 
 
-class userBasicHelper():
+async def create_response(request, backend):
+    try:
+        method = getattr(backend, request.method)
+    except AttributeError:
+        raise MethodNotFound(f"Method '{request.method}' not found!")
+
+    awaitable = False
+    if inspect.isawaitable(method) or inspect.iscoroutine(method) or inspect.iscoroutinefunction(method):
+        awaitable = True
+
+    try:
+        params = request.params
+    except AttributeError:
+        if awaitable:
+            return await method()
+        else:
+            return method()
+
+    if isinstance(params, list):
+        if awaitable:
+            return await method(*params)
+        else:
+            return method(*params)
+    elif isinstance(params, dict):
+        if awaitable:
+            return await method(**params)
+        else:
+            return method(**params)
+
+
+class UserBasicHelper(JSONRPCHandler):
     _passwords = []
+
+    def initialize(self, response_creator: Awaitable = None, version: Optional[str] = None):
+        if response_creator is None:
+            response_creator = functools.partial(create_response,
+                                                 backend=self)
+        super().initialize(response_creator=response_creator, version=version)
 
     def _request_auth(self):
         self.set_header('WWW-Authenticate', 'Basic realm=tmr')
@@ -42,7 +75,8 @@ class userBasicHelper():
             self._request_auth()
 
 
-class Handler(userBasicHelper, JSONRPCHandler):
+class Handler(UserBasicHelper):
+
     @tornado.web.authenticated
     async def post(self):
         await JSONRPCHandler.post(self)
@@ -96,7 +130,7 @@ class Handler(userBasicHelper, JSONRPCHandler):
         ai = Devices.by_int(AI, str(circuit))
         return ai.set(bits=bits, gain=gain, interval=interval)
 
-    #def ai_measure(self, circuit):
+    # def ai_measure(self, circuit):
 
     ###### Analog Output (0-10V) ######
     async def ao_set_value(self, circuit, value):
@@ -148,8 +182,8 @@ class Handler(userBasicHelper, JSONRPCHandler):
     ###### EEprom ######
     async def ee_read_byte(self, circuit, index):
         ee = Devices.by_int(EE, str(circuit))
-        return  await ee.read_byte(index)
+        return await ee.read_byte(index)
 
     async def ee_write_byte(self, circuit, index, value):
         ee = Devices.by_int(EE, str(circuit))
-        return  await ee.write_byte(index, value)
+        return await ee.write_byte(index, value)

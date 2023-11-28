@@ -3,23 +3,20 @@
 import asyncio
 
 import os
-from asyncio import Future
 from collections import OrderedDict
-from typing import Union, Optional
 
-import jsonschema
 import tornado.httpserver
 import tornado.httpclient
 import tornado.ioloop
 import tornado.web
 
-from .schemas import schemas
 
 from operator import methodcaller
 from tornado import gen
 from tornado.options import define, options
 from tornado import websocket
 from tornado import escape
+from .handlers_base import EvokWebHandlerBase
 
 try:
     from urllib.parse import urlparse  # py2
@@ -42,8 +39,6 @@ if not os.path.isdir(config_path):
 evok_config = config.EvokConfig(config_path)
 
 wh = None
-cors = False
-corsdomains = '*'
 allow_unsafe_configuration_handlers = evok_config.getbooldef('allow_unsafe_configuration_handlers', False)
 
 from . import rpc_handler
@@ -55,16 +50,6 @@ class UserCookieHelper:
     def get_current_user(self):
         if len(self._passwords) == 0: return True
         return self.get_secure_cookie("user")
-
-
-def enable_cors(handler):
-    if cors:
-        handler.set_header("Access-Control-Allow-Headers", "*")
-        handler.set_header("Access-Control-Allow-Headers", "Content-Type, Depth, User-Agent, X-File-Size,"
-                                                           "X-Requested-With, X-Requested-By, If-Modified-Since, X-File-Name, Cache-Control")
-        handler.set_header("Access-Control-Allow-Origin", corsdomains)
-        handler.set_header("Access-Control-Allow-Credentials", "true")
-        handler.set_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
 
 
 registered_ws = {}
@@ -119,12 +104,12 @@ class WsHandler(websocket.WebSocketHandler):
         registered_ws["all"].add(self)
 
     def on_event(self, device):
-        dev_all = device.full()
         outp = []
         try:
             if len(self.filter) == 1 and self.filter[0] == "default":
                 self.write_message(json.dumps(device.full()))
             else:
+                dev_all = device.full()
                 if 'dev' in dev_all:
                     dev_all = [dev_all]
                 for single_dev in dev_all:
@@ -206,7 +191,7 @@ class WsHandler(websocket.WebSocketHandler):
                         else:
                             result = await func()
                     if cmd == "full":
-                        self.write_message(json.dumps(result))
+                        await self.write_message(json.dumps(result))
                     # send response only to the modbusclient_rs485 requesting full info
                 # nebo except Exception as e:
                 except Exception as E:
@@ -232,9 +217,6 @@ class LogoutHandler(tornado.web.RequestHandler):
 
 
 class LoginHandler(tornado.web.RequestHandler):
-    def initialize(self):
-        enable_cors(self)
-
     def post(self):
         username = 'admin'
         password = self.get_argument("password", "")
@@ -255,52 +237,7 @@ class LoginHandler(tornado.web.RequestHandler):
         return False
 
 
-class EvokWebHandlerBase(tornado.web.RequestHandler):
-
-    def initialize(self):
-        enable_cors(self)
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-
-    def _get_kw(self) -> dict:
-        raise NotImplementedError("'_get_kw' not implemented!")
-
-    # usage: GET /rest/DEVICE/CIRCUIT
-    #        or
-    #        GET /rest/DEVICE/CIRCUIT/PROPERTY
-    @tornado.web.authenticated
-    def get(self, dev, circuit, prop):
-        device = Devices.by_name(dev, circuit)
-        if prop:
-            if prop[0] in ('_',):
-                raise Exception('Invalid property name')
-            result = {prop: getattr(device, prop)}
-        else:
-            result = device.full()
-        return result
-
-    async def post(self, dev, circuit, prop):
-        try:
-            device = Devices.by_name(dev, circuit)
-            schema, example = schemas[dev]
-            kw = self._get_kw()
-            print(kw)
-            jsonschema.validate(instance=kw, schema=schema)
-            result = await device.set(**kw)
-            self.write(json.dumps({'success': True, 'result': result}))
-        except Exception as E:
-            self.write(json.dumps({'success': False, 'errors': {str(type(E).__name__): str(E)}}))
-        self.set_header('Content-Type', 'application/json')
-        await self.finish()
-
-    def options(self):
-        self.set_status(204)
-        self.finish()
-
-
 class LegacyRestHandler(UserCookieHelper, EvokWebHandlerBase):
-
     def _get_kw(self) -> dict:
         return dict([(k, v[0].decode()) for (k, v) in self.request.body_arguments.items()])
 
@@ -310,11 +247,22 @@ class LegacyJsonHandler(UserCookieHelper, EvokWebHandlerBase):
         return json.loads(self.request.body)
 
 
+class LoadAllHandler(UserCookieHelper, EvokWebHandlerBase):
+    async def get(self):  # noqa
+        """This function returns a heterogeneous list of all devices exposed via the REST API"""
+        result = self._get_all()
+        self.write(json.dumps(result))
+        self.set_header('Content-Type', 'application/json')
+        await self.finish()
+
+    async def post(self):  # noqa
+        pass
+
+
 class VersionHandler(UserCookieHelper, tornado.web.RequestHandler):
     version = 'Unspecified'
 
     def initialize(self):
-        enable_cors(self)
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
         self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
@@ -325,76 +273,8 @@ class VersionHandler(UserCookieHelper, tornado.web.RequestHandler):
         self.finish()
 
 
-class JSONLoadAllHandler(UserCookieHelper, tornado.web.RequestHandler):
-    def initialize(self):
-        enable_cors(self)
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-
-    async def get(self):
-        """This function returns a heterogeneous list of all devices exposed via the REST API"""
-        result = list(map(lambda dev: dev.full(), Devices.by_int(INPUT)))
-        result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
-        result += map(lambda dev: dev.full(), Devices.by_int(OUTPUT))
-        result += map(lambda dev: dev.full(), Devices.by_int(AI))
-        result += map(lambda dev: dev.full(), Devices.by_int(AO))
-        result += map(lambda dev: dev.full(), Devices.by_int(SENSOR))
-        result += map(lambda dev: dev.full(), Devices.by_int(LED))
-        result += map(lambda dev: dev.full(), Devices.by_int(WATCHDOG))
-        result += map(lambda dev: dev.full(), Devices.by_int(MODBUS_SLAVE))
-        result += map(lambda dev: dev.full(), Devices.by_int(UART))
-        result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
-        result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
-        result += map(lambda dev: dev.full(), Devices.by_int(LIGHT_CHANNEL))
-        result += map(lambda dev: dev.full(), Devices.by_int(UNIT_REGISTER))
-        result += map(lambda dev: dev.full(), Devices.by_int(EXT_CONFIG))
-        self.success(result)
-
-    def options(self):
-        # no body
-        self.set_status(204)
-        self.finish()
-
-
-class RestLoadAllHandler(UserCookieHelper, tornado.web.RequestHandler):
-    def initialize(self):
-        enable_cors(self)
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-
-    async def get(self):
-        """This function returns a heterogeneous list of all devices exposed via the REST API"""
-        result = list(map(lambda dev: dev.full(), Devices.by_int(INPUT)))
-        result += map(lambda dev: dev.full(), Devices.by_int(RELAY))
-        result += map(lambda dev: dev.full(), Devices.by_int(AI))
-        result += map(lambda dev: dev.full(), Devices.by_int(AO))
-        result += map(lambda dev: dev.full(), Devices.by_int(SENSOR))
-        result += map(lambda dev: dev.full(), Devices.by_int(LED))
-        result += map(lambda dev: dev.full(), Devices.by_int(WATCHDOG))
-        result += map(lambda dev: dev.full(), Devices.by_int(MODBUS_SLAVE))
-        result += map(lambda dev: dev.full(), Devices.by_int(UART))
-        result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
-        result += map(lambda dev: dev.full(), Devices.by_int(WIFI))
-        result += map(lambda dev: dev.full(), Devices.by_int(LIGHT_CHANNEL))
-        result += map(lambda dev: dev.full(), Devices.by_int(OWBUS))
-        result += map(lambda dev: dev.full(), Devices.by_int(UNIT_REGISTER))
-        result += map(lambda dev: OrderedDict(sorted(dev.full().items(), key=lambda t: t[0])),
-                      Devices.by_int(EXT_CONFIG))  # Sort for better reading
-        self.write(json.dumps(result))
-        self.set_header('Content-Type', 'application/json')
-        self.finish()
-
-    def options(self):
-        # no body
-        self.set_status(204)
-        self.finish()
-
-
 class JSONBulkHandler(tornado.web.RequestHandler):
     def initialize(self):
-        # enable_cors(self)
         self.set_header("Content-Type", "application/json")
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
@@ -527,8 +407,6 @@ def main():
     hw_dict = config.HWDict(dir_paths=[f'{config_path}/hw_definitions/'])
     alias_dict = (config.HWDict(dir_paths=['/var/evok/'])).definitions
 
-    cors = True
-    corsdomains = evok_config.getstringdef("cors_domains", "*")
     define("cors", default=True, help="enable CORS support", type=bool)
     port = evok_config.getintdef("port", 8080)
     if options.as_dict()['port'] != -1:
@@ -542,10 +420,10 @@ def main():
 
     app_routes = [
         (r"/rpc/?", rpc_handler.Handler),
-        (r"/rest/all/?", RestLoadAllHandler),
+        (r"/rest/all/?", LoadAllHandler),
         (r"/rest/([^/]+)/([^/]+)/?([^/]+)?/?", LegacyRestHandler),
         (r"/bulk/?", JSONBulkHandler),
-        (r"/json/all/?", JSONLoadAllHandler),
+        (r"/json/all/?", LoadAllHandler),
         (r"/json/([^/]+)/([^/]+)/?([^/]+)?/?", LegacyJsonHandler),
         (r"/version/?", VersionHandler),
         (r"/ws/?", WsHandler),
