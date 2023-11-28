@@ -69,7 +69,7 @@ class DeviceList(dict):
             if circuit in self.alias_dict:
                 return self.alias_dict[circuit]
             else:
-                raise Exception(f'Invalid device circuit number {str(circuit)} with deftypeid {devtypeid}')
+                raise Exception(f'Invalid device circuit number {str(circuit)} with devtypeid {devtypeid}')
 
     def by_name(self, devtype, circuit=None):
         circuit = str(circuit) if circuit is not None else None
@@ -85,7 +85,7 @@ class DeviceList(dict):
             if circuit in self.alias_dict:
                 return self.alias_dict[circuit]
             else:
-                raise Exception(f'Invalid device circuit number {str(circuit)} with deftype {devtype}')
+                raise Exception(f'Invalid device circuit number {str(circuit)} with devtype {devtype}')
 
     def register_device(self, devtype, device):
         """ can be called with devtype = INTEGER or NAME

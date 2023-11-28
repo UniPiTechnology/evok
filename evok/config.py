@@ -273,8 +273,3 @@ def add_aliases(alias_conf):
                                 dev_obj.alias = dev_pointer["name"]
                         except Exception as E:
                             logger.exception(str(E))
-
-
-def add_wifi():
-    wifi = WiFiAdapter("1_01")
-    Devices.register_device(WIFI, wifi)
