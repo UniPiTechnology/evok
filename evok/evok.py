@@ -12,7 +12,6 @@ import tornado.web
 
 
 from operator import methodcaller
-from tornado import gen
 from tornado.options import define, options
 from tornado import websocket
 from tornado import escape

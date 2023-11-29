@@ -240,7 +240,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
 
                 elif bus_type in ['MODBUSTCP', 'MODBUSRTU']:
                     slave_id = device_data.get("slave-id", 1)
-                    scanfreq = device_data.get("scan_frequency", 1)
+                    scanfreq = device_data.get("scan_frequency", 50)
                     scan_enabled = device_data.get("scan_enabled", True)
                     device_model = device_data["model"]
                     circuit = device_name
