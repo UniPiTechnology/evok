@@ -2,6 +2,7 @@
   Code specific to Neuron devices
 ------------------------------------------
 """
+from copy import copy
 import logging
 import math
 import datetime
@@ -97,16 +98,18 @@ class ModbusCacheMap(object):
                     # check modbus response
                     if not isinstance(vals, ExceptionResponse) and not isinstance(vals, ModbusIOException) and\
                        vals is not None:
-                        # reset communication flags
-                        self.last_comm_time = time.time()
-                        for index in range(m_reg_group['count']):
-                            self.frequency[m_reg_group['start_reg']] = 1
-
                         # update modbus cache
                         m_reg_group['values'] = vals.registers
 
                         # call force update callbacks in registered devices and check differences
-                        # TODO
+                        for device in self.modbus_slave.eventable_devices:
+                            if device.check_new_data() is True:
+                                changeset.append(device)
+
+                        # reset communication flags
+                        self.last_comm_time = time.time()
+                        for index in range(m_reg_group['count']):
+                            self.frequency[m_reg_group['start_reg']] = 1
 
                 except Exception as E:
                     logger.warning(E)
@@ -115,6 +118,7 @@ class ModbusCacheMap(object):
                 self.frequency[m_reg_group['start_reg']] += 1
         if len(changeset) > 0:
             proxy = Proxy(set(changeset))
+            # print(f"changeset: {changeset}")
             devents.status(proxy)
         if initial:
             self.sem.release()
@@ -128,7 +132,7 @@ class ModbusSlave(object):
         self.alias = ""
         self.devtype = MODBUS_SLAVE
         self.modbus_cache_map = None
-        self.datadeps = {}
+        self.eventable_devices = list()
         self.boards = list()
         self.dev_id = dev_id
         self.hw_dict = hw_dict
@@ -280,6 +284,10 @@ class Board(object):
             else:
                 raise Exception("HW Definition %s requires Modbus register blocks to be specified" % cache_definition['type'])
 
+    def __register_eventable_device(self, device):
+        if hasattr(device, 'check_new_data'):
+            self.modbus_slave.eventable_devices.append(device)
+
     def parse_feature_di(self, max_count, m_feature, board_id):
         counter = 0
         while counter < max_count:
@@ -298,14 +306,7 @@ class Board(object):
                 _inp = Input("%s_%02d" % (self.circuit, counter + 1 + start_index), self, board_val_reg, 0x1 << (counter % 16),
                              regdebounce=board_deboun_reg + counter, major_group=0, regcounter=board_counter_reg + (2 * counter), modes=m_feature['modes'],
                              dev_id=self.dev_id, legacy_mode=self.legacy_mode)
-            if board_val_reg in self.modbus_slave.datadeps:
-                self.modbus_slave.datadeps[board_val_reg]+=[_inp]
-            else:
-                self.modbus_slave.datadeps[board_val_reg] = [_inp]
-            if (board_counter_reg + (2 * counter)) in self.modbus_slave.datadeps:
-                self.modbus_slave.datadeps[board_counter_reg + (2 * counter)]+=[_inp]
-            else:
-                self.modbus_slave.datadeps[board_counter_reg + (2 * counter)] = [_inp]
+            self.__register_eventable_device(_inp)
             Devices.register_device(INPUT, _inp)
             counter+=1
 
@@ -325,10 +326,7 @@ class Board(object):
             else:
                     _r = Relay("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
                                dev_id=self.dev_id, major_group=0, legacy_mode=self.legacy_mode)
-            if board_val_reg in self.modbus_slave.datadeps:
-                self.modbus_slave.datadeps[board_val_reg]+=[_r]
-            else:
-                self.modbus_slave.datadeps[board_val_reg] = [_r]
+            self.__register_eventable_device(_r)
             Devices.register_device(RELAY, _r)
             counter+=1
 
@@ -338,10 +336,7 @@ class Board(object):
             board_val_reg = m_feature['val_reg']
             _led = ULED("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg, 0x1 << (counter % 16), m_feature['val_coil'] + counter,
                         dev_id=self.dev_id, major_group=0, legacy_mode=self.legacy_mode)
-            if (board_val_reg + counter) in self.modbus_slave.datadeps:
-                self.modbus_slave.datadeps[board_val_reg] += [_led]
-            else:
-                self.modbus_slave.datadeps[board_val_reg] = [_led]
+            self.__register_eventable_device(_led)
             Devices.register_device(LED, _led)
             counter+=1
 
@@ -353,10 +348,7 @@ class Board(object):
             _wd = Watchdog("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg + counter, board_timeout_reg + counter,
                            dev_id=self.dev_id, major_group=0, nv_save_coil=m_feature['nv_sav_coil'], reset_coil=m_feature['reset_coil'],
                            legacy_mode=self.legacy_mode)
-            if (board_val_reg + counter) in self.modbus_slave.datadeps:
-                self.modbus_slave.datadeps[board_val_reg + counter]+=[_wd]
-            else:
-                self.modbus_slave.datadeps[board_val_reg + counter] = [_wd]
+            self.__register_eventable_device(_wd)
             Devices.register_device(WATCHDOG, _wd)
             counter+=1
 
@@ -371,10 +363,7 @@ class Board(object):
             else:
                 _ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, dev_id=self.dev_id,
                                    major_group=0, legacy_mode=self.legacy_mode)
-            if (board_val_reg + counter) in self.modbus_slave.datadeps:
-                self.modbus_slave.datadeps[board_val_reg + counter]+=[_ao]
-            else:
-                self.modbus_slave.datadeps[board_val_reg + counter] = [_ao]
+            self.__register_eventable_device(_ao)
             Devices.register_device(AO, _ao)
             counter+=1
 
@@ -386,10 +375,7 @@ class Board(object):
             _ai = AnalogInput18(circuit, self, value_reg, regmode=mode_reg+i,
                                 dev_id=self.dev_id, major_group=0, modes=m_feature['modes'])
 
-            if value_reg in self.modbus_slave.datadeps:
-                self.modbus_slave.datadeps[value_reg]+=[_ai]
-            else:
-                self.modbus_slave.datadeps[value_reg] = [_ai]
+            self.__register_eventable_device(_ai)
             Devices.register_device(AI, _ai)
             value_reg += 2;
 
@@ -416,10 +402,7 @@ class Board(object):
                                   regmode=m_feature['mode_reg'] + counter if m_feature.get('mode_reg', None) is not None else None,
                                   dev_id=self.dev_id, major_group=0, tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
 
-            if board_val_reg in self.modbus_slave.datadeps:
-                self.modbus_slave.datadeps[board_val_reg]+=[_ai]
-            else:
-                self.modbus_slave.datadeps[board_val_reg] = [_ai]
+            self.__register_eventable_device(_ai)
             Devices.register_device(AI, _ai)
             counter+=1
 
@@ -433,10 +416,7 @@ class Board(object):
             else:
                 _reg = Register("%s_%d" % (self.circuit, board_val_reg + counter), self, counter, board_val_reg + counter, dev_id=self.dev_id,
                                 major_group=0, legacy_mode=self.legacy_mode)
-            if board_val_reg and ((board_val_reg + counter) in self.modbus_slave.datadeps):
-                self.modbus_slave.datadeps[board_val_reg + counter] += [_reg]
-            elif board_val_reg:
-                self.modbus_slave.datadeps[board_val_reg + counter] = [_reg]
+            self.__register_eventable_device(_reg)
             Devices.register_device(REGISTER, _reg)
             counter+=1
 
@@ -526,6 +506,7 @@ class Relay(object):
         self.valreg = reg
         self.bitmask = mask
         self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address)[0]
+        self.value = None
         if self.pwmdutyreg >= 0: # This instance supports PWM mode
             self.pwm_duty_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmdutyreg, slave=self.arm.modbus_address))[0]
             self.pwm_cycle_val = ((self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmcyclereg, slave=self.arm.modbus_address))[0] + 1)
@@ -571,14 +552,6 @@ class Relay(object):
                 'circuit': self.circuit,
                 'value': self.value}
 
-    @property
-    def value(self):
-        try:
-            if self.regvalue() & self.bitmask: return 1
-        except:
-            pass
-        return 0
-
     def get_state(self):
         """ Returns ( status, is_pending )
               current on/off status is taken from last mcp value without reading it from hardware
@@ -595,8 +568,10 @@ class Relay(object):
         await self.arm.modbus_slave.client.write_coil(self.coil, 1 if value else 0, slave=self.arm.modbus_address)
         return 1 if value else 0
 
-    def value_delta(self, new_val):
-        return (self.regvalue() ^ new_val) & self.bitmask
+    def check_new_data(self):
+        old_value = copy(self.value)
+        self.value = 1 if (self.regvalue() & self.bitmask) else 0
+        return old_value != self.value
 
     async def set(self, value=None, timeout=None, mode=None, pwm_freq=None, pwm_duty=None, alias=None):
         """ Sets new on/off status. Disable pending timeouts
@@ -706,6 +681,7 @@ class ULED(object):
         self.valreg = reg
         self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address)[0]
         self.coil = coil
+        self.value = None
 
     def full(self):
         ret = {'dev': 'led', 'circuit': self.circuit, 'value': self.value, 'glob_dev_id': self.dev_id}
@@ -713,20 +689,16 @@ class ULED(object):
             ret['alias'] = self.alias
         return ret
 
-
     def simple(self):
         return {'dev': 'led', 'circuit': self.circuit, 'value': self.value}
 
-    @property
-    def value(self):
-        try:
-            if self.regvalue() & self.bitmask: return 1
-        except:
-            pass
-        return 0
-
     def value_delta(self, new_val):
         return (self.regvalue() ^ new_val) & self.bitmask
+
+    def check_new_data(self):
+        old_value = copy(self.value)
+        self.value = 1 if (self.regvalue() & self.bitmask) else 0
+        return old_value != self.value
 
     def get_state(self):
         """ Returns ( status, is_pending )
@@ -776,6 +748,10 @@ class Watchdog(object):
         self.valreg = reg
         self.toreg = timeout_reg
 
+        self.value = None
+        self.timeout = None
+        self.was_wd_boot_value = None
+
     def full(self):
         ret = {'dev': 'wd',
                'circuit': self.circuit,
@@ -794,34 +770,14 @@ class Watchdog(object):
     def simple(self):
         return {'dev': 'wd',
                 'circuit': self.circuit,
-                'value': self.regvalue()}
+                'value': self.value}
 
-    def value_delta(self, new_val):
-        return (self.regvalue() ^ new_val) & 0x03 #Only the two lowest bits contains watchdog status
-
-    @property
-    def value(self):
-        try:
-            if self.regvalue() & self.bitmask: return 1
-        except:
-            pass
-        return 0
-
-    @property
-    def timeout(self):
-        try:
-            if self.timeoutvalue(): return self.timeoutvalue()[0]
-        except:
-            pass
-        return 0
-
-    @property
-    def was_wd_boot_value(self):
-        try:
-            if self.regvalue() & 0b10: return 1
-        except:
-            pass
-        return 0
+    def check_new_data(self):
+        old_value = copy(self.value)
+        self.value = self.regvalue() & 0x03  # Only the two lowest bits contains watchdog status
+        self.timeout = self.timeoutvalue()[0] if self.timeoutvalue() else 0
+        self.was_wd_boot_value = 1 if self.regvalue() & 0b10 else 0
+        return old_value != self.value
 
     def get_state(self):
         """ Returns ( status, is_pending )
@@ -1085,32 +1041,17 @@ class Input():
                 elif (curr_ds_tgl & self.bitmask):
                     self.ds_mode = 'Toggle'
         self.counter_mode = "Enabled"
+        self.value = None
+        self.counter = None
+        self.debounce = None
 
-    @property
-    def debounce(self):
-        try:
-            return self.regdebouncevalue()
-        except:
-            pass
-        return 0
-
-    @property
-    def value(self):
-        try:
-            if self.regvalue() & self.bitmask: return 1
-        except:
-            pass
-        return 0
-
-    @property
-    def counter(self):
-        try:
-            return self.regcountervalue()
-        except:
-            return 0
-
-    def value_delta(self, new_val):
-        return (self.regvalue() ^ new_val) & self.bitmask
+    def check_new_data(self):
+        old_value = copy(self.value)
+        old_counter = copy(self.counter)
+        self.value = 1 if (self.regvalue() & self.bitmask) else 0
+        self.counter = self.regcountervalue()
+        self.debounce = self.regdebouncevalue()
+        return old_counter != self.counter or old_value != self.value
 
     def full(self):
         ret = {'dev': 'input',
@@ -1129,7 +1070,6 @@ class Input():
         if self.alias != '':
             ret['alias'] = self.alias
         return ret
-
 
     def simple(self):
         if self.counter_mode == 'Enabled':
@@ -1222,22 +1162,29 @@ class AnalogOutputBrain:
             self.mode = 'Current'
         else:
             self.mode = 'Resistance'
+        self.value = None
+        self.res_value = None
 
-    @property
-    def value(self):
+    def check_new_data(self):
+        old_value = copy(self.value)
+        old_res_value = copy(self.res_value)
+        self.value = self.regvalue()
+        self.res_value = self.regres_value()
+        return self.value != old_value or self.res_value != old_res_value
+
+    def regvalue(self):
         try:
             ret = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.reg, slave=self.arm.modbus_address)
             ret = BinaryPayloadDecoder.fromRegisters(ret, Endian.BIG, Endian.LITTLE).decode_32bit_float()
-            return float(ret)
+            return round(float(ret), 3)
         except:
             return 0
 
-    @property
-    def res_value(self):
+    def regres_value(self):
         try:
             ret = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.reg_res, slave=self.arm.modbus_address)
             ret = BinaryPayloadDecoder.fromRegisters(ret, Endian.BIG, Endian.LITTLE).decode_32bit_float()
-            return float(ret)
+            return round(float(ret), 3)
         except:
             return 0
 
@@ -1322,20 +1269,15 @@ class AnalogOutput():
             self.mode = 'Voltage'
         else:
             self.mode = 'Current'
+        self.value = None
+        self.res_value = None
 
-    @property
-    def value(self):
-        try:
-            return self.regvalue() * 0.0025
-        except:
-            return 0
-
-    @property
-    def res_value(self):
-        try:
-            return float(self.regvalue()) * 0.0025
-        except:
-            return 0
+    def check_new_data(self):
+        old_value = copy(self.value)
+        old_res_value = copy(self.res_value)
+        self.value = round(self.regvalue() * 0.0025, 3)
+        self.res_value = round(float(self.regvalue()) * 0.0025, 3)
+        return self.value != old_value or self.res_value != old_res_value
 
     def full(self):
         ret = {'dev': 'ao',
@@ -1392,7 +1334,6 @@ class AnalogOutput():
         return self.full()
 
 
-
 class AnalogInput():
     def __init__(self, circuit, arm, reg, regmode=None, dev_id=0, major_group=0, legacy_mode=True, tolerances='brain', modes=['Voltage']):
         self.alias = ""
@@ -1424,13 +1365,18 @@ class AnalogInput():
         if self.tolerances == "simple":
             pass
         self.tolerance_mode = self.get_tolerance_mode()
+        self.value = None
 
-    @property
-    def value(self):
+    def check_new_data(self):
+        old_value = copy(self.value)
+        self.value = self.regvalue()
+        return self.value != old_value
+
+    def regvalue(self):
         try:
             ret = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg, slave=self.arm.modbus_address)
             ret = BinaryPayloadDecoder.fromRegisters(ret, Endian.BIG, Endian.LITTLE).decode_32bit_float()
-            return float(ret)
+            return round(float(ret), 3)
         except Exception as E:
             logger.exception(str(E))
             return 0
@@ -1598,14 +1544,19 @@ class AnalogInput18():
         self.mode = self.get_mode()
         self.major_group = major_group
         self.calibration = {'Voltage': 10.0/(1<<18)/0.9772, 'Current': 40.0/(1<<18)}
+        self.value = None
 
+    def check_new_data(self):
+        old_value = copy(self.value)
+        self.value = self.regvalue()
+        return self.value != old_value
 
-    @property
-    def value(self):
+    def regvalue(self):
         try:
             U32 = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg, slave=self.arm.modbus_address)
             raw_value = U32[0] | (U32[1] << 16)
-            return raw_value if self.tolerance_mode == "Integer 18bit" else float(raw_value)*self.calibration[self.mode]
+            ret = raw_value if self.tolerance_mode == "Integer 18bit" else float(raw_value)*self.calibration[self.mode]
+            return round(ret, 3)
         except Exception as E:
             logger.exception(str(E))
             return 0
@@ -1615,7 +1566,6 @@ class AnalogInput18():
             return "Current"
         else:
             return "Voltage"
-
 
     async def set(self, mode=None, range=None, alias=None):
         if alias is not None:
