@@ -6,6 +6,8 @@ import tornado
 
 from .devices import *
 
+SCHEMA_VALIDATE = False
+
 
 class EvokWebHandlerBase(tornado.web.RequestHandler):
     def initialize(self):
@@ -28,14 +30,16 @@ class EvokWebHandlerBase(tornado.web.RequestHandler):
             result = {prop: getattr(device, prop)}
         else:
             result = device.full()
-        return result
+        self.write(json.dumps(result))
+        self.finish()
 
     async def post(self, dev, circuit, prop):
         try:
             device = Devices.by_name(dev, circuit)
             schema, example = schemas[dev]
             kw = self._get_kw()
-            jsonschema.validate(instance=kw, schema=schema)
+            if SCHEMA_VALIDATE:
+                jsonschema.validate(instance=kw, schema=schema)
             result = await device.set(**kw)
             self.write(json.dumps({'success': True, 'result': result}))
         except Exception as E:

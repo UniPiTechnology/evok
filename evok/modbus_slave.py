@@ -2,7 +2,7 @@
   Code specific to Neuron devices
 ------------------------------------------
 """
-
+import logging
 import math
 import datetime
 from math import sqrt
@@ -26,37 +26,59 @@ import time
 import subprocess
 
 
+def raise_if_null(val, register):
+    if val is not None: return val
+    raise ENoCacheRegister(f"No cached value of register {register}")
+
+
 class ModbusCacheMap(object):
     last_comm_time = 0
+
     def __init__(self, modbus_reg_map, modbus_slave):
         self.modbus_reg_map = modbus_reg_map
         self.modbus_slave: ModbusSlave = modbus_slave
         self.sem = Semaphore(1)
-        self.registered = {}
-        self.registered_input = {}
         self.frequency = {}
         for m_reg_group in modbus_reg_map:
-            self.frequency[m_reg_group['start_reg']] = 10000001    # frequency less than 1/10 million are not read on start
-            for index in range(m_reg_group['count']):
-                if 'type' in m_reg_group and m_reg_group['type'] == 'input':
-                    self.registered_input[(m_reg_group['start_reg'] + index)] = None
-                else:
-                    self.registered[(m_reg_group['start_reg'] + index)] = None
+            self.frequency[m_reg_group['start_reg']] = 10000001  # frequency less than 1/10 million are not read on start
+            m_reg_group['values'] = [None for i in range(m_reg_group['count'])]
+
+    def __get_reg_group(self, index: int, is_input: bool):
+        group = None
+        for m_reg_group in self.modbus_reg_map:
+            group_is_input = m_reg_group.get('type', None) == 'input'
+            if group_is_input is is_input and \
+                    ((m_reg_group['start_reg']) <= index < (m_reg_group['count'] + m_reg_group['start_reg'])):
+                group = m_reg_group['values']
+                index -= m_reg_group['start_reg']
+                # print(f"index: '{index}' cont: '{count}'\tfind in: '{m_reg_group}'")
+                break
+        if group is None:
+            raise ValueError(f"Unknown register {index}!")
+        return group, index
 
     def get_register(self, count, index, slave=0, is_input=False):
-
-        def raiseifNull(val, register):
-            if val!=None: return val
-            raise ENoCacheRegister(f"No cached value of register {register}")
-
         try:
-            if is_input:
-                _slice = (raiseifNull(self.registered_input[index+i], index+1) for i in range(count))
-            else:
-                _slice = (raiseifNull(self.registered[index+i], index+1) for i in range(count))
-            return list(_slice)
+            group, index = self.__get_reg_group(index=index, is_input=is_input)
+            ret = (raise_if_null(group[index + i], index + 1) for i in range(count))
+            return list(ret)
         except KeyError as E:
             raise Exception('Unknown register %d' % E.args[0])
+
+    async def get_register_async(self, count, index, slave=0, is_input=False):
+        group, group_index = self.__get_reg_group(index=index, is_input=is_input)
+        # ^^ raise exception if index not in cache map!
+
+        # read values from modbus
+        if is_input:
+            val = await self.modbus_slave.client.read_input_registers(index, count, slave=slave)
+        else:
+            val = await self.modbus_slave.client.read_holding_registers(index, count, slave=slave)
+
+        # update cache map
+        for i in range(len(val.registers)):
+            group[group_index + i] = val.registers[i]
+        return val.registers
 
     async def do_scan(self, slave=0, initial=False):
         if initial:
@@ -64,26 +86,31 @@ class ModbusCacheMap(object):
         changeset = []
         for m_reg_group in self.modbus_reg_map:
             if (self.frequency[m_reg_group['start_reg']] >= m_reg_group['frequency']) or (self.frequency[m_reg_group['start_reg']] == 0):    # only read once for every [frequency] cycles
-                val = None
+                vals = None
                 try:
+                    # read values from modbus
                     if 'type' in m_reg_group and m_reg_group['type'] == 'input':
-                        val = await self.modbus_slave.client.read_input_registers(m_reg_group['start_reg'], m_reg_group['count'], slave=slave)
-                        cache = self.registered_input
+                        vals = await self.modbus_slave.client.read_input_registers(m_reg_group['start_reg'], m_reg_group['count'], slave=slave)
                     else:
-                        val = await self.modbus_slave.client.read_holding_registers(m_reg_group['start_reg'], m_reg_group['count'], slave=slave)
-                        cache = self.registered
-                    if not isinstance(val, ExceptionResponse) and not isinstance(val, ModbusIOException) and not isinstance(val, ExceptionResponse) and val is not None:
+                        vals = await self.modbus_slave.client.read_holding_registers(m_reg_group['start_reg'], m_reg_group['count'], slave=slave)
+
+                    # check modbus response
+                    if not isinstance(vals, ExceptionResponse) and not isinstance(vals, ModbusIOException) and\
+                       vals is not None:
+                        # reset communication flags
                         self.last_comm_time = time.time()
                         for index in range(m_reg_group['count']):
-                            if (m_reg_group['start_reg'] + index) in self.modbus_slave.datadeps and cache[(m_reg_group['start_reg'] + index)] != val.registers[index]:
-                                for ddep in self.modbus_slave.datadeps[m_reg_group['start_reg'] + index]:
-                                    if not hasattr(ddep, 'value_delta') or ddep.value_delta(val.registers[index]):
-                                        changeset += [ddep]
-                            cache[(m_reg_group['start_reg'] + index)] = val.registers[index]
                             self.frequency[m_reg_group['start_reg']] = 1
+
+                        # update modbus cache
+                        m_reg_group['values'] = vals.registers
+
+                        # call force update callbacks in registered devices and check differences
+                        # TODO
+
                 except Exception as E:
                     logger.warning(E)
-                    print(f"val: {val} \t {val.registers if hasattr(val, 'registers') else None}", flush=True)
+                    print(f"vals: {vals} \t {vals.registers if hasattr(vals, 'registers') else None}", flush=True)
             else:
                 self.frequency[m_reg_group['start_reg']] += 1
         if len(changeset) > 0:
@@ -91,61 +118,6 @@ class ModbusCacheMap(object):
             devents.status(proxy)
         if initial:
             self.sem.release()
-
-    async def set_register(self, count, index, inp, slave=0, is_input=False):
-        if len(inp) < count:
-            raise Exception('Insufficient data to write into registers')
-        for counter in range(count):
-            if is_input:
-                if index + counter not in self.registered_input:
-                    raise Exception('Unknown register %d' % index + counter)
-                await self.modbus_slave.client.write_register(index + counter, 1, inp[counter], slave=slave)
-                self.registered_input[index + counter] = inp[counter]
-            else:
-                if index + counter not in self.registered:
-                    raise Exception('Unknown register %d' % index + counter)
-                await self.modbus_slave.client.write_register(index + counter, 1, inp[counter], slave=slave)
-                self.registered[index + counter] = inp[counter]
-
-    def has_register(self, index, is_input=False):
-        if is_input:
-            return index not in self.registered_input
-        else:
-            return index not in self.registered
-
-    async def get_register_async(self, count, index, slave=0, is_input=False):
-        if is_input:
-            for counter in range(index,count+index):
-                if counter not in self.registered_input:
-                    raise Exception('Unknown register')
-            val = await self.modbus_slave.client.read_input_registers(index, count, slave=slave)
-        else:
-            for counter in range(index,count+index):
-                if counter not in self.registered:
-                    raise Exception('Unknown register')
-            val = await self.modbus_slave.client.read_holding_registers(index, count, slave=slave)
-        for counter in range(len(val.registers)):
-            self.registered[index+counter] = val.registers[counter]
-        return val.registers
-
-
-    async def set_register_async(self, count, index, inp, slave=0, is_input=False):
-        if is_input:
-            if len(inp) < count:
-                raise Exception('Insufficient data to write into registers')
-            for counter in range(count):
-                if index + counter not in self.registered_input:
-                    raise Exception('Unknown register')
-                await self.modbus_slave.client.write_register(index + counter, 1, inp[counter], slave=slave)
-                self.registered_input[index + counter] = inp[counter]
-        else:
-            if len(inp) < count:
-                raise Exception('Insufficient data to write into registers')
-            for counter in range(count):
-                if index + counter not in self.registered:
-                    raise Exception('Unknown register')
-                await self.modbus_slave.client.write_register(index + counter, 1, inp[counter], slave=slave)
-                self.registered[index + counter] = inp[counter]
 
 
 class ModbusSlave(object):
@@ -468,17 +440,6 @@ class Board(object):
             Devices.register_device(REGISTER, _reg)
             counter+=1
 
-    def parse_feature_uart(self, max_count: int, m_feature: dict, board_id):
-        counter = 0
-        while counter < max_count:
-            board_val_reg = m_feature['conf_reg']
-            address_reg = int(m_feature.get('address_reg', -1))
-            _uart = Uart("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, dev_id=self.dev_id,
-                         major_group=0, parity_modes=m_feature['parity_modes'], speed_modes=m_feature['speed_modes'],
-                         stopb_modes=m_feature['stopb_modes'], address_reg=address_reg, legacy_mode=self.legacy_mode)
-            Devices.register_device(UART, _uart)
-            counter+=1
-
     def parse_feature_unit_register(self, max_count, m_feature, board_id):
         counter = 0
         board_val_reg = m_feature['value_reg']
@@ -501,28 +462,6 @@ class Board(object):
             Devices.register_device(UNIT_REGISTER, _xgt)
             counter+=1
 
-    def parse_feature_ext_config(self, m_feature, board_id):
-
-
-        #_xext_conf = ExtConfig("{}_CONFIG".format(self.circuit), self, reg_groups=m_feature, dev_id=self.dev_id)
-        _xext_conf = ExtConfig("{}".format(self.circuit), self, reg_groups=m_feature, dev_id=self.dev_id)
-        Devices.register_device(EXT_CONFIG, _xext_conf)
-
-        # --------------------------------------------------------------
-        """
-        board_val_reg = m_feature['value_reg']
-        while counter < max_count:
-
-            _valid_mask = m_feature.get('valid_mask_reg')
-            _post_write_action = m_feature.get('post_write')
-
-            _xgt = UnitRegister("{}_{}".format(self.circuit, board_val_reg + counter), self, board_val_reg + counter, reg_type="input",
-                                dev_id=self.dev_id, major_group=0, offset=_offset, factor=_factor, unit=_unit,
-                                valid_mask=_valid_mask, name=_name, post_write=_post_write_action)
-            counter+=1
-        """
-
-
     def parse_feature(self, m_feature):
         board_id = 1 # UART Extension has always only one group
         max_count = m_feature.get('count')
@@ -542,14 +481,10 @@ class Board(object):
             self.parse_feature_ai(max_count, m_feature, board_id)
         elif m_feature['type'] == 'REGISTER':
             self.parse_feature_register(max_count, m_feature, board_id)
-        elif m_feature['type'] == 'UART':
-            self.parse_feature_uart(max_count, m_feature, board_id)
         elif m_feature['type'] == 'UNIT_REGISTER':
             self.parse_feature_unit_register(max_count, m_feature, board_id)
-        elif m_feature['type'] == 'EXT_CONFIG':
-            self.parse_feature_ext_config(m_feature, board_id)
         else:
-            logging.error("Unknown feature: " + str(m_feature) + " at board id: " + str(board_id))
+            logging.warning("Unknown feature: " + str(m_feature['type']) + " at board id: " + str(board_id))
 
     async def parse_definition(self, hw_dict):
         try:
