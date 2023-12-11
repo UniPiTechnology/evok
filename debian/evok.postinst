@@ -15,35 +15,6 @@
 . /usr/share/debconf/confmodule
 
 # ----------------------------------------------------------------------------------------
-# Issue 0 - Resolve platform-specific config file - if not env variable exists, an auto-detection process
-# based on cpu type is used instead.
-# ----------------------------------------------------------------------------------------
-
-if [ -z "${UNIPI_INSTALL_FOR}" ]; then
-    HWPROC=$(cat /proc/cpuinfo | grep '^Hardware' | sed 's/^.*: //')
-    [ -z "${HWPROC}" ] && HWPROC=$(cat /sys/devices/soc0/soc_id)
-
-    [ "${HWPROC}" = "Allwinnersun50iw2Family" ] && UNIPI_INSTALL_FOR="axon"
-    [ "${HWPROC}" = "i.MX8MM" ] && UNIPI_INSTALL_FOR="patron"
-    [ -z "${UNIPI_INSTALL_FOR}" ] && UNIPI_INSTALL_FOR="neuron"
-fi
-
-if [ "${UNIPI_INSTALL_FOR}" = "axon" ]; then  #Axon
-    ucf --debconf-ok --verbose /tmp/evok.conf.axon /etc/evok.conf || true
-    rm -f /tmp/evok.conf.axon  || true
-    rm -f /tmp/evok.conf.patron  || true
-elif [ "${UNIPI_INSTALL_FOR}" = "patron" ]; then
-    ucf --debconf-ok --verbose /tmp/evok.conf.patron /etc/evok.conf || true
-    rm -f /tmp/evok.conf.patron  || true
-    rm -f /tmp/evok.conf.axon || true
-elif [ "${UNIPI_INSTALL_FOR}" = "neuron" ]; then
-    ucf --debconf-ok --verbose /tmp/evok.conf.neuron /etc/evok.conf || true
-else
-    echo "!!! Unsupported platform, default evok.conf file not installed !!!" >&2
-fi
-    echo "Using configuration file for unipi ${UNIPI_INSTALL_FOR}" >&2
-
-# ----------------------------------------------------------------------------------------
 # Issue 1 - Resolve nginx config files conflict - no more sites can share the same port 80
 # ----------------------------------------------------------------------------------------
 
@@ -120,7 +91,7 @@ fi
 # ----------------------------------------------------------------------------------------
 # FINALLY - Start the service
 # ----------------------------------------------------------------------------------------
-if -f /opt/unipi/tools/os-configurator; then
+if [ -f /opt/unipi/tools/os-configurator ]; then
   echo "Calling os-configurator update..." >&2
   /opt/unipi/tools/os-configurator -u
 fi
