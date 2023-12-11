@@ -120,6 +120,11 @@ fi
 # ----------------------------------------------------------------------------------------
 # FINALLY - Start the service
 # ----------------------------------------------------------------------------------------
+if -f /opt/unipi/tools/os-configurator; then
+  echo "Calling os-configurator update..." >&2
+  /opt/unipi/tools/os-configurator -u
+fi
+systemctl start evok  || true
 echo "Starting Evok..." >&2
 systemctl start evok  || true
 echo "Restarting nginx..." >&2
