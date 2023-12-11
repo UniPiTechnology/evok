@@ -2,8 +2,6 @@
 import sys
 from typing import List, Union
 
-import yaml
-
 sys.path.append("/opt/unipi/os-configurator")
 os_configurator = __import__("os-configurator")
 
@@ -87,6 +85,16 @@ def generate_config(boards: List[str], defaults: Union[None, dict] = None):
     return ret
 
 
+def yaml_dump(data: dict, stream, depth: int):
+    pre = ''.join(['  ' for i in range(depth)])
+    for key, value in data.items():
+        if type(value) is dict:
+            stream.write(f"{pre}{key}:\n")
+            yaml_dump(value, stream, depth+1)
+        else:
+            stream.write(f"{pre}{key}: {value}\n")
+
+
 def run():
     product_data = os_configurator.get_product_info()
     platform_id = int(os_configurator.get_product_info().id)
@@ -105,7 +113,7 @@ def run():
     autogen_conf = generate_config(boards, defaults=defaults)
 
     with open('/etc/evok/autogen.yaml', 'w') as f:
-        yaml.dump(data=autogen_conf, stream=f)
+        yaml_dump(data=autogen_conf, stream=f, depth=0)
 
 
 if __name__ == '__main__':
