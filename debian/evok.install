@@ -6,6 +6,5 @@ etc/config.yaml etc/evok/
 opt/os-configurator/run.d/* /opt/unipi/os-configurator/run.d
 debian/etc/nginx/sites-enabled/evok etc/nginx/sites-available
 var/evok-alias.yaml var/evok
-version.txt opt/evok
 www/evok/* var/www/evok
 

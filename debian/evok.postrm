@@ -23,9 +23,8 @@ echo "Postrm script invoked..." >&2
 case "$1" in
     purge)
         echo "Removing configuration file..." >&2
-        rm -f /etc/evok.conf
-        rm -f /etc/evok.conf.ucf-dist
-        ucf --verbose --purge "/etc/evok.conf" || true
+        rm -rf /etc/evok
+        ucf --verbose --purge "/etc/evok" || true
     ;;
     remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
     ;;
