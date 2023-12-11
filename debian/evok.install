@@ -1,7 +1,6 @@
 #! /usr/bin/dh-exec
 
 debian/systemd/evok.service lib/systemd/system
-debian/config_files/${DEB_HOST_ARCH}/evok.conf.* tmp
 etc/hw_definitions/* etc/evok/hw_definitions
 etc/config.yaml etc/evok/
 debian/etc/nginx/sites-enabled/evok etc/nginx/sites-available
