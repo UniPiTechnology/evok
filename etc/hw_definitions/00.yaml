@@ -1,5 +1,5 @@
 ---
-type: B1000
+type: 00
 modbus_register_blocks:
   - start_reg   : 0
     count       : 2

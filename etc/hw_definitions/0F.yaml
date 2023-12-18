@@ -1,5 +1,5 @@
 ---
-type: E4AI4AO
+type: 0F
 modbus_register_blocks:
   - start_reg   : 0
     count       : 2
@@ -15,7 +15,7 @@ modbus_register_blocks:
     frequency   : 5
 modbus_features:
   - type        : DI
-    count       : 4
+    count       : 6
     modes       :
       - Simple
       - DirectSwitch
@@ -33,10 +33,10 @@ modbus_features:
     toggle_reg  : 1018
   - type        : RO
     count       : 5
-    val_reg     : 1
-    val_coil    : 0
     modes       :
       - Simple
+    val_reg     : 1
+    val_coil    : 0
   - type        : AO
     count       : 4
     modes       :
@@ -64,24 +64,6 @@ modbus_features:
     timeout_reg : 1008
     nv_sav_coil : 1003
     reset_coil  : 1002
-  - type        : UART
-    parity_modes :
-      - None
-      - Odd
-      - Even
-    speed_modes :
-      - 2400bps
-      - 4800bps
-      - 9600bps
-      - 19200bps
-      - 38400bps
-      - 57600bps
-      - 115200bps
-    stopb_modes :
-      - One
-      - Two
-    conf_reg    : 1023
-    count       : 1
   - type        : REGISTER
     count       : 28
     start_reg   : 0

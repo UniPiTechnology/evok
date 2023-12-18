@@ -9,20 +9,18 @@ os_configurator = __import__("os-configurator")
 OWFS_CONFIG_PATH = "/etc/owfs.conf"
 OWFS_CONFIG_LINES = ["server: i2c=/dev/i2c-1", "server: w1"]
 
-BRAIN = "B1000"
-E14DI14RO = "E14DI14RO"
-E30DI = "E30DI"
-E4AI4AO = "E4AI4AO"
-E6DI8RO = "E6DI8RO"
-E16DI14RO = "E16DI14RO"
-E30RO = "E30RO"
-E4AI4AO6DI = "E4AI4AO6DI"
-E8DI8DO = ""
+BRAIN = "00"
+E14DI14RO = "09"
+E16DI14DI = "0A"
+E16DI14RO = "08"
+E14RO14RO = "07"
+E8DI8DO = "01"
+E4AI4AO4DI5RO = "13"
+E4AI4AO6DI5RO = "0F"
+
 UNIPI11 = "UNIPI11"
 UNIPI11LITE = "UNIPI11LITE"
 
-E4AI4AO4DI5RO = E4AI4AO
-E4AI4AO6DI5RO = E4AI4AO6DI
 
 hw_data = {
     0x0103: [BRAIN],  # S103
@@ -30,17 +28,17 @@ hw_data = {
     0x1203: [BRAIN],  # S103_I
     0x0203: [BRAIN, E8DI8DO],  # M103
     0x0303: [BRAIN, E16DI14RO],  # M203
-    0x0403: [BRAIN, E30DI],  # M303
+    0x0403: [BRAIN, E16DI14DI],  # M303
     0x0503: [BRAIN, E4AI4AO4DI5RO],  # M523
     0x0603: [BRAIN, E16DI14RO, E16DI14RO],  # L203
-    0x0703: [BRAIN, E30RO, E30RO],  # L403
+    0x0703: [BRAIN, E14RO14RO, E14RO14RO],  # L403
     0x0803: [BRAIN, E4AI4AO4DI5RO, E16DI14RO],  # L523
     0x0903: [BRAIN, E4AI4AO4DI5RO, E4AI4AO4DI5RO],  # L533
     0x0a03: [BRAIN],  # S103_G
-    0x0b03: [BRAIN, E30RO],  # M403
+    0x0b03: [BRAIN, E14RO14RO],  # M403
     0x0c03: [BRAIN, E4AI4AO6DI5RO],  # M503
     # 0x0d03: [BRAIN],  # M603
-    0x0e03: [BRAIN, E30DI, E30DI],  # L303
+    0x0e03: [BRAIN, E16DI14DI, E16DI14DI],  # L303
     0x0F03: [BRAIN, E4AI4AO6DI5RO, E14DI14RO],  # L503
     0x1003: [BRAIN, E4AI4AO6DI5RO, E4AI4AO6DI5RO],  # L513
 
@@ -128,7 +126,6 @@ def run():
 
     if platform_id in [0x0001, 0x0101, 0x1101]:
         defaults['port'] = 503
-        defaults['names'] = ['UNIPI1']
         defaults['slave-ids'] = [0]
 
     autogen_conf = generate_config(boards, defaults=defaults)
