@@ -1,9 +1,13 @@
 #!/usr/bin/python3
+import os
 import sys
 from typing import List, Union
 
 sys.path.append("/opt/unipi/os-configurator")
 os_configurator = __import__("os-configurator")
+
+OWFS_CONFIG_PATH = "/etc/owfs.conf"
+OWFS_CONFIG_LINES = ["server: i2c=/dev/i2c-1", "server: w1"]
 
 BRAIN = "B1000"
 E14DI14RO = "E14DI14RO"
@@ -19,7 +23,6 @@ UNIPI11LITE = "UNIPI11LITE"
 
 E4AI4AO4DI5RO = E4AI4AO
 E4AI4AO6DI5RO = E4AI4AO6DI
-
 
 hw_data = {
     0x0103: [BRAIN],  # S103
@@ -59,12 +62,27 @@ hw_data = {
 }
 
 
+def configure_owfs():
+    to_write = list(OWFS_CONFIG_LINES)
+    with open(OWFS_CONFIG_PATH, 'r') as f:
+        line = f.readline().replace('\n', '')
+        if line in to_write:
+            to_write.remove(line)
+
+    if len(to_write) > 0:
+        with open(OWFS_CONFIG_PATH, 'a') as f:
+            f.write('\n')
+            for line in to_write:
+                f.write(f"{line}\n")
+        print("Configured OWFS")
+
+
 def generate_config(boards: List[str], defaults: Union[None, dict] = None):
     defaults = defaults if defaults is not None else dict()
     port = defaults.get('port', 502)
     hostname = defaults.get('hostname', '127.0.0.1')
-    names = defaults.get('names', [i for i in range(1, len(boards)+1)])
-    slave_ids = defaults.get('slave-ids', [i for i in range(1, len(boards)+1)])
+    names = defaults.get('names', [i for i in range(1, len(boards) + 1)])
+    slave_ids = defaults.get('slave-ids', [i for i in range(1, len(boards) + 1)])
 
     ret = {
         'hw_tree': {
@@ -90,7 +108,7 @@ def yaml_dump(data: dict, stream, depth: int):
     for key, value in data.items():
         if type(value) is dict:
             stream.write(f"{pre}{key}:\n")
-            yaml_dump(value, stream, depth+1)
+            yaml_dump(value, stream, depth + 1)
         else:
             stream.write(f"{pre}{key}: {value}\n")
 
@@ -102,6 +120,9 @@ def run():
     boards: List[str] = hw_data.get(platform_id, [])
 
     print(f"Detect device {model_name} ({hex(platform_id)}) with boards {boards}")
+
+    if BRAIN in boards and os.path.isfile(OWFS_CONFIG_PATH):
+        configure_owfs()
 
     defaults = dict()
 
