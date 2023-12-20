@@ -91,8 +91,9 @@ class EvokConfig:
 
     def __init__(self, conf_dir_path: str):
         data = self.__get_final_conf(scope=[conf_dir_path+'/config.yaml'])
-        self.main: dict = self.__get_main_conf(data)
         self.hw_tree: dict = self.__get_hw_tree(data)
+        self.apis: dict = self.__get_apis_conf(data)
+        self.logging: dict = self.__get_logging_conf(data)
 
     def __merge_data(self, source: dict, append: dict):
         for key in append:
@@ -121,14 +122,6 @@ class EvokConfig:
         return final_conf
 
     @staticmethod
-    def __get_main_conf(data: dict) -> dict:
-        ret = {}
-        for name, value in data.items():
-            if name not in ['hw_tree']:
-                ret[name] = value
-        return ret
-
-    @staticmethod
     def __get_hw_tree(data: dict) -> dict:
         ret = {}
         if 'hw_tree' not in data:
@@ -138,35 +131,36 @@ class EvokConfig:
             ret[name] = value
         return ret
 
+    @staticmethod
+    def __get_apis_conf(data: dict) -> dict:
+        ret = {}
+        if 'apis' not in data:
+            logger.warning("Section 'apis' not in configuration!")
+            return ret
+        for name, value in data['apis'].items():
+            ret[name] = value
+        return ret
+
+    @staticmethod
+    def __get_logging_conf(data: dict) -> dict:
+        ret = {}
+        if 'logging' not in data:
+            logger.warning("Section 'logging' not in configuration!")
+            return ret
+        for name, value in data['logging'].items():
+            ret[name] = value
+        return ret
+
     def configtojson(self):
         return self.main  # TODO: zkontrolovat!!
 
-    def getintdef(self, key, default):
-        try:
-            return int(self.main[key])
-        except:
-            return default
-
-    def getfloatdef(self, key, default):
-        try:
-            return float(self.main[key])
-        except:
-            return default
-
-    def getbooldef(self, key, default):
-        try:
-            return bool(self.main[key])
-        except:
-            return default
-
-    def getstringdef(self, key, default):
-        try:
-            return str(self.main[key])
-        except:
-            return default
-
     def get_hw_tree(self) -> dict:
         return self.hw_tree
+
+    def get_api(self, name: str) -> dict:
+        if name not in self.apis:
+            raise ValueError(f"Api '{name}' not found")
+        return self.apis[name]
 
 
 def hexint(value):

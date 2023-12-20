@@ -11,34 +11,32 @@ autogen: true
 #   +------------------+
 #   | Logging settings |
 #   +------------------+
-log_level: ERROR
-# ^ Minimum severity of messages to be logged, where minimum is CRITICAL.
-# ^ Options: [CRITICAL, ERROR, WARNING, INFO, DEBUG]
-log_file: /var/log/evok.log
+logging:
+  level: ERROR
+  # ^ Minimum severity of messages to be logged, where minimum is CRITICAL.
+  # ^ Options: [CRITICAL, ERROR, WARNING, INFO, DEBUG]
+  file: /var/log/evok.log
 
 #   +--------------+
 #   | API settings |
 #   +--------------+
-port: 8080
-# ^ API listen port
-# ^ only change if you are certain you know what you are doing
-# ^ FOR OUR WEB INTERFACE THE PORT SHOULD BE CHANGED IN "/etc/evok-nginx.conf" TOO !!!
+apis:
+  port: 8080
+  # ^ API listen port
+  # ^ only change if you are certain you know what you are doing
+  # ^ FOR OUR WEB INTERFACE THE PORT SHOULD BE CHANGED IN "/etc/evok-nginx.conf" TOO !!!
 
-#   +-----------------------+
-#   | Websocket configuration |
-#   +-----------------------+
-websocket_all_filtered: False
-# ^ 'All' WebSocket requests will be subject to the filtering set by 'filter'
+  websocket:
+    all_filtered: False
+    # ^ 'All' WebSocket requests will be subject to the filtering set by 'filter'
 
-#   +-----------------------+
-#   | Webhook configuration |
-#   +-----------------------+
-webhook_enabled: False
-webhook_address: http://127.0.0.1:80
-webhook_device_mask: ["input","wd"]
-# ^ List of device types to notify on (written as a JSON list) - adding AI will generate a large amount of messages!
-webhook_complex_events: False
-# ^ EVOK will send POST requests with the same data as WebSocket, rather than an empty GET request
+  webhook:
+    enabled: False
+    address: http://127.0.0.1:80
+    device_mask: ["input","wd"]
+    # ^ List of device types to notify on (written as a JSON list) - adding AI will generate a large amount of messages!
+    complex_events: False
+    # ^ EVOK will send POST requests with the same data as WebSocket, rather than an empty GET request
 
 #   +------------------------+
 #   | Hardware Configuration |
