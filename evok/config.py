@@ -159,7 +159,8 @@ class EvokConfig:
 
     def get_api(self, name: str) -> dict:
         if name not in self.apis:
-            raise ValueError(f"Api '{name}' not found")
+            logging.warning(f"Api '{name}' not found")
+            return {}
         return self.apis[name]
 
 

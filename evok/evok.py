@@ -38,7 +38,6 @@ if not os.path.isdir(config_path):
 evok_config = config.EvokConfig(config_path)
 
 wh = None
-allow_unsafe_configuration_handlers = evok_config.getbooldef('allow_unsafe_configuration_handlers', False)
 
 from . import rpc_handler
 
@@ -130,9 +129,8 @@ class WsHandler(websocket.WebSocketHandler):
             # get FULL state of each IO
             if cmd == "all":
                 result = []
-                # devices = [INPUT, RELAY, AI, AO, SENSOR, UNIT_REGISTER]
                 devices = [INPUT, RELAY, AI, AO, SENSOR]
-                if evok_config.getbooldef("websocket_all_filtered", False):
+                if evok_config.get_api('websocket').get("all_filtered", False):
                     if (len(self.filter) == 1 and self.filter[0] == "default"):
                         for dev in devices:
                             result += map(lambda dev: dev.full(), Devices.by_int(dev))
@@ -391,8 +389,8 @@ def main():
     tornado.options.parse_command_line()
 
     # tornado.httpclient.AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
-    log_file = evok_config.getstringdef("log_file", "./evok.log")
-    log_level = evok_config.getstringdef("log_level", "INFO").upper()
+    log_file = evok_config.logging.get("log_file", "./evok.log")
+    log_level = evok_config.logging.get("log_level", "INFO").upper()
 
     # rotating file handler
     filelog_handler = logging.handlers.TimedRotatingFileHandler(filename=log_file, when='D', backupCount=7)
@@ -408,15 +406,9 @@ def main():
     alias_dict = (config.HWDict(dir_paths=['/var/evok/'])).definitions
 
     define("cors", default=True, help="enable CORS support", type=bool)
-    port = evok_config.getintdef("port", 8080)
+    port = evok_config.apis.get("port", 8080)
     if options.as_dict()['port'] != -1:
         port = options.as_dict()['port']  # use command-line option instead of config option
-
-    modbus_address = evok_config.getstringdef("modbus_address", '')
-    modbus_port = evok_config.getintdef("modbus_port", 0)
-
-    if options.as_dict()['modbus_port'] != -1:
-        modbus_port = options.as_dict()['modbus_port']  # use command-line option instead of config option
 
     app_routes = [
         (r"/rpc/?", rpc_handler.Handler),
@@ -449,22 +441,13 @@ def main():
     httpServer.listen(port)
     logger.info("HTTP server listening on port: %d", port)
 
-    if modbus_port > 0:  # used for UniPi 1.x
-        from modbus_tornado import ModbusServer, ModbusApplication
-        import modbus_unipi
-        # modbus_context = modbus_unipi.UnipiContext()  # full version
-        modbus_context = modbus_unipi.UnipiContextGpio()  # limited version
+    modbus_context = None
 
-        modbus_server = ModbusServer(ModbusApplication(store=modbus_context, identity=modbus_unipi.identity))
-        modbus_server.listen(modbus_port, address=modbus_address)
-        logger.info("Modbus/TCP server listening on port: %d", modbus_port)
-    else:
-        modbus_context = None
-
-    if evok_config.getbooldef("webhook_enabled", False):
-        wh_address = evok_config.getstringdef("webhook_address", "http://127.0.0.1:80/index.html")
-        wh_types = evok_config.getstringdef("webhook_device_mask", ["input", "sensor", "uart", "watchdog"])
-        wh_complex = evok_config.getbooldef("webhook_complex_events", False)
+    webhook_config = evok_config.get_api('webhook')
+    if webhook_config.get("enabled", False):
+        wh_address = webhook_config.get("address", "http://127.0.0.1:80/index.html")
+        wh_types = webhook_config.get("device_mask", ["input", "sensor", "uart", "watchdog"])
+        wh_complex = webhook_config.get("complex_events", False)
         wh = WhHandler(wh_address, wh_types, wh_complex)
         wh.open()
 
