@@ -95,6 +95,10 @@ if [ -f /opt/unipi/tools/os-configurator ]; then
   echo "Calling os-configurator update..." >&2
   /opt/unipi/tools/os-configurator -u
 fi
+if [ -f /lib/systemd/system/owfs.service ]; then
+  echo "Restarting OWFS..." >&2
+  systemctl restart owfs || true
+fi
 systemctl start evok  || true
 echo "Starting Evok..." >&2
 systemctl start evok  || true

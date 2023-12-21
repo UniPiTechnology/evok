@@ -74,6 +74,27 @@ def configure_owfs():
                 f.write(f"{line}\n")
         print("Configured OWFS")
 
+def configure_owfs():
+    to_write = list(OWFS_CONFIG_LINES)
+    with open(OWFS_CONFIG_PATH, 'r') as f:
+        line = ' '
+        while True:
+            line = f.readline()
+            if len(line) == 0:
+                break
+            line=line.replace('\n', '')
+            if line in to_write:
+                to_write.remove(line)
+
+    if len(to_write) > 0:
+        with open(OWFS_CONFIG_PATH, 'a') as f:
+            f.write('\n')
+            for line in to_write:
+                f.write(f"{line}\n")
+        print("Configured OWFS")
+
+
+
 
 def generate_config(boards: List[str], defaults: Union[None, dict] = None):
     defaults = defaults if defaults is not None else dict()

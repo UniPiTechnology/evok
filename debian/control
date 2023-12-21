@@ -12,6 +12,6 @@ Package: evok
 Architecture: any
 Pre-Depends: dpkg (>= 1.21.1), python3, ucf, ${misc:Pre-Depends}, ${shlibs:Depends}
 Depends: nginx, ${misc:Depends}, unipi-os-configurator
-Recommends: unipi-modbus-tools
+Recommends: unipi-modbus-tools, owfs
 Description: UniPi API based on the Tornado webserver
 
