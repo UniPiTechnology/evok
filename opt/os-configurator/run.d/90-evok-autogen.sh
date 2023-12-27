@@ -7,7 +7,9 @@ sys.path.append("/opt/unipi/os-configurator")
 os_configurator = __import__("os-configurator")
 
 OWFS_CONFIG_PATH = "/etc/owfs.conf"
-OWFS_CONFIG_LINES = ["server: i2c=/dev/i2c-1", "server: w1"]
+OWFS_CONFIG_LINES = ["### CONFIGURED BY EVOK ###",
+                     "server: i2c=/dev/i2c-1", "server: w1",
+                     "##########################"]
 
 BRAIN = "00"
 E14DI14RO = "09"
@@ -79,9 +81,8 @@ def configure_owfs():
 
     if len(required_lines) > 0 or change:
         if len(required_lines) > 0:
-            lines.append('\n### CONFIGURED BY EVOK ###')
+            lines.append('\n')
             lines.extend(required_lines)
-            lines.append('##########################')
         with open(OWFS_CONFIG_PATH, 'w') as f:
             for line in lines:
                 f.write(f"{line}\n")

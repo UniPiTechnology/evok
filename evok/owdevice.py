@@ -310,8 +310,8 @@ class OwBusDriver:
             async with self.bus_lock:
                 try:
                     await server.scan_now(polling=False)
-                except Exception:
-                    logger.error(str(E))
+                except Exception as E:
+                    logger.error(f"{type(E)}: {str(E)}")
             with anyio.CancelScope() as scope:
                 self.scanning_scope = scope
                 await anyio.sleep(self.scan_interval if self.scan_interval>0 else 3600)
