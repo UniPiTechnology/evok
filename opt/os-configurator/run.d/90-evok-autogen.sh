@@ -61,39 +61,31 @@ hw_data = {
 
 
 def configure_owfs():
-    to_write = list(OWFS_CONFIG_LINES)
+    change = False
+    required_lines = list(OWFS_CONFIG_LINES)
+    lines = list()
     with open(OWFS_CONFIG_PATH, 'r') as f:
-        line = f.readline().replace('\n', '')
-        if line in to_write:
-            to_write.remove(line)
-
-    if len(to_write) > 0:
-        with open(OWFS_CONFIG_PATH, 'a') as f:
-            f.write('\n')
-            for line in to_write:
-                f.write(f"{line}\n")
-        print("Configured OWFS")
-
-def configure_owfs():
-    to_write = list(OWFS_CONFIG_LINES)
-    with open(OWFS_CONFIG_PATH, 'r') as f:
-        line = ' '
         while True:
             line = f.readline()
             if len(line) == 0:
                 break
-            line=line.replace('\n', '')
-            if line in to_write:
-                to_write.remove(line)
+            line = line.replace('\n', '')
+            if line in required_lines:
+                required_lines.remove(line)
+            if 'FAKE' in line and '#' != line.replace(' ', '')[0]:
+                line = '#' + line
+                change = True
+            lines.append(line)
 
-    if len(to_write) > 0:
-        with open(OWFS_CONFIG_PATH, 'a') as f:
-            f.write('\n')
-            for line in to_write:
+    if len(required_lines) > 0 or change:
+        if len(required_lines) > 0:
+            lines.append('\n### CONFIGURED BY EVOK ###\n')
+            lines.extend([f"{ln}\n" for ln in required_lines])
+            lines.append('##########################\n')
+        with open(OWFS_CONFIG_PATH, 'w') as f:
+            for line in lines:
                 f.write(f"{line}\n")
         print("Configured OWFS")
-
-
 
 
 def generate_config(boards: List[str], defaults: Union[None, dict] = None):
