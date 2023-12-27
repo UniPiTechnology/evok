@@ -150,7 +150,7 @@ class ModbusSlave(object):
             self.scan_interval = 1.0 / scan_freq
         self.scan_enabled = scan_enabled
         self.versions = []
-        self.logfile = evok_config.getstringdef( "log_file", "/var/log/evok.log")
+        self.logfile = evok_config.logging.get("file", "./evok.log")
         self.client: Union[AsyncModbusTcpClient, EvokModbusSerialClient] = client
         self.loop: Union[None, IOLoop] = None
         self.circuit: Union[None, str] = circuit
@@ -259,7 +259,7 @@ class Board(object):
         self.dev_id = dev_id
         self.evok_config = evok_config
         self.circuit = circuit
-        self.legacy_mode = not (evok_config.getbooldef('use_experimental_api', False))
+        self.legacy_mode = True
         self.modbus_slave: ModbusSlave = modbus_slave
         self.major_group = major_group
         self.modbus_address = modbus_address
@@ -526,7 +526,7 @@ class Relay(object):
         else: # This RELAY instance does not support PWM mode (no pwmdutyreg given)
             self.mode = 'Simple'
 
-        self.forced_changes = arm.modbus_slave.evok_config.getbooldef("force_immediate_state_changes", False)
+        self.forced_changes = False  # force_immediate_state_changes
 
     def full(self, forced_value=None):
         ret =  {'dev': 'relay',

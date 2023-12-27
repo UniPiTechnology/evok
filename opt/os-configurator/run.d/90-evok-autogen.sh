@@ -79,16 +79,16 @@ def configure_owfs():
 
     if len(required_lines) > 0 or change:
         if len(required_lines) > 0:
-            lines.append('\n### CONFIGURED BY EVOK ###\n')
-            lines.extend([f"{ln}\n" for ln in required_lines])
-            lines.append('##########################\n')
+            lines.append('\n### CONFIGURED BY EVOK ###')
+            lines.extend(required_lines)
+            lines.append('##########################')
         with open(OWFS_CONFIG_PATH, 'w') as f:
             for line in lines:
                 f.write(f"{line}\n")
         print("Configured OWFS")
 
 
-def generate_config(boards: List[str], defaults: Union[None, dict] = None):
+def generate_config(boards: List[str], defaults: Union[None, dict] = None, has_ow: bool = False):
     defaults = defaults if defaults is not None else dict()
     port = defaults.get('port', 502)
     hostname = defaults.get('hostname', '127.0.0.1')
@@ -111,6 +111,14 @@ def generate_config(boards: List[str], defaults: Union[None, dict] = None):
             'slave-id': slave_ids[i],
             'model': boards[i]
         }
+
+    if has_ow:
+        ret['hw_tree']['OWFS'] = {
+            'type': 'OWBUS',
+            'interval': 10,
+            'scan_interval': 60
+        }
+
     return ret
 
 
@@ -132,7 +140,9 @@ def run():
 
     print(f"Detect device {model_name} ({hex(platform_id)}) with boards {boards}")
 
+    has_ow = False
     if BRAIN in boards and os.path.isfile(OWFS_CONFIG_PATH):
+        has_ow = True
         configure_owfs()
 
     defaults = dict()
@@ -141,7 +151,7 @@ def run():
         defaults['port'] = 503
         defaults['slave-ids'] = [0]
 
-    autogen_conf = generate_config(boards, defaults=defaults)
+    autogen_conf = generate_config(boards, defaults=defaults, has_ow=has_ow)
 
     with open('/etc/evok/autogen.yaml', 'w') as f:
         yaml_dump(data=autogen_conf, stream=f, depth=0)

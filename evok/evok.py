@@ -389,8 +389,8 @@ def main():
     tornado.options.parse_command_line()
 
     # tornado.httpclient.AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
-    log_file = evok_config.logging.get("log_file", "./evok.log")
-    log_level = evok_config.logging.get("log_level", "INFO").upper()
+    log_file = evok_config.logging.get("file", "./evok.log")
+    log_level = evok_config.logging.get("level", "INFO").upper()
 
     # rotating file handler
     filelog_handler = logging.handlers.TimedRotatingFileHandler(filename=log_file, when='D', backupCount=7)
