@@ -23,7 +23,7 @@ modbus_features:
     min_v       : 0
     max_v       : 10
     val_reg     : 3
-  - type        : DO
+  - type        : RO
     count       : 8
     modes       :
       - Simple

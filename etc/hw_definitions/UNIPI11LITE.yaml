@@ -8,7 +8,7 @@ modbus_register_blocks:
     count       : 6
     frequency   : 10
 modbus_features:
-  - type        : DO
+  - type        : RO
     count       : 6
     modes       :
       - Simple

@@ -141,14 +141,16 @@ def run():
 
     print(f"Detect device {model_name} ({hex(platform_id)}) with boards {boards}")
 
+    is_unipi_one = True if platform_id in [0x0001, 0x0101, 0x1101] else False
+
     has_ow = False
-    if BRAIN in boards and os.path.isfile(OWFS_CONFIG_PATH):
+    if (BRAIN in boards or is_unipi_one) and os.path.isfile(OWFS_CONFIG_PATH):
         has_ow = True
         configure_owfs()
 
     defaults = dict()
 
-    if platform_id in [0x0001, 0x0101, 0x1101]:
+    if is_unipi_one:
         defaults['port'] = 503
         defaults['slave-ids'] = [0]
 
