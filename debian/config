@@ -101,36 +101,4 @@ if detect_nginx_conflict; then
     esac
 fi
 
-# -------------------------------------------------------------------------------
-# ---- Issue No. 2 - DS2482 Kernel module is loaded -> owfs cannot works properly
-# -------------------------------------------------------------------------------
-
-OVERLAY_CONFIG_FILE="/boot/config.txt"
-AXON_BOOTCONFIG_FILE="/boot/boot.scr"
-KERNEL_MODULE_NAME="ds2482"
-
-# The module is disabled (unloaded) in postinst script
-
-detect_ow_kernelmodule() {
-    if [ -f "$OVERLAY_CONFIG_FILE" ]; then # Neuron PLC
-        if lsmod | grep -q "$KERNEL_MODULE_NAME"; then
-            return 0 # Positive reply -> conflict is present
-        fi
-
-    elif [ -f "$AXON_BOOTCONFIG_FILE" ]; then # Axon PLC
-        if lsmod | grep -q "$KERNEL_MODULE_NAME"; then
-            return 0 # Positive reply -> conflict is present
-        fi
-    fi
-
-    return 1
-}
-
-if detect_ow_kernelmodule; then
-    db_input high evok/kernel_ow_conflict_resolve || true
-    db_go || true
-else
-    db_set evok/kernel_ow_conflict_resolve false
-fi
-
 exit

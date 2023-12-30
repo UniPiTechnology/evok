@@ -67,28 +67,6 @@ if ! [ -z "$CONFLICT_CONFILE" ]; then # If a conflict has occurred
 fi
 
 # ----------------------------------------------------------------------------------------
-# Issue 2 - Resolve kernel module conflict with owfs used by Evok internally
-# ----------------------------------------------------------------------------------------
-
-# Need for conflict resolution is invoked during the configure phase
-db_get evok/kernel_ow_conflict_resolve || true
-
-OVERLAY_CONFIG_FILE="/boot/config.txt" # Overlay config file on  RPi (Neuron series)
-
-if "$RET"; then # OK
-
-    if [ -f "$OVERLAY_CONFIG_FILE" ]; then # The issue is Neuron-related only (?)
-        # echo "Disabling 1w master DS2482 on RPi platform..."
-        sed -i "s/^[[:blank:]]*dtoverlay=ds2482/#dtoverlay=ds2482/g" "$OVERLAY_CONFIG_FILE"
-
-    else # Disable 1w master on Axon series by proprietary bootcmd tool
-        # echo "Disabling 1w master DS2482 on NanoPi platform..." >&2
-        cd /etc/bootcmd.d/
-        make disable-1wmaster
-    fi
-fi
-
-# ----------------------------------------------------------------------------------------
 # FINALLY - Start the service
 # ----------------------------------------------------------------------------------------
 if [ -f /opt/unipi/tools/os-configurator ]; then
