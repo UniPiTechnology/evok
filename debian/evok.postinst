@@ -71,7 +71,7 @@ fi
 # ----------------------------------------------------------------------------------------
 if [ -f /opt/unipi/tools/os-configurator ]; then
   echo "Calling os-configurator update..." >&2
-  /opt/unipi/tools/os-configurator -u
+  /opt/unipi/tools/os-configurator -u || echo "os-configurator return error, please call it manually."
 fi
 if [ -f /lib/systemd/system/owfs.service ]; then
   echo "Restarting OWFS..." >&2
