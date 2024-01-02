@@ -74,6 +74,8 @@ def configure_owfs():
             line = line.replace('\n', '')
             if line in required_lines:
                 required_lines.remove(line)
+                if line == OWFS_CONFIG_LINES[0]:
+                    return  # If have signature by evok, do nothing.
             if 'FAKE' in line and '#' != line.replace(' ', '')[0]:
                 line = '#' + line
                 change = True
@@ -134,10 +136,14 @@ def yaml_dump(data: dict, stream, depth: int):
 
 
 def run():
-    product_data = os_configurator.get_product_info()
-    platform_id = int(os_configurator.get_product_info().id)
-    model_name = product_data.name
-    boards: List[str] = hw_data.get(platform_id, [])
+    try:
+        product_data = os_configurator.get_product_info()
+        platform_id = int(os_configurator.get_product_info().id)
+        model_name = product_data.name
+        boards: List[str] = hw_data.get(platform_id, [])
+    except Exception as E:
+        print(f"Device not recognized!  ({E})")
+        exit(0)
 
     print(f"Detect device {model_name} ({hex(platform_id)}) with boards {boards}")
 

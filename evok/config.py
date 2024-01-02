@@ -113,9 +113,12 @@ class EvokConfig:
             scope = files
         final_conf = {}
         for path in scope:
-            with open(path, 'r') as f:
-                ydata: dict = yaml.load(f, Loader=yaml.Loader)
-            self.__merge_data(final_conf, ydata)
+            try:
+                with open(path, 'r') as f:
+                    ydata: dict = yaml.load(f, Loader=yaml.Loader)
+                self.__merge_data(final_conf, ydata)
+            except FileNotFoundError:
+                logger.warning(f"Config file {path} not found!")
         if check_autogen and final_conf.get('autogen', False):
             logger.info(f"Including autogen....")
             return self.__get_final_conf(scope=['/etc/evok/autogen.yaml', *scope], check_autogen=False)
