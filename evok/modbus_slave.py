@@ -177,7 +177,8 @@ class ModbusSlave(object):
                 if defin and (defin['type'] == self.device_model):
                     self.hw_board_dict = defin
                     break
-            board = Board(self.evok_config, self.circuit, self.modbus_address, self, dev_id=self.dev_id)
+            board = Board(self.evok_config, self.circuit, self.modbus_address, self, dev_id=self.dev_id,
+                          major_group=self.major_group)
             await board.parse_definition(self.hw_dict)
             self.boards.append(board)
             config.add_aliases(alias_dict)
@@ -288,7 +289,7 @@ class Board(object):
         if hasattr(device, 'check_new_data'):
             self.modbus_slave.eventable_devices.append(device)
 
-    def parse_feature_di(self, max_count, m_feature, board_id):
+    def parse_feature_di(self, max_count, m_feature):
         counter = 0
         while counter < max_count:
             board_val_reg = m_feature['val_reg']
@@ -299,60 +300,60 @@ class Board(object):
                 start_index = m_feature['start_index']
             if ('ds_modes' in m_feature) and ('direct_reg' in m_feature) and ('polar_reg' in m_feature) and ('toggle_reg' in m_feature):
                 _inp = Input("%s_%02d" % (self.circuit, counter + 1 + start_index), self, board_val_reg, 0x1 << (counter % 16),
-                             regdebounce=board_deboun_reg + counter, major_group=0, regcounter=board_counter_reg + (2 * counter), modes=m_feature['modes'],
+                             regdebounce=board_deboun_reg + counter, major_group=self.major_group, regcounter=board_counter_reg + (2 * counter), modes=m_feature['modes'],
                              dev_id=self.dev_id, ds_modes=m_feature['ds_modes'], regmode=m_feature['direct_reg'], regtoggle=m_feature['toggle_reg'],
                              regpolarity=m_feature['polar_reg'], legacy_mode=self.legacy_mode)
             else:
                 _inp = Input("%s_%02d" % (self.circuit, counter + 1 + start_index), self, board_val_reg, 0x1 << (counter % 16),
-                             regdebounce=board_deboun_reg + counter, major_group=0, regcounter=board_counter_reg + (2 * counter), modes=m_feature['modes'],
+                             regdebounce=board_deboun_reg + counter, major_group=self.major_group, regcounter=board_counter_reg + (2 * counter), modes=m_feature['modes'],
                              dev_id=self.dev_id, legacy_mode=self.legacy_mode)
             self.__register_eventable_device(_inp)
             Devices.register_device(INPUT, _inp)
             counter+=1
 
-    def parse_feature_ro(self, max_count, m_feature, board_id):
+    def parse_feature_ro(self, max_count, m_feature):
         counter = 0
         while counter < max_count:
             board_val_reg = m_feature['val_reg']
             if m_feature['type'] == 'DO' and m_feature['pwm_reg'] and m_feature['pwm_ps_reg'] and m_feature['pwm_c_reg']:
                 if not self.legacy_mode:
                     _r = Relay("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
-                               dev_id=self.dev_id, major_group=0, pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
+                               dev_id=self.dev_id, major_group=self.major_group, pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
                                pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
                 else:
                     _r = Relay("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
-                               dev_id=self.dev_id, major_group=0, pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
+                               dev_id=self.dev_id, major_group=self.major_group, pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
                                pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
             else:
                     _r = Relay("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
-                               dev_id=self.dev_id, major_group=0, legacy_mode=self.legacy_mode)
+                               dev_id=self.dev_id, major_group=self.major_group, legacy_mode=self.legacy_mode)
             self.__register_eventable_device(_r)
             Devices.register_device(RELAY, _r)
             counter+=1
 
-    def parse_feature_led(self, max_count, m_feature, board_id):
+    def parse_feature_led(self, max_count, m_feature):
         counter = 0
         while counter < max_count:
             board_val_reg = m_feature['val_reg']
             _led = ULED("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg, 0x1 << (counter % 16), m_feature['val_coil'] + counter,
-                        dev_id=self.dev_id, major_group=0, legacy_mode=self.legacy_mode)
+                        dev_id=self.dev_id, major_group=self.major_group, legacy_mode=self.legacy_mode)
             self.__register_eventable_device(_led)
             Devices.register_device(LED, _led)
             counter+=1
 
-    def parse_feature_wd(self, max_count, m_feature, board_id):
+    def parse_feature_wd(self, max_count, m_feature):
         counter = 0
         while counter < max_count:
             board_val_reg = m_feature['val_reg']
             board_timeout_reg = m_feature['timeout_reg']
             _wd = Watchdog("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg + counter, board_timeout_reg + counter,
-                           dev_id=self.dev_id, major_group=0, nv_save_coil=m_feature['nv_sav_coil'], reset_coil=m_feature['reset_coil'],
+                           dev_id=self.dev_id, major_group=self.major_group, nv_save_coil=m_feature['nv_sav_coil'], reset_coil=m_feature['reset_coil'],
                            legacy_mode=self.legacy_mode)
             self.__register_eventable_device(_wd)
             Devices.register_device(WATCHDOG, _wd)
             counter+=1
 
-    def parse_feature_ao(self, max_count, m_feature, board_id):
+    def parse_feature_ao(self, max_count, m_feature):
         counter = 0
         while counter < max_count:
             board_val_reg = m_feature['val_reg']
@@ -362,25 +363,24 @@ class Board(object):
                                    dev_id=self.dev_id, major_group=self.major_group, legacy_mode=self.legacy_mode)
             else:
                 _ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, dev_id=self.dev_id,
-                                   major_group=0, legacy_mode=self.legacy_mode)
+                                   major_group=self.major_group, legacy_mode=self.legacy_mode)
             self.__register_eventable_device(_ao)
             Devices.register_device(AO, _ao)
             counter+=1
 
-    def parse_feature_ai18(self, max_count, m_feature, board_id):
+    def parse_feature_ai18(self, max_count, m_feature):
         value_reg = m_feature['val_reg']
         mode_reg = m_feature['mode_reg']
         for i in range(max_count):
             circuit = "%s_%02d" % (self.circuit, i + 1)
             _ai = AnalogInput18(circuit, self, value_reg, regmode=mode_reg+i,
-                                dev_id=self.dev_id, major_group=0, modes=m_feature['modes'])
+                                dev_id=self.dev_id, major_group=self.major_group, modes=m_feature['modes'])
 
             self.__register_eventable_device(_ai)
             Devices.register_device(AI, _ai)
             value_reg += 2;
 
-
-    def parse_feature_ai(self, max_count, m_feature, board_id):
+    def parse_feature_ai(self, max_count, m_feature):
         counter = 0
         while counter < max_count:
             board_val_reg = m_feature['val_reg']
@@ -390,37 +390,37 @@ class Board(object):
                 board_val_reg = m_feature['val_reg'] + counter
                 _ai = AnalogInput(circuit, self, board_val_reg,
                                   regmode=m_feature['mode_reg'],
-                                  dev_id=self.dev_id, major_group=0, tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
-            elif (m_feature.get('type') == "AI18" ):
+                                  dev_id=self.dev_id, major_group=self.major_group, tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
+            elif m_feature.get('type') == "AI18":
                 board_val_reg = m_feature['val_reg'] + counter * 2
                 _ai = AnalogInput18(circuit, self, board_val_reg,
                                   regmode=m_feature['mode_reg'] + counter,
-                                  dev_id=self.dev_id, major_group=0, modes=m_feature['modes'])
+                                  dev_id=self.dev_id, major_group=self.major_group, modes=m_feature['modes'])
             else:
                 board_val_reg = m_feature['val_reg'] + counter * 2
                 _ai = AnalogInput(circuit, self, board_val_reg,
                                   regmode=m_feature['mode_reg'] + counter if m_feature.get('mode_reg', None) is not None else None,
-                                  dev_id=self.dev_id, major_group=0, tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
+                                  dev_id=self.dev_id, major_group=self.major_group, tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
 
             self.__register_eventable_device(_ai)
             Devices.register_device(AI, _ai)
             counter+=1
 
-    def parse_feature_register(self, max_count, m_feature, board_id):
+    def parse_feature_register(self, max_count, m_feature):
         counter = 0
         while counter < max_count:
             board_val_reg = m_feature['start_reg']
             if 'reg_type' in m_feature and m_feature['reg_type'] == 'input':
                 _reg = Register("%s_%d_inp" % (self.circuit, board_val_reg + counter), self, counter, board_val_reg + counter, reg_type='input', dev_id=self.dev_id,
-                                major_group=0, legacy_mode=self.legacy_mode)
+                                major_group=self.major_group, legacy_mode=self.legacy_mode)
             else:
                 _reg = Register("%s_%d" % (self.circuit, board_val_reg + counter), self, counter, board_val_reg + counter, dev_id=self.dev_id,
-                                major_group=0, legacy_mode=self.legacy_mode)
+                                major_group=self.major_group, legacy_mode=self.legacy_mode)
             self.__register_eventable_device(_reg)
             Devices.register_device(REGISTER, _reg)
             counter+=1
 
-    def parse_feature_unit_register(self, max_count, m_feature, board_id):
+    def parse_feature_unit_register(self, max_count, m_feature):
         counter = 0
         board_val_reg = m_feature['value_reg']
         while counter < max_count:
@@ -436,35 +436,34 @@ class Board(object):
             _datatype = m_feature.get('datatype')
 
             _xgt = UnitRegister("{}_{}".format(self.circuit, board_val_reg + counter), self, board_val_reg + counter, reg_type="input",
-                                dev_id=self.dev_id, datatype=_datatype, major_group=0, offset=_offset, factor=_factor, unit=_unit,
+                                dev_id=self.dev_id, datatype=_datatype, major_group=self.major_group, offset=_offset, factor=_factor, unit=_unit,
                                 valid_mask=_valid_mask, name=_name, post_write=_post_write_action)
 
             Devices.register_device(UNIT_REGISTER, _xgt)
             counter+=1
 
     def parse_feature(self, m_feature):
-        board_id = 1 # UART Extension has always only one group
         max_count = m_feature.get('count')
         if m_feature['type'] == 'DI':
-            self.parse_feature_di(max_count, m_feature, board_id)
+            self.parse_feature_di(max_count, m_feature)
         elif (m_feature['type'] == 'RO' or m_feature['type'] == 'DO'):
-            self.parse_feature_ro(max_count, m_feature, board_id)
+            self.parse_feature_ro(max_count, m_feature)
         elif m_feature['type'] == 'LED':
-            self.parse_feature_led(max_count, m_feature, board_id)
+            self.parse_feature_led(max_count, m_feature)
         elif m_feature['type'] == 'WD':
-            self.parse_feature_wd(max_count, m_feature, board_id)
+            self.parse_feature_wd(max_count, m_feature)
         elif m_feature['type'] == 'AO':
-            self.parse_feature_ao(max_count, m_feature, board_id)
+            self.parse_feature_ao(max_count, m_feature)
         elif m_feature['type'] == 'AI':
-            self.parse_feature_ai(max_count, m_feature, board_id)
+            self.parse_feature_ai(max_count, m_feature)
         elif m_feature['type'] == 'AI18':
-            self.parse_feature_ai(max_count, m_feature, board_id)
+            self.parse_feature_ai(max_count, m_feature)
         elif m_feature['type'] == 'REGISTER':
-            self.parse_feature_register(max_count, m_feature, board_id)
+            self.parse_feature_register(max_count, m_feature)
         elif m_feature['type'] == 'UNIT_REGISTER':
-            self.parse_feature_unit_register(max_count, m_feature, board_id)
+            self.parse_feature_unit_register(max_count, m_feature)
         else:
-            logging.warning("Unknown feature: " + str(m_feature['type']) + " at board id: " + str(board_id))
+            logging.warning("Unknown feature: " + str(m_feature['type']) + " at board: " + str(self.major_group))
 
     async def parse_definition(self, hw_dict):
         try:
