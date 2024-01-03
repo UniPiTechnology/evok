@@ -64,24 +64,6 @@ modbus_features:
     timeout_reg : 1008
     nv_sav_coil : 1003
     reset_coil  : 1002
-  - type        : UART
-    parity_modes :
-      - None
-      - Odd
-      - Even
-    speed_modes :
-      - 2400bps
-      - 4800bps
-      - 9600bps
-      - 19200bps
-      - 38400bps
-      - 57600bps
-      - 115200bps
-    stopb_modes :
-      - One
-      - Two
-    conf_reg    : 1023
-    count       : 1
   - type        : REGISTER
     count       : 28
     start_reg   : 0
