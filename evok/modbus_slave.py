@@ -2,8 +2,7 @@
   Code specific to Neuron devices
 ------------------------------------------
 """
-from copy import copy
-import logging
+from copy import copy, deepcopy
 import math
 import datetime
 from math import sqrt
@@ -35,11 +34,11 @@ def raise_if_null(val, register):
 class ModbusCacheMap(object):
     def __init__(self, modbus_reg_map, modbus_slave):
         self.last_comm_time = 0
-        self.modbus_reg_map = copy(modbus_reg_map)
+        self.modbus_reg_map = deepcopy(modbus_reg_map)
         self.modbus_slave: ModbusSlave = modbus_slave
         self.sem = Semaphore(1)
         self.frequency = {}
-        for m_reg_group in modbus_reg_map:
+        for m_reg_group in self.modbus_reg_map:
             self.frequency[m_reg_group['start_reg']] = 10000001  # frequency less than 1/10 million are not read on start
             m_reg_group['values'] = [None for i in range(m_reg_group['count'])]
 
@@ -1274,7 +1273,6 @@ class AnalogOutput():
         old_value = copy(self.value)
         old_res_value = copy(self.res_value)
         self.value = round(self.regvalue() * 0.0025, 3)
-        print(f"{self.circuit}: {self.value}")
         self.res_value = round(float(self.regvalue()) * 0.0025, 3)
         return self.value != old_value or self.res_value != old_res_value
 
