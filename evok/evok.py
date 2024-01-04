@@ -420,7 +420,7 @@ def main():
         (r"/version/?", VersionHandler),
         (r"/ws/?", WsHandler),
         (r"/(.*)", tornado.web.StaticFileHandler, {
-            "path": "../var/www/evok",
+            "path": "/opt/evok/www",
             "default_filename": "index.html"
         })
     ]

@@ -21,7 +21,7 @@ logging:
 #   | API settings |
 #   +--------------+
 apis:
-  port: 8080
+  port: 80
   # ^ API listen port
   # ^ only change if you are certain you know what you are doing
   # ^ FOR OUR WEB INTERFACE THE PORT SHOULD BE CHANGED IN "/etc/evok-nginx.conf" TOO !!!

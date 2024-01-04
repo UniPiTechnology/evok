@@ -1,10 +1,3 @@
 #! /usr/bin/dh-exec
 
-debian/systemd/evok.service lib/systemd/system
-etc/hw_definitions/* etc/evok/hw_definitions
-etc/config.yaml etc/evok/
-opt/os-configurator/run.d/* /opt/unipi/os-configurator/run.d
-debian/etc/nginx/sites-enabled/evok etc/nginx/sites-available
-var/evok-alias.yaml var/evok
-www/evok/* var/www/evok
-
+files/* /
