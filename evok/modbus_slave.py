@@ -33,10 +33,9 @@ def raise_if_null(val, register):
 
 
 class ModbusCacheMap(object):
-    last_comm_time = 0
-
     def __init__(self, modbus_reg_map, modbus_slave):
-        self.modbus_reg_map = modbus_reg_map
+        self.last_comm_time = 0
+        self.modbus_reg_map = copy(modbus_reg_map)
         self.modbus_slave: ModbusSlave = modbus_slave
         self.sem = Semaphore(1)
         self.frequency = {}
@@ -58,7 +57,7 @@ class ModbusCacheMap(object):
             raise ValueError(f"Unknown register {index}!")
         return group, index
 
-    def get_register(self, count, index, slave=0, is_input=False):
+    def get_register(self, count, index, is_input=False):
         try:
             group, index = self.__get_reg_group(index=index, is_input=is_input)
             ret = (raise_if_null(group[index + i], index + 1) for i in range(count))
@@ -504,12 +503,12 @@ class Relay(object):
         self.coil = coil
         self.valreg = reg
         self.bitmask = mask
-        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address)[0]
+        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg)[0]
         self.value = None
         if self.pwmdutyreg >= 0: # This instance supports PWM mode
-            self.pwm_duty_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmdutyreg, slave=self.arm.modbus_address))[0]
-            self.pwm_cycle_val = ((self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmcyclereg, slave=self.arm.modbus_address))[0] + 1)
-            self.pwm_prescale_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmprescalereg, slave=self.arm.modbus_address))[0]
+            self.pwm_duty_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmdutyreg))[0]
+            self.pwm_cycle_val = ((self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmcyclereg))[0] + 1)
+            self.pwm_prescale_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmprescalereg))[0]
             if (self.pwm_cycle_val > 0) and (self.pwm_prescale_val > 0):
                 self.pwm_freq = 48000000 / (self.pwm_cycle_val * self.pwm_prescale_val)
             else:
@@ -678,7 +677,7 @@ class ULED(object):
         self.legacy_mode = legacy_mode
         self.bitmask = mask
         self.valreg = reg
-        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address)[0]
+        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg)[0]
         self.coil = coil
         self.value = None
 
@@ -736,8 +735,8 @@ class Watchdog(object):
         self.arm = arm
         self.major_group = major_group
         self.legacy_mode = legacy_mode
-        self.timeoutvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.toreg, slave=self.arm.modbus_address)
-        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.toreg, slave=self.arm.modbus_address)[0]
+        self.timeoutvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.toreg)
+        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.toreg)[0]
         self.nvsavvalue = 0
         self.resetvalue = 0
         self.nv_save_coil = nv_save_coil
@@ -849,20 +848,20 @@ class UnitRegister():
             _is_iput = False
 
         if valid_mask is not None:
-            self.valid_mask = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, valid_mask, slave=self.arm.modbus_address, is_input=_is_iput)[0]
+            self.valid_mask = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, valid_mask, is_input=_is_iput)[0]
         else:
             self.valid_mask = None
 
         if self.datatype is None:
             if factor == 1 and offset == 0: # Reading RAW value - save some CPU time
-                self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address, is_input=_is_iput)[0]
+                self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, is_input=_is_iput)[0]
             else:
-                self.regvalue = lambda: (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address, is_input=_is_iput)[0] * self.factor) + self.offset
+                self.regvalue = lambda: (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, is_input=_is_iput)[0] * self.factor) + self.offset
 
         elif datatype == "float32":
 
             # TODO - add factor and offset version
-            self.regvalue = lambda: self.__parse_float32(self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg, slave=self.arm.modbus_address, is_input=_is_iput))
+            self.regvalue = lambda: self.__parse_float32(self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg, is_input=_is_iput))
 
 
     def __parse_float32(self, raw_regs):
@@ -947,9 +946,9 @@ class Register():
         self.valreg = reg
         self.reg_type = reg_type
         if reg_type == "input":
-            self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address, is_input=True)[0]
+            self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, is_input=True)[0]
         else:
-            self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, slave=self.arm.modbus_address, is_input=False)[0]
+            self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, is_input=False)[0]
 
     def full(self):
         ret = {'dev': 'register',
@@ -1023,18 +1022,18 @@ class Input():
         self.regtoggle = regtoggle
         self.regpolarity = regpolarity
         self.reg = reg
-        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.reg, slave=self.arm.modbus_address)[0]
+        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.reg)[0]
         self.regcountervalue = self.regdebouncevalue = lambda: None
-        if not (regcounter is None): self.regcountervalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, regcounter, slave=self.arm.modbus_address)[0] + (self.arm.modbus_slave.modbus_cache_map.get_register(1, regcounter + 1, slave=self.arm.modbus_address)[0] << 16)
-        if not (regdebounce is None): self.regdebouncevalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, regdebounce, slave=self.arm.modbus_address)[0]
+        if not (regcounter is None): self.regcountervalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, regcounter)[0] + (self.arm.modbus_slave.modbus_cache_map.get_register(1, regcounter + 1)[0] << 16)
+        if not (regdebounce is None): self.regdebouncevalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, regdebounce)[0]
         self.mode = 'Simple'
         self.ds_mode = 'Simple'
         if 'DirectSwitch' in self.modes:
-            curr_ds = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0]
+            curr_ds = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
             if (curr_ds & self.bitmask) > 0:
                 self.mode = 'DirectSwitch'
-                curr_ds_pol = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regpolarity, slave=self.arm.modbus_address)[0]
-                curr_ds_tgl = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regtoggle, slave=self.arm.modbus_address)[0]
+                curr_ds_pol = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regpolarity)[0]
+                curr_ds_tgl = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regtoggle)[0]
                 if (curr_ds_pol & self.bitmask):
                     self.ds_mode = 'Inverted'
                 elif (curr_ds_tgl & self.bitmask):
@@ -1154,10 +1153,10 @@ class AnalogOutputBrain:
         self.modes = ['Voltage', 'Current', 'Resistance']
         self.arm = arm
         self.major_group = major_group
-        self.is_voltage = lambda: bool(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0] == 0)
+        self.is_voltage = lambda: bool(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0] == 0)
         if self.is_voltage():
             self.mode = 'Voltage'
-        elif self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0] == 1:
+        elif self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0] == 1:
             self.mode = 'Current'
         else:
             self.mode = 'Resistance'
@@ -1173,7 +1172,7 @@ class AnalogOutputBrain:
 
     def regvalue(self):
         try:
-            ret = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.reg, slave=self.arm.modbus_address)
+            ret = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.reg)
             ret = BinaryPayloadDecoder.fromRegisters(ret, Endian.BIG, Endian.LITTLE).decode_32bit_float()
             return round(float(ret), 3)
         except:
@@ -1181,7 +1180,7 @@ class AnalogOutputBrain:
 
     def regres_value(self):
         try:
-            ret = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.reg_res, slave=self.arm.modbus_address)
+            ret = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.reg_res)
             ret = BinaryPayloadDecoder.fromRegisters(ret, Endian.BIG, Endian.LITTLE).decode_32bit_float()
             return round(float(ret), 3)
         except:
@@ -1230,7 +1229,7 @@ class AnalogOutputBrain:
             if Devices.add_alias(alias, self, file_update=True):
                 self.alias = alias
         if mode is not None and mode in self.modes and self.regmode != -1:
-            val = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0]
+            val = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
             cur_val = self.value
             if mode == "Voltage":
                 val = 0
@@ -1256,7 +1255,7 @@ class AnalogOutput():
         self.dev_id = dev_id
         self.circuit = circuit
         self.reg = reg
-        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.reg, slave=self.arm.modbus_address)[0]
+        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.reg)[0]
         self.regmode = regmode
         self.legacy_mode = legacy_mode
         self.modes = modes
@@ -1275,6 +1274,7 @@ class AnalogOutput():
         old_value = copy(self.value)
         old_res_value = copy(self.res_value)
         self.value = round(self.regvalue() * 0.0025, 3)
+        print(f"{self.circuit}: {self.value}")
         self.res_value = round(float(self.regvalue()) * 0.0025, 3)
         return self.value != old_value or self.res_value != old_res_value
 
@@ -1309,7 +1309,7 @@ class AnalogOutput():
             if Devices.add_alias(alias, self, file_update=True):
                 self.alias = alias
         if mode is not None and mode in self.modes and self.regmode != -1:
-            val = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0]
+            val = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
             cur_val = self.value
             if mode == "Voltage":
                 val = 0
@@ -1349,13 +1349,13 @@ class AnalogInput():
         self.tolerances = tolerances
         self.sec_ai_mode = 0
         if self.tolerances == '500series':
-            self.sec_ai_mode = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0]
+            self.sec_ai_mode = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
             self.mode = self.get_500_series_mode()
             self.unit_name = self.internal_unit
         self.major_group = major_group
         self.is_voltage = lambda: True
         if self.tolerances == 'brain':
-            self.is_voltage = lambda: bool(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0] == 0)
+            self.is_voltage = lambda: bool(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0] == 0)
             if self.is_voltage():
                 self.mode = "Voltage"
             else:
@@ -1373,7 +1373,7 @@ class AnalogInput():
 
     def regvalue(self):
         try:
-            ret = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg, slave=self.arm.modbus_address)
+            ret = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg)
             ret = BinaryPayloadDecoder.fromRegisters(ret, Endian.BIG, Endian.LITTLE).decode_32bit_float()
             return round(float(ret), 3)
         except Exception as E:
@@ -1539,7 +1539,7 @@ class AnalogInput18():
         self.unit_name = ''
         self.tolerances = ["Integer 18bit", "Float"]
         self.tolerance_mode = "Integer 18bit"
-        self.raw_mode = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode, slave=self.arm.modbus_address)[0]
+        self.raw_mode = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
         self.mode = self.get_mode()
         self.major_group = major_group
         self.calibration = {'Voltage': 10.0/(1<<18)/0.9772, 'Current': 40.0/(1<<18)}
@@ -1552,7 +1552,7 @@ class AnalogInput18():
 
     def regvalue(self):
         try:
-            U32 = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg, slave=self.arm.modbus_address)
+            U32 = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg)
             raw_value = U32[0] | (U32[1] << 16)
             ret = raw_value if self.tolerance_mode == "Integer 18bit" else float(raw_value)*self.calibration[self.mode]
             return round(ret, 3)
