@@ -403,7 +403,7 @@ def main():
     logger.info(f"Starting using config file {config_path}")
 
     hw_dict = config.HWDict(dir_paths=[f'{config_path}/hw_definitions/'])
-    alias_dict = (config.HWDict(dir_paths=['/var/evok/'])).definitions
+    alias_dict = (config.HWDict(dir_paths=['/var/lib/evok/'])).definitions
 
     define("cors", default=True, help="enable CORS support", type=bool)
     port = evok_config.apis.get("port", 8080)
