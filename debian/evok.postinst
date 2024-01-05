@@ -12,11 +12,16 @@ case "$1" in
     echo "Calling os-configurator update..." >&2
     /opt/unipi/tools/os-configurator --force || echo "os-configurator return error, please call it manually."
 	fi
+    if [ -z "`id -u evok 2> /dev/null`" ]; then
+        adduser --system  --home /var/lib/evok --gecos "evok" \
+            --disabled-password --quiet evok || true
+    fi
+    chown evok: /var/lib/evok || true
 
-  if [ -f /lib/systemd/system/owfs.service ]; then
-    echo "Restarting OWFS..." >&2
-    systemctl restart owfs || true
-  fi
+    if [ -f /lib/systemd/system/owfs.service ]; then
+        echo "Restarting OWFS..." >&2
+        systemctl restart owfs || true
+    fi
 	;;
 
 	abort-upgrade|abort-remove|abort-deconfigure)
