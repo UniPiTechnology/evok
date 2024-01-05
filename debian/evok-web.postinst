@@ -27,7 +27,6 @@ CONFLICT_CONFILE="$RET"
 
 case "$1" in
 	configure)
-	    ln -s "$EVOK_NGINX_CONFILE" "$EVOK_NGINX_CONFILE_ENABLED"
 
 	    if ! [ -z "$CONFLICT_CONFILE" ]; then # If a conflict has occurred
 
