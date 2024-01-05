@@ -9,7 +9,7 @@ Vcs-Git: https://github.com/UniPiTechnology/evok.git
 Vcs-Browser: https://github.com/UniPiTechnology/evok/
 
 Package: evok
-Architecture: arm64 arm
+Architecture: any
 Depends: python3, ${misc:Depends}
 Recommends: owserver, unipi-os-configurator, unipi-modbus-tools, unipi-one, evok-web
 Description: UniPi API based on the Tornado webserver
