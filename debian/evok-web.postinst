@@ -29,46 +29,45 @@ case "$1" in
 	configure)
 	    ln -s "$EVOK_NGINX_CONFILE" "$EVOK_NGINX_CONFILE_ENABLED"
 
-if ! [ -z "$CONFLICT_CONFILE" ]; then # If a conflict has occurred
+	    if ! [ -z "$CONFLICT_CONFILE" ]; then # If a conflict has occurred
 
-    db_get evok/http_conflict || true
+	        db_get evok/http_conflict || true
 
-    #echo "The selected way of solution $RET" >&2
+	        #echo "The selected way of solution $RET" >&2
 
-    case "$RET" in
-      *replace*) # Option 1 - Remove conflicting configuration file
-          echo "Removing conflict confile $CONFLICT_CONFILE" >&2
-          db_get evok/http_conflict_makesure || true
+	        case "$RET" in
+	          *replace*) # Option 1 - Remove conflicting configuration file
+	              echo "Removing conflict confile $CONFLICT_CONFILE" >&2
+	              db_get evok/http_conflict_makesure || true
 
-          if [ -n "$DEBIAN_FRONTEND" -a "$DEBIAN_FRONTEND" = 'noninteractive' ]; then
-              RET=true
-          fi
+	              if [ -n "$DEBIAN_FRONTEND" -a "$DEBIAN_FRONTEND" = 'noninteractive' ]; then
+	                  RET=true
+	              fi
 
-          if [ "$RET" = true ] ; then
-              rm "$CONFLICT_CONFILE"
-          fi
-          ;;
-      *another*) # Option 2 -Change port number in Evok's ngninx confile
-          db_get evok/control_website_port || true
-          #echo "Changing port to $RET - is it OK?" >&2
-          if [ -f "$EVOK_NGINX_CONFILE" ]; then
-              sed -i "s/listen[[:space:]]*[[:digit:]]*/listen $RET/g" "$EVOK_NGINX_CONFILE"
-          fi
+	              if [ "$RET" = true ] ; then
+	                  rm "$CONFLICT_CONFILE"
+	              fi
+	              ;;
+	          *another*) # Option 2 -Change port number in Evok's ngninx confile
+	              db_get evok/control_website_port || true
+	              #echo "Changing port to $RET - is it OK?" >&2
+	              if [ -f "$EVOK_NGINX_CONFILE" ]; then
+	                  sed -i "s/listen[[:space:]]*[[:digit:]]*/listen $RET/g" "$EVOK_NGINX_CONFILE"
+	              fi
 
-          if [ -f "$EVOK_NGINX_CONFILE_ENABLED" ]; then
-              sed -i "s/listen[[:space:]]*[[:digit:]]*/listen $RET/g" "$EVOK_NGINX_CONFILE_ENABLED"
-          fi
+	              if [ -f "$EVOK_NGINX_CONFILE_ENABLED" ]; then
+	                  sed -i "s/listen[[:space:]]*[[:digit:]]*/listen $RET/g" "$EVOK_NGINX_CONFILE_ENABLED"
+	              fi
 
-          ;;
-      *) # Option 3 - Remove Evok Nginx confile
-         # All services provided by Nginx are disabled (incl. those proxy-ed) !!!
-          #echo "DO NOT USE EVOK WEBSITE" >&2
-          rm -f "$EVOK_NGINX_CONFILE_ENABLED"
-          rm -f "$EVOK_NGINX_CONFILE"
-          ;;
-    esac
-    #rm -f "/etc/nginx/sites-enabled/evok"
-fi
+	              ;;
+	          *) # Option 3 - Remove Evok Nginx confile
+	             # All services provided by Nginx are disabled (incl. those proxy-ed) !!!
+	              #echo "DO NOT USE EVOK WEBSITE" >&2
+	              rm -f "$EVOK_NGINX_CONFILE_ENABLED"
+	              rm -f "$EVOK_NGINX_CONFILE"
+	              ;;
+	        esac
+	    fi
 	    deb-systemd-invoke try-restart nginx  >/dev/null || true
 	;;
 
