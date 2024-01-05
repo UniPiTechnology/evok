@@ -67,6 +67,7 @@ case "$1" in
 	              ;;
 	        esac
 	    fi
+	    db_reset evok/nginx_as_dependency
 	    deb-systemd-invoke try-restart nginx  >/dev/null || true
 	;;
 
