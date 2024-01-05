@@ -425,27 +425,10 @@ def main():
         handlers=api_routes
     )
 
-    webapp = tornado.web.Application(
-        handlers=[
-            (r"/(.*)", tornado.web.StaticFileHandler, {
-                "path": "/opt/evok/www",
-                "default_filename": "index.html"
-            })
-        ]
-    )
-
     #### prepare http server #####
     httpServerApi = tornado.httpserver.HTTPServer(app)
     httpServerApi.listen(port_api)
     logger.info("HTTP server API listening on port: %d", port_api)
-
-    #### prepare web server #####
-    web_config = evok_config.get_api('web')
-    if web_config.get('enabled', False):
-        port_web = web_config.get('port', 80)
-        httpServerWeb = tornado.httpserver.HTTPServer(webapp)
-        httpServerWeb.listen(port_web)
-        logger.info("HTTP server WEB listening on port: %d", port_web)
 
     modbus_context = None
 

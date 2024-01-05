@@ -39,10 +39,6 @@ apis:
     complex_events: false
     # ^ EVOK will send POST requests with the same data as WebSocket, rather than an empty GET request
 
-  web:
-    enabled: true
-    port: 80
-
 #   +------------------------+
 #   | Hardware Configuration |
 #   +------------------------+
