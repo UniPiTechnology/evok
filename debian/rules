@@ -31,7 +31,7 @@ else
 	dh $@ --with python-virtualenv
 #	dh $@ --with python3 --with python-virtualenv
 #	dh $@ --buildsystem=dh_virtualenv
-fi
+endif
 
 override_dh_virtualenv:
 	dh_virtualenv
