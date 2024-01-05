@@ -7,6 +7,7 @@
 # see FEATURE AREAS in dpkg-buildflags(1)
 #export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
+ARCH = $(sh dpkg-architecture -q DEB_BUILD_ARCH)
 export DH_VIRTUALENV_INSTALL_ROOT=/opt
 export DH_VIRTUALENV_ARGUMENTS
 export DH_VERBOSE=1
@@ -28,10 +29,15 @@ export PYBUILD_NAME=evok
 	dh $@ --with python-virtualenv
 
 
+ifeq ($(ARCH),'amd64')
+override_dh_virtualenv:
+	echo "Skipping create virtualenv."
+else
 override_dh_virtualenv:
 	dh_virtualenv
 	sed 's#/opt/evok/bin/python#debian/evok/opt/evok/bin/python#' -i debian/evok/opt/evok/bin/pip3
 	debian/evok/opt/evok/bin/pip3 uninstall -y setuptools wheel pip
+endif
 
 #	dh_virtualenv --extra-virtualenv-arg=--no-pip --pip-tool=/usr/bin/pip3
 #	dh_virtualenv --extra-virtualenv-arg=--no-pip --pip-tool=/usr/bin/pip3

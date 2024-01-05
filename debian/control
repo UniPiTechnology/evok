@@ -15,7 +15,7 @@ Recommends: owserver, unipi-os-configurator, unipi-modbus-tools, unipi-one, evok
 Description: UniPi API based on the Tornado webserver
 
 Package: evok-web
-Architecture: any
+Architecture: all
 Depends: nginx, evok, ${misc:Depends}
 Description: Webserver for evok
 
