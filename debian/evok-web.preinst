@@ -18,18 +18,14 @@ set -e
 
 case "$1" in
     install)
-		if test -f /etc/systemd/system/evok.service; then
-			deb-systemd-helper --quiet disable evok.service
-			deb-systemd-helper --quiet stop evok.service
-			rm /etc/systemd/system/evok.service
-			rm -r -f /opt/evok
-		fi
-                if test ! -d /etc/nginx; then
+                db_get evok/nginx_conflict_files || true
+                CONFLICT_CONFILE="$RET"
+                if [ -z "$CONFLICT_CONFILE" ]; then
                         db_set evok/nginx_as_dependency true
                         echo "Nginx was installed as dependency A" 1>&2
                 fi
 
-                        echo "Pre-script was invoked" 1>&2
+                echo "Pre-script was invoked" 1>&2
 
 
     ;;
