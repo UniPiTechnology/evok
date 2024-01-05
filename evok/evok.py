@@ -406,11 +406,9 @@ def main():
     alias_dict = (config.HWDict(dir_paths=['/var/lib/evok/'])).definitions
 
     define("cors", default=True, help="enable CORS support", type=bool)
-    port = evok_config.apis.get("port", 8080)
-    if options.as_dict()['port'] != -1:
-        port = options.as_dict()['port']  # use command-line option instead of config option
+    port_api = evok_config.apis.get("port", 8080)
 
-    app_routes = [
+    api_routes = [
         (r"/rpc/?", rpc_handler.Handler),
         (r"/rest/all/?", LoadAllHandler),
         (r"/rest/([^/]+)/([^/]+)/?([^/]+)?/?", LegacyRestHandler),
@@ -418,28 +416,36 @@ def main():
         (r"/json/all/?", LoadAllHandler),
         (r"/json/([^/]+)/([^/]+)/?([^/]+)?/?", LegacyJsonHandler),
         (r"/version/?", VersionHandler),
-        (r"/ws/?", WsHandler),
-        (r"/(.*)", tornado.web.StaticFileHandler, {
-            "path": "/opt/evok/www",
-            "default_filename": "index.html"
-        })
     ]
 
+    if evok_config.get_api('websocket').get('enabled', False):
+        api_routes.append((r"/ws/?", WsHandler))
+
     app = tornado.web.Application(
-        handlers=app_routes
+        handlers=api_routes
     )
-    # docs = get_api_docs(app_routes)
-    # print docs
-    # try:
-    #    with open('./API_docs.md', "w") as api_out:
-    #        api_out.writelines(docs)
-    # except Exception as E:
-    #    logger.exception(str(E))
+
+    webapp = tornado.web.Application(
+        handlers=[
+            (r"/(.*)", tornado.web.StaticFileHandler, {
+                "path": "/opt/evok/www",
+                "default_filename": "index.html"
+            })
+        ]
+    )
 
     #### prepare http server #####
-    httpServer = tornado.httpserver.HTTPServer(app)
-    httpServer.listen(port)
-    logger.info("HTTP server listening on port: %d", port)
+    httpServerApi = tornado.httpserver.HTTPServer(app)
+    httpServerApi.listen(port_api)
+    logger.info("HTTP server API listening on port: %d", port_api)
+
+    #### prepare web server #####
+    web_config = evok_config.get_api('web')
+    if web_config.get('enabled', False):
+        port_web = web_config.get('port', 80)
+        httpServerWeb = tornado.httpserver.HTTPServer(webapp)
+        httpServerWeb.listen(port_web)
+        logger.info("HTTP server WEB listening on port: %d", port_web)
 
     modbus_context = None
 

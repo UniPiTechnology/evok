@@ -21,22 +21,27 @@ logging:
 #   | API settings |
 #   +--------------+
 apis:
-  port: 80
+  port: 8080
   # ^ API listen port
   # ^ only change if you are certain you know what you are doing
   # ^ FOR OUR WEB INTERFACE THE PORT SHOULD BE CHANGED IN "/etc/evok-nginx.conf" TOO !!!
 
   websocket:
-    all_filtered: False
+    enabled: true
+    all_filtered: false
     # ^ 'All' WebSocket requests will be subject to the filtering set by 'filter'
 
   webhook:
-    enabled: False
+    enabled: false
     address: http://127.0.0.1:80
     device_mask: ["input","wd"]
     # ^ List of device types to notify on (written as a JSON list) - adding AI will generate a large amount of messages!
-    complex_events: False
+    complex_events: false
     # ^ EVOK will send POST requests with the same data as WebSocket, rather than an empty GET request
+
+  web:
+    enabled: true
+    port: 80
 
 #   +------------------------+
 #   | Hardware Configuration |
