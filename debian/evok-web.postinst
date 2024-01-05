@@ -68,6 +68,7 @@ if ! [ -z "$CONFLICT_CONFILE" ]; then # If a conflict has occurred
     esac
     #rm -f "/etc/nginx/sites-enabled/evok"
 fi
+	deb-systemd-invoke try-restart nginx  >/dev/null || true
 	;;
 
 	abort-upgrade|abort-remove|abort-deconfigure)
