@@ -12,7 +12,7 @@ SyslogLevel=debug
 SyslogIdentifier=evok
 StandardOutput=null
 WorkingDirectory=/opt/evok
-
+User=evok
 Restart=always
 
 [Install]

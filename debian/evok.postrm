@@ -24,7 +24,10 @@ case "$1" in
     purge)
         echo "Removing configuration file..." >&2
         rm -rf /etc/evok
-        ucf --verbose --purge "/etc/evok" || true
+        if [ -x "$(command -v deluser)" ]; then
+            deluser --quiet --system evok > /dev/null || true
+        fi
+        rm -rf /var/lib/evok
     ;;
     remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
     ;;
