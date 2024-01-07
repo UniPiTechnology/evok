@@ -350,32 +350,21 @@ class JSONBulkHandler(tornado.web.RequestHandler):
         await self.finish()
 
 
-def gener_status_cb(mainloop, modbus_context):
-    def status_cb_modbus(device, *kwargs):
-        modbus_context.status_callback(device)
-        if "all" in registered_ws:
-            for x in registered_ws['all']:
-                x.on_event(device)
+def gener_status_cb(mainloop):
 
     def status_cb(device, *kwargs):
         if "all" in registered_ws:
             for x in registered_ws['all']:
                 x.on_event(device)
 
-    if modbus_context:
-        return status_cb_modbus
     return status_cb
 
 
-def gener_config_cb(mainloop, modbus_context):
-    def config_cb_modbus(device, *kwargs):
-        modbus_context.config_callback(device)
+def gener_config_cb(mainloop):
 
     def config_cb(device, *kwargs):
         pass
 
-    if modbus_context:
-        return config_cb_modbus
     return config_cb
 
 
@@ -430,8 +419,6 @@ def main():
     httpServerApi.listen(port_api)
     logger.info("HTTP server API listening on port: %d", port_api)
 
-    modbus_context = None
-
     webhook_config = evok_config.get_api('webhook')
     if webhook_config.get("enabled", False):
         wh_address = webhook_config.get("address", "http://127.0.0.1:80/index.html")
@@ -444,8 +431,8 @@ def main():
 
     #### prepare hardware according to config #####
     # prepare callbacks for config events
-    devents.register_config_cb(gener_config_cb(mainLoop, modbus_context))
-    devents.register_status_cb(gener_status_cb(mainLoop, modbus_context))
+    devents.register_config_cb(gener_config_cb(mainLoop))
+    devents.register_status_cb(gener_status_cb(mainLoop))
 
     # create hw devices
     config.create_devices(evok_config, hw_dict)
