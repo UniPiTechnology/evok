@@ -49,8 +49,7 @@ class MySensor(object):
             self.time = anyio.current_time() + self.calc_interval()
             devents.config(self)
         if alias is not None:
-            if Devices.add_alias(alias, self, file_update=True):
-                self.alias = alias
+            Devices.set_alias(alias, self, file_update=True)
 
 
     async def read_val_from_sens(self, sens):

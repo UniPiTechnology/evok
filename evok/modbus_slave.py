@@ -156,9 +156,9 @@ class ModbusSlave(object):
     def get(self):
         return self.full()
 
-    def switch_to_async(self, loop: IOLoop, alias_dict):
+    def switch_to_async(self, loop: IOLoop):
         self.loop = loop
-        loop.add_callback(lambda: self.readboards(alias_dict))
+        loop.add_callback(lambda: self.readboards())
 
     async def set(self, print_log=None):
         if print_log is not None and print_log != 0:
@@ -167,7 +167,7 @@ class ModbusSlave(object):
         else:
             return ""
 
-    async def readboards(self, alias_dict):
+    async def readboards(self):
         logger.info(f"Reading the Modbus board on Modbus address {self.modbus_address}\t({self.circuit})")
         self.boards = list()
         try:
@@ -179,7 +179,6 @@ class ModbusSlave(object):
                           major_group=self.major_group)
             await board.parse_definition(self.hw_dict)
             self.boards.append(board)
-            config.add_aliases(alias_dict)
         except ConnectionException as E:
             logger.error(f"No board detected on Modbus {self.modbus_address}\t({type(E).__name__}:{E})")
         except Exception as E:
@@ -265,8 +264,7 @@ class Board(object):
 
     async def set(self, alias=None):
         if not alias is None:
-            if Devices.add_alias(alias, self, file_update=True):
-                self.alias = alias
+            Devices.set_alias(alias, self, file_update=True)
         return await self.full()
 
     async def initialise_cache(self, cache_definition):
@@ -647,8 +645,7 @@ class Relay(object):
             self.mode = 'PWM'
 
         if alias is not None:
-            if Devices.add_alias(alias, self, file_update=True):
-                self.alias = alias
+            Devices.set_alias(alias, self, file_update=True)
 
         if timeout is None:
             return self.full()
@@ -714,8 +711,7 @@ class ULED(object):
         """ Sets new on/off status. Disable pending timeouts
         """
         if alias is not None:
-            if Devices.add_alias(alias, self):
-                self.alias = alias
+            Devices.set_alias(alias, self)
         if value is not None:
             value = int(value)
             await self.arm.modbus_slave.client.write_coil(self.coil, 1 if value else 0, slave=self.arm.modbus_address)
@@ -793,8 +789,7 @@ class Watchdog(object):
         """ Sets new on/off status. Disable pending timeouts
         """
         if alias is not None:
-            if Devices.add_alias(alias, self, file_update=True):
-                self.alias = alias
+            Devices.set_alias(alias, self, file_update=True)
 
         if self.nv_save_coil >= 0 and nv_save is not None and nv_save != self.nvsavvalue:
             if nv_save != 0:
@@ -870,8 +865,7 @@ class UnitRegister():
     async def set(self, value=None, alias=None, **kwargs):
         """ Sets new on/off status. Disable pending timeouts """
         if alias is not None:
-            if Devices.add_alias(alias, self, file_update=True):
-                self.alias = alias
+            Devices.set_alias(alias, self, file_update=True)
 
         raise Exception("Unit_register object is read-only")
 
@@ -993,8 +987,7 @@ class Register():
         """ Sets new on/off status. Disable pending timeouts
         """
         if alias is not None:
-            if Devices.add_alias(alias, self, file_update=True):
-                self.alias = alias
+            Devices.set_alias(alias, self, file_update=True)
         if value is not None:
             value = int(value)
             await self.arm.modbus_slave.client.write_register(self.valreg, value if value else 0, slave=self.arm.modbus_address)
@@ -1081,8 +1074,7 @@ class Input():
 
     async def set(self, debounce=None, mode=None, counter=None, counter_mode=None, ds_mode=None, alias=None):
         if alias is not None:
-            if Devices.add_alias(alias, self, file_update=True):
-                self.alias = alias
+            Devices.set_alias(alias, self, file_update=True)
 
         if mode is not None and mode != self.mode and mode in self.modes:
             self.mode = mode
@@ -1225,8 +1217,8 @@ class AnalogOutputBrain:
 
     async def set(self, value=None, mode=None, alias=None):
         if alias is not None:
-            if Devices.add_alias(alias, self, file_update=True):
-                self.alias = alias
+            Devices.set_alias(alias, self, file_update=True)
+
         if mode is not None and mode in self.modes and self.regmode != -1:
             val = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
             cur_val = self.value
@@ -1304,8 +1296,8 @@ class AnalogOutput():
 
     async def set(self, value=None, mode=None, alias=None):
         if alias is not None:
-            if Devices.add_alias(alias, self, file_update=True):
-                self.alias = alias
+            Devices.set_alias(alias, self, file_update=True)
+
         if mode is not None and mode in self.modes and self.regmode != -1:
             val = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
             cur_val = self.value
@@ -1449,8 +1441,8 @@ class AnalogInput():
 
     async def set(self, mode=None, range=None, alias=None):
         if alias is not None:
-            if Devices.add_alias(alias, self, file_update=True):
-                self.alias = alias
+            Devices.set_alias(alias, self, file_update=True)
+
         if mode is not None and mode in self.modes:
             if self.tolerances == "brain" and mode != self.mode:
                 self.mode = mode
@@ -1566,8 +1558,8 @@ class AnalogInput18():
 
     async def set(self, mode=None, range=None, alias=None):
         if alias is not None:
-            if Devices.add_alias(alias, self, file_update=True):
-                self.alias = alias
+            Devices.set_alias(alias, self, file_update=True)
+
         if mode is not None and mode in self.modes:
             self.mode = mode
             if self.mode == "Voltage":

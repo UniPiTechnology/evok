@@ -1,6 +1,9 @@
 from . import devents
 import yaml
 import re
+from copy import deepcopy
+from typing import Any, Type, Tuple, List, Mapping
+
 from .log import *
 
 """
@@ -8,9 +11,68 @@ from .log import *
 
 """
 
+# ToDo: ...
+Device = Any
+
+class Aliases:
+    alias_dict: Mapping[str, Device] = {}
+    initial_dict: Mapping[str, Mapping[str, str]] = {}
+
+    def __init__(self, initial_dict: Mapping[str, Mapping[str, str]]):
+        self.initial_dict = initial_dict
+        self.dirty = False
+
+    def __getitem__(self, key):
+        return self.alias_dict.__get_item__(self.key)
+
+    def validate(self, alias: str) -> None:
+        # check duplicity
+        if alias in self.alias_dict:
+            raise Exception(f"Duplicate alias {alias}")
+        # check alias name
+        if (not (alias.startswith("al_")) or (len(re.findall(r"[A-Za-z0-9\-\._]*", alias)) > 2)):
+            raise Exception(f"Invalid alias {alias}")
+
+    def add(self, alias: str, device: Device, file_update:bool=False):
+        if (alias != device.alias):
+            self.validate(alias)
+        # delete old alias
+        if device.alias: self.delete(device.alias)
+        # delete alias from initial_dict
+        if alias: self.delete(alias)
+        # create new alias
+        self.alias_dict[alias] = device
+        if file_update:
+            self.set_dirty()
+
+    def delete(self, alias: str, file_update:bool=False) -> None:
+        # delete alias from regular dict
+        if alias in self.alias_dict:
+            del self.alias_dict[alias]
+            if file_update:
+                self.set_dirty()
+        # delete alias from initial dict
+        if alias in self.initial_dict:
+            del self.initial_dict[alias]
+            if file_update:
+                self.set_dirty()
+
+    def get_aliases_by_circuit(self, dev_type: int, circuit: str):
+        return  list((alias for alias, rec in self.initial_dict.items()\
+                            if (rec.get("dev_type", None) == dev_type) and (rec.get("circuit", None) == circuit)))
+
+    def set_dirty(self) -> None:
+        self.dirty = True
+
+    def get_dict_to_save(self) -> Mapping[str, Mapping[str, str]]:
+        aliases = deepcopy(self.initital_dict)
+        aliases.update(dict(((alias, {"circuit":device.circuit, "dev_type":device.devtype})
+                             for alias,device in self.alias_dict)))
+        return aliases
+
 
 class DeviceList(dict):
-    alias_dict = {}
+    alias_dict = Aliases({})
 
     def __init__(self, altnames):
         super(DeviceList, self).__init__()
@@ -72,13 +134,13 @@ class DeviceList(dict):
                 raise Exception(f'Invalid device circuit number {str(circuit)} with devtypeid {devtypeid}')
 
     def by_name(self, devtype, circuit=None):
-        circuit = str(circuit) if circuit is not None else None
         try:
             devdict = self[devtype]
         except KeyError:
             devdict = self[self.altnames[devtype]]
         if circuit is None:
             return devdict.values()
+        circuit = str(circuit)
         try:
             return devdict[circuit]
         except KeyError:
@@ -96,42 +158,33 @@ class DeviceList(dict):
             devdict = self._arr[devtype]
         else:
             devdict = self[devtype]
+
         devdict[str(device.circuit)] = device
+        # assign saved alias
+        for alias in self.alias_dict.get_aliases_by_circuit(devtype, str(device.circuit)):
+            try:
+                self.alias_dict.add(alias, device)
+                device.alias = alias
+                logger.info(f"Set alias {alias} to {devtype_names[devtype]}[{device.circuit}]")
+            except Exception as E:
+                logger.warning(f"Error on setting saved alias: {str(E)}")
+
         devents.config(device)
         logging.debug(f"Registed new device '{devtype_names[devtype]}' with circuit {device.circuit} \t ({device})")
 
-    def add_alias(self, alias_key, device, file_update=False):
-        if (not (alias_key.startswith("al_")) or (len(re.findall(r"[A-Za-z0-9\-\._]*", alias_key)) > 2)):
-            if (alias_key == ''):
-                if device.alias in self.alias_dict:
-                    del self.alias_dict[device.alias]
-                if file_update:
-                    self.save_alias_dict()
-                return True
-            else:
-                raise Exception("Invalid alias %s" % alias_key)
-                return False
-        if not alias_key in self.alias_dict:
-            if device.alias in self.alias_dict:
-                del self.alias_dict[device.alias]
-            self.alias_dict[alias_key] = device
-            if file_update:
-                self.save_alias_dict()
-            return True
-        else:
-            if (alias_key != device.alias):
-                raise Exception("Duplicate alias %s" % alias_key)
-            return False
-
-    def save_alias_dict(self):
+    def set_alias(self, alias: str, device: Device, file_update:bool=False) -> None:
         try:
-            with open("/var/lib/evok/alias.yaml", 'w+') as yfile:
-                out_dict = {"version": 1.0, "aliases":[]}
-                for single_alias in self.alias_dict:
-                    out_dict["aliases"] += [{"circuit": self.alias_dict[single_alias].circuit, "dev_type": self.alias_dict[single_alias].devtype, "name": single_alias}]
-                yfile.write(yaml.dump(out_dict))
+            if (alias == '' or alias is None):
+                if device.alias: self.alias_dict.delete(device.alias, file_update)
+                device.alias = alias
+                logger.debug(f"Reset alias of {devtype_names[device.devtype]}[{device.circuit}]")
+            elif alias != device.alias:
+                self.alias_dict.add(alias, device, file_update)
+                device.alias = alias
+                logger.debug(f"Set alias {alias} of {devtype_names[device.devtype]}[{device.circuit}]")
         except Exception as E:
-            logger.exception(str(E))
+            logger.error(f"Error on setting alias {alias}: {str(E)}")
+            raise E
 
 
 # # define device types constants

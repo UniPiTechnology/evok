@@ -257,17 +257,29 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                 logger.exception(f"Error in config section '{bus_type}:{device_name}' - {str(E)}")
 
 
-def add_aliases(alias_conf):
-    if alias_conf is not None:
-        for alias_conf_single in alias_conf:
-            if alias_conf_single is not None:
-                if "version" in alias_conf_single and "aliases" in alias_conf_single and alias_conf_single[
-                    "version"] == 1.0:
-                    for dev_pointer in alias_conf_single['aliases']:
-                        try:
-                            dev_obj = Devices.by_int(dev_pointer["dev_type"], dev_pointer["circuit"])
-                            logger.info("Alias loaded: " + str(dev_obj) + " " + str(dev_pointer["name"]))
-                            if Devices.add_alias(dev_pointer["name"], dev_obj):
-                                dev_obj.alias = dev_pointer["name"]
-                        except Exception as E:
-                            logger.exception(str(E))
+def load_aliases(path):
+    alias_dicts = HWDict(paths=[path]).definitions
+    # HWDict returns List(), take only first item
+    alias_conf = alias_dicts[0] if len(alias_dicts) > 0 else dict()
+    version = alias_conf.get("version",None)
+    if version == 1.0:
+        # transform array to dict if version 1.0
+        result = dict(((rec["name"], {"circuit": rec.get("circuit",None), "dev_type": rec.get("dev_type", None)}) \
+                       for rec in alias_conf.get("aliases", {}) \
+                       if rec.get("name", None) is not None))
+    elif version == 2.0:
+        result = alias_conf.get("aliases", {})
+    else:
+        result = {}
+    Devices.alias_dict = Aliases(result)
+    logger.debug(f"Load aliases with {result}")
+
+
+async def save_aliases(path):
+    # ToDo:
+    aliases = Devices.alias_dict.get_dict_to_save()
+    try:
+        with open(path, 'w+') as yfile:
+            yfile.write(yaml.dump({"version": 2.0, "aliases": aliases}))
+    except Exception as E:
+        logger.exception(str(E))

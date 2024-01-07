@@ -392,7 +392,7 @@ def main():
     logger.info(f"Starting using config file {config_path}")
 
     hw_dict = config.HWDict(dir_paths=[f'{config_path}/hw_definitions/'])
-    alias_dict = (config.HWDict(dir_paths=['/var/lib/evok/'])).definitions
+    config.load_aliases('/var/lib/evok/alias.yaml')
 
     define("cors", default=True, help="enable CORS support", type=bool)
     port_api = evok_config.apis.get("port", 8080)
@@ -455,7 +455,7 @@ def main():
             device.switch_to_async(mainLoop)
 
     for modbus_slave in Devices.by_int(MODBUS_SLAVE):
-        modbus_slave.switch_to_async(mainLoop, alias_dict)
+        modbus_slave.switch_to_async(mainLoop)
         if modbus_slave.scan_enabled:
             modbus_slave.start_scanning()
 
