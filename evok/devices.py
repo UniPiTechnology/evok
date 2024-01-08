@@ -174,7 +174,7 @@ class DeviceList(dict):
                 logger.warning(f"Error on setting saved alias: {str(E)}")
 
         devents.config(device)
-        logging.debug(f"Registed new device '{devtype_names[devtype]}' with circuit {device.circuit} \t ({device})")
+        logger.debug(f"Registed new device '{devtype_names[devtype]}' with circuit {device.circuit} \t ({device})")
 
     def set_alias(self, alias: str, device: Device, file_update:bool=False) -> None:
         try:

@@ -569,95 +569,105 @@ class Relay(object):
         return old_value != self.value
 
     async def set(self, value=None, timeout=None, mode=None, pwm_freq=None, pwm_duty=None, alias=None):
-        """ Sets new on/off status. Disable pending timeouts
-        """
-        if self.pending_id:
-            IOLoop.instance().remove_timeout(self.pending_id)
-            self.pending_id = None
+        """ Sets new on/off status. Disable pending timeouts """
+        try:
+            if self.pending_id:
+                IOLoop.instance().remove_timeout(self.pending_id)
+                self.pending_id = None
 
-        #if pwm_duty is not None and self.mode == 'PWM' and float(pwm_duty) <= 0.01:
-        #    mode = 'Simple'
-        # New system - mode field will no longer be used
+            if pwm_duty is not None:
+                pwm_duty = float(pwm_duty)
 
-        # Set PWM Freq
-        if (pwm_freq is not None) and (float(pwm_freq) > 0):
-            self.pwm_freq = pwm_freq;
-            self.pwm_delay_val = 48000000 / float(pwm_freq)
-            if ((int(self.pwm_delay_val) % 50000) == 0) and ((self.pwm_delay_val / 50000) < 65535):
-                self.pwm_cycle_val = 50000
-                self.pwm_prescale_val = self.pwm_delay_val / 50000
-            elif ((int(self.pwm_delay_val) % 10000) == 0) and ((self.pwm_delay_val / 10000) < 65535):
-                self.pwm_cycle_val = 10000
-                self.pwm_prescale_val = self.pwm_delay_val / 10000
-            elif ((int(self.pwm_delay_val) % 5000) == 0) and ((self.pwm_delay_val / 5000) < 65535):
-                self.pwm_cycle_val = 5000
-                self.pwm_prescale_val = self.pwm_delay_val / 5000
-            elif ((int(self.pwm_delay_val) % 1000) == 0) and ((self.pwm_delay_val / 1000) < 65535):
-                self.pwm_cycle_val = 1000
-                self.pwm_prescale_val = self.pwm_delay_val / 1000
-            else:
-                self.pwm_prescale_val = sqrt(self.pwm_delay_val)
-                self.pwm_cycle_val = self.pwm_prescale_val
+            if pwm_freq is not None:
+                pwm_freq = float(pwm_freq)
 
-            if self.pwm_duty > 0:
-                self.pwm_duty_val = float(self.pwm_cycle_val) * float(float(self.pwm_duty) / 100.0)
+            #if pwm_duty is not None and self.mode == 'PWM' and float(pwm_duty) <= 0.01:
+            #    mode = 'Simple'
+            # New system - mode field will no longer be used
 
-            other_devs = Devices.by_int(RELAY, major_group=self.major_group)  # All PWM outs in the same group share this registers
-            for other_dev in other_devs:
-                if other_dev.pwm_duty > 0:
+            # Set PWM Freq
+            if (pwm_freq is not None) and (pwm_freq > 0):
+                self.pwm_freq = pwm_freq;
+                self.pwm_delay_val = 48000000 / pwm_freq
+                if ((int(self.pwm_delay_val) % 50000) == 0) and ((self.pwm_delay_val / 50000) < 65535):
+                    self.pwm_cycle_val = 50000
+                    self.pwm_prescale_val = round(self.pwm_delay_val / 50000)
+                elif ((int(self.pwm_delay_val) % 10000) == 0) and ((self.pwm_delay_val / 10000) < 65535):
+                    self.pwm_cycle_val = 10000
+                    self.pwm_prescale_val = round(self.pwm_delay_val / 10000)
+                elif ((int(self.pwm_delay_val) % 5000) == 0) and ((self.pwm_delay_val / 5000) < 65535):
+                    self.pwm_cycle_val = 5000
+                    self.pwm_prescale_val = round(self.pwm_delay_val / 5000)
+                elif ((int(self.pwm_delay_val) % 1000) == 0) and ((self.pwm_delay_val / 1000) < 65535):
+                    self.pwm_cycle_val = 1000
+                    self.pwm_prescale_val = round(self.pwm_delay_val / 1000)
+                else:
+                    self.pwm_prescale_val = round(sqrt(self.pwm_delay_val))
+                    self.pwm_cycle_val = round(self.pwm_prescale_val)
+
+                if self.pwm_duty > 0:
+                    self.pwm_duty_val = round(float(self.pwm_cycle_val) * float(self.pwm_duty / 100.0))
+
+                other_devs = Devices.by_int(RELAY, major_group=self.major_group)  # All PWM outs in the same group share this registers
+                for other_dev in other_devs:
                     other_dev.pwm_freq = self.pwm_freq
                     other_dev.pwm_delay_val = self.pwm_delay_val
                     other_dev.pwm_cycle_val = self.pwm_cycle_val
                     other_dev.pwm_prescale_val = self.pwm_prescale_val
-                    await other_dev.set(pwm_duty=other_dev.pwm_duty)
+                    if other_dev.pwm_duty > 0:
+                        await other_dev.set(pwm_duty=other_dev.pwm_duty)
 
-            await self.arm.modbus_slave.client.write_register(self.pwmcyclereg, self.pwm_cycle_val - 1, slave=self.arm.modbus_address)
-            await self.arm.modbus_slave.client.write_register(self.pwmprescalereg, self.pwm_prescale_val, slave=self.arm.modbus_address)
-            await self.arm.modbus_slave.client.write_register(self.pwmdutyreg, self.pwm_duty_val, slave=self.arm.modbus_address)
+                await self.arm.modbus_slave.client.write_register(self.pwmcyclereg, self.pwm_cycle_val - 1, slave=self.arm.modbus_address)
+                await self.arm.modbus_slave.client.write_register(self.pwmprescalereg, self.pwm_prescale_val, slave=self.arm.modbus_address)
+                await self.arm.modbus_slave.client.write_register(self.pwmdutyreg, self.pwm_duty_val, slave=self.arm.modbus_address)
 
-        # Set Binary value
-        if value is not None:
+            # Set Binary value
+            if value is not None:
 
-            parsed_value = 1 if int(value) else 0
+                parsed_value = 1 if int(value) else 0
 
-            if pwm_duty is not None:
-                if (pwm_duty == 100 and parsed_value == 1) or (pwm_duty == 0 and parsed_value == 0): # No conflict in this case
-                    pass
-                else:
-                    raise Exception('Set value conflict: Cannot set both value and pwm_duty at once.')
+                if pwm_duty is not None:
+                    if (pwm_duty == 100 and parsed_value == 1) or (pwm_duty == 0 and parsed_value == 0): # No conflict in this case
+                        pass
+                    else:
+                        raise Exception('Set value conflict: Cannot set both value and pwm_duty at once.')
 
-            if not (timeout is None):
-                timeout = float(timeout)
+                if not (timeout is None):
+                    timeout = float(timeout)
 
-            self.mode = 'Simple'
-            await self.arm.modbus_slave.client.write_coil(self.coil, parsed_value, slave=self.arm.modbus_address)
-            if self.pwm_duty != 0:
-                self.pwm_duty = 0
-                await self.arm.modbus_slave.client.write_register(self.pwmdutyreg, self.pwm_duty, slave=self.arm.modbus_address) # Turn off PWM
+                self.mode = 'Simple'
+                await self.arm.modbus_slave.client.write_coil(self.coil, parsed_value, slave=self.arm.modbus_address)
+                if self.pwm_duty != 0:
+                    self.pwm_duty = 0
+                    await self.arm.modbus_slave.client.write_register(self.pwmdutyreg, round(self.pwm_duty), slave=self.arm.modbus_address) # Turn off PWM
 
-        # Set PWM Duty
-        elif pwm_duty is not None and float(pwm_duty) >= 0.0 and float(pwm_duty) <= 100.0:
-            self.pwm_duty = pwm_duty
-            self.pwm_duty_val = float(self.pwm_cycle_val) * float(float(self.pwm_duty) / 100.0)
-            if self.value != 0:
-                self.arm.modbus_slave.client.write_coil(self.coil, 0, slave=self.arm.modbus_address)
-            await self.arm.modbus_slave.client.write_register(self.pwmdutyreg, self.pwm_duty_val, slave=self.arm.modbus_address)
-            self.mode = 'PWM'
+            # Set PWM Duty
+            elif pwm_duty is not None and pwm_duty >= 0.0 and pwm_duty <= 100.0:
+                self.pwm_duty = pwm_duty
+                self.pwm_duty_val = round(float(self.pwm_cycle_val) * self.pwm_duty / 100.0)
+                if self.value != 0:
+                    self.arm.modbus_slave.client.write_coil(self.coil, 0, slave=self.arm.modbus_address)
+                await self.arm.modbus_slave.client.write_register(self.pwmdutyreg, self.pwm_duty_val, slave=self.arm.modbus_address)
+                self.mode = 'PWM'
 
-        if alias is not None:
-            Devices.set_alias(alias, self, file_update=True)
+            if alias is not None:
+                Devices.set_alias(alias, self, file_update=True)
 
-        if timeout is None:
+            if timeout is None:
+                return self.full()
+
+            async def timercallback():
+                self.pending_id = None
+                await self.arm.modbus_slave.client.write_coil(self.coil, 0 if value else 1, slave=self.arm.modbus_address)
+
+            self.pending_id = IOLoop.instance().add_timeout(
+                datetime.timedelta(seconds=float(timeout)), timercallback)
+
             return self.full()
 
-        async def timercallback():
-            self.pending_id = None
-            await self.arm.modbus_slave.client.write_coil(self.coil, 0 if value else 1, slave=self.arm.modbus_address)
-
-        self.pending_id = IOLoop.instance().add_timeout(
-            datetime.timedelta(seconds=float(timeout)), timercallback)
-
-        return self.full()
+        except Exception as E:
+            logger.error(f"Error in set RO: {E}")
+            raise E
 
     def get(self):
         return self.full()
@@ -1603,4 +1613,3 @@ class AnalogInput18():
     @property
     def voltage(self):
         return self.value
-

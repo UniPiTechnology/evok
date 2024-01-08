@@ -390,7 +390,7 @@ def config_cb(device, *kwargs):
 
 def main():
     arg_parser = argparse.ArgumentParser(prog='evok', description='')
-    arg_parser.add_argument('-d', '--debug', action='store_true', const=True, default=False, help='Debug logging')
+    arg_parser.add_argument('-d', '--debug', action='store_true', default=False, help='Debug logging')
 
     log_level = evok_config.logging.get("level", "INFO").upper()
     args = arg_parser.parse_args()
