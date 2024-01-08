@@ -8,10 +8,8 @@ StartLimitIntervalSec=300
 Type=simple
 ExecStart=/opt/evok/bin/evok
 TimeoutStopSec=3
-SyslogLevel=debug
 SyslogIdentifier=evok
-StandardOutput=null
-WorkingDirectory=/opt/evok
+WorkingDirectory=/var/lib/evok
 User=evok
 Restart=always
 

@@ -4,7 +4,7 @@ import re
 from copy import deepcopy
 from typing import Any, Type, Tuple, List, Mapping, Callable
 
-from .log import *
+from .log import logger
 
 """
    Structured dict/dict of all devices in the system

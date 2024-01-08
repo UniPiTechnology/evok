@@ -12,10 +12,10 @@ autogen: true
 #   | Logging settings |
 #   +------------------+
 logging:
-  level: ERROR
+  level: WARNING
   # ^ Minimum severity of messages to be logged, where minimum is CRITICAL.
   # ^ Options: [CRITICAL, ERROR, WARNING, INFO, DEBUG]
-  file: /var/lib/evok/log.evok
+  # file: /var/lib/evok/log.evok
 
 #   +--------------+
 #   | API settings |

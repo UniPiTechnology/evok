@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+import argparse
 import asyncio
 
 import os
@@ -10,17 +10,15 @@ import tornado.httpclient
 import tornado.ioloop
 import tornado.web
 
+import logging
+from .log import logger
+logger.setLevel(logging.INFO)  # noqa
 
 from operator import methodcaller
-from tornado.options import define, options
 from tornado import websocket
 from tornado import escape
 from .handlers_base import EvokWebHandlerBase
-
-try:
-    from urllib.parse import urlparse  # py2
-except ImportError:
-    from urlparse import urlparse  # py3
+from urllib.parse import urlparse
 
 import signal
 
@@ -391,30 +389,31 @@ def config_cb(device, *kwargs):
 ################################ MAIN ################################
 
 def main():
-    # define("path1", default='', help="Use this config file, if device is Unipi 1.x", type=str)
-    # define("path2", default='', help="Use this config file, if device is Unipi Neuron", type=str)
-    define("port", default=-1, help="Http server listening ports", type=int)
-    define("modbus_port", default=-1, help="Modbus/TCP listening port, 0 disables modbus", type=int)
-    tornado.options.parse_command_line()
+    arg_parser = argparse.ArgumentParser(prog='evok', description='')
+    arg_parser.add_argument('-d', '--debug', action='store_true', const=True, default=False, help='Debug logging')
 
-    # tornado.httpclient.AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
-    log_file = evok_config.logging.get("file", "./evok.log")
     log_level = evok_config.logging.get("level", "INFO").upper()
+    args = arg_parser.parse_args()
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(log_level)
 
-    # rotating file handler
-    filelog_handler = logging.handlers.TimedRotatingFileHandler(filename=log_file, when='D', backupCount=7)
-    log_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    filelog_handler.setFormatter(log_formatter)
-    filelog_handler.setLevel(log_level)
-    logger.addHandler(filelog_handler)
-    # logging.getLogger('pymodbus').setLevel(logging.DEBUG)
+    log_file = evok_config.logging.get("file", None)
+    if log_file is not None:
+        # rotating file handler
+        filelog_handler = logging.handlers.TimedRotatingFileHandler(filename=log_file, when='D', backupCount=7)
+        log_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        filelog_handler.setFormatter(log_formatter)
+        filelog_handler.setLevel(log_level)
+        logger.addHandler(filelog_handler)
+        # logging.getLogger('pymodbus').setLevel(logging.DEBUG)
 
     logger.info(f"Starting using config file {config_path}")
 
     hw_dict = config.HWDict(dir_paths=[f'{config_path}/hw_definitions/'])
     config.load_aliases('/var/lib/evok/alias.yaml')
 
-    define("cors", default=True, help="enable CORS support", type=bool)
     port_api = evok_config.apis.get("port", 8080)
 
     api_routes = [
