@@ -2,7 +2,7 @@ from . import devents
 import yaml
 import re
 from copy import deepcopy
-from typing import Any, Type, Tuple, List, Mapping
+from typing import Any, Type, Tuple, List, Mapping, Callable
 
 from .log import *
 
@@ -20,10 +20,17 @@ class Aliases:
 
     def __init__(self, initial_dict: Mapping[str, Mapping[str, str]]):
         self.initial_dict = initial_dict
-        self.dirty = False
+        self.dirty_callback: Callable = None
 
     def __getitem__(self, key):
         return self.alias_dict.__get_item__(self.key)
+
+    def register_dirty_cb(self, func: Callable) -> None:
+        self.dirty_callback = func
+
+    def set_dirty(self) -> None:
+        if self.dirty_callback:
+            self.dirty_callback()
 
     def validate(self, alias: str) -> None:
         # check duplicity
@@ -57,22 +64,19 @@ class Aliases:
             if file_update:
                 self.set_dirty()
 
-    def get_aliases_by_circuit(self, dev_type: int, circuit: str):
+    def get_aliases_by_circuit(self, devtype: int, circuit: str):
         return  list((alias for alias, rec in self.initial_dict.items()\
-                            if (rec.get("dev_type", None) == dev_type) and (rec.get("circuit", None) == circuit)))
-
-    def set_dirty(self) -> None:
-        self.dirty = True
+                            if (rec.get("devtype", None) == devtype) and (rec.get("circuit", None) == circuit)))
 
     def get_dict_to_save(self) -> Mapping[str, Mapping[str, str]]:
-        aliases = deepcopy(self.initital_dict)
-        aliases.update(dict(((alias, {"circuit":device.circuit, "dev_type":device.devtype})
-                             for alias,device in self.alias_dict)))
+        aliases = deepcopy(self.initial_dict)
+        aliases.update(dict(((alias, {"circuit":device.circuit, "devtype":device.devtype})
+                             for alias,device in self.alias_dict.items())))
         return aliases
 
 
 class DeviceList(dict):
-    alias_dict = Aliases({})
+    aliases = Aliases({})
 
     def __init__(self, altnames):
         super(DeviceList, self).__init__()
@@ -128,8 +132,8 @@ class DeviceList(dict):
         try:
             return devdict[circuit]
         except KeyError:
-            if circuit in self.alias_dict:
-                return self.alias_dict[circuit]
+            if circuit in self.aliases:
+                return self.aliases[circuit]
             else:
                 raise Exception(f'Invalid device circuit number {str(circuit)} with devtypeid {devtypeid}')
 
@@ -144,8 +148,8 @@ class DeviceList(dict):
         try:
             return devdict[circuit]
         except KeyError:
-            if circuit in self.alias_dict:
-                return self.alias_dict[circuit]
+            if circuit in self.aliases:
+                return self.aliases[circuit]
             else:
                 raise Exception(f'Invalid device circuit number {str(circuit)} with devtype {devtype}')
 
@@ -161,9 +165,9 @@ class DeviceList(dict):
 
         devdict[str(device.circuit)] = device
         # assign saved alias
-        for alias in self.alias_dict.get_aliases_by_circuit(devtype, str(device.circuit)):
+        for alias in self.aliases.get_aliases_by_circuit(devtype, str(device.circuit)):
             try:
-                self.alias_dict.add(alias, device)
+                self.aliases.add(alias, device)
                 device.alias = alias
                 logger.info(f"Set alias {alias} to {devtype_names[devtype]}[{device.circuit}]")
             except Exception as E:
@@ -175,11 +179,11 @@ class DeviceList(dict):
     def set_alias(self, alias: str, device: Device, file_update:bool=False) -> None:
         try:
             if (alias == '' or alias is None):
-                if device.alias: self.alias_dict.delete(device.alias, file_update)
+                if device.alias: self.aliases.delete(device.alias, file_update)
                 device.alias = alias
                 logger.debug(f"Reset alias of {devtype_names[device.devtype]}[{device.circuit}]")
             elif alias != device.alias:
-                self.alias_dict.add(alias, device, file_update)
+                self.aliases.add(alias, device, file_update)
                 device.alias = alias
                 logger.debug(f"Set alias {alias} of {devtype_names[device.devtype]}[{device.circuit}]")
         except Exception as E:

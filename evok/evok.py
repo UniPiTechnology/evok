@@ -350,22 +350,42 @@ class JSONBulkHandler(tornado.web.RequestHandler):
         await self.finish()
 
 
-def gener_status_cb(mainloop):
+class AliasTask:
 
-    def status_cb(device, *kwargs):
-        if "all" in registered_ws:
-            for x in registered_ws['all']:
-                x.on_event(device)
+    def __init__(self, aliases, loop):
+        self.event = asyncio.Event()
+        self.aliases = aliases
+        self.aliases.register_dirty_cb(lambda: self.event.set())
+        loop.add_callback(self.start)
 
-    return status_cb
+    async def start(self):
+        self.alias_task = asyncio.create_task(self.work())
+
+    def cancel(self):
+        self.alias_task.cancel()
+
+    async def work(self):
+        """ Wait for Event generated on setting alias and save aliases to file (in thread)"""
+        while True:
+            await asyncio.sleep(1)
+            await self.event.wait()
+            try:
+                alias_dict = self.aliases.get_dict_to_save()
+                self.event.clear()
+                await asyncio.to_thread(config.save_aliases, alias_dict, '/var/lib/evok/alias.yaml')
+            except Exception as E:
+                logger.exception(E)
 
 
-def gener_config_cb(mainloop):
+def status_cb(device, *kwargs):
+    if "all" in registered_ws:
+        for x in registered_ws['all']:
+            x.on_event(device)
 
-    def config_cb(device, *kwargs):
-        pass
 
-    return config_cb
+def config_cb(device, *kwargs):
+    pass
+
 
 
 ################################ MAIN ################################
@@ -431,8 +451,8 @@ def main():
 
     #### prepare hardware according to config #####
     # prepare callbacks for config events
-    devents.register_config_cb(gener_config_cb(mainLoop))
-    devents.register_status_cb(gener_status_cb(mainLoop))
+    devents.register_config_cb(config_cb)
+    devents.register_status_cb(status_cb)
 
     # create hw devices
     config.create_devices(evok_config, hw_dict)
@@ -446,6 +466,8 @@ def main():
                 urlspec.handler_class._server = mainLoop
     '''
     # switch buses to async mode, start processes, plan some actions
+    alias_task = AliasTask(Devices.aliases, mainLoop)
+
     for bustype in (I2CBUS, GPIOBUS, OWBUS):
         for device in Devices.by_int(bustype):
             device.bus_driver.switch_to_async(mainLoop)
@@ -469,6 +491,7 @@ def main():
             bus.bus_driver.switch_to_sync()
         for bus in Devices.by_int(GPIOBUS):
             bus.bus_driver.switch_to_sync()
+        alias_task.cancel()
         logger.info("Shutting down")
         tornado.ioloop.IOLoop.instance().stop()
 

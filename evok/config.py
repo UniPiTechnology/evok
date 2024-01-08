@@ -263,23 +263,23 @@ def load_aliases(path):
     alias_conf = alias_dicts[0] if len(alias_dicts) > 0 else dict()
     version = alias_conf.get("version",None)
     if version == 1.0:
-        # transform array to dict if version 1.0
-        result = dict(((rec["name"], {"circuit": rec.get("circuit",None), "dev_type": rec.get("dev_type", None)}) \
+        # transform array to dict and rename dev_type -> devtype if version 1.0
+        result = dict(((rec["name"], {"circuit": rec.get("circuit",None), "devtype": rec.get("dev_type", None)}) \
                        for rec in alias_conf.get("aliases", {}) \
                        if rec.get("name", None) is not None))
     elif version == 2.0:
         result = alias_conf.get("aliases", {})
     else:
         result = {}
-    Devices.alias_dict = Aliases(result)
+    Devices.aliases = Aliases(result)
     logger.debug(f"Load aliases with {result}")
 
 
-async def save_aliases(path):
-    # ToDo:
-    aliases = Devices.alias_dict.get_dict_to_save()
+# don't call it directly in asyn loop -- block
+def save_aliases(alias_dict, path):
     try:
+        logger.info(f"Saving alias file {path}")
         with open(path, 'w+') as yfile:
-            yfile.write(yaml.dump({"version": 2.0, "aliases": aliases}))
+            yfile.write(yaml.dump({"version": 2.0, "aliases": alias_dict}))
     except Exception as E:
         logger.exception(str(E))
