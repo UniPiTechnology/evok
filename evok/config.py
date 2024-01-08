@@ -35,7 +35,7 @@ class HWDict:
         if scope is None or len(scope) == 0:
             raise ValueError(f"HWDict: no scope!")
         for file_path in scope:
-            if file_path.endswith(".yaml"):
+            if file_path.endswith(".yaml") and os.path.isfile(file_path):
                 with open(file_path, 'r') as yfile:
                     ydata = yaml.load(yfile, Loader=yaml.SafeLoader)
                     if ydata is None:
