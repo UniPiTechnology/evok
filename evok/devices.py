@@ -15,6 +15,7 @@ from .log import logger
 Device = Any
 
 class Aliases:
+
     alias_dict: Mapping[str, Device] = {}
     initial_dict: Mapping[str, Mapping[str, str]] = {}
 
@@ -23,7 +24,10 @@ class Aliases:
         self.dirty_callback: Callable = None
 
     def __getitem__(self, key):
-        return self.alias_dict.__get_item__(self.key)
+        return self.alias_dict.__getitem__(key)
+
+    def __contains__(self, key):
+        return self.alias_dict.__contains__(key)
 
     def register_dirty_cb(self, func: Callable) -> None:
         self.dirty_callback = func
@@ -37,7 +41,7 @@ class Aliases:
         if alias in self.alias_dict:
             raise Exception(f"Duplicate alias {alias}")
         # check alias name
-        if (not (alias.startswith("al_")) or (len(re.findall(r"[A-Za-z0-9\-\._]*", alias)) > 2)):
+        if len(re.findall(r"[A-Za-z0-9\-\._]*", alias)) > 2:
             raise Exception(f"Invalid alias {alias}")
 
     def add(self, alias: str, device: Device, file_update:bool=False):
