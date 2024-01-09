@@ -24,7 +24,12 @@ apis:
   port: 8080
   # ^ API listen port
   # ^ only change if you are certain you know what you are doing
-  # ^ FOR OUR WEB INTERFACE THE PORT SHOULD BE CHANGED IN "/etc/evok-nginx.conf" TOO !!!
+  # ^ FOR OUR WEB INTERFACE THE PORT SHOULD BE CHANGED IN "etc/nginx/sites-available/evok" TOO !!!
+
+  address: 127.0.0.1
+  # ^ API listen address
+  # ^ to listen on all interfaces set this paramater to empty or remove it
+  # ^ FOR OUR WEB INTERFACE THE PORT SHOULD BE CHANGED IN "etc/nginx/sites-available/evok" TOO !!!
 
   websocket:
     enabled: true

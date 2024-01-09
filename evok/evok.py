@@ -413,6 +413,7 @@ def main():
 
     hw_dict = config.HWDict(dir_paths=[f'{config_path}/hw_definitions/'])
     config.load_aliases('/var/lib/evok/alias.yaml')
+    address_api = evok_config.apis.get("address", None)
 
     port_api = evok_config.apis.get("port", 8080)
 
@@ -435,7 +436,7 @@ def main():
 
     #### prepare http server #####
     httpServerApi = tornado.httpserver.HTTPServer(app)
-    httpServerApi.listen(port_api)
+    httpServerApi.listen(port_api, address=address_api)
     logger.info("HTTP server API listening on port: %d", port_api)
 
     webhook_config = evok_config.get_api('webhook')
