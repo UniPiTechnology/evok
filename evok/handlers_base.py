@@ -6,7 +6,7 @@ import tornado
 
 from .devices import *
 
-SCHEMA_VALIDATE = False
+SCHEMA_VALIDATE = True
 
 
 class EvokWebHandlerBase(tornado.web.RequestHandler):
