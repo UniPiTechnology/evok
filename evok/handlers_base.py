@@ -23,14 +23,17 @@ class EvokWebHandlerBase(tornado.web.RequestHandler):
     #        GET /rest/DEVICE/CIRCUIT/PROPERTY
     @tornado.web.authenticated
     def get(self, dev, circuit, prop):
-        device = Devices.by_name(dev, circuit)
-        if prop:
-            if prop[0] in ('_',):
-                raise Exception('Invalid property name')
-            result = {prop: getattr(device, prop)}
-        else:
-            result = device.full()
-        self.write(json.dumps(result))
+        try:
+            device = Devices.by_name(dev, circuit)
+            if prop:
+                if prop[0] in ('_',):
+                    raise Exception('Invalid property name')
+                result = {prop: getattr(device, prop)}
+            else:
+                result = device.full()
+            self.write(json.dumps(result))
+        except Exception as E:
+            self.write(json.dumps({'success': False, 'errors': {str(type(E).__name__): str(E)}}))
         self.finish()
 
     async def post(self, dev, circuit, prop):
