@@ -407,7 +407,7 @@ function populateConfigForm(form, device, circuit, data) {
 
 	if (device != "neuron") {
 		if (device != "wifi" && device != "wd") {
-			var decoded_alias = alias.substr(3, alias.length - 1);
+			var decoded_alias = alias;
 			decoded_alias = decoded_alias.replace(/_/g," ");
 			alias_text_field = $("<input>", {"type":"text", "name": "unipi_config_form_alias_field", "data-wrapper-class": "ui-btn", "id": "unipi_config_form_alias_field", "value": decoded_alias});
 			alias_label = $("<label>", {"for": "unipi_config_form_alias_field"});
@@ -767,7 +767,7 @@ function syncDevice(msg) {
 
 	// Change alias back into text
 	if ("alias" in msg) {
-		var decoded_alias = msg.alias.substr(3, msg.alias.length - 1);
+		var decoded_alias = msg.alias;
 		decoded_alias = decoded_alias.replace(/_/g," ");
 		circuit_display_name = decoded_alias;
 	}
@@ -1263,7 +1263,6 @@ function createConfigPostRequestDict(arg_fields) {
 		case "unipi_config_form_alias_field": {
 			if (arg_fields[i].value != "") {
 				var encoded_alias = arg_fields[i].value.replace(/ /g,"_");
-				encoded_alias = "al_" + encoded_alias;
 				outp["alias"] = encoded_alias;
 			} else {
 				outp["alias"] = "";
@@ -1385,7 +1384,7 @@ function configFormSubmitHandler(event) {
 	        			    }
 	        				$("#unipi_config_div_grid_anchor_" + device + "_" + circuit).text(circuit_display_name);
 	        			} else {
-	        				var decoded_alias = post_request_dict["alias"].substr(3, post_request_dict["alias"].length - 1);
+	        				var decoded_alias = post_request_dict["alias"];
 	        				decoded_alias = decoded_alias.replace(/_/g," ");
 	        				$("#unipi_config_div_grid_anchor_" + device + "_" + circuit).text(decoded_alias);
 	        			}
