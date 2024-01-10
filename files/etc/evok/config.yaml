@@ -67,7 +67,7 @@ apis:
 #       - MODBUSTCP (specific settings: [hostname, port])
 #       - MODBUSRTU (specific settings: [port, boudrate, parity])
 #   <device_name>: Your choice, but cannot be duplicates!
-#   <model_id>: Defines a modbus register map. Source is in '/etc/evok/hw_definitions'.
+#   <model_id>: Defines a modbus register map. Source is in '.yaml' files in '/etc/evok/hw_definitions'.
 #               ^ examples [xS51, xS11, ]
 
 
