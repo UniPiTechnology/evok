@@ -37,228 +37,6 @@ owire_post_out_schema = {
 
 owire_post_out_example = {"result": {"dev": "temp", "circuit": "1_01", "address": "abcdefgh", "typ": "DS9999"}}
 
-uart_get_out_schema = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "title": "Neuron_Instruction",
-    "type": "object",
-    "additionalProperties": False,
-    "properties": {
-        "dev": {
-            "type": "string",
-            "enum": [
-                "uart"
-            ]
-        },
-        "circuit": {
-            "type": "string"
-        },
-        "conf_value": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 65535
-        },
-        "parity_modes": {
-            "type": "array",
-            "items": {
-                "type": "string",
-                "enum": [
-                    "Odd",
-                    "Even",
-                    "None"
-                ]
-            }
-        },
-        "parity_mode": {
-            "type": "string",
-            "enum": [
-                "Odd",
-                "Even",
-                "None"
-            ]
-        },
-        "speed_modes": {
-            "type": "array",
-            "items": {
-                "type": "string",
-                "enum": [
-                    "2400bps",
-                    "4800bps",
-                    "9600bps",
-                    "19200bps",
-                    "38400bps",
-                    "57600bps",
-                    "115200bps"
-                ]
-            }
-        },
-        "speed_mode": {
-            "type": "string",
-            "enum": [
-                "2400bps",
-                "4800bps",
-                "9600bps",
-                "19200bps",
-                "38400bps",
-                "57600bps",
-                "115200bps"
-            ]
-        },
-        "stopb_modes": {
-            "type": "array",
-            "items": {
-                "type": "string",
-                "enum": [
-                    "One",
-                    "Two"
-                ]
-            }
-        },
-        "stopb_mode": {
-            "type": "string",
-            "enum": [
-                "One",
-                "Two"
-            ]
-        },
-        "glob_dev_id": {
-            "type": "number",
-            "minimum": 0
-        },
-        "sw_address": {
-            "type": "number"
-        },
-        "alias": {
-            "type": "string"
-        }
-    },
-    "required": [
-        "dev",
-        "circuit",
-        "parity_modes",
-        "parity_mode",
-        "speed_modes",
-        "speed_mode",
-        "stopb_modes",
-        "stopb_mode",
-        "glob_dev_id"
-    ]
-}
-
-uart_get_out_example = {
-            "glob_dev_id": 1,
-            "conf_value": 15,
-            "stopb_modes": [
-                "One",
-                "Two"
-            ],
-            "stopb_mode": "One",
-            "circuit": "1_01",
-            "speed_modes": [
-                "2400bps",
-                "4800bps",
-                "9600bps",
-                "19200bps",
-                "38400bps",
-                "57600bps",
-                "115200bps"
-            ],
-            "parity_modes": [
-                "None",
-                "Odd",
-                "Even"
-            ],
-            "parity_mode": "None",
-            "dev": "uart",
-            "speed_mode": "38400bps"
-        }
-
-uart_post_inp_schema = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "title": "Neuron_Instruction",
-    "type": "object",
-    "additionalProperties": False,
-    "properties": {
-        "conf_value": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 65535
-        },
-        "parity_mode": {
-            "type": "string",
-            "enum": [
-                "None",
-                "Odd",
-                "Even"
-            ]
-        },
-        "speed_mode": {
-            "type": "string",
-            "enum": [
-                "2400bps",
-                "4800bps",
-                "9600bps",
-                "19200bps",
-                "38400bps",
-                "57600bps",
-                "115200bps"
-            ]
-        },
-        "stopb_mode": {
-            "type": "string",
-            "enum": [
-                "One",
-                "Two"
-            ]
-        },
-        "sw_address": {
-            "type": "number"
-        },
-        "alias": {
-            "type": "string"
-        }
-    }
-}
-
-uart_post_inp_example = {"parity_mode": "Even"}
-
-uart_post_out_schema = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "title": "Neuron_Instruction",
-    "type": "object",
-    "additionalProperties": False,
-    "properties": {
-        "result": { "type": "object"},
-        "error": { "type": "string"}
-    }
-}
-
-uart_post_out_example = {
-            "glob_dev_id": 1,
-            "conf_value": 15,
-            "stopb_modes": [
-                "One",
-                "Two"
-            ],
-            "stopb_mode": "One",
-            "circuit": "1_01",
-            "speed_modes": [
-                "2400bps",
-                "4800bps",
-                "9600bps",
-                "19200bps",
-                "38400bps",
-                "57600bps",
-                "115200bps"
-            ],
-            "parity_modes": [
-                "None",
-                "Odd",
-                "Even"
-            ],
-            "parity_mode": "None",
-            "dev": "uart",
-            "speed_mode": "38400bps"
-        }
 
 neuron_get_out_schema = {
         "$schema": "http://json-schema.org/draft-04/schema#",
@@ -390,7 +168,7 @@ led_post_inp_schema = {
     "additionalProperties": False,
     "additionalProperties": False,
     "properties": {
-        "value": { "type": "string"}
+        "value": { "type": ["boolean", "string"] }
     },
 }
 
@@ -1385,7 +1163,7 @@ relay_post_inp_schema = {
     "type": "object",
     "additionalProperties": False,
     "properties": {
-        "value": { "type": "string"},
+        "value": { "type": ["boolean", "string"] },
         "mode": {"type": "string"},
         "timeout": {"type": "string"},
         "pwm_freq": {"type": "number"},
@@ -1410,154 +1188,6 @@ relay_post_out_schema = {
 }
 
 relay_post_out_example = {"result": 1, "success": True}
-
-light_channel_get_out_schema = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "title": "Neuron_Instruction",
-    "type": "object",
-    "additionalProperties": False,
-    "properties": {
-        "dev": {
-            "type": "string",
-            "enum": [
-                "light_channel"
-            ]
-        },
-        "circuit": {
-            "type": "string"
-        },
-        "broadcast_commands": {
-            "type": "array",
-            "items": {
-                "type": [
-                    "string"
-                ],
-                "enum": [
-                    "recall_max_level",
-                    "recall_min_level",
-                    "off",
-                    "up",
-                    "down",
-                    "step_up",
-                    "step_down",
-                    "step_down_and_off",
-                    "turn_on_and_step_up",
-                    "DAPC",
-                    "reset",
-                    "identify_device",
-                    "DTR0",
-                    "DTR1",
-                    "DTR2"
-                ]
-            }
-        },
-        "group_commands": {
-            "type": "array",
-            "items": {
-                "type": [
-                    "string"
-                ],
-                "enum": [
-                    "recall_max_level",
-                    "recall_min_level",
-                    "off",
-                    "up",
-                    "down",
-                    "step_up",
-                    "step_down",
-                    "step_down_and_off",
-                    "turn_on_and_step_up",
-                    "DAPC",
-                    "reset",
-                    "identify_device"
-                ]
-            }
-        },
-        "glob_dev_id": {
-            "type": "number",
-            "minimum": 0
-        },
-        "alias": {
-            "type": "string"
-        },
-        "scan_types": {
-            "type": "array",
-            "items": {
-                "type": [
-                    "string"
-                ],
-                "enum": [
-                    "assigned",
-                    "unassigned"
-                ]
-            }
-        }
-    },
-    "required": [
-        "dev",
-        "circuit",
-        "group_commands",
-        "glob_dev_id"
-    ]
-}
-
-light_channel_get_out_example = {"scan_types": ["assigned","unassigned"], "broadcast_commands": ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off",
-                                   "turn_on_and_step_up", "DAPC", "reset", "identify_device", "DTR0", "DTR1", "DTR2"],
-                                "group_commands": ["recall_max_level", "recall_min_level", "off", "up", "down", "step_up", "step_down", "step_down_and_off",
-                               "turn_on_and_step_up", "DAPC", "reset", "identify_device"], "circuit": "2_01", "dev": "light_channel", "glob_dev_id": 1}
-
-light_channel_post_inp_schema = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "title": "Neuron_Instruction",
-    "type": "object",
-    "additionalProperties": False,
-    "properties": {
-        "broadcast_command": {
-            "type": "string"
-        },
-        "broadcast_argument": {
-            "type": "number"
-        },
-        "group_command": {
-            "type": "string"
-        },
-        "group_address": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 63
-        },
-        "group_argument": {
-            "type": "number"
-        },
-        "alias": {
-            "type": "string"
-        },
-        "scan": {
-            "type": "string",
-            "enum": [
-                "unassigned",
-                "assigned"
-            ]
-        }
-    }
-}
-
-light_channel_post_inp_example = {"alias": "abc"}
-
-light_channel_post_out_schema = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "title": "Neuron_Instruction",
-    "type": "object",
-    "additionalProperties": False,
-    "properties": {
-        "result": { "type": "number"},
-        "error": { "type": "array"},
-        "success": { "type": "boolean"}
-    },
-    "required": ["success"]
-}
-
-light_channel_post_out_example = {"result": 1, "success": True}
 
 
 ao_get_out_schema = {
@@ -1633,7 +1263,7 @@ ao_post_inp_schema = {
     "additionalProperties": False,
     "properties": {
         "value": {
-            "type": "number",
+            "type": ["string", "number"],
             "minimum": 0
         },
         "mode": {
@@ -2021,14 +1651,14 @@ di_post_inp_schema = {
     "type": "object",
     "additionalProperties": False,
     "properties": {
-        "value": { "type": "number"},
+        "value": { "type": ["number", "string"]},
         "counter": {
-            "type": "number",
+            "type": ["number", "string"],
             "minimum": 0,
             "maximum": 4294967295
         },
         "counter_mode": {},
-        "debounce": {"type": "number"}
+        "debounce": {"type": ["number", "string"]}
     },
 }
 
@@ -2188,16 +1818,16 @@ wd_post_inp_schema = {
     "additionalProperties": False,
     "properties": {
         "value": {
-            "type": "number"
+            "type": ["string", "number"]
         },
         "timeout": {
-            "type": "number"
+            "type": ["string", "number"]
         },
         "reset": {
-            "type": "number"
+            "type": ["string", "number"]
         },
         "nv_save": {
-            "type": "number"
+            "type": ["string", "number"]
         },
         "alias": {
             "type": "string"
