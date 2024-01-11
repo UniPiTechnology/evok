@@ -66,6 +66,7 @@ class EvokWebHandlerBase(tornado.web.RequestHandler):
         result += map(lambda dev: dev.full(), Devices.by_int(LIGHT_CHANNEL))
         result += map(lambda dev: dev.full(), Devices.by_int(UNIT_REGISTER))
         result += map(lambda dev: dev.full(), Devices.by_int(EXT_CONFIG))
+        result += map(lambda dev: dev.full(), Devices.by_int(DEVICE_INFO))
         return result
 
     def options(self):

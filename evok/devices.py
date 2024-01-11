@@ -178,7 +178,7 @@ class DeviceList(dict):
                 logger.warning(f"Error on setting saved alias: {str(E)}")
 
         devents.config(device)
-        logger.debug(f"Registed new device '{devtype_names[devtype]}' with circuit {device.circuit} \t ({device})")
+        logger.debug(f"Registered new device '{devtype_names[devtype]}' with circuit {device.circuit} \t ({device})")
 
     def set_alias(self, alias: str, device: Device, file_update:bool=False) -> None:
         try:
@@ -224,6 +224,7 @@ UNIT_REGISTER = 24
 EXT_CONFIG = 25
 TCPBUS = 26
 SERIALBUS = 27
+DEVICE_INFO = 28
 
 # # corresponding device types names !! ORDER IS IMPORTANT
 devtype_names = (
@@ -255,6 +256,7 @@ devtype_names = (
     'ext_config',
     'tcp_bus',
     'serial_bus',
+    'device_info',
 )
 
 devtype_altnames = {

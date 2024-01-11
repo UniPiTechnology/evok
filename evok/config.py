@@ -87,6 +87,31 @@ class SerialBusDevice:
         loop.add_callback(lambda: self.bus_driver.connect())
 
 
+class DeviceInfo:
+    def __init__(self, family: str, model: str, sn: int, board_count: int):
+        """
+        :param family: [Neuron, Patron, UNIPI1, Iris]
+        :param model: [S103, M533, ...]
+        :param sn: serial number
+        :param board_count: number of boards
+        """
+        self.family: str = family
+        self.model: str = model
+        self.sn: int = sn
+        self.board_count: int = board_count
+        self.circuit: str = f"{family}_{model}_{sn}"
+
+    def full(self):
+        return {
+            'dev': "device_info",
+            'family': self.family,
+            'model': self.model,
+            'sn': self.sn,
+            'board_count': self.board_count,
+            'circuit': self.circuit,
+        }
+
+
 class EvokConfig:
 
     def __init__(self, conf_dir_path: str):
@@ -183,6 +208,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
         bus_type = bus_data['type']
 
         bus = None
+        bus_device_info: Union[None, DeviceInfo] = None
         if bus_type == 'OWBUS':
             dev_counter += 1
             interval = bus_data.get("interval", 60)
@@ -211,6 +237,18 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                                                 stopbits=serial_stopbits, timeout=1)
             bus = SerialBusDevice(circuit=bus_name, bus_driver=bus_driver, dev_id=dev_counter)
             Devices.register_device(SERIALBUS, bus)
+
+        if bus is not None:
+            bus_device_info_data = bus_data.get("device_info", None)  # noqa
+            if bus_device_info_data is not None:
+                bus_device_info_data: dict
+                family = bus_device_info_data.get("family", 'unknown')
+                model = bus_device_info_data.get("model", 'unknown')
+                sn = bus_device_info_data.get("sn", 0)
+                board_count = bus_device_info_data.get("board_count", 1)
+                bus_device_info = DeviceInfo(family=family, model=model, sn=sn, board_count=board_count)
+                dev_counter += 1
+                Devices.register_device(DEVICE_INFO, bus_device_info)
 
         if 'devices' not in bus_data:
             logging.info(f"Creating bus '{bus_name}' with type '{bus_type}'.")
@@ -248,6 +286,17 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                                         hw_dict, device_model=device_model, slave_id=slave_id,
                                         dev_id=dev_counter, major_group=major_group)
                     Devices.register_device(MODBUS_SLAVE, slave)
+
+                    if bus_device_info is None:
+                        device_info = {'model': device_name}
+                        device_info.update(bus_data.get("device_info", {}))
+                        family = device_info.get("family", 'unknown')
+                        model = device_info.get("model", 'unknown')
+                        sn = device_info.get("sn", 0)
+                        board_count = device_info.get("board_count", 1)
+                        dev_counter += 1
+                        Devices.register_device(DEVICE_INFO,
+                                                DeviceInfo(family=family, model=model, sn=sn, board_count=board_count))
 
                 else:
                     dev_counter -= 1

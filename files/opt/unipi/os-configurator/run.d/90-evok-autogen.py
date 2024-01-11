@@ -57,6 +57,15 @@ hw_data = {
     0x1101: [UNIPI11LITE],  # UNIPI11LITE
 }
 
+code2family = {
+    1: 'UNIPI1',
+    2: 'Gate',
+    3: 'Neuron',
+    6: 'CM40',
+    7: 'Patron',
+    15: 'Iris',
+}
+
 
 def configure_owfs():
     change = False
@@ -87,7 +96,8 @@ def configure_owfs():
         print("Configured OWFS")
 
 
-def generate_config(boards: List[str], defaults: Union[None, dict] = None, has_ow: bool = False):
+def generate_config(boards: List[str], defaults: Union[None, dict], has_ow: bool,
+                    family: str, product_model: str, product_serial: int):
     defaults = defaults if defaults is not None else dict()
     port = defaults.get('port', 502)
     hostname = defaults.get('hostname', '127.0.0.1')
@@ -100,6 +110,12 @@ def generate_config(boards: List[str], defaults: Union[None, dict] = None, has_o
                 'type': 'MODBUSTCP',
                 'hostname': hostname,
                 'port': port,
+                'device_info': {
+                    'family': family,
+                    'model': product_model,
+                    'sn': product_serial,
+                    'board_count': len(boards)
+                },
                 'devices': {},
             }
         }
@@ -135,6 +151,7 @@ def run():
     try:
         envs = os.environ
         platform_id = int(envs['UNIPI_PRODUCT_ID'], 16)
+        family = code2family.get(int(str(envs['UNIPI_PRODUCT_ID'])[2:], 16), 'UNKNOWN')
         product_model = envs.get("UNIPI_PRODUCT_NAME", "UNKNOWN")
         product_serial = envs.get("UNIPI_PRODUCT_SERIAL", "UNKNOWN")
         has_ds2485 = bool(int(envs.get('HAS_DS2482', '0')))
@@ -143,7 +160,7 @@ def run():
         print(f"Device not recognized!  ({E})")
         exit(0)
 
-    print(f"Detect device {product_model} (id={hex(platform_id)}, sn={product_serial}) with boards {boards}")
+    print(f"Detect device {family} {product_model} (id={hex(platform_id)}, sn={product_serial}) with boards {boards}")
 
     is_unipi_one = True if platform_id in [0x0001, 0x0101, 0x1101] else False
     has_ow = has_ds2485 and os.path.isfile(OWFS_CONFIG_PATH)
@@ -157,7 +174,8 @@ def run():
         defaults['port'] = 503
         defaults['slave-ids'] = [0]
 
-    autogen_conf = generate_config(boards, defaults=defaults, has_ow=has_ow)
+    autogen_conf = generate_config(boards, defaults=defaults, has_ow=has_ow,
+                                   family=family, product_model=product_model, product_serial=product_serial)
 
     with open('/etc/evok/autogen.yaml', 'w') as f:
         yaml_dump(data=autogen_conf, stream=f, depth=0)
