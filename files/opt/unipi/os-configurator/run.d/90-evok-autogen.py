@@ -1,10 +1,6 @@
 #!/usr/bin/python3
 import os
-import sys
 from typing import List, Union
-
-sys.path.append("/opt/unipi/os-configurator")
-os_configurator = __import__("os-configurator")
 
 OWFS_CONFIG_PATH = "/etc/owfs.conf"
 OWFS_CONFIG_LINES = ["### CONFIGURED BY EVOK ###",
@@ -137,21 +133,22 @@ def yaml_dump(data: dict, stream, depth: int):
 
 def run():
     try:
-        product_data = os_configurator.get_product_info()
-        platform_id = int(os_configurator.get_product_info().id)
-        model_name = product_data.name
+        envs = os.environ
+        platform_id = int(envs['UNIPI_PRODUCT_ID'], 16)
+        product_model = envs.get("UNIPI_PRODUCT_NAME", "UNKNOWN")
+        product_serial = envs.get("UNIPI_PRODUCT_SERIAL", "UNKNOWN")
+        has_ds2485 = bool(int(envs.get('HAS_DS2482', '0')))
         boards: List[str] = hw_data.get(platform_id, [])
     except Exception as E:
         print(f"Device not recognized!  ({E})")
         exit(0)
 
-    print(f"Detect device {model_name} ({hex(platform_id)}) with boards {boards}")
+    print(f"Detect device {product_model} (id={hex(platform_id)}, sn={product_serial}) with boards {boards}")
 
     is_unipi_one = True if platform_id in [0x0001, 0x0101, 0x1101] else False
+    has_ow = has_ds2485 and os.path.isfile(OWFS_CONFIG_PATH)
 
-    has_ow = False
-    if (BRAIN in boards or is_unipi_one) and os.path.isfile(OWFS_CONFIG_PATH):
-        has_ow = True
+    if has_ow:
         configure_owfs()
 
     defaults = dict()
