@@ -1,4 +1,5 @@
 import math
+import sys
 import time
 from asyncio import TaskGroup
 import statistics
@@ -6,23 +7,13 @@ import statistics
 import aiohttp
 import asyncio
 
-host = '192.168.221.40'
+host = '127.0.0.1'
 
-set_values = ['01', '02', '03', '04']
-set_index = 0
-set_value = True
+request_value = True
 
 
-def set_increment():
-    global set_index, set_value
-    set_index += 1
-    if set_index >= len(set_values):
-        set_index = 0
-        set_value = not set_value
-
-
-async def rest_request_get(session: aiohttp.ClientSession, results):
-    url = f'http://{host}/rest/do/1_01'
+async def rest_request_get(session: aiohttp.ClientSession, results, dev_type: str):
+    url = f'http://{host}/rest/{dev_type}/1_01'
     start_stamp = time.time()
     async with session.get(url) as response:
         await response.text()
@@ -30,8 +21,8 @@ async def rest_request_get(session: aiohttp.ClientSession, results):
     results.append(diff)
 
 
-async def json_request_get(session: aiohttp.ClientSession, results):
-    url = f'http://{host}/json/do/1_01'
+async def json_request_get(session: aiohttp.ClientSession, results ,dev_type: str):
+    url = f'http://{host}/json/{dev_type}/1_01'
     start_stamp = time.time()
     async with session.get(url) as response:
         await response.text()
@@ -39,22 +30,11 @@ async def json_request_get(session: aiohttp.ClientSession, results):
     results.append(diff)
 
 
-async def rest_request_set(session: aiohttp.ClientSession, results):
-    url = f'http://{host}/rest/do/1_{set_values[set_index]}'
-    start_stamp = time.time()
-    data = {'value': str(1 if set_value else 0)}
-    set_increment()
-    async with session.post(url, data=data) as response:
-        await response.text()
-    diff = time.time() - start_stamp
-    results.append(diff)
-
-
-async def json_request_set(session: aiohttp.ClientSession, results):
-    global set_index
-    url = f'http://{host}/rest/do/1_{set_values[set_index]}'
-    data = {'value': str(1 if set_value else 0)}
-    set_increment()
+async def rest_request_set(session: aiohttp.ClientSession, results, dev_type: str):
+    global request_value
+    url = f'http://{host}/rest/{dev_type}/1_01'
+    data = {'value': str(1 if request_value else 0)}
+    request_value = not request_value
     start_stamp = time.time()
     async with session.post(url, data=data) as response:
         await response.text()
@@ -62,14 +42,26 @@ async def json_request_set(session: aiohttp.ClientSession, results):
     results.append(diff)
 
 
-async def request(fce, period: float, repeat: int) -> dict:
+async def json_request_set(session: aiohttp.ClientSession, results, dev_type: str):
+    global request_value
+    url = f'http://{host}/rest/{dev_type}/1_01'
+    data = {'value': str(1 if request_value else 0)}
+    request_value = not request_value
+    start_stamp = time.time()
+    async with session.post(url, data=data) as response:
+        await response.text()
+    diff = time.time() - start_stamp
+    results.append(diff)
+
+
+async def request(fce, period: float, repeat: int, dev_type: str) -> dict:
     results = list()
     async with aiohttp.ClientSession() as session:
         async with TaskGroup() as group:
             for _ in range(repeat):
-                group.create_task(fce(session, results))
+                group.create_task(fce(session, results, dev_type))
                 await asyncio.sleep(period)
-    ret = {'fce': fce.__name__, 'period': period}
+    ret = {'fce': fce.__name__, 'period': period, 'repeat': repeat, 'dev_type': dev_type}
     ret.update(get_result(results))
     print(end='.', flush=True)
     await asyncio.sleep(1)
@@ -88,44 +80,31 @@ def get_result(results: list) -> dict:
 
 
 async def main():
-    print("Benchmark started ", end='.')
+    device_id = sys.argv[1] if len(sys.argv) > 1 else 'dev'
+    device_id = device_id.replace(' ', '').replace('#', '')
+    if len(device_id) == 0:
+        device_id = 'dev'
+    print(f"Benchmark started for device: '{device_id}' #", end='.')
     results = list()
 
-    results.append(await request(fce=rest_request_get, period=0, repeat=100))
-    results.append(await request(fce=rest_request_get, period=0.001, repeat=100))
-    results.append(await request(fce=rest_request_get, period=0.002, repeat=100))
-    results.append(await request(fce=rest_request_get, period=0.003, repeat=100))
-    results.append(await request(fce=rest_request_get, period=0.006, repeat=100))
-    results.append(await request(fce=rest_request_get, period=0.01, repeat=100))
-    results.append(await request(fce=rest_request_get, period=0.1, repeat=30))
+    for dev_type in ['do', 'ao']:
+        for fce in [rest_request_get, json_request_get, rest_request_set, json_request_set]:
+            for period in [0, 0.001, 0.002, 0.006, 0.01, 0.1, 0.2]:
+                repeat = 100 if period < 0.1 else 30
+                results.append(await request(fce=fce, period=period, repeat=repeat, dev_type=dev_type))
 
-    results.append(await request(fce=json_request_get, period=0, repeat=100))
-    results.append(await request(fce=json_request_get, period=0.001, repeat=100))
-    results.append(await request(fce=json_request_get, period=0.002, repeat=100))
-    results.append(await request(fce=json_request_get, period=0.003, repeat=100))
-    results.append(await request(fce=json_request_get, period=0.006, repeat=100))
-    results.append(await request(fce=json_request_get, period=0.01, repeat=100))
-    results.append(await request(fce=json_request_get, period=0.1, repeat=30))
-
-    results.append(await request(fce=rest_request_set, period=0, repeat=100))
-    results.append(await request(fce=rest_request_set, period=0.001, repeat=100))
-    results.append(await request(fce=rest_request_set, period=0.002, repeat=100))
-    results.append(await request(fce=rest_request_set, period=0.003, repeat=100))
-    results.append(await request(fce=rest_request_set, period=0.006, repeat=100))
-    results.append(await request(fce=rest_request_set, period=0.01, repeat=100))
-    results.append(await request(fce=rest_request_set, period=0.1, repeat=30))
-
-    results.append(await request(fce=json_request_set, period=0, repeat=100))
-    results.append(await request(fce=json_request_set, period=0.001, repeat=100))
-    results.append(await request(fce=json_request_set, period=0.002, repeat=100))
-    results.append(await request(fce=json_request_set, period=0.003, repeat=100))
-    results.append(await request(fce=json_request_set, period=0.006, repeat=100))
-    results.append(await request(fce=json_request_set, period=0.01, repeat=100))
-    results.append(await request(fce=json_request_set, period=0.1, repeat=30))
-
-    print()
+    print("#")
     for data in results:
         print(f"{data['fce']}:\t{data}")
+
+    with open(f"./{device_id}.csv", 'w') as f:
+        head = results[0].keys()
+        f.write(','.join(head))
+        f.write('\n')
+        for line in results:
+            for key in head:
+                f.write(f"{line[key]},")
+            f.write('\n')
 
 
 loop = asyncio.get_event_loop()
