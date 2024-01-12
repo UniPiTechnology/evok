@@ -538,8 +538,8 @@ function getDeviceCategoryName(device) {
 	case "device_info": {
 		return "EVOK Devices";
 	}
-	case "extension": {
-		return "Modbus extensions";
+	case "modbus_slave": {
+		return "Modbus slave";
 	}
 	case "wifi": {
 		return "WiFi Adapters";
@@ -720,10 +720,9 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 		device_properties["device_name"] = device_properties["device_info_family"] + " " + device_properties["device_info_name"];
 		break;
 	}
-	case "extension": {
-		device_properties["device_name"] = "Modbus device: " + msg.model;
-		device_properties["device_addr"] = msg.circuit.split("_")[1];
-		device_properties["device_uart"] = msg.uart_port;
+	case "modbus_slave": {
+		device_properties["device_name"] = "Modbus device: " + msg.circuit;
+		device_properties["device_slave_id"] = msg.slave_id
 		break;
 	}
 	case "wifi": {
@@ -782,7 +781,7 @@ function syncDevice(msg) {
         li = document.createElement("li");
         li.id = device_signature + "_li";
 
-        if (device != "extension"){ 
+        if (device != "modbus_slave"){
             populateConfigTab(device, circuit, circuit_display_name, msg);
         }
         var div = document.createElement("div");
@@ -871,9 +870,9 @@ function syncDevice(msg) {
             }
         	break;
         }
-        case "extension": {
+        case "modbus_slave": {
             main_el = document.createElement("h1");
-            main_el.textContent = "Address: " + device_properties["device_addr"] + "  UART: " + device_properties["device_uart"];
+            main_el.textContent = "Address: " + device_properties["device_slave_id"];
             break;
         }
         case "uart": {
@@ -1001,37 +1000,23 @@ function syncDevice(msg) {
         	break;       	
         }
         case "device_info": {
-            var divider = document.getElementById("unipi_uart_divider");
+            var divider = document.getElementById("unipi_watchdog_divider");
             var list = document.getElementById("system_list");
             list.insertBefore(li, divider);
             $('#system_list').listview('refresh');
         	break;        	
         }
-        case "extension": {
+        case "modbus_slave": {
             $('#system_list').append(li);
             $('#system_list').listview('refresh');
         	break;
         }
-        case "uart": {
-            var divider = document.getElementById("unipi_watchdog_divider");
-            var list = document.getElementById("system_list");
-            list.insertBefore(li, divider);
-            $('#system_list').listview('refresh'); 
-        	break;        	
-        }
         case "wd": {
-            var divider = document.getElementById("unipi_wifi_divider");
+            var divider = document.getElementById("unipi_modbus_slave_divider");
             var list = document.getElementById("system_list");
             list.insertBefore(li, divider);
         	$('#system_list').listview('refresh');
         	break;        	
-        }
-        case "wifi": {
-            var divider = document.getElementById("unipi_extension_divider");
-            var list = document.getElementById("system_list");
-            list.insertBefore(li, divider);
-            $('#system_list').listview('refresh'); 
-        	break;
         }
         case "light_channel": {
         	var divider = document.getElementById("unipi_digital_divider");
@@ -1104,8 +1089,8 @@ function syncDevice(msg) {
             }
             break;
         }
-        case "extension": {
-            main_el.innerHTML = "Address: " + device_properties["device_addr"] + "  UART: " + device_properties["device_uart"];
+        case "modbus_slave": {
+            main_el.innerHTML = "Address: " + device_properties["device_slave_id"];
             break;
         }
         case "uart": {

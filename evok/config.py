@@ -294,6 +294,8 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                         model = device_info.get("model", 'unknown')
                         sn = device_info.get("sn", 0)
                         board_count = device_info.get("board_count", 1)
+                        if model[:2].lower() == 'xs' and family == 'unknown':
+                            family = 'Extension'
                         dev_counter += 1
                         Devices.register_device(DEVICE_INFO,
                                                 DeviceInfo(family=family, model=model, sn=sn, board_count=board_count))
