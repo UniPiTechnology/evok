@@ -15,6 +15,7 @@ case "$1" in
     if [ -z "`id -u evok 2> /dev/null`" ]; then
         adduser --system  --home /var/lib/evok --gecos "evok" \
             --disabled-password --quiet evok || true
+        usermod -a -G dialout evok || true
     fi
     chown evok: /var/lib/evok || true
 
