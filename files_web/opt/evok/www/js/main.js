@@ -347,7 +347,7 @@ function populateConfigForm(form, device, circuit, data) {
 	case "1wdevice": {
 		break;
 	}
-	case "neuron": {
+	case "device_info": {
 		break;
 	}
 	case "wifi": {
@@ -405,7 +405,7 @@ function populateConfigForm(form, device, circuit, data) {
 	var device_field_label = $("<label>", {"for": "unipi_config_form_device_field"});
 	form.append([circuit_field_label, circuit_text_field, device_field_label, device_text_field]);
 
-	if (device != "neuron") {
+	if (device != "device_info") {
 		if (device != "wifi" && device != "wd") {
 			var decoded_alias = alias;
 			decoded_alias = decoded_alias.replace(/_/g," ");
@@ -459,7 +459,7 @@ function getConfigurationFormTitle(device) {
 	case "1wdevice": {
 		return "1Wire Device Configuration";
 	}
-	case "neuron": {
+	case "device_info": {
 		return "PLC Device Configuration";
 	}
 	case "wifi": {
@@ -535,7 +535,7 @@ function getDeviceCategoryName(device) {
 	case "1wdevice": {
 		return "1Wire Devices";
 	}
-	case "neuron": {
+	case "device_info": {
 		return "EVOK Devices";
 	}
 	case "extension": {
@@ -613,8 +613,8 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
     device_properties["value"] = msg.value;
     device_properties["humidity"] = "N/A";
     device_properties["unit"] = "";
-    device_properties["neuron_sn"] = 0;
-    device_properties["neuron_name"] = "";
+    device_properties["device_info_sn"] = 0;
+    device_properties["device_info_name"] = "";
     device_properties["uart_speed_modes"] = [""];
     device_properties["uart_speed_mode"]= "";
     device_properties["uart_parity_modes"] = [""];
@@ -713,10 +713,11 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 		}
 		break;
 	}
-	case "neuron": {
-		device_properties["neuron_sn"] = msg.sn;
-		device_properties["neuron_name"] = msg.model;
-		device_properties["device_name"] = "Neuron " + device_properties["neuron_name"];
+	case "device_info": {
+		device_properties["device_info_sn"] = msg.sn;
+		device_properties["device_info_name"] = msg.model;
+		device_properties["device_info_family"] = msg.family;
+		device_properties["device_name"] = device_properties["device_info_family"] + " " + device_properties["device_info_name"];
 		break;
 	}
 	case "extension": {
@@ -861,10 +862,10 @@ function syncDevice(msg) {
             main_el.textContent = state + device_properties["unit"];
         	break;
         }
-        case "neuron": {
+        case "device_info": {
             main_el = document.createElement("h1");
-            if (device_properties["neuron_sn"] != null) {
-            	main_el.textContent = "S/N: " + device_properties["neuron_sn"];
+            if (device_properties["device_info_sn"] != null) {
+            	main_el.textContent = "S/N: " + device_properties["device_info_sn"];
             } else {
             	main_el.textContent = "";
             }
@@ -999,7 +1000,7 @@ function syncDevice(msg) {
             $('#inputs_list').listview('refresh');
         	break;       	
         }
-        case "neuron": {
+        case "device_info": {
             var divider = document.getElementById("unipi_uart_divider");
             var list = document.getElementById("system_list");
             list.insertBefore(li, divider);
@@ -1095,9 +1096,9 @@ function syncDevice(msg) {
         	}
         	break;
         }
-        case "neuron": {
-            if (device_properties["neuron_sn"] != null) {
-            	main_el.innerHTML = "S/N: " + device_properties["neuron_sn"];
+        case "device_info": {
+            if (device_properties["device_info_sn"] != null) {
+            	main_el.innerHTML = "S/N: " + device_properties["device_info_sn"];
             } else {
             	main_el.innerHTML = "";
             }
@@ -1192,7 +1193,7 @@ function configButtonHandler(event) {
 	var config_device_header = $("<h3>", {id: "config_form_device_header"});
 	config_device_header.text(getConfigurationFormTitle(device));
 	var config_circuit_header = $("<h5>", {id: "config_form_circuit_header"});
-	if (device != "neuron") {
+	if (device != "device_info") {
 		config_circuit_header.text(circuit_display_name);
 	} else {
 		config_circuit_header.text("PLC Device: " + circuit_display_name);
@@ -1338,7 +1339,7 @@ function createConfigPostRequestDict(arg_fields) {
 }
 
 function configFormSubmitHandler(event) {
-	if ($("#unipi_config_form_device_field").val() == "neuron") {
+	if ($("#unipi_config_form_device_field").val() == "device_info") {
 		var circuit = $("#unipi_config_form_circuit_field").val();
 		var device = $("#unipi_config_form_device_field").val();
 		event.preventDefault();
@@ -1346,7 +1347,7 @@ function configFormSubmitHandler(event) {
 		$("#unipi_config_form_div").popup("close");
 		$.ajax({
 	    	crossDomain: true,
-	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + "/rest/neuron/" + circuit + '/',
+	    	url: 'http://' + $(location).attr('hostname') + ':' + api_port + "/rest/device_info/" + circuit + '/',
 	        type: 'POST',
 	        data: {"print_log": 1},
 	        success: function (data) {

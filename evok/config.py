@@ -279,7 +279,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                     scanfreq = device_data.get("scan_frequency", 50)
                     scan_enabled = device_data.get("scan_enabled", True)
                     device_model = device_data["model"]
-                    circuit = device_name
+                    circuit = f"{device_name}"
                     major_group = device_name
 
                     slave = ModbusSlave(bus.bus_driver, circuit, evok_config, scanfreq, scan_enabled,
@@ -289,7 +289,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
 
                     if bus_device_info is None:
                         device_info = {'model': device_name}
-                        device_info.update(bus_data.get("device_info", {}))
+                        device_info.update(device_data.get("device_info", {}))
                         family = device_info.get("family", 'unknown')
                         model = device_info.get("model", 'unknown')
                         sn = device_info.get("sn", 0)

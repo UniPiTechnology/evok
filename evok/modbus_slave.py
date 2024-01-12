@@ -214,11 +214,12 @@ class ModbusSlave(object):
             self.is_scanning = False
 
     def full(self):
-        ret = {'dev': 'extension',
-                'circuit': self.circuit,
-                'model': self.device_model,
-                'glob_dev_id': self.dev_id,
-                'last_comm': 0x7fffffff}
+        ret = {'dev': 'modbus_slave',
+               'circuit': self.circuit,
+               'glob_dev_id': self.dev_id,
+               'last_comm': 0x7fffffff,
+               'slave_id': self.modbus_address,
+               }
         if self.alias != '':
             ret['alias'] = self.alias
         if self.modbus_cache_map is not None:
