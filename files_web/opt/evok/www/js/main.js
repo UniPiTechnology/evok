@@ -723,6 +723,7 @@ function extractDeviceProperties(device, circuit, circuit_display_name, msg) {
 	case "modbus_slave": {
 		device_properties["device_name"] = "Modbus device: " + msg.circuit;
 		device_properties["device_slave_id"] = msg.slave_id
+		device_properties["device_mb_type"] = msg.modbus_type
 		break;
 	}
 	case "wifi": {
@@ -872,7 +873,7 @@ function syncDevice(msg) {
         }
         case "modbus_slave": {
             main_el = document.createElement("h1");
-            main_el.textContent = "Address: " + device_properties["device_slave_id"];
+			main_el.innerHTML = "Type: " + device_properties["device_mb_type"] + "  Address: " + device_properties["device_slave_id"];
             break;
         }
         case "uart": {
@@ -894,11 +895,6 @@ function syncDevice(msg) {
             	main_el.textContent = enabled_text + " [Triggered]";
             }
             wd_device_cache.push(circuit);
-        	break;
-        }
-        case "wifi": {
-        	main_el = document.createElement("h1");
-        	main_el.textContent = device_properties["wifi_ap_state"];
         	break;
         }
         case "light_channel": {
@@ -1090,7 +1086,7 @@ function syncDevice(msg) {
             break;
         }
         case "modbus_slave": {
-            main_el.innerHTML = "Address: " + device_properties["device_slave_id"];
+            main_el.innerHTML = "Type: " + device_properties["device_mb_type"] + "  Address: " + device_properties["device_slave_id"];
             break;
         }
         case "uart": {
@@ -1110,10 +1106,6 @@ function syncDevice(msg) {
             	main_el.innerHTML = enabled_text + " [Triggered]";
             }        	
             break;
-        }
-        case "wifi": {
-        	main_el.innerHTML = device_properties["wifi_ap_state"];
-        	break;
         }
         case "light_channel": {
         	//main_el.innerHTML = "Channel " + circuit;

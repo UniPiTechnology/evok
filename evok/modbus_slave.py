@@ -9,7 +9,7 @@ from math import sqrt
 from typing import Union
 
 from tornado.ioloop import IOLoop
-from pymodbus.client import AsyncModbusTcpClient
+from pymodbus.client import AsyncModbusTcpClient, AsyncModbusSerialClient
 from pymodbus.pdu import ExceptionResponse
 from pymodbus.exceptions import ModbusIOException, ConnectionException
 from pymodbus.payload import BinaryPayloadDecoder, BinaryPayloadBuilder
@@ -18,7 +18,7 @@ from tornado.locks import Semaphore
 
 from .devices import *
 from .errors import ENoCacheRegister, ModbusSlaveError
-from .modbus_unipi import EvokModbusSerialClient
+from .modbus_unipi import EvokModbusSerialClient, EvokModbusTcpClient
 from .log import *
 from . import config
 import time
@@ -124,7 +124,7 @@ class ModbusCacheMap(object):
 
 class ModbusSlave(object):
 
-    def __init__(self, client: Union[AsyncModbusTcpClient, EvokModbusSerialClient],
+    def __init__(self, client: Union[EvokModbusTcpClient, EvokModbusSerialClient],
                  circuit, evok_config, scan_freq, scan_enabled, hw_dict, slave_id=1,
                  major_group=1, device_model='unspecified', dev_id=0):
         self.alias = ""
@@ -152,6 +152,11 @@ class ModbusSlave(object):
         self.client: Union[AsyncModbusTcpClient, EvokModbusSerialClient] = client
         self.loop: Union[None, IOLoop] = None
         self.circuit: Union[None, str] = circuit
+        self.modbus_type = 'UNKNOWN'
+        if type(self.client) in [EvokModbusTcpClient, AsyncModbusTcpClient]:
+            self.modbus_type = 'TCP'
+        elif type(self.client) in [EvokModbusSerialClient, AsyncModbusSerialClient]:
+            self.modbus_type = 'RTU'
 
     def get(self):
         return self.full()
@@ -219,6 +224,7 @@ class ModbusSlave(object):
                'glob_dev_id': self.dev_id,
                'last_comm': 0x7fffffff,
                'slave_id': self.modbus_address,
+               'modbus_type': self.modbus_type,
                }
         if self.alias != '':
             ret['alias'] = self.alias

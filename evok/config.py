@@ -88,7 +88,7 @@ class SerialBusDevice:
 
 
 class DeviceInfo:
-    def __init__(self, family: str, model: str, sn: int, board_count: int):
+    def __init__(self, family: str, model: str, sn: Union[None, int], board_count: int):
         """
         :param family: [Neuron, Patron, UNIPI1, Iris]
         :param model: [S103, M533, ...]
@@ -97,7 +97,7 @@ class DeviceInfo:
         """
         self.family: str = family
         self.model: str = model
-        self.sn: int = sn
+        self.sn: Union[None, int] = sn
         self.board_count: int = board_count
         self.circuit: str = f"{family}_{model}_{sn}"
 
@@ -244,7 +244,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                 bus_device_info_data: dict
                 family = bus_device_info_data.get("family", 'unknown')
                 model = bus_device_info_data.get("model", 'unknown')
-                sn = bus_device_info_data.get("sn", 0)
+                sn = bus_device_info_data.get("sn", None)
                 board_count = bus_device_info_data.get("board_count", 1)
                 bus_device_info = DeviceInfo(family=family, model=model, sn=sn, board_count=board_count)
                 dev_counter += 1
@@ -292,7 +292,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                         device_info.update(device_data.get("device_info", {}))
                         family = device_info.get("family", 'unknown')
                         model = device_info.get("model", 'unknown')
-                        sn = device_info.get("sn", 0)
+                        sn = device_info.get("sn", None)
                         board_count = device_info.get("board_count", 1)
                         if model[:2].lower() == 'xs' and family == 'unknown':
                             family = 'Extension'
