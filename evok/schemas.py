@@ -1155,7 +1155,7 @@ relay_post_inp_schema = {
     "type": "object",
     "additionalProperties": False,
     "properties": {
-        "value": { "type": ["boolean", "string"] },
+        "value": { "type": ["boolean", "string", 'number'] },
         "mode": {"type": "string"},
         "timeout": {"type": "string"},
         "pwm_freq": {"type": ["number", "string"]},
