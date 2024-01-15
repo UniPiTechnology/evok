@@ -1,14 +1,8 @@
 import asyncio
 import time
-import traceback
 from typing import Any, Callable, Type, Tuple
 
 from pymodbus.client import AsyncModbusSerialClient, AsyncModbusTcpClient
-from pymodbus.datastore import ModbusServerContext
-from pymodbus.datastore import ModbusSlaveContext
-from pymodbus.datastore import ModbusSequentialDataBlock
-from pymodbus.datastore.store import BaseModbusDataBlock
-from pymodbus.device import ModbusDeviceIdentification
 from pymodbus.framer import ModbusRtuFramer, ModbusFramer, ModbusSocketFramer
 
 #---------------------------------------------------------------------------#
@@ -25,7 +19,7 @@ class EvokModbusSerialClient(AsyncModbusSerialClient):
         if EvokModbusSerialClient.instance_counter > 0:
             raise Exception(f"DualAsyncModbusSerialClient: trying constructing multiple singleton object.")
         EvokModbusSerialClient.instance_counter += 1
-        super().__init__(port, framer, baudrate, bytesize, parity, stopbits, reconnect_delay=None, retries=1, **kwargs)
+        super().__init__(port, framer, baudrate, bytesize, parity, stopbits, retries=1, **kwargs)
         for method_name in ['read_holding_registers', 'read_input_registers', 'write_register', 'write_coil', 'connect']:
             setattr(self, method_name, self.__block(getattr(self, method_name)))
         self.lock = asyncio.Lock()
@@ -37,21 +31,11 @@ class EvokModbusSerialClient(AsyncModbusSerialClient):
 
     def __block(self, operation: Callable):
         async def ret(*args, **kwargs):
-            # opname = str(operation).split(' of ')[0].split(' ')[-1]
-            # opname = opname.split('.')[1] if '.' in opname else opname
-            # print(f"{self.block_count}\toperation prepare:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
             self.block_count += 1
             async with self.lock:
                 self.block_count -= 1
-                # print(f"{self.block_count}\toperation   start:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
-                try:
-                    aret = await operation(*args, **kwargs)
-                    # print(f"{self.block_count}\toperation    done:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
-                    return aret
-                except Exception as E:
-                    # print(f"{self.block_count}\toperation   error:\t {self.__runtime()}  \t  {opname}  \t  ({args}  \t  {kwargs})", flush=True)
-                    traceback.print_exc()
-                    raise E
+                aret = await operation(*args, **kwargs)
+                return aret
         return ret
 
 
@@ -73,11 +57,7 @@ class EvokModbusTcpClient(AsyncModbusTcpClient):
             self.block_count += 1
             async with self.lock:
                 self.block_count -= 1
-                try:
-                    aret = await operation(*args, **kwargs)
-                    return aret
-                except Exception as E:
-                    traceback.print_exc()
-                    raise E
+                aret = await operation(*args, **kwargs)
+                return aret
         return ret
 
