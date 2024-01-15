@@ -1577,7 +1577,7 @@ di_post_inp_schema = {
         "counter_mode": {},
         "debounce": {"type": ["number", "string"]},
         "mode": {"type": "string"},
-        "mode_ds": {"type": "string"},
+        "ds_mode": {"type": "string"},
         "alias": {"type": "string"}
     },
 }
