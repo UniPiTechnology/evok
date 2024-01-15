@@ -5,6 +5,7 @@ import asyncio
 import os
 from collections import OrderedDict
 
+import jsonschema
 import tornado.httpserver
 import tornado.httpclient
 import tornado.ioloop
@@ -17,8 +18,9 @@ logger.setLevel(logging.INFO)  # noqa
 from operator import methodcaller
 from tornado import websocket
 from tornado import escape
-from .handlers_base import EvokWebHandlerBase
+from .handlers_base import EvokWebHandlerBase, SCHEMA_VALIDATE
 from urllib.parse import urlparse
+from .schemas import schemas
 
 import signal
 
@@ -283,69 +285,80 @@ class JSONBulkHandler(tornado.web.RequestHandler):
     async def post(self):
         """This function returns a heterogeneous list of all devices exposed via the REST API"""
         result = {}
-        js_dict = json.loads(self.request.body)
-        if 'group_queries' in js_dict:
-            for single_query in js_dict['group_queries']:
-                all_devs = []
-                for device_type in single_query['device_types']:
-                    all_devs += Devices.by_name(device_type)
-                if 'group' in single_query:
-                    all_devs_filtered = []
-                    for single_dev in all_devs:
-                        if single_dev.arm.major_group == single_query['group']:
-                            all_devs_filtered.append(single_dev)
-                    all_devs = all_devs_filtered
-                if 'device_circuits' in single_query:
-                    all_devs_filtered = []
-                    for single_dev in all_devs:
-                        if single_dev.circuit in single_query['device_circuits']:
-                            all_devs_filtered.append(single_dev)
-                    all_devs = all_devs_filtered
-                if 'global_device_id' in single_query:
-                    all_devs_filtered = []
-                    for single_dev in all_devs:
-                        if single_dev.dev_id == single_query['global_device_id']:
-                            all_devs_filtered.append(single_dev)
-                    all_devs = all_devs_filtered
-                if 'group_queries' in result:
-                    result['group_queries'] += [map(methodcaller('full'), all_devs)]
-                else:
-                    result['group_queries'] = [map(methodcaller('full'), all_devs)]
-        if 'group_assignments' in js_dict:
-            for single_command in js_dict['group_assignments']:
-                all_devs = Devices.by_name(single_command['device_type'])
-                if 'group' in single_command:
-                    all_devs_filtered = []
-                    for single_dev in all_devs:
-                        if single_dev.arm.major_group == single_command['group']:
-                            all_devs_filtered.append(single_dev)
-                    all_devs = all_devs_filtered
-                if 'device_circuits' in single_command:
-                    all_devs_filtered = []
-                    for single_dev in all_devs:
-                        if single_dev.circuit in single_command['device_circuits']:
-                            all_devs_filtered.append(single_dev)
-                    all_devs = all_devs_filtered
-                if 'global_device_id' in single_command:
-                    all_devs_filtered = []
-                    for single_dev in all_devs:
-                        if single_dev.dev_id == single_command['global_device_id']:
-                            all_devs_filtered.append(single_dev)
-                    outp = await all_devs[i].set(**(single_command['assigned_values']))
-                if 'group_assignments' in result:
-                    result['group_assignments'] += [map(methodcaller('full'), all_devs)]
-                else:
-                    result['group_assignments'] = [map(methodcaller('full'), all_devs)]
-        if 'individual_assignments' in js_dict:
-            for single_command in js_dict['individual_assignments']:
-                outp = Devices.by_name(single_command['device_type'], circuit=single_command['device_circuit'])
-                outp = await outp.set(**(single_command['assigned_values']))
-                if 'individual_assignments' in result:
-                    result['individual_assignments'] += [outp]
-                else:
-                    result['individual_assignments'] = [outp]
-        self.write(json.dumps(result))
-        await self.finish()
+        try:
+            js_dict = json.loads(self.request.body)
+            if 'group_queries' in js_dict:
+                for single_query in js_dict['group_queries']:
+                    all_devs = []
+                    for device_type in single_query['device_types']:
+                        all_devs += Devices.by_name(device_type)
+                    if 'group' in single_query:
+                        all_devs_filtered = []
+                        for single_dev in all_devs:
+                            if single_dev.arm.major_group == single_query['group']:
+                                all_devs_filtered.append(single_dev)
+                        all_devs = all_devs_filtered
+                    if 'device_circuits' in single_query:
+                        all_devs_filtered = []
+                        for single_dev in all_devs:
+                            if single_dev.circuit in single_query['device_circuits']:
+                                all_devs_filtered.append(single_dev)
+                        all_devs = all_devs_filtered
+                    if 'global_device_id' in single_query:
+                        all_devs_filtered = []
+                        for single_dev in all_devs:
+                            if single_dev.dev_id == single_query['global_device_id']:
+                                all_devs_filtered.append(single_dev)
+                        all_devs = all_devs_filtered
+                    if 'group_queries' in result:
+                        result['group_queries'] += [map(methodcaller('full'), all_devs)]
+                    else:
+                        result['group_queries'] = [map(methodcaller('full'), all_devs)]
+            if 'group_assignments' in js_dict:
+                for single_command in js_dict['group_assignments']:
+                    all_devs = Devices.by_name(single_command['device_type'])
+                    if 'group' in single_command:
+                        all_devs_filtered = []
+                        for single_dev in all_devs:
+                            if single_dev.arm.major_group == single_command['group']:
+                                all_devs_filtered.append(single_dev)
+                        all_devs = all_devs_filtered
+                    if 'device_circuits' in single_command:
+                        all_devs_filtered = []
+                        for single_dev in all_devs:
+                            if single_dev.circuit in single_command['device_circuits']:
+                                all_devs_filtered.append(single_dev)
+                        all_devs = all_devs_filtered
+                    if 'global_device_id' in single_command:
+                        all_devs_filtered = []
+                        for single_dev in all_devs:
+                            if single_dev.dev_id == single_command['global_device_id']:
+                                all_devs_filtered.append(single_dev)
+                        for single_dev in all_devs_filtered:
+                            outp = await all_devs[single_dev].set(**(single_command['assigned_values']))
+                    if 'group_assignments' in result:
+                        result['group_assignments'] += [map(methodcaller('full'), all_devs)]
+                    else:
+                        result['group_assignments'] = [map(methodcaller('full'), all_devs)]
+            if 'individual_assignments' in js_dict:
+                for single_command in js_dict['individual_assignments']:
+                    dev = single_command['device_type']
+                    schema, example = schemas[dev]
+                    outp = Devices.by_name(dev, circuit=single_command['device_circuit'])
+                    kw = single_command['assigned_values']
+                    if SCHEMA_VALIDATE:
+                        jsonschema.validate(instance=kw, schema=schema)
+                    outp = await outp.set(**kw)
+                    if 'individual_assignments' in result:
+                        result['individual_assignments'] += [outp]
+                    else:
+                        result['individual_assignments'] = [outp]
+            self.write(json.dumps(result))
+        except Exception as E:
+            logger.error(f"Error while processing get: {str(type(E).__name__)}: {str(E)}")
+            self.write(json.dumps({'success': False, 'errors': {str(type(E).__name__): str(E)}}))
+        finally:
+            await self.finish()
 
 
 class AliasTask:
