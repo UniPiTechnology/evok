@@ -2,7 +2,7 @@ import json
 
 import websocket
 
-host = '127.0.0.1'
+host = '192.168.221.144'
 
 
 def on_message(ws, message):
@@ -18,7 +18,7 @@ def on_close(ws):
 
 
 def on_open(ws):
-    ws.send(json.dumps({"cmd": "filter", "devices": ["ai", "input"]}))
+    ws.send(json.dumps({"cmd": "filter", "devices": ["ao", "input"]}))
 
 
 if __name__ == "__main__":
