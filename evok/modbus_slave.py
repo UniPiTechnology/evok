@@ -111,7 +111,7 @@ class ModbusCacheMap(object):
 
                 except Exception as E:
                     logger.warning(E)
-                    print(f"vals: {vals} \t {vals.registers if hasattr(vals, 'registers') else None}", flush=True)
+                    # print(f"vals: {vals} \t {vals.registers if hasattr(vals, 'registers') else None}", flush=True)
             else:
                 self.frequency[m_reg_group['start_reg']] += 1
         if len(changeset) > 0:

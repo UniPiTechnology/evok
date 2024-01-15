@@ -5,6 +5,7 @@ import jsonschema
 import tornado
 
 from .devices import *
+from .log import logger
 
 SCHEMA_VALIDATE = True
 
@@ -33,6 +34,7 @@ class EvokWebHandlerBase(tornado.web.RequestHandler):
                 result = device.full()
             self.write(json.dumps(result))
         except Exception as E:
+            logger.error(f"Error while processing get: {str(type(E).__name__)}: {str(E)}")
             self.write(json.dumps({'success': False, 'errors': {str(type(E).__name__): str(E)}}))
         self.finish()
 
@@ -46,6 +48,7 @@ class EvokWebHandlerBase(tornado.web.RequestHandler):
             result = await device.set(**kw)
             self.write(json.dumps({'success': True, 'result': result}))
         except Exception as E:
+            logger.error(f"Error while processing post: {str(type(E).__name__)}: {str(E)}")
             self.write(json.dumps({'success': False, 'errors': {str(type(E).__name__): str(E)}}))
         self.set_header('Content-Type', 'application/json')
         await self.finish()

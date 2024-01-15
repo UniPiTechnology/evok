@@ -166,9 +166,9 @@ led_post_inp_schema = {
     "title": "Neuron_Instruction",
     "type": "object",
     "additionalProperties": False,
-    "additionalProperties": False,
     "properties": {
-        "value": { "type": ["boolean", "string"] }
+        "value": { "type": ["boolean", "string"] },
+        "alias": {"type": "string"}
     },
 }
 
@@ -178,7 +178,6 @@ led_post_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
     "type": "object",
-    "additionalProperties": False,
     "additionalProperties": False,
     "properties": {
         "result": { "type": "number"},
@@ -196,7 +195,6 @@ all_get_out_schema = {
             "anyOf": [
                 {
                     "type": "object",
-                    "additionalProperties": False,
                     "additionalProperties": False,
                     "properties": {
                         "dev": {
@@ -300,7 +298,6 @@ all_get_out_schema = {
                 {
                     "type": "object",
                     "additionalProperties": False,
-                    "additionalProperties": False,
                     "properties": {
                         "dev": {
                             "type": "string",
@@ -361,7 +358,6 @@ all_get_out_schema = {
                 },
                 {
                     "type": "object",
-                    "additionalProperties": False,
                     "additionalProperties": False,
                     "properties": {
                         "dev": {
@@ -523,7 +519,6 @@ all_get_out_schema = {
                 {
                     "type": "object",
                     "additionalProperties": False,
-                    "additionalProperties": False,
                     "properties": {
                         "dev": {
                             "type": "string",
@@ -561,7 +556,6 @@ all_get_out_schema = {
                 { 
                     "type": "object",
                     "additionalProperties": False,
-                    "additionalProperties": False,
                     "properties": {
                         "dev": { 
                             "type": "string",
@@ -589,7 +583,6 @@ all_get_out_schema = {
                 },
                 {
                     "type": "object",
-                    "additionalProperties": False,
                     "additionalProperties": False,
                     "properties": {
                         "dev": {
@@ -628,7 +621,6 @@ all_get_out_schema = {
                 },
                 {
                     "type": "object",
-                    "additionalProperties": False,
                     "additionalProperties": False,
                     "properties": {
                         "dev": {
@@ -1166,8 +1158,8 @@ relay_post_inp_schema = {
         "value": { "type": ["boolean", "string"] },
         "mode": {"type": "string"},
         "timeout": {"type": "string"},
-        "pwm_freq": {"type": "number"},
-        "pwm_duty": {"type": "number"},
+        "pwm_freq": {"type": ["number", "string"]},
+        "pwm_duty": {"type": ["number", "string"]},
         "alias": {"type": "string"}
     },
 }
@@ -1462,81 +1454,6 @@ ai_post_out_schema = {
 ai_post_out_example = {"result": {}}
 
 
-wifi_get_out_schema = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "title": "Neuron_Instruction",
-    "type": "object",
-    "additionalProperties": False,
-    "properties": {
-        "dev": {
-            "type": "string",
-            "enum": [
-                "wifi"
-            ]
-        },
-        "circuit": {
-            "type": "string"
-        },
-        "ap_state": {
-            "type": "string",
-            "enum": [
-                "Enabled",
-                "Disabled"
-            ]
-        },
-        "eth0_masq": {
-            "type": "string",
-            "enum": [
-                "Enabled",
-                "Disabled"
-            ]
-        },
-        "glob_dev_id": {
-            "type": "number",
-            "minimum": 0
-        },
-        "alias": {
-            "type": "string"
-        }
-    },
-    "required": [
-        "dev",
-        "circuit",
-        "ap_state",
-        "eth0_masq",
-        "glob_dev_id"
-    ]
-}
-
-wifi_get_out_example = {"value": 0.004243475302661791, "unit": "V", "circuit": "1_01", "dev": "ai"}
-
-wifi_post_inp_schema = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "title": "Neuron_Instruction",
-    "type": "object",
-    "additionalProperties": False,
-    "properties": {
-        "value": { "type": "string"},
-        "mode": {"type": "string"}
-    },
-}
-
-
-wifi_post_inp_example = {"value": 1}
-
-wifi_post_out_schema = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "title": "Neuron_Instruction",
-    "type": "object",
-    "additionalProperties": False,
-    "properties": {
-        "result": { "type": "object"},
-        "error": { "type": "array"},
-    }
-}
-
-wifi_post_out_example = {"result": 1, "success": True}
-
 di_get_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
@@ -1658,7 +1575,9 @@ di_post_inp_schema = {
             "maximum": 4294967295
         },
         "counter_mode": {},
-        "debounce": {"type": ["number", "string"]}
+        "debounce": {"type": ["number", "string"]},
+        "mode": {"type": "string"},
+        "alias": {"type": "string"}
     },
 }
 
@@ -1764,21 +1683,21 @@ wd_get_out_schema = {
             "type": "string"
         },
         "value": {
-            "type": "number",
+            "type": ["number", "string"],
             "minimum": 0,
             "maximum": 1
         },
         "timeout": {
-            "type": "number",
+            "type": ["number", "string"],
             "minimum": 0
         },
         "was_wd_reset": {
-            "type": "number",
+            "type": ["number", "string"],
             "minimum": 0,
             "maximum": 1
         },
         "nv_save": {
-            "type": "number",
+            "type": ["number", "string"],
             "minimum": 0,
             "maximum": 1
         },
@@ -1913,10 +1832,10 @@ owbus_post_inp_schema = {
             "type": "boolean"
         },
         "interval": {
-            "type": "number"
+            "type": ["number", "string"]
         },
         "scan_interval": {
-            "type": "number"
+            "type": ["number", "string"]
         },
         "circuit": {
             "type": "string"
