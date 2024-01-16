@@ -3,6 +3,7 @@ import time
 from typing import Any, Callable, Type, Tuple
 
 from pymodbus.client import AsyncModbusSerialClient, AsyncModbusTcpClient
+from pymodbus.exceptions import ConnectionException
 from pymodbus.framer import ModbusRtuFramer, ModbusFramer, ModbusSocketFramer
 
 #---------------------------------------------------------------------------#
@@ -15,8 +16,7 @@ class EvokModbusSerialClient(AsyncModbusSerialClient):
     def __init__(self, port: str, framer: Type[ModbusFramer] = ModbusRtuFramer, baudrate: int = 19200,
                  bytesize: int = 8, parity: str = "N", stopbits: int = 1, **kwargs: Any) -> None:
         super().__init__(port, framer, baudrate, bytesize, parity, stopbits, retries=0, **kwargs)
-        for method_name in ['read_holding_registers', 'read_input_registers', 'write_register', 'write_coil',
-                            'transport_connect']:
+        for method_name in ['read_holding_registers', 'read_input_registers', 'write_register', 'write_coil']:
             setattr(self, method_name, self.__block(getattr(self, method_name)))
         self.lock = asyncio.Lock()
         self.stime = time.time()
@@ -27,11 +27,14 @@ class EvokModbusSerialClient(AsyncModbusSerialClient):
 
     def __block(self, operation: Callable):
         async def ret(*args, **kwargs):
-            self.block_count += 1
             async with self.lock:
-                self.block_count -= 1
-                aret = await operation(*args, **kwargs)
-                return aret
+                try:
+                    aret = await operation(*args, **kwargs)
+                    return aret
+                except ConnectionException:
+                    await asyncio.sleep(self.reconnect_delay_current)
+                    while not self.connected:
+                        pass
         return ret
 
 
@@ -42,8 +45,7 @@ class EvokModbusTcpClient(AsyncModbusTcpClient):
                  source_address: Tuple[str, int] = None, **kwargs: Any) -> None:
         EvokModbusTcpClient.instance_counter += 1
         super().__init__(host, port, framer, source_address, **kwargs)
-        for method_name in ['read_holding_registers', 'read_input_registers', 'write_register', 'write_coil',
-                            'transport_connect']:
+        for method_name in ['read_holding_registers', 'read_input_registers', 'write_register', 'write_coil']:
             setattr(self, method_name, self.__block(getattr(self, method_name)))
         self.lock = asyncio.Lock()
         self.stime = time.time()
@@ -51,9 +53,7 @@ class EvokModbusTcpClient(AsyncModbusTcpClient):
 
     def __block(self, operation: Callable):
         async def ret(*args, **kwargs):
-            self.block_count += 1
             async with self.lock:
-                self.block_count -= 1
                 aret = await operation(*args, **kwargs)
                 return aret
         return ret

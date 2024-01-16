@@ -1393,9 +1393,8 @@ class AnalogInput():
             ret = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg)
             ret = BinaryPayloadDecoder.fromRegisters(ret, Endian.BIG, Endian.LITTLE).decode_32bit_float()
             return round(float(ret), 3)
-        except Exception as E:
-            logger.exception(str(E))
-            return 0
+        except ENoCacheRegister:
+            return None
 
     def get_tolerance_modes(self):
         if self.tolerances == 'brain':
