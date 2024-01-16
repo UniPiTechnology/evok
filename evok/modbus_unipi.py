@@ -34,7 +34,7 @@ class EvokModbusSerialClient(AsyncModbusSerialClient):
                 except ConnectionException:
                     await asyncio.sleep(self.reconnect_delay_current)
                     while not self.connected:
-                        pass
+                        await asyncio.sleep(0.001)  # TODO
         return ret
 
 
