@@ -84,6 +84,7 @@ class ModbusCacheMap(object):
             await self.sem.acquire()
         changeset = []
         for m_reg_group in self.modbus_reg_map:
+            m_reg_group: dict
             if (self.frequency[m_reg_group['start_reg']] >= m_reg_group['frequency']) or (self.frequency[m_reg_group['start_reg']] == 0):    # only read once for every [frequency] cycles
                 vals = None
                 try:
@@ -106,11 +107,21 @@ class ModbusCacheMap(object):
 
                         # reset communication flags
                         self.last_comm_time = time.time()
-                        self.frequency[m_reg_group['start_reg']] = 1
+                        if 'original_frequency' in m_reg_group:
+                            m_reg_group['frequency'] = m_reg_group['original_frequency']
+                            m_reg_group.pop('original_frequency')
 
                 except Exception as E:
                     logger.warning(E)
-                    # print(f"vals: {vals} \t {vals.registers if hasattr(vals, 'registers') else None}", flush=True)
+                    if 'original_frequency' not in m_reg_group:
+                        m_reg_group['original_frequency'] = int(m_reg_group['frequency'])
+                    elif m_reg_group['frequency'] < 2000:
+                        m_reg_group['frequency'] *= 2
+                        logger.info(f"Slowing down device "
+                                    f"'{self.modbus_slave.modbus_address}:{m_reg_group['start_reg']}': "
+                                    f"{m_reg_group['frequency']}")
+                finally:
+                    self.frequency[m_reg_group['start_reg']] = 1
             else:
                 self.frequency[m_reg_group['start_reg']] += 1
         if len(changeset) > 0:
@@ -1619,3 +1630,4 @@ class AnalogInput18():
     @property
     def voltage(self):
         return self.value
+

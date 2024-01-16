@@ -14,8 +14,9 @@ from .log import *
 class EvokModbusSerialClient(AsyncModbusSerialClient):
     def __init__(self, port: str, framer: Type[ModbusFramer] = ModbusRtuFramer, baudrate: int = 19200,
                  bytesize: int = 8, parity: str = "N", stopbits: int = 1, **kwargs: Any) -> None:
-        super().__init__(port, framer, baudrate, bytesize, parity, stopbits, retries=1, **kwargs)
-        for method_name in ['read_holding_registers', 'read_input_registers', 'write_register', 'write_coil', 'connect']:
+        super().__init__(port, framer, baudrate, bytesize, parity, stopbits, retries=0, **kwargs)
+        for method_name in ['read_holding_registers', 'read_input_registers', 'write_register', 'write_coil',
+                            'transport_connect']:
             setattr(self, method_name, self.__block(getattr(self, method_name)))
         self.lock = asyncio.Lock()
         self.stime = time.time()
@@ -41,7 +42,8 @@ class EvokModbusTcpClient(AsyncModbusTcpClient):
                  source_address: Tuple[str, int] = None, **kwargs: Any) -> None:
         EvokModbusTcpClient.instance_counter += 1
         super().__init__(host, port, framer, source_address, **kwargs)
-        for method_name in ['read_holding_registers', 'read_input_registers', 'write_register', 'write_coil', 'connect']:
+        for method_name in ['read_holding_registers', 'read_input_registers', 'write_register', 'write_coil',
+                            'transport_connect']:
             setattr(self, method_name, self.__block(getattr(self, method_name)))
         self.lock = asyncio.Lock()
         self.stime = time.time()

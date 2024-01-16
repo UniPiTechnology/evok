@@ -236,7 +236,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
             serial_parity = bus_data.get("parity", 'N')
             serial_stopbits = bus_data.get("stopbits", 1)
             bus_driver = EvokModbusSerialClient(port=serial_port, baudrate=serial_baud_rate, parity=serial_parity,
-                                                stopbits=serial_stopbits, timeout=1)
+                                                stopbits=serial_stopbits, timeout=0.5)
             bus = SerialBusDevice(circuit=bus_name, bus_driver=bus_driver, dev_id=dev_counter)
             Devices.register_device(SERIALBUS, bus)
 
@@ -264,7 +264,6 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                 continue
             logging.info(f"^ Creating device '{device_name}' with type '{bus_type}'")
             try:
-                dev_counter += 1
                 if bus_type == 'OWBUS':
                     ow_type = device_data.get("type")
                     address = device_data.get("address")
@@ -275,6 +274,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                                                      is_static=True)
                     if ow_type in ["DS2408", "DS2406", "DS2404", "DS2413"]:
                         sensor = OWSensorDevice(sensor, dev_id=dev_counter)
+                    dev_counter += 1
                     Devices.register_device(SENSOR, sensor)
 
                 elif bus_type in ['MODBUSTCP', 'MODBUSRTU']:
@@ -288,6 +288,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                     slave = ModbusSlave(bus.bus_driver, circuit, evok_config, scanfreq, scan_enabled,
                                         hw_dict, device_model=device_model, slave_id=slave_id,
                                         dev_id=dev_counter, major_group=major_group)
+                    dev_counter += 1
                     Devices.register_device(MODBUS_SLAVE, slave)
 
                     if bus_device_info is None:
@@ -304,7 +305,6 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                                                 DeviceInfo(family=family, model=model, sn=sn, board_count=board_count))
 
                 else:
-                    dev_counter -= 1
                     logger.error(f"Unknown bus type: '{bus_type}'! skipping...")
 
             except Exception as E:
