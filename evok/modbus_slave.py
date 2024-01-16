@@ -106,8 +106,7 @@ class ModbusCacheMap(object):
 
                         # reset communication flags
                         self.last_comm_time = time.time()
-                        for index in range(m_reg_group['count']):
-                            self.frequency[m_reg_group['start_reg']] = 1
+                        self.frequency[m_reg_group['start_reg']] = 1
 
                 except Exception as E:
                     logger.warning(E)

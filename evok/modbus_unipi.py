@@ -12,13 +12,8 @@ from .log import *
 
 
 class EvokModbusSerialClient(AsyncModbusSerialClient):
-    instance_counter = 0
-
     def __init__(self, port: str, framer: Type[ModbusFramer] = ModbusRtuFramer, baudrate: int = 19200,
                  bytesize: int = 8, parity: str = "N", stopbits: int = 1, **kwargs: Any) -> None:
-        if EvokModbusSerialClient.instance_counter > 0:
-            raise Exception(f"DualAsyncModbusSerialClient: trying constructing multiple singleton object.")
-        EvokModbusSerialClient.instance_counter += 1
         super().__init__(port, framer, baudrate, bytesize, parity, stopbits, retries=1, **kwargs)
         for method_name in ['read_holding_registers', 'read_input_registers', 'write_register', 'write_coil', 'connect']:
             setattr(self, method_name, self.__block(getattr(self, method_name)))

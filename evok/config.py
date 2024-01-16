@@ -88,13 +88,15 @@ class SerialBusDevice:
 
 
 class DeviceInfo:
-    def __init__(self, family: str, model: str, sn: Union[None, int], board_count: int):
+    def __init__(self, family: str, model: str, sn: Union[None, int], board_count: int,
+                 dev_id):
         """
         :param family: [Neuron, Patron, UNIPI1, Iris]
         :param model: [S103, M533, ...]
         :param sn: serial number
         :param board_count: number of boards
         """
+        self.dev_id = dev_id
         self.family: str = family
         self.model: str = model
         self.sn: Union[None, int] = sn
@@ -246,7 +248,8 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                 model = bus_device_info_data.get("model", 'unknown')
                 sn = bus_device_info_data.get("sn", None)
                 board_count = bus_device_info_data.get("board_count", 1)
-                bus_device_info = DeviceInfo(family=family, model=model, sn=sn, board_count=board_count)
+                bus_device_info = DeviceInfo(family=family, model=model, sn=sn, board_count=board_count,
+                                             dev_id=dev_counter)
                 dev_counter += 1
                 Devices.register_device(DEVICE_INFO, bus_device_info)
 
