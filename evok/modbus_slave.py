@@ -506,11 +506,13 @@ class Relay(object):
         self.pwmcyclereg = pwmcyclereg
         self.pwmprescalereg = pwmprescalereg
         self.pwmdutyreg = pwmdutyreg
-        self.pwm_duty = 0
-        self.pwm_duty_val = 0
-        self.pwm_freq = 0
-        self.pwm_cycle_val = 0
-        self.pwm_prescale_val = 0
+        self.pwm_duty = None
+        self.pwm_duty_val = None
+        self.pwm_freq = None
+        self.pwm_cycle_val = None
+        self.pwm_prescale_val = None
+        self.pwm_delay_val = None
+        self.mode = None
         self.major_group = major_group
         self.legacy_mode = legacy_mode
         self.digital_only = digital_only
@@ -519,24 +521,6 @@ class Relay(object):
         self.bitmask = mask
         self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg)[0]
         self.value = None
-        if self.pwmdutyreg >= 0: # This instance supports PWM mode
-            self.pwm_duty_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmdutyreg))[0]
-            self.pwm_cycle_val = ((self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmcyclereg))[0] + 1)
-            self.pwm_prescale_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmprescalereg))[0]
-            if (self.pwm_cycle_val > 0) and (self.pwm_prescale_val > 0):
-                self.pwm_freq = 48000000 / (self.pwm_cycle_val * self.pwm_prescale_val)
-            else:
-                self.pwm_freq = 0
-            if (self.pwm_duty_val == 0):
-                self.pwm_duty = 0
-                self.mode = 'Simple'  # Mode field is for backward compatibility, will be deprecated soon
-            else:
-                logger.info("Pocitam z {} {}".format(self.pwm_cycle_val, self.pwm_duty_val))
-                self.pwm_duty = (100 / (float(self.pwm_cycle_val) / float(self.pwm_duty_val)))
-                self.pwm_duty = round(self.pwm_duty ,1) if self.pwm_duty % 1 else int(self.pwm_duty)
-                self.mode = 'PWM'  # Mode field is for backward compatibility, will be deprecated soon
-        else: # This RELAY instance does not support PWM mode (no pwmdutyreg given)
-            self.mode = 'Simple'
 
         self.forced_changes = False  # force_immediate_state_changes
 
@@ -581,6 +565,24 @@ class Relay(object):
         return 1 if value else 0
 
     def check_new_data(self):
+        if self.pwmdutyreg >= 0: # This instance supports PWM mode
+            self.pwm_duty_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmdutyreg))[0]
+            self.pwm_cycle_val = ((self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmcyclereg))[0] + 1)
+            self.pwm_prescale_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmprescalereg))[0]
+            if (self.pwm_cycle_val > 0) and (self.pwm_prescale_val > 0):
+                self.pwm_freq = 48000000 / (self.pwm_cycle_val * self.pwm_prescale_val)
+            else:
+                self.pwm_freq = 0
+            if self.pwm_duty_val == 0:
+                self.pwm_duty = 0
+                self.mode = 'Simple'  # Mode field is for backward compatibility, will be deprecated soon
+            else:
+                self.pwm_duty = (100 / (float(self.pwm_cycle_val) / float(self.pwm_duty_val)))
+                self.pwm_duty = round(self.pwm_duty ,1) if self.pwm_duty % 1 else int(self.pwm_duty)
+                self.mode = 'PWM'  # Mode field is for backward compatibility, will be deprecated soon
+        else: # This RELAY instance does not support PWM mode (no pwmdutyreg given)
+            self.mode = 'Simple'
+
         old_value = copy(self.value)
         self.value = 1 if (self.regvalue() & self.bitmask) else 0
         return old_value != self.value
@@ -688,6 +690,7 @@ class Relay(object):
 
     def get(self):
         return self.full()
+
 
 class ULED(object):
     def __init__(self, circuit, arm, post, reg, mask, coil, dev_id=0, major_group=0, legacy_mode=True):
@@ -827,7 +830,6 @@ class Watchdog(object):
         if value is not None:
             value = int(value)
 
-
         await self.arm.modbus_slave.client.write_register(self.valreg, 1 if value else 0, slave=self.arm.modbus_address)
 
         if not (timeout is None):
@@ -895,19 +897,6 @@ class UnitRegister():
             Devices.set_alias(alias, self, file_update=True)
 
         raise Exception("Unit_register object is read-only")
-
-
-        # nastavit to nepujde
-
-        if value is not None:
-
-            self.arm.modbus_slave.client.write_register(self.valreg, int(value), slave=self.arm.modbus_address)
-
-            if isinstance(self.post_write, list):
-                for coil in self.post_write:
-                    self.arm.modbus_slave.client.write_coil(coil, 1, slave=self.arm.modbus_address)
-
-
 
     def full(self):
 
@@ -1047,22 +1036,23 @@ class Input():
         if not (regdebounce is None): self.regdebouncevalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, regdebounce)[0]
         self.mode = 'Simple'
         self.ds_mode = 'Simple'
-        if 'DirectSwitch' in self.modes:
-            curr_ds = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
-            if (curr_ds & self.bitmask) > 0:
-                self.mode = 'DirectSwitch'
-                curr_ds_pol = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regpolarity)[0]
-                curr_ds_tgl = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regtoggle)[0]
-                if (curr_ds_pol & self.bitmask):
-                    self.ds_mode = 'Inverted'
-                elif (curr_ds_tgl & self.bitmask):
-                    self.ds_mode = 'Toggle'
         self.counter_mode = "Enabled"
         self.value = None
         self.counter = None
         self.debounce = None
 
     def check_new_data(self):
+        if 'DirectSwitch' in self.modes:
+            curr_ds = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
+            if (curr_ds & self.bitmask) > 0:
+                self.mode = 'DirectSwitch'
+                curr_ds_pol = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regpolarity)[0]
+                curr_ds_tgl = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regtoggle)[0]
+                if curr_ds_pol & self.bitmask:
+                    self.ds_mode = 'Inverted'
+                elif curr_ds_tgl & self.bitmask:
+                    self.ds_mode = 'Toggle'
+
         old_value = copy(self.value)
         old_counter = copy(self.counter)
         self.value = 1 if (self.regvalue() & self.bitmask) else 0
@@ -1149,7 +1139,7 @@ class Input():
         """ Returns ( value, debounce )
               current on/off value is taken from last value without reading it from hardware
         """
-        return (self.value, self.debounce)
+        return self.value, self.debounce
 
     def get_value(self):
         """ Returns value
@@ -1172,16 +1162,18 @@ class AnalogOutputBrain:
         self.arm = arm
         self.major_group = major_group
         self.is_voltage = lambda: bool(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0] == 0)
+        self.value = None
+        self.res_value = None
+        self.mode = None
+
+    def check_new_data(self):
         if self.is_voltage():
             self.mode = 'Voltage'
         elif self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0] == 1:
             self.mode = 'Current'
         else:
             self.mode = 'Resistance'
-        self.value = None
-        self.res_value = None
 
-    def check_new_data(self):
         old_value = copy(self.value)
         old_res_value = copy(self.res_value)
         self.value = self.regvalue()
@@ -1265,6 +1257,7 @@ class AnalogOutputBrain:
 
     def get(self):
         return self.full()
+
 
 class AnalogOutput():
     def __init__(self, circuit, arm, reg, regmode=-1, dev_id=0, modes=['Voltage'], major_group=0, legacy_mode=True):
@@ -1365,25 +1358,27 @@ class AnalogInput():
         self.unit_name = unit_names[VOLT]
         self.tolerances = tolerances
         self.sec_ai_mode = 0
-        if self.tolerances == '500series':
-            self.sec_ai_mode = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
-            self.mode = self.get_500_series_mode()
-            self.unit_name = self.internal_unit
         self.major_group = major_group
         self.is_voltage = lambda: True
         if self.tolerances == 'brain':
             self.is_voltage = lambda: bool(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0] == 0)
-            if self.is_voltage():
-                self.mode = "Voltage"
-            else:
-                self.mode = "Current"
-                self.unit_name = unit_names[AMPERE]
         if self.tolerances == "simple":
             pass
         self.tolerance_mode = self.get_tolerance_mode()
         self.value = None
 
     def check_new_data(self):
+        if self.tolerances == '500series':
+            self.sec_ai_mode = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
+            self.mode = self.get_500_series_mode()
+            self.unit_name = self.internal_unit
+        elif self.tolerances == 'brain':
+            if self.is_voltage():
+                self.mode = "Voltage"
+            else:
+                self.mode = "Current"
+                self.unit_name = unit_names[AMPERE]
+
         old_value = copy(self.value)
         self.value = self.regvalue()
         return self.value != old_value
@@ -1556,13 +1551,14 @@ class AnalogInput18():
         self.unit_name = ''
         self.tolerances = ["Integer 18bit", "Float"]
         self.tolerance_mode = "Integer 18bit"
-        self.raw_mode = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
+        self.raw_mode = None
         self.mode = self.get_mode()
         self.major_group = major_group
         self.calibration = {'Voltage': 10.0/(1<<18)/0.9772, 'Current': 40.0/(1<<18)}
         self.value = None
 
     def check_new_data(self):
+        self.raw_mode = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
         old_value = copy(self.value)
         self.value = self.regvalue()
         return self.value != old_value
