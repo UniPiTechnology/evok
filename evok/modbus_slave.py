@@ -864,28 +864,27 @@ class UnitRegister():
         self.name = name
         self.post_write = post_write
         self.datatype = datatype
+        self.valid_mask_reg = valid_mask
+        self.is_input = reg_type == "input"
 
-        if reg_type == "input":
-            _is_iput = True
-        else:
-            _is_iput = False
+    def valid_mask(self):
+        try:
+            return self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valid_mask_reg, is_input=self.is_input)[0]
+        except ENoCacheRegister:
+            return None
 
-        if valid_mask is not None:
-            self.valid_mask = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, valid_mask, is_input=_is_iput)[0]
-        else:
-            self.valid_mask = None
-
-        if self.datatype is None:
-            if factor == 1 and offset == 0: # Reading RAW value - save some CPU time
-                self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, is_input=_is_iput)[0]
-            else:
-                self.regvalue = lambda: (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, is_input=_is_iput)[0] * self.factor) + self.offset
-
-        elif datatype == "float32":
-
-            # TODO - add factor and offset version
-            self.regvalue = lambda: self.__parse_float32(self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg, is_input=_is_iput))
-
+    def regvalue(self):
+        try:
+            if self.datatype is None:
+                if self.factor == 1 and self.offset == 0:  # Reading RAW value - save some CPU time
+                    return self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, is_input=self.is_input)[0]
+                else:
+                    return (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, is_input=self.is_input)[0] * self.factor) + self.offset
+            elif self.datatype == "float32":
+                # TODO - add factor and offset version
+                return self.__parse_float32(self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg, is_input=self.is_input))
+        except ENoCacheRegister:
+            return None
 
     def __parse_float32(self, raw_regs):
         ret = float(BinaryPayloadDecoder.fromRegisters(raw_regs, Endian.BIG, Endian.BIG).decode_32bit_float())
@@ -941,7 +940,8 @@ class UnitRegister():
               current on/off status is taken from last mcp value without reading it from hardware
               is_pending is Boolean
         """
-        return (self.value)
+        return self.value
+
 
 class Register():
     def __init__(self, circuit, arm, post, reg, reg_type="holding", dev_id=0, major_group=0, legacy_mode=True):
@@ -954,10 +954,15 @@ class Register():
         self.legacy_mode = legacy_mode
         self.valreg = reg
         self.reg_type = reg_type
-        if reg_type == "input":
-            self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, is_input=True)[0]
-        else:
-            self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, is_input=False)[0]
+
+    def regvalue(self):
+        try:
+            if self.reg_type == "input":
+                return self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, is_input=True)[0]
+            else:
+                return self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, is_input=False)[0]
+        except ENoCacheRegister:
+            return None
 
     def full(self):
         ret = {'dev': 'register',
