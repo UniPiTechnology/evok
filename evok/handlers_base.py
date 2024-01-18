@@ -25,13 +25,21 @@ class EvokWebHandlerBase(tornado.web.RequestHandler):
     @tornado.web.authenticated
     def get(self, dev, circuit, prop):
         try:
-            device = Devices.by_name(dev, circuit)
             if prop:
                 if prop[0] in ('_',):
                     raise Exception('Invalid property name')
-                result = {prop: getattr(device, prop)}
+            if circuit == 'all':
+                if prop:
+                    result = list(map(lambda d: {'circuit': d.circuit, prop: getattr(d, prop)},
+                                      Devices.by_name(dev)))
+                else:
+                    result = list(map(lambda d: d.full(), Devices.by_name(dev)))
             else:
-                result = device.full()
+                device = Devices.by_name(dev, circuit)
+                if prop:
+                    result = {prop: getattr(device, prop)}
+                else:
+                    result = device.full()
             self.write(json.dumps(result))
         except Exception as E:
             logger.error(f"Error while processing get: {str(type(E).__name__)}: {str(E)}")
