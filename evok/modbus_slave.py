@@ -354,6 +354,12 @@ class Board(object):
             Devices.register_device(LED, _led)
             counter+=1
 
+    def parse_feature_owpower(self, m_feature):
+        _owpower = OwPower(f"{self.circuit}", self, m_feature['val_coil'], dev_id=self.dev_id,
+                           major_group=self.major_group)
+        self.__register_eventable_device(_owpower)
+        Devices.register_device(OWPOWER, _owpower)
+
     def parse_feature_wd(self, max_count, m_feature):
         counter = 0
         while counter < max_count:
@@ -456,7 +462,7 @@ class Board(object):
             counter+=1
 
     def parse_feature(self, m_feature):
-        max_count = m_feature.get('count')
+        max_count = m_feature.get('count', 1)
         if m_feature['type'] == 'DI':
             self.parse_feature_di(max_count, m_feature)
         elif (m_feature['type'] == 'RO' or m_feature['type'] == 'DO'):
@@ -475,6 +481,8 @@ class Board(object):
             self.parse_feature_register(max_count, m_feature)
         elif m_feature['type'] == 'UNIT_REGISTER':
             self.parse_feature_unit_register(max_count, m_feature)
+        elif m_feature['type'] == 'OWPOWER':
+            self.parse_feature_owpower(m_feature)
         else:
             logging.warning("Unknown feature: " + str(m_feature['type']) + " at board: " + str(self.major_group))
 
@@ -687,6 +695,41 @@ class Relay(object):
         except Exception as E:
             logger.error(f"Error in set RO: {E}")
             raise E
+
+    def get(self):
+        return self.full()
+
+
+class OwPower(object):
+    def __init__(self, circuit, arm, coil, dev_id=0, major_group=0):
+        self.alias = ""
+        self.devtype = LED
+        self.dev_id = dev_id
+        self.circuit = circuit
+        self.arm = arm
+        self.major_group = major_group
+        self.coil = coil
+        self.value = 0
+        self.simple = self.full
+
+    def full(self):
+        ret = {'dev': 'owpower', 'circuit': self.circuit, 'value': self.value, 'glob_dev_id': self.dev_id}
+        if self.alias != '':
+            ret['alias'] = self.alias
+        return ret
+
+    def simple(self):
+        return {'dev': 'owpower', 'circuit': self.circuit, 'value': self.value}
+
+    async def set(self, value=None, alias=None):
+        """ Sets new on/off status. Disable pending timeouts
+        """
+        if alias is not None:
+            Devices.set_alias(alias, self, file_update=True)
+        if value is not None:
+            self.value = value
+            await self.arm.modbus_slave.client.write_coil(self.coil, 1 if value else 0, slave=self.arm.modbus_address)
+        return self.full()
 
     def get(self):
         return self.full()

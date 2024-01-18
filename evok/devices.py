@@ -225,6 +225,7 @@ EXT_CONFIG = 25
 TCPBUS = 26
 SERIALBUS = 27
 DEVICE_INFO = 28
+OWPOWER = 29
 
 # # corresponding device types names !! ORDER IS IMPORTANT
 devtype_names = (
@@ -257,6 +258,7 @@ devtype_names = (
     'tcp_bus',
     'serial_bus',
     'device_info',
+    'owpower',
 )
 
 devtype_altnames = {

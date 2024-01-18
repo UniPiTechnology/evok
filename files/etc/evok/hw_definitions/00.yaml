@@ -75,6 +75,8 @@ modbus_features:
     count       : 4
     val_coil    : 8
     val_reg     : 20
+  - type        : OWPOWER
+    val_coil    : 1001
   - type        : WD
     count       : 1
     val_reg     : 6
