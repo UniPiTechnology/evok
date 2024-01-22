@@ -116,16 +116,17 @@ def generate_config(boards: List[str], defaults: Union[None, dict], has_ow: bool
                     'sn': product_serial,
                     'board_count': len(boards)
                 },
-                'devices': {},
             }
         }
     }
 
-    for i in range(len(boards)):
-        ret['hw_tree']['LOCAL_TCP']['devices'][names[i]] = {
-            'slave-id': slave_ids[i],
-            'model': boards[i]
-        }
+    if len(boards) > 0:
+        ret['devices']: {}
+        for i in range(len(boards)):
+            ret['hw_tree']['LOCAL_TCP']['devices'][names[i]] = {
+                'slave-id': slave_ids[i],
+                'model': boards[i]
+            }
 
     if has_ow:
         ret['hw_tree']['OWFS'] = {
