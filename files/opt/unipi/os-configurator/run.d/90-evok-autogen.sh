@@ -121,7 +121,7 @@ def generate_config(boards: List[str], defaults: Union[None, dict], has_ow: bool
     }
 
     if len(boards) > 0:
-        ret['devices']: {}
+        ret['hw_tree']['LOCAL_TCP']['devices']: {}
         for i in range(len(boards)):
             ret['hw_tree']['LOCAL_TCP']['devices'][names[i]] = {
                 'slave-id': slave_ids[i],
