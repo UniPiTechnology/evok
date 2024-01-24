@@ -727,6 +727,7 @@ class OwPower(object):
         if alias is not None:
             Devices.set_alias(alias, self, file_update=True)
         if value is not None:
+            value = bool(int(value))
             self.value = value
             await self.arm.modbus_slave.client.write_coil(self.coil, 1 if value else 0, slave=self.arm.modbus_address)
         return self.full()

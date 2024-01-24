@@ -1,3 +1,5 @@
+import asyncio
+
 from . import devices
 from .devices import *
 from .log import *
@@ -223,7 +225,10 @@ def MySensorFabric(address, typ, bus, interval=None, dynamic=True, circuit=None,
 
 class OwBusDriver:
 
-    def __init__(self, circuit, interval=60, scan_interval=300, major_group=1):
+    def __init__(self, circuit, dev_id, interval=60, scan_interval=300, major_group=1,
+                 owpower_circuit=None):
+        self.bus_driver = self
+        self.dev_id = dev_id
         self.devtype = devices.OWBUS
         self.circuit = circuit
         self.major_group = major_group
@@ -232,6 +237,7 @@ class OwBusDriver:
         self.scanned = set()
         self.mysensors = list()
         self.ow = None
+        self.owpower_circuit = owpower_circuit
 
 
     def full(self):
@@ -264,7 +270,7 @@ class OwBusDriver:
             self.scan_interval = scan_interval
             was_changed = True
         if do_scan:
-            logger.debug("Invoked scan of 1W bus")
+            logger.info("Invoked scan of 1W bus")
             await self.do_scan(invoked_async=True)
         if not (interval is None) and (interval != self.interval):
             self.interval = interval
@@ -275,7 +281,7 @@ class OwBusDriver:
 
         if was_changed:
             devents.config(self)
-        return(self.full())
+        return self.full()
 
 
     def register_sensor(self, mysensor):
@@ -288,19 +294,16 @@ class OwBusDriver:
             self.scanning_scope.cancel()
 
     async def do_reset(self):
-        logger.debug("Invoked reset of 1W master")
-        '''
-        try:
-            with ModbusClient('127.0.0.1') as client: # Send request to local unipi-tcp in simple sync mode
-                ret = client.write_coil(1001, True, unit=1)
-                time.sleep(0.2)
-                ret = client.write_coil(1001, False, unit=1)
-            ow.finish()
-            time.sleep(0.05)
-            ow.init(self.bus)
-        except (ConnectionException):
-            pass
-        '''
+        if self.owpower_circuit is not None:
+            logger.info("Invoked reset of 1W master")
+            owpower = devices.Devices.by_int(devices.OWPOWER, self.owpower_circuit)
+            await owpower.set(value=True)
+            await asyncio.sleep(0.2)
+            await owpower.set(value=False)
+            await asyncio.sleep(0.05)
+            self.do_scan()
+        else:
+            logger.warning("1W reset is not supported!")
 
     # Running async tasks: scanning, poll, mon
     async def scanning(self, server):

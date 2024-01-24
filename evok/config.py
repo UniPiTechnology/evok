@@ -46,16 +46,6 @@ class HWDict:
                                 f"definition count {len(self.definitions) - 1}")
 
 
-class OWBusDevice:
-    def __init__(self, bus_driver, dev_id):
-        self.dev_id = dev_id
-        self.bus_driver = bus_driver
-        self.circuit = bus_driver.circuit
-
-    def full(self):
-        return self.bus_driver.full()
-
-
 class OWSensorDevice:
     def __init__(self, sensor_dev, dev_id):
         self.dev_id = dev_id
@@ -215,10 +205,11 @@ def create_devices(evok_config: EvokConfig, hw_dict):
             dev_counter += 1
             interval = bus_data.get("interval", 60)
             scan_interval = bus_data.get("scan_interval", 300)
+            owpower = bus_data.get("owpower", None)
 
             circuit = bus_name
-            ow_bus_driver = owdevice.OwBusDriver(circuit, interval=interval, scan_interval=scan_interval)
-            bus = OWBusDevice(ow_bus_driver, dev_id=dev_counter)
+            bus = owdevice.OwBusDriver(circuit, interval=interval, scan_interval=scan_interval,
+                                       dev_id=dev_counter, owpower_circuit=owpower)
             Devices.register_device(OWBUS, bus)
 
         elif bus_type == 'MODBUSTCP':

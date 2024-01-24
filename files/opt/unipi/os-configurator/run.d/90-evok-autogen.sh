@@ -132,8 +132,10 @@ def generate_config(boards: List[str], defaults: Union[None, dict], has_ow: bool
         ret['hw_tree']['OWFS'] = {
             'type': 'OWBUS',
             'interval': 10,
-            'scan_interval': 60
+            'scan_interval': 60,
         }
+        if BRAIN in boards:
+            ret['hw_tree']['OWFS']['owpower'] = 1
 
     return ret
 
