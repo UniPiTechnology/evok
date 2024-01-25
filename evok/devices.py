@@ -14,8 +14,8 @@ from .log import logger
 # ToDo: ...
 Device = Any
 
-class Aliases:
 
+class Aliases:
     alias_dict: Mapping[str, Device] = {}
     initial_dict: Mapping[str, Mapping[str, str]] = {}
 
@@ -44,7 +44,7 @@ class Aliases:
         if len(re.findall(r"[A-Za-z0-9\-\._]*", alias)) > 2:
             raise Exception(f"Invalid alias {alias}")
 
-    def add(self, alias: str, device: Device, file_update:bool=False):
+    def add(self, alias: str, device: Device, file_update: bool = False):
         if (alias != device.alias):
             self.validate(alias)
         # delete old alias
@@ -56,7 +56,7 @@ class Aliases:
         if file_update:
             self.set_dirty()
 
-    def delete(self, alias: str, file_update:bool=False) -> None:
+    def delete(self, alias: str, file_update: bool = False) -> None:
         # delete alias from regular dict
         if alias in self.alias_dict:
             del self.alias_dict[alias]
@@ -69,13 +69,13 @@ class Aliases:
                 self.set_dirty()
 
     def get_aliases_by_circuit(self, devtype: int, circuit: str):
-        return  list((alias for alias, rec in self.initial_dict.items()\
-                            if (rec.get("devtype", None) == devtype) and (rec.get("circuit", None) == circuit)))
+        return list((alias for alias, rec in self.initial_dict.items() \
+                     if (rec.get("devtype", None) == devtype) and (rec.get("circuit", None) == circuit)))
 
     def get_dict_to_save(self) -> Mapping[str, Mapping[str, str]]:
         aliases = deepcopy(self.initial_dict)
-        aliases.update(dict(((alias, {"circuit":device.circuit, "devtype":device.devtype})
-                             for alias,device in self.alias_dict.items())))
+        aliases.update(dict(((alias, {"circuit": device.circuit, "devtype": device.devtype})
+                             for alias, device in self.alias_dict.items())))
         return aliases
 
 
@@ -152,10 +152,11 @@ class DeviceList(dict):
         try:
             return devdict[circuit]
         except KeyError:
-            if circuit in self.aliases:
+            if circuit in self.aliases and \
+                    devtype_names[self.aliases[circuit].devtype] == devtype:
                 return self.aliases[circuit]
             else:
-                raise Exception(f'Invalid device circuit number {str(circuit)} with devtype {devtype}')
+                raise Exception(f"Invalid device circuit '{str(circuit)}' with devtype '{devtype}'")
 
     def register_device(self, devtype, device):
         """ can be called with devtype = INTEGER or NAME
@@ -180,7 +181,7 @@ class DeviceList(dict):
         devents.config(device)
         logger.debug(f"Registered new device '{devtype_names[devtype]}' with circuit {device.circuit} \t ({device})")
 
-    def set_alias(self, alias: str, device: Device, file_update:bool=False) -> None:
+    def set_alias(self, alias: str, device: Device, file_update: bool = False) -> None:
         try:
             if (alias == '' or alias is None):
                 if device.alias: self.aliases.delete(device.alias, file_update)
@@ -271,7 +272,7 @@ devtype_altnames = {
     'wd': 'watchdog',
     'rs485': 'uart',
     'temp': 'sensor'
-    }
+}
 
 Devices = DeviceList(devtype_altnames)
 for n in devtype_names:
