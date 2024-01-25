@@ -47,7 +47,7 @@ class MySensor(object):
 
     async def set(self, interval=None, alias=None):
         if interval is not None:
-            self.interval = interval
+            self.interval = int(interval)
             self.time = anyio.current_time() + self.calc_interval()
             devents.config(self)
         if alias is not None:
@@ -83,6 +83,7 @@ class DS18B20(MySensor):  # thermometer
                 'lost': self.lost,
                 'time': self.readtime,
                 'interval': self.interval,
+                'alias': self.alias,
                 'typ': self.type}
 
 
@@ -91,6 +92,7 @@ class DS18B20(MySensor):  # thermometer
                 'circuit': self.circuit,
                 'value': self.value,
                 'lost': self.lost,
+                'alias': self.alias,
                 'typ': self.type}
 
     async def read_val_from_sens(self, sens):
@@ -117,6 +119,7 @@ class DS2438(MySensor):  # vdd + vad + thermometer
                 'lost': self.lost,
                 'time': self.readtime,
                 'interval': self.interval,
+                'alias': self.alias,
                 'typ': self.type}
 
     def simple(self):
@@ -127,6 +130,7 @@ class DS2438(MySensor):  # vdd + vad + thermometer
                 'temp': getattr(self,'temperature', None),
                 'vis': getattr(self,'vis', None),
                 'lost': self.lost,
+                'alias': self.alias,
                 'typ': self.type}
 
 
@@ -185,6 +189,7 @@ class DS2408(MySensor):
                 'circuit': self.circuit,
                 'address': self.address,
                 'value': None,
+                'alias': self.alias,
                 'typ': self.type}
 
     def simple(self):

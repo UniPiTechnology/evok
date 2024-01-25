@@ -16,10 +16,13 @@ owire_get_out_example = {"dev": "temp", "circuit": "1_01", "address": "abcdefgh"
 
 owire_post_inp_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "title": "Neuron_Instruction",
+    "title": "OW_sensor",
     "type": "object",
     "additionalProperties": False,
-    "properties": {}
+    "properties": {
+        "interval": {"type": ["string", "number"]},
+        "alias": {"type": "string"}
+    }
 }
 
 owire_post_inp_example = {}
