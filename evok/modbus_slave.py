@@ -912,10 +912,12 @@ class UnitRegister():
         self.is_input = reg_type == "input"
 
     def valid_mask(self):
+        if self.valid_mask_reg is None:
+            return 0
         try:
             return self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valid_mask_reg, is_input=self.is_input)[0]
         except ENoCacheRegister:
-            return None
+            return 0
 
     def regvalue(self):
         try:
@@ -952,7 +954,7 @@ class UnitRegister():
             ret['name'] = self.name
 
         if self.valid_mask is not None:
-            ret['valid'] = "true" if (self.valid_mask() & (1 << self.valreg - 1)) != 0 else "false"
+            ret['valid'] = "true" if (self.valid_mask() & (1 << self.valreg)) != 0 else "false"
 
         if self.unit is not None:
             ret['unit'] = self.unit
