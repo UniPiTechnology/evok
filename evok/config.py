@@ -108,7 +108,7 @@ class EvokConfig:
 
     def __init__(self, conf_dir_path: str):
         data = self.__get_final_conf(scope=[conf_dir_path+'/config.yaml'])
-        self.hw_tree: dict = self.__get_hw_tree(data)
+        self.comm_channels: dict = self.__get_comm_channels(data)
         self.apis: dict = self.__get_apis_conf(data)
         self.logging: dict = self.__get_logging_conf(data)
 
@@ -142,12 +142,12 @@ class EvokConfig:
         return final_conf
 
     @staticmethod
-    def __get_hw_tree(data: dict) -> dict:
+    def __get_comm_channels(data: dict) -> dict:
         ret = {}
-        if 'hw_tree' not in data:
-            logger.warning("Section 'hw_tree' not in configuration!")
+        if 'comm_channels' not in data:
+            logger.warning("Section 'comm_channels' not in configuration!")
             return ret
-        for name, value in data['hw_tree'].items():
+        for name, value in data['comm_channels'].items():
             ret[name] = value
         return ret
 
@@ -174,8 +174,8 @@ class EvokConfig:
     def configtojson(self):
         return self.main  # TODO: zkontrolovat!!
 
-    def get_hw_tree(self) -> dict:
-        return self.hw_tree
+    def get_comm_channels(self) -> dict:
+        return self.comm_channels
 
     def get_api(self, name: str) -> dict:
         if name not in self.apis:
@@ -192,7 +192,7 @@ def hexint(value):
 
 def create_devices(evok_config: EvokConfig, hw_dict):
     dev_counter = 0
-    for bus_name, bus_data in evok_config.get_hw_tree().items():
+    for bus_name, bus_data in evok_config.get_comm_channels().items():
         bus_data: dict
         if not bus_data.get("enabled", True):
             logger.info(f"Skipping disabled bus '{bus_name}'")

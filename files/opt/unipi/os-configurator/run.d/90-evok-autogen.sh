@@ -105,7 +105,7 @@ def generate_config(boards: List[str], defaults: Union[None, dict], has_ow: bool
     slave_ids = defaults.get('slave-ids', [i for i in range(1, len(boards) + 1)])
 
     ret = {
-        'hw_tree': {
+        'comm_channels': {
             'LOCAL_TCP': {
                 'type': 'MODBUSTCP',
                 'hostname': hostname,
@@ -121,21 +121,21 @@ def generate_config(boards: List[str], defaults: Union[None, dict], has_ow: bool
     }
 
     if len(boards) > 0:
-        ret['hw_tree']['LOCAL_TCP']['devices'] = {}
+        ret['comm_channels']['LOCAL_TCP']['devices'] = {}
         for i in range(len(boards)):
-            ret['hw_tree']['LOCAL_TCP']['devices'][names[i]] = {
+            ret['comm_channels']['LOCAL_TCP']['devices'][names[i]] = {
                 'slave-id': slave_ids[i],
                 'model': boards[i]
             }
 
     if has_ow:
-        ret['hw_tree']['OWFS'] = {
+        ret['comm_channels']['OWFS'] = {
             'type': 'OWBUS',
             'interval': 10,
             'scan_interval': 60,
         }
         if BRAIN in boards:
-            ret['hw_tree']['OWFS']['owpower'] = 1
+            ret['comm_channels']['OWFS']['owpower'] = 1
 
     return ret
 
