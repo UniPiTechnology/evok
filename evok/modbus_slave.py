@@ -1209,7 +1209,23 @@ class AnalogOutputBrain:
         self.regmode = regmode
         self.legacy_mode = legacy_mode
         self.reg_res = reg_res
-        self.modes = ['Voltage', 'Current', 'Resistance']
+        self.modes = {
+            'Voltage': {
+                'value': 0,
+                'unit': 'V',
+                'range': [0, 10]
+            },
+            'Current': {
+                'value': 1,
+                'unit': 'I',
+                'range': [0, 20]
+            },
+            'Resistance':{
+                'value': 2,
+                'unit': 'Ohm',
+                'range': [0, 2000]
+            }
+        }
         self.arm = arm
         self.major_group = major_group
         self.is_voltage = lambda: bool(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0] == 0)
@@ -1251,7 +1267,7 @@ class AnalogOutputBrain:
         ret = {'dev': 'ao',
                'circuit': self.circuit,
                'mode': self.mode,
-               'modes': self.modes,
+               'modes': self.modes.keys(),
                'glob_dev_id': self.dev_id}
         if self.mode == 'Resistance':
             ret['value'] = self.res_value
@@ -1311,7 +1327,7 @@ class AnalogOutputBrain:
 
 
 class AnalogOutput():
-    def __init__(self, circuit, arm, reg, regmode=-1, dev_id=0, modes=['Voltage'], major_group=0, legacy_mode=True):
+    def __init__(self, circuit, arm, reg, regmode=-1, dev_id=0, modes=None, major_group=0, legacy_mode=True):
         self.alias = ""
         self.devtype = AO
         self.dev_id = dev_id
@@ -1320,15 +1336,10 @@ class AnalogOutput():
         self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.reg)[0]
         self.regmode = regmode
         self.legacy_mode = legacy_mode
-        self.modes = modes
+        self.modes = modes if modes is not None else {}
         self.arm = arm
         self.major_group = major_group
         self.offset = 0
-        self.is_voltage = lambda: True
-        if self.is_voltage():
-            self.mode = 'Voltage'
-        else:
-            self.mode = 'Current'
         self.value = None
         self.res_value = None
 
@@ -1343,10 +1354,11 @@ class AnalogOutput():
         ret = {'dev': 'ao',
                'circuit': self.circuit,
                'mode': self.mode,
-               'modes': self.modes,
-               'glob_dev_id': self.dev_id}
+               'modes': self.modes.keys(),
+               'glob_dev_id': self.dev_id
+               }
         ret['value'] = self.value
-        ret['unit'] = (unit_names[VOLT]) if self.is_voltage() else (unit_names[AMPERE])
+        ret['unit'] = self.modes[self.mode]['unit']
         if self.alias != '':
             ret['alias'] = self.alias
         return ret
@@ -1404,10 +1416,9 @@ class AnalogInput():
         self.arm = arm
         self.legacy_mode = legacy_mode
         self.regmode = regmode
-        self.modes = modes
-        self.mode = None  # TODO: nacitani modu!
+        self.modes = modes if modes is not None else {}
+        self.mode = None
         self.unit_name = unit_names[VOLT]
-        self.sec_ai_mode = 0
         self.major_group = major_group
         self.is_voltage = lambda: True
         self.value = None
@@ -1415,16 +1426,9 @@ class AnalogInput():
 
     def check_new_data(self):
         # TODO: ostranit 'tolerances'
-        if self.tolerances == '500series':
-            self.sec_ai_mode = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
-            self.mode = self.get_500_series_mode()
-            self.unit_name = self.internal_unit
-        elif self.tolerances == 'brain':
-            if self.is_voltage():
-                self.mode = "Voltage"
-            else:
-                self.mode = "Current"
-                self.unit_name = unit_names[AMPERE]
+        self.sec_ai_mode = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
+        self.mode = self.get_500_series_mode()
+        self.unit_name = self.internal_unit
 
         old_value = copy(self.value)
         self.value = self.regvalue()
@@ -1443,17 +1447,11 @@ class AnalogInput():
             Devices.set_alias(alias, self, file_update=True)
 
         if mode is not None and mode in self.modes:
+            mdata = self.modes[mode]
             self.mode = mode
-            if self.mode == "Voltage":
-                self.unit_name = unit_names[VOLT]
-                self.sec_ai_mode = 1
-            elif self.mode == "Current":
-                self.unit_name = unit_names[AMPERE]
-                self.sec_ai_mode = 3
-            elif self.mode == "Resistance":
-                self.unit_name = unit_names[OHM]
-                self.sec_ai_mode = 4
-            await self.arm.modbus_slave.client.write_register(self.regmode, self.sec_ai_mode, slave=self.arm.modbus_address)
+            self.unit_name = mdata['unit']
+            mvalue = mdata['value']
+            await self.arm.modbus_slave.client.write_register(self.regmode, mvalue, slave=self.arm.modbus_address)
         return self.full()
 
     def full(self):
@@ -1463,7 +1461,7 @@ class AnalogInput():
                'unit': self.unit_name,
                'glob_dev_id': self.dev_id,
                'mode': self.mode,
-               'modes': self.modes,
+               'modes': self.modes.keys(),
                'range': self.range,
                }
         if self.alias != '':
