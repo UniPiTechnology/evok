@@ -376,28 +376,22 @@ class Board(object):
         counter = 0
         while counter < max_count:
             board_val_reg = m_feature['val_reg']
-            if 'res_val_reg' in m_feature:
-                _ao = AnalogOutputBrain("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter,
-                                   regmode=m_feature['mode_reg'], reg_res=m_feature['res_val_reg'],
-                                   dev_id=self.dev_id, major_group=self.major_group, legacy_mode=self.legacy_mode)
-            else:
-                _ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter, dev_id=self.dev_id,
-                                   major_group=self.major_group, legacy_mode=self.legacy_mode)
+            _ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter,
+                               dev_id=self.dev_id, major_group=self.major_group)
             self.__register_eventable_device(_ao)
             Devices.register_device(AO, _ao)
             counter+=1
 
-    def parse_feature_ai18(self, max_count, m_feature):
-        value_reg = m_feature['val_reg']
-        mode_reg = m_feature['mode_reg']
-        for i in range(max_count):
-            circuit = "%s_%02d" % (self.circuit, i + 1)
-            _ai = AnalogInput18(circuit, self, value_reg, regmode=mode_reg+i,
-                                dev_id=self.dev_id, major_group=self.major_group, modes=m_feature['modes'])
-
-            self.__register_eventable_device(_ai)
-            Devices.register_device(AI, _ai)
-            value_reg += 2;
+    def parse_feature_bao(self, max_count, m_feature):
+        counter = 0
+        while counter < max_count:
+            board_val_reg = m_feature['val_reg']
+            _ao = AnalogOutputBrain("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter,
+                                    regmode=m_feature['mode_reg'], reg_res=m_feature['res_val_reg'],
+                                    dev_id=self.dev_id, major_group=self.major_group)
+            self.__register_eventable_device(_ao)
+            Devices.register_device(AO, _ao)
+            counter+=1
 
     def parse_feature_ai(self, max_count, m_feature):
         counter = 0
@@ -405,21 +399,10 @@ class Board(object):
             board_val_reg = m_feature['val_reg']
             tolerances = m_feature.get('tolerances')
             circuit = "%s_%02d" % (self.circuit, counter + 1)
-            if m_feature.get('tolerance', None) == 'brain':
-                board_val_reg = m_feature['val_reg'] + counter
-                _ai = AnalogInput(circuit, self, board_val_reg,
-                                  regmode=m_feature['mode_reg'],
-                                  dev_id=self.dev_id, major_group=self.major_group, tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
-            elif m_feature.get('type') == "AI18":
-                board_val_reg = m_feature['val_reg'] + counter * 2
-                _ai = AnalogInput18(circuit, self, board_val_reg,
-                                  regmode=m_feature['mode_reg'] + counter,
-                                  dev_id=self.dev_id, major_group=self.major_group, modes=m_feature['modes'])
-            else:
-                board_val_reg = m_feature['val_reg'] + counter * 2
-                _ai = AnalogInput(circuit, self, board_val_reg,
-                                  regmode=m_feature['mode_reg'] + counter if m_feature.get('mode_reg', None) is not None else None,
-                                  dev_id=self.dev_id, major_group=self.major_group, tolerances=tolerances, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
+            board_val_reg = m_feature['val_reg'] + counter * 2
+            _ai = AnalogInput(circuit, self, board_val_reg,
+                              regmode=m_feature['mode_reg'] + counter if m_feature.get('mode_reg', None) is not None else None,
+                              dev_id=self.dev_id, major_group=self.major_group, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
 
             self.__register_eventable_device(_ai)
             Devices.register_device(AI, _ai)
@@ -473,9 +456,9 @@ class Board(object):
             self.parse_feature_wd(max_count, m_feature)
         elif m_feature['type'] == 'AO':
             self.parse_feature_ao(max_count, m_feature)
+        elif m_feature['type'] == 'BAO':
+            self.parse_feature_bao(max_count, m_feature)
         elif m_feature['type'] == 'AI':
-            self.parse_feature_ai(max_count, m_feature)
-        elif m_feature['type'] == 'AI18':
             self.parse_feature_ai(max_count, m_feature)
         elif m_feature['type'] == 'REGISTER':
             self.parse_feature_register(max_count, m_feature)
@@ -1200,14 +1183,13 @@ class Input():
 
 
 class AnalogOutputBrain:
-    def __init__(self, circuit, arm, reg, regmode=-1, reg_res=0, dev_id=0, major_group=0, legacy_mode=True):
+    def __init__(self, circuit, arm, reg, regmode=-1, reg_res=0, dev_id=0, major_group=0):
         self.alias = ""
         self.devtype = AO
         self.dev_id = dev_id
         self.circuit = circuit
         self.reg = reg
         self.regmode = regmode
-        self.legacy_mode = legacy_mode
         self.reg_res = reg_res
         self.modes = {
             'Voltage': {
@@ -1327,7 +1309,7 @@ class AnalogOutputBrain:
 
 
 class AnalogOutput():
-    def __init__(self, circuit, arm, reg, regmode=-1, dev_id=0, modes=None, major_group=0, legacy_mode=True):
+    def __init__(self, circuit, arm, reg, regmode=-1, dev_id=0, modes=None, major_group=0):
         self.alias = ""
         self.devtype = AO
         self.dev_id = dev_id
@@ -1335,15 +1317,25 @@ class AnalogOutput():
         self.reg = reg
         self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.reg)[0]
         self.regmode = regmode
-        self.legacy_mode = legacy_mode
         self.modes = modes if modes is not None else {}
         self.arm = arm
         self.major_group = major_group
         self.offset = 0
         self.value = None
         self.res_value = None
+        self.mode = None
+        self.unit_name = None
+
+    def get_mode_by_regvalue(self, regvalue: int):
+        for mode, data in self.modes.items():
+            if regvalue == data['value']:
+                return mode
+        return None
 
     def check_new_data(self):
+        mode_value = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
+        self.set(mode=self.get_mode_by_regvalue(mode_value))
+
         old_value = copy(self.value)
         old_res_value = copy(self.res_value)
         self.value = round(self.regvalue() * 0.0025, 3)
@@ -1382,22 +1374,12 @@ class AnalogOutput():
             Devices.set_alias(alias, self, file_update=True)
 
         if mode is not None and mode in self.modes and self.regmode != -1:
-            val = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
-            cur_val = self.value
-            if mode == "Voltage":
-                val = 0
-                if (self.mode == 'Current'):
-                    self.factor = (self.factor / 10) * 3
-            elif mode == "Current":
-                val = 1
-                if (self.mode == 'Voltage' or self.mode == 'Resistance'):
-                    self.factor = (self.factor / 3) * 10
-            elif mode == "Resistance":
-                val = 3
+            mdata = self.modes[mode]
             self.mode = mode
-            await self.arm.modbus_slave.client.write_register(self.regmode, val, slave=self.arm.modbus_address)
-            if mode == "Voltage" or mode == "Current":
-                await self.set_value(cur_val)        # Restore original value (i.e. 1.5V becomes 1.5mA)
+            self.unit_name = mdata['unit']
+            mvalue = mdata['value']
+            await self.arm.modbus_slave.client.write_register(self.regmode, mvalue, slave=self.arm.modbus_address)
+
         if not (value is None):
             await self.set_value(value)
         return self.full()
@@ -1424,11 +1406,15 @@ class AnalogInput():
         self.value = None
         self.range = None
 
+    def get_mode_by_regvalue(self, regvalue: int):
+        for mode, data in self.modes.items():
+            if regvalue == data['value']:
+                return mode
+        return None
+
     def check_new_data(self):
-        # TODO: ostranit 'tolerances'
-        self.sec_ai_mode = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
-        self.mode = self.get_500_series_mode()
-        self.unit_name = self.internal_unit
+        mode_value = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
+        self.set(mode=self.get_mode_by_regvalue(mode_value))
 
         old_value = copy(self.value)
         self.value = self.regvalue()
@@ -1479,13 +1465,3 @@ class AnalogInput():
     @property
     def voltage(self):
         return self.value
-
-    @property
-    def internal_unit(self):
-        if self.mode == "Voltage":
-            return unit_names[VOLT]
-        elif self.mode == "Current":
-            return unit_names[AMPERE]
-        else:
-            return unit_names[OHM]
-

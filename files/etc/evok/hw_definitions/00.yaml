@@ -17,31 +17,23 @@ modbus_register_blocks:
     count       : 6
     frequency   : 10
 modbus_features:
-  - type        : AO
+  - type        : BAO
     count       : 1
-    modes       :
-      - Voltage
-      - Current
-      - Resistance
-    min_v       : 0
-    max_v       : 10
-    min_c       : 0
-    max_c       : 0.020
-    min_r       : 0
-    max_r       : 2000
     val_reg     : 3000
     res_val_reg : 3004
     mode_reg    : 1019
   - type        : AI
     count       : 1
     modes       :
-      - Voltage
-      - Current
+      Voltage:
+        value: 0
+        unit: 'V'
+        range: [0, 10]
+      Current:
+        value: 1
+        unit: 'mA'
+        range: [0, 20]
     tolerances  : brain
-    min_v       : 0
-    max_v       : 10
-    min_c       : 0
-    max_c       : 0.020
     val_reg     : 3002
     mode_reg    : 1024
   - type        : DO

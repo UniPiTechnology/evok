@@ -40,7 +40,9 @@ modbus_features:
   - type        : AO
     count       : 4
     modes       :
-      - Voltage
+      Voltage:
+        unit: 'V'
+        range: [0, 10]
     min_v       : 0
     max_v       : 10
     val_reg     : 2
@@ -71,11 +73,6 @@ modbus_features:
         value: 5
         unit: 'Ohm'
         range: [0, 100000]
-    tolerances  : 500series
-    min_v       : 0
-    max_v       : 10
-    min_c       : 0
-    max_c       : 0.020
     val_reg     : 6
     mode_reg    : 1019
   - type        : WD
