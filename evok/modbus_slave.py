@@ -1183,7 +1183,7 @@ class Input():
 
 
 class AnalogOutputBrain:
-    def __init__(self, circuit, arm, reg, regmode=-1, reg_res=0, dev_id=0, major_group=0):
+    def __init__(self, circuit, arm, reg, regmode=None, reg_res=0, dev_id=0, major_group=0):
         self.alias = ""
         self.devtype = AO
         self.dev_id = dev_id
@@ -1249,7 +1249,7 @@ class AnalogOutputBrain:
         ret = {'dev': 'ao',
                'circuit': self.circuit,
                'mode': self.mode,
-               'modes': self.modes.keys(),
+               'modes': list(self.modes.keys()),
                'glob_dev_id': self.dev_id}
         if self.mode == 'Resistance':
             ret['value'] = self.res_value
@@ -1287,7 +1287,7 @@ class AnalogOutputBrain:
         if alias is not None:
             Devices.set_alias(alias, self, file_update=True)
 
-        if mode is not None and mode in self.modes and self.regmode != -1:
+        if mode is not None and mode in self.modes and self.regmode is not None:
             val = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
             cur_val = self.value
             if mode == "Voltage":
@@ -1309,7 +1309,7 @@ class AnalogOutputBrain:
 
 
 class AnalogOutput():
-    def __init__(self, circuit, arm, reg, regmode=-1, dev_id=0, modes=None, major_group=0):
+    def __init__(self, circuit, arm, reg, regmode=None, dev_id=0, modes=None, major_group=0):
         self.alias = ""
         self.devtype = AO
         self.dev_id = dev_id
@@ -1333,8 +1333,9 @@ class AnalogOutput():
         return None
 
     def check_new_data(self):
-        mode_value = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
-        self.set(mode=self.get_mode_by_regvalue(mode_value))
+        if self.regmode is not None:
+            mode_value = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
+            self.set(mode=self.get_mode_by_regvalue(mode_value))
 
         old_value = copy(self.value)
         old_res_value = copy(self.res_value)
@@ -1346,7 +1347,7 @@ class AnalogOutput():
         ret = {'dev': 'ao',
                'circuit': self.circuit,
                'mode': self.mode,
-               'modes': self.modes.keys(),
+               'modes': list(self.modes.keys()),
                'glob_dev_id': self.dev_id
                }
         ret['value'] = self.value
@@ -1373,7 +1374,7 @@ class AnalogOutput():
         if alias is not None:
             Devices.set_alias(alias, self, file_update=True)
 
-        if mode is not None and mode in self.modes and self.regmode != -1:
+        if mode is not None and mode in self.modes and self.regmode is not None:
             mdata = self.modes[mode]
             self.mode = mode
             self.unit_name = mdata['unit']
@@ -1413,8 +1414,9 @@ class AnalogInput():
         return None
 
     def check_new_data(self):
-        mode_value = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
-        self.set(mode=self.get_mode_by_regvalue(mode_value))
+        if self.regmode is not None:
+            mode_value = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
+            self.set(mode=self.get_mode_by_regvalue(mode_value))
 
         old_value = copy(self.value)
         self.value = self.regvalue()
@@ -1447,7 +1449,7 @@ class AnalogInput():
                'unit': self.unit_name,
                'glob_dev_id': self.dev_id,
                'mode': self.mode,
-               'modes': self.modes.keys(),
+               'modes': list(self.modes.keys()),
                'range': self.range,
                }
         if self.alias != '':
