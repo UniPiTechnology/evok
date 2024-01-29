@@ -1395,7 +1395,7 @@ class AnalogOutput():
 
 
 class AnalogInput():
-    def __init__(self, circuit, arm, reg, regmode=None, dev_id=0, major_group=0, legacy_mode=True, tolerances='brain', modes=['Voltage']):
+    def __init__(self, circuit, arm, reg, regmode=None, dev_id=0, major_group=0, legacy_mode=True, modes=None):
         self.alias = ""
         self.devtype = AI
         self.dev_id = dev_id
@@ -1405,20 +1405,16 @@ class AnalogInput():
         self.legacy_mode = legacy_mode
         self.regmode = regmode
         self.modes = modes
-        self.mode = 'Voltage'
+        self.mode = None  # TODO: nacitani modu!
         self.unit_name = unit_names[VOLT]
-        self.tolerances = tolerances
         self.sec_ai_mode = 0
         self.major_group = major_group
         self.is_voltage = lambda: True
-        if self.tolerances == 'brain':
-            self.is_voltage = lambda: bool(self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0] == 0)
-        if self.tolerances == "simple":
-            pass
-        self.tolerance_mode = self.get_tolerance_mode()
         self.value = None
+        self.range = None
 
     def check_new_data(self):
+        # TODO: ostranit 'tolerances'
         if self.tolerances == '500series':
             self.sec_ai_mode = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
             self.mode = self.get_500_series_mode()
@@ -1442,124 +1438,34 @@ class AnalogInput():
         except ENoCacheRegister:
             return None
 
-    def get_tolerance_modes(self):
-        if self.tolerances == 'brain':
-            if self.mode == 'Voltage':
-                return ["10.0"]
-            else:
-                return ["20.0"]
-        elif self.tolerances == '500series':
-            if self.mode == 'Voltage':
-                return ["0.0", "2.5", "10.0"]
-            elif self.mode == 'Current':
-                return ["20.0"]
-            elif self.mode == "Resistance":
-                return ["1960.0", "100.0"]
-        elif self.tolerances == 'simple':
-            return ["10.0"]
-
-    def get_tolerance_mode(self):
-        if self.tolerances == 'brain':
-            if self.mode == 'voltage':
-                return "10.0"
-            else:
-                return "20.0"
-        elif self.tolerances == '500series':
-            if self.sec_ai_mode == 0:
-                return "0.0"
-            elif self.sec_ai_mode == 1:
-                return "10.0"
-            elif self.sec_ai_mode == 2:
-                return "2.5"
-            elif self.sec_ai_mode == 3:
-                return "20.0"
-            elif self.sec_ai_mode == 4:
-                return "1960.0"
-            elif self.sec_ai_mode == 5:
-                return "100.0"
-        if self.tolerances == 'simple':
-            return "10.0"
-
-    def get_500_series_mode(self):
-        if self.sec_ai_mode == 0:
-            return "Voltage"
-        elif self.sec_ai_mode == 1:
-            return "Voltage"
-        elif self.sec_ai_mode == 2:
-            return "Voltage"
-        elif self.sec_ai_mode == 3:
-            return "Current"
-        elif self.sec_ai_mode == 4:
-            return "Resistance"
-        elif self.sec_ai_mode == 5:
-            return "Resistance"
-
-    def get_500_series_sec_mode(self):
-        if self.mode == "Voltage":
-            if self.tolerance_mode == "0.0":
-                return 0
-            elif self.tolerance_mode == "10.0":
-                return 1
-            elif self.tolerance_mode == "2.5":
-                return 2
-        elif self.mode == "Current":
-            if self.tolerance_mode == "20.0":
-                return 3
-        elif self.mode == "Resistance":
-            if self.tolerance_mode == "1960.0":
-                return 4
-            elif self.tolerance_mode == "100.0":
-                return 5
-
-    async def set(self, mode=None, range=None, alias=None):
+    async def set(self, mode=None, alias=None):
         if alias is not None:
             Devices.set_alias(alias, self, file_update=True)
 
         if mode is not None and mode in self.modes:
-            if self.tolerances == "brain" and mode != self.mode:
-                self.mode = mode
-                if self.mode == "Voltage":
-                    self.unit_name = unit_names[VOLT]
-                    await self.arm.modbus_slave.client.write_register(self.regmode, 0, slave=self.arm.modbus_address)
-                elif self.mode == "Current":
-                    self.unit_name = unit_names[AMPERE]
-                    await self.arm.modbus_slave.client.write_register(self.regmode, 1, slave=self.arm.modbus_address)
-                self.tolerance_mode = self.get_tolerance_mode()
-            elif self.tolerances == "500series":
-                self.mode = mode
-                if self.mode == "Voltage":
-                    self.unit_name = unit_names[VOLT]
-                    self.sec_ai_mode = 1
-                elif self.mode == "Current":
-                    self.unit_name = unit_names[AMPERE]
-                    self.sec_ai_mode = 3
-                elif self.mode == "Resistance":
-                    self.unit_name = unit_names[OHM]
-                    self.sec_ai_mode = 4
-                self.tolerance_mode = self.get_tolerance_mode()
-                await self.arm.modbus_slave.client.write_register(self.regmode, self.sec_ai_mode, slave=self.arm.modbus_address)
-        if self.tolerances == '500series' and range is not None and range in self.get_tolerance_modes():
+            self.mode = mode
             if self.mode == "Voltage":
                 self.unit_name = unit_names[VOLT]
+                self.sec_ai_mode = 1
             elif self.mode == "Current":
                 self.unit_name = unit_names[AMPERE]
-            else:
+                self.sec_ai_mode = 3
+            elif self.mode == "Resistance":
                 self.unit_name = unit_names[OHM]
-            self.tolerance_mode = range
-            self.sec_ai_mode = self.get_500_series_sec_mode()
+                self.sec_ai_mode = 4
             await self.arm.modbus_slave.client.write_register(self.regmode, self.sec_ai_mode, slave=self.arm.modbus_address)
         return self.full()
 
     def full(self):
         ret = {'dev': 'ai',
                'circuit': self.circuit,
-                  'value': self.value,
-                  'unit': self.unit_name,
-                'glob_dev_id': self.dev_id,
+               'value': self.value,
+               'unit': self.unit_name,
+               'glob_dev_id': self.dev_id,
                'mode': self.mode,
-                  'modes': self.modes,
-                  'range': self.tolerance_mode,
-                  'range_modes': self.get_tolerance_modes()}
+               'modes': self.modes,
+               'range': self.range,
+               }
         if self.alias != '':
             ret['alias'] = self.alias
         return ret
@@ -1584,96 +1490,4 @@ class AnalogInput():
             return unit_names[AMPERE]
         else:
             return unit_names[OHM]
-
-
-class AnalogInput18():
-
-    def __init__(self, circuit, arm, reg, regmode=-1, dev_id=0, major_group=0, modes=['Voltage']):
-        self.alias = ""
-        self.devtype = AI
-        self.dev_id = dev_id
-        self.circuit = circuit
-        self.valreg = reg
-        self.arm = arm
-        self.regmode = regmode
-        self.modes = modes
-        self.mode = 'Voltage'
-        self.unit_name = ''
-        self.tolerances = ["Integer 18bit", "Float"]
-        self.tolerance_mode = "Integer 18bit"
-        self.raw_mode = None
-        self.mode = self.get_mode()
-        self.major_group = major_group
-        self.calibration = {'Voltage': 10.0/(1<<18)/0.9772, 'Current': 40.0/(1<<18)}
-        self.value = None
-
-    def check_new_data(self):
-        self.raw_mode = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
-        old_value = copy(self.value)
-        self.value = self.regvalue()
-        return self.value != old_value
-
-    def regvalue(self):
-        try:
-            U32 = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg)
-            raw_value = U32[0] | (U32[1] << 16)
-            ret = raw_value if self.tolerance_mode == "Integer 18bit" else float(raw_value)*self.calibration[self.mode]
-            return round(ret, 3)
-        except Exception as E:
-            logger.exception(str(E))
-            return 0
-
-    def get_mode(self):
-        if self.raw_mode == 1:
-            return "Current"
-        else:
-            return "Voltage"
-
-    async def set(self, mode=None, range=None, alias=None):
-        if alias is not None:
-            Devices.set_alias(alias, self, file_update=True)
-
-        if mode is not None and mode in self.modes:
-            self.mode = mode
-            if self.mode == "Voltage":
-                    self.raw_mode = 0
-            elif self.mode == "Current":
-                    self.raw_mode = 1
-            await self.arm.modbus_slave.client.write_register(self.regmode, self.raw_mode, slave=self.arm.modbus_address)
-
-        if range is not None and range in self.tolerances:
-            self.tolerance_mode = range
-            if range == "Float":
-                self.unit_name = unit_names[AMPERE] if self.mode == "Current" else unit_names[VOLT]
-            else:
-                self.unit_name = ''
-
-        return self.full()
-
-    def full(self):
-        ret = {'dev': 'ai',
-               'circuit': self.circuit,
-               'value': self.value,
-               'unit': self.unit_name,
-               'glob_dev_id': self.dev_id,
-               'mode': self.mode,
-               'modes': self.modes,
-               'range': self.tolerance_mode,
-               'range_modes': self.tolerances
-              }
-        if self.alias != '':
-            ret['alias'] = self.alias
-        return ret
-
-    def get(self):
-        return self.full()
-
-    def simple(self):
-        return {'dev': 'ai',
-                'circuit': self.circuit,
-                'value': self.value}
-
-    @property
-    def voltage(self):
-        return self.value
 
