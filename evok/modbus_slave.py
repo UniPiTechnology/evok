@@ -285,7 +285,7 @@ class Board(object):
 
     async def set(self, alias=None):
         if not alias is None:
-            Devices.set_alias(alias, self, file_update=True)
+            Devices.set_alias(alias, self)
         return await self.full()
 
     async def initialise_cache(self, cache_definition):
@@ -668,7 +668,7 @@ class Relay(object):
                 self.mode = 'PWM'
 
             if alias is not None:
-                Devices.set_alias(alias, self, file_update=True)
+                Devices.set_alias(alias, self)
 
             if timeout is None:
                 return self.full()
@@ -715,7 +715,7 @@ class OwPower(object):
         """ Sets new on/off status. Disable pending timeouts
         """
         if alias is not None:
-            Devices.set_alias(alias, self, file_update=True)
+            Devices.set_alias(alias, self)
         if value is not None:
             value = bool(int(value))
             self.value = value
@@ -775,7 +775,7 @@ class ULED(object):
         """ Sets new on/off status. Disable pending timeouts
         """
         if alias is not None:
-            Devices.set_alias(alias, self, file_update=True)
+            Devices.set_alias(alias, self)
         if value is not None:
             value = int(value)
             await self.arm.modbus_slave.client.write_coil(self.coil, 1 if value else 0, slave=self.arm.modbus_address)
@@ -853,7 +853,7 @@ class Watchdog(object):
         """ Sets new on/off status. Disable pending timeouts
         """
         if alias is not None:
-            Devices.set_alias(alias, self, file_update=True)
+            Devices.set_alias(alias, self)
 
         if self.nv_save_coil >= 0 and nv_save is not None and nv_save != self.nvsavvalue:
             if nv_save != 0:
@@ -929,7 +929,7 @@ class UnitRegister():
     async def set(self, value=None, alias=None, **kwargs):
         """ Sets new on/off status. Disable pending timeouts """
         if alias is not None:
-            Devices.set_alias(alias, self, file_update=True)
+            Devices.set_alias(alias, self)
 
         raise Exception("Unit_register object is read-only")
 
@@ -1044,7 +1044,7 @@ class Register():
         """ Sets new on/off status. Disable pending timeouts
         """
         if alias is not None:
-            Devices.set_alias(alias, self, file_update=True)
+            Devices.set_alias(alias, self)
         if value is not None:
             value = int(value)
             await self.arm.modbus_slave.client.write_register(self.valreg, value if value else 0, slave=self.arm.modbus_address)
@@ -1132,7 +1132,7 @@ class Input():
 
     async def set(self, debounce=None, mode=None, counter=None, counter_mode=None, ds_mode=None, alias=None):
         if alias is not None:
-            Devices.set_alias(alias, self, file_update=True)
+            Devices.set_alias(alias, self)
 
         if mode is not None and mode != self.mode and mode in self.modes:
             self.mode = mode
@@ -1293,7 +1293,7 @@ class AnalogOutputBrain:
 
     async def set(self, value=None, mode=None, alias=None):
         if alias is not None:
-            Devices.set_alias(alias, self, file_update=True)
+            Devices.set_alias(alias, self)
 
         if mode is not None and mode in self.modes and self.regmode is not None:
             val = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
@@ -1394,7 +1394,7 @@ class AnalogOutput:
 
     async def set(self, value=None, mode=None, alias=None):
         if alias is not None:
-            Devices.set_alias(alias, self, file_update=True)
+            Devices.set_alias(alias, self)
 
         if mode is not None and mode in self.modes and self.regmode is not None:
             mdata = self.modes[mode]
@@ -1466,7 +1466,7 @@ class AnalogInput:
 
     async def set(self, mode=None, alias=None):
         if alias is not None:
-            Devices.set_alias(alias, self, file_update=True)
+            Devices.set_alias(alias, self)
 
         if mode is not None and mode in self.modes:
             mdata = self.modes[mode]
