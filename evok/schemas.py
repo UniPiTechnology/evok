@@ -1407,36 +1407,10 @@ ai_post_inp_schema = {
     "properties": {
         "mode": {
             "type": "string",
-            "enum": [
-                "Voltage",
-                "Current",
-                "Resistance",
-                "Simple"
-            ],
-            "description": "Simple is only valid for the UniPi 1.1"
-        },
-        "range": {
-            "type": "string",
-            "enum": [
-                "0.0",
-                "2.5",
-                "10.0",
-                "20.0",
-                "100.0",
-                "1960.0"
-            ]
+            "description": "Must be in 'modes'!"
         },
         "alias": {
             "type": "string"
-        },
-        "bits": {
-            "description": "Only for the UniPi 1.1"
-        },
-        "gain": {
-            "description": "Only for the UniPi 1.1"
-        },
-        "interval": {
-            "description": "Only for the UniPi 1.1"
         }
     }
 }

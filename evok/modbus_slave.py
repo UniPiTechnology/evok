@@ -1252,14 +1252,15 @@ class AnalogOutputBrain:
         ret = {'dev': 'ao',
                'circuit': self.circuit,
                'mode': self.mode,
-               'modes': list(self.modes.keys()),
-               'glob_dev_id': self.dev_id}
+               'modes': self.modes,
+               'glob_dev_id': self.dev_id,
+               'unit': self.modes[self.mode]
+        }
+
         if self.mode == 'Resistance':
             ret['value'] = self.res_value
-            ret['unit'] = (unit_names[OHM])
         else:
             ret['value'] = self.value
-            ret['unit'] = (unit_names[VOLT]) if self.is_voltage() else (unit_names[AMPERE])
         if self.alias != '':
             ret['alias'] = self.alias
         return ret
@@ -1350,11 +1351,11 @@ class AnalogOutput:
         ret = {'dev': 'ao',
                'circuit': self.circuit,
                'mode': self.mode,
-               'modes': list(self.modes.keys()),
-               'glob_dev_id': self.dev_id
+               'modes': self.modes,
+               'glob_dev_id':self.dev_id,
+               'value': self.value,
+               'unit': self.unit_name
                }
-        ret['value'] = self.value
-        ret['unit'] = self.unit_name
         if self.alias != '':
             ret['alias'] = self.alias
         return ret
@@ -1456,7 +1457,7 @@ class AnalogInput:
                'unit': self.unit_name,
                'glob_dev_id': self.dev_id,
                'mode': self.mode,
-               'modes': list(self.modes.keys()),
+               'modes': self.modes,
                'range': self.range,
                }
         if self.alias != '':
