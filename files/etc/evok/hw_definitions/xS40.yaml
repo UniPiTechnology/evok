@@ -35,26 +35,6 @@ modbus_features:
       deboun_reg  : 1010
       polar_reg   : 1019
       toggle_reg  : 1020
-    - type        : UART
-      count       : 1
-      major_group : 1
-      parity_modes :
-        - None
-        - Odd
-        - Even
-      speed_modes :
-        - 2400bps
-        - 4800bps
-        - 9600bps
-        - 19200bps
-        - 38400bps
-        - 57600bps
-        - 115200bps
-      stopb_modes :
-        - One
-        - Two
-      conf_reg    : 1021
-      address_reg : 1022
     - type        : LED
       count       : 4
       major_group : 1

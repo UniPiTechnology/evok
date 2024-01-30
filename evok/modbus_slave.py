@@ -102,8 +102,12 @@ class ModbusCacheMap(object):
 
                         # call force update callbacks in registered devices and check differences
                         for device in self.modbus_slave.eventable_devices:
-                            if await device.check_new_data() is True:
-                                changeset.append(device)
+                            try:
+                                if await device.check_new_data() is True:
+                                    changeset.append(device)
+                            except Exception as E:
+                                m = f"Error while checking new data in device '{device.devtype}_{device.circuit}': {E}"
+                                logger.error(m)
 
                         # reset communication flags
                         self.last_comm_time = time.time()
@@ -1202,7 +1206,7 @@ class AnalogOutputBrain:
             },
             'Current': {
                 'value': 1,
-                'unit': 'I',
+                'unit': 'mA',
                 'range': [0, 20]
             },
             'Resistance':{
@@ -1254,7 +1258,7 @@ class AnalogOutputBrain:
                'mode': self.mode,
                'modes': self.modes,
                'glob_dev_id': self.dev_id,
-               'unit': self.modes[self.mode]
+               'unit': self.modes[self.mode]['unit']
         }
 
         if self.mode == 'Resistance':
@@ -1328,7 +1332,6 @@ class AnalogOutput:
         self.value = None
         self.res_value = None
         self.mode = list(modes.keys())[0] if len(modes) == 1 and self.regmode is None else None
-        self.unit_name = None
 
     def get_mode_by_regvalue(self, regvalue: int):
         for mode, data in self.modes.items():
@@ -1336,10 +1339,24 @@ class AnalogOutput:
                 return mode
         return None
 
+    @property
+    def unit_name(self):
+        if self.mode in self.modes:
+            return self.modes[self.mode].get('unit', None)
+        else:
+            return None
+
+    @property
+    def range(self):
+        if self.mode in self.modes:
+            return self.modes[self.mode].get('range', None)
+        else:
+            return None
+
     async def check_new_data(self):
         if self.regmode is not None:
             mode_value = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
-            await self.set(mode=self.get_mode_by_regvalue(mode_value))
+            self.mode = self.get_mode_by_regvalue(mode_value)
 
         old_value = copy(self.value)
         old_res_value = copy(self.res_value)
@@ -1354,7 +1371,8 @@ class AnalogOutput:
                'modes': self.modes,
                'glob_dev_id':self.dev_id,
                'value': self.value,
-               'unit': self.unit_name
+               'unit': self.unit_name,
+               'range': self.range,
                }
         if self.alias != '':
             ret['alias'] = self.alias
@@ -1382,9 +1400,7 @@ class AnalogOutput:
             mdata = self.modes[mode]
             if 'value' not in mdata:
                 raise ValueError(f"AnalogOutput: this device cant switch mode!")
-            self.mode = mode
-            self.unit_name = mdata.get('unit', None)
-            mvalue = mdata['value']
+            mvalue = int(mdata['value'])
             await self.arm.modbus_slave.client.write_register(self.regmode, mvalue, slave=self.arm.modbus_address)
 
         if not (value is None):
@@ -1407,11 +1423,9 @@ class AnalogInput:
         self.regmode = regmode
         self.modes = modes if modes is not None else {}
         self.mode = list(modes.keys())[0] if len(modes) == 1 and self.regmode is None else None
-        self.unit_name = unit_names[VOLT]
         self.major_group = major_group
         self.is_voltage = lambda: True
         self.value = None
-        self.range = None
 
     def get_mode_by_regvalue(self, regvalue: int):
         for mode, data in self.modes.items():
@@ -1419,10 +1433,24 @@ class AnalogInput:
                 return mode
         return None
 
+    @property
+    def unit_name(self):
+        if self.mode in self.modes:
+            return self.modes[self.mode].get('unit', None)
+        else:
+            return None
+
+    @property
+    def range(self):
+        if self.mode in self.modes:
+            return self.modes[self.mode].get('range', None)
+        else:
+            return None
+
     async def check_new_data(self):
         if self.regmode is not None:
             mode_value = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
-            await self.set(mode=self.get_mode_by_regvalue(mode_value))
+            self.mode = self.get_mode_by_regvalue(mode_value)
 
         old_value = copy(self.value)
         self.value = self.regvalue()
@@ -1444,9 +1472,7 @@ class AnalogInput:
             mdata = self.modes[mode]
             if 'value' not in mdata:
                 raise ValueError(f"AnalogInput: this device cant switch mode!")
-            self.mode = mode
-            self.unit_name = mdata.get('unit', None)
-            mvalue = mdata['value']
+            mvalue = int(mdata['value'])
             await self.arm.modbus_slave.client.write_register(self.regmode, mvalue, slave=self.arm.modbus_address)
         return self.full()
 

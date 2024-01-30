@@ -33,7 +33,6 @@ modbus_features:
         value: 1
         unit: 'mA'
         range: [0, 20]
-    tolerances  : brain
     val_reg     : 3002
     mode_reg    : 1024
   - type        : DO

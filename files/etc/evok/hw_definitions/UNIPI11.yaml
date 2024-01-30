@@ -11,15 +11,18 @@ modbus_features:
   - type        : AO
     count       : 1
     modes       :
-      - Voltage
+      Voltage:
+        unit: 'V'
+        range: [0, 10]
     min_v       : 0
     max_v       : 10
     val_reg     : 2
   - type        : AI
     count       : 2
     modes       :
-      - Voltage
-    tolerances  : simple
+      Voltage:
+        unit: 'V'
+        range: [0, 10]
     min_v       : 0
     max_v       : 10
     val_reg     : 3

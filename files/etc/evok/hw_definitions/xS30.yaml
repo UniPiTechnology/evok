@@ -32,26 +32,6 @@ modbus_features:
       counter_reg : 3
       deboun_reg  : 1010
       start_index : 0
-    - type        : UART
-      major_group : 1
-      parity_modes :
-        - None
-        - Odd
-        - Even
-      speed_modes :
-        - 2400bps
-        - 4800bps
-        - 9600bps
-        - 19200bps
-        - 38400bps
-        - 57600bps
-        - 115200bps
-      stopb_modes :
-        - One
-        - Two
-      count       : 1
-      conf_reg    : 1034
-      address_reg : 1035
     - type        : LED
       major_group : 1
       count       : 4

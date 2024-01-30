@@ -37,27 +37,38 @@ modbus_features:
       toggle_reg  : 1018
     - type        : AO
       count       : 4
-      major_group : 1
       modes       :
-        - Voltage
-      min_v       : 0
-      max_v       : 10
+        Voltage:
+          unit: 'V'
+          range: [0, 10]
       val_reg     : 2
       mode_reg    : 1019
     - type        : AI
       count       : 4
-      major_group : 1
       modes       :
-        - Voltage
-        - Current
-        - Resistance
-      tolerances  : 500series
-      min_v       : 0
-      max_v       : 10
-      min_c       : 0
-      max_c       : 0.020
+        Disabled:
+          value: 0
+        Voltage10:
+          value: 1
+          unit: 'V'
+          range: [0, 10]
+        Voltage2V5:
+          value: 2
+          unit: 'V'
+          range: [0, 2.5]
+        Current20m:
+          value: 3
+          unit: 'mA'
+          range: [0, 20]
+        Resistance3W:
+          value: 4
+          unit: 'Ohm'
+          range: [0, 1960]
+        Resistance2W:
+          value: 5
+          unit: 'Ohm'
+          range: [0, 100000]
       val_reg     : 6
-      mode_reg    : 1019
     - type        : UART
       count       : 1
       major_group : 1
