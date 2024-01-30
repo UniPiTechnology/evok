@@ -49,7 +49,6 @@ modbus_features:
     modes       :
       Disabled:
         value: 0
-        unit: ''
       Voltage10:
         value: 1
         unit: 'V'

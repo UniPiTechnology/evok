@@ -1311,7 +1311,7 @@ class AnalogOutputBrain:
         return self.full()
 
 
-class AnalogOutput():
+class AnalogOutput:
     def __init__(self, circuit, arm, reg, regmode=None, dev_id=0, modes=None, major_group=0):
         self.alias = ""
         self.devtype = AO
@@ -1379,8 +1379,10 @@ class AnalogOutput():
 
         if mode is not None and mode in self.modes and self.regmode is not None:
             mdata = self.modes[mode]
+            if 'value' not in mdata:
+                raise ValueError(f"AnalogOutput: this device cant switch mode!")
             self.mode = mode
-            self.unit_name = mdata['unit']
+            self.unit_name = mdata.get('unit', None)
             mvalue = mdata['value']
             await self.arm.modbus_slave.client.write_register(self.regmode, mvalue, slave=self.arm.modbus_address)
 
@@ -1392,7 +1394,7 @@ class AnalogOutput():
         return self.full()
 
 
-class AnalogInput():
+class AnalogInput:
     def __init__(self, circuit, arm, reg, regmode=None, dev_id=0, major_group=0, legacy_mode=True, modes=None):
         self.alias = ""
         self.devtype = AI
@@ -1439,8 +1441,10 @@ class AnalogInput():
 
         if mode is not None and mode in self.modes:
             mdata = self.modes[mode]
+            if 'value' not in mdata:
+                raise ValueError(f"AnalogInput: this device cant switch mode!")
             self.mode = mode
-            self.unit_name = mdata['unit']
+            self.unit_name = mdata.get('unit', None)
             mvalue = mdata['value']
             await self.arm.modbus_slave.client.write_register(self.regmode, mvalue, slave=self.arm.modbus_address)
         return self.full()
