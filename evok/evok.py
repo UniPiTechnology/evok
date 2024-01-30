@@ -469,16 +469,8 @@ def main():
 
     # create hw devices
     config.create_devices(evok_config, hw_dict)
-    '''
-    """ Setting the '_server' attribute if not set - simple link to mainloop"""
-    for (srv, urlspecs) in app.handlers:
-        for urlspec in urlspecs:
-            try:
-                setattr(urlspec.handler_class, '_server', mainLoop)
-            except AttributeError:
-                urlspec.handler_class._server = mainLoop
-    '''
-    # switch buses to async mode, start processes, plan some actions
+    Devices.register_device(RUN, Devices.aliases)
+
     alias_task = AliasTask(Devices.aliases, mainLoop)
 
     for bustype in (I2CBUS, GPIOBUS, OWBUS):

@@ -20,6 +20,8 @@ class Aliases:
     initial_dict: Mapping[str, Mapping[str, str]] = {}
 
     def __init__(self, initial_dict: Mapping[str, Mapping[str, str]]):
+        self.devtype = 30
+        self.circuit = 'alias'
         self.initial_dict = initial_dict
         self.dirty_callback: Callable = None
 
@@ -77,6 +79,20 @@ class Aliases:
         aliases.update(dict(((alias, {"circuit": device.circuit, "devtype": device.devtype})
                              for alias, device in self.alias_dict.items())))
         return aliases
+
+    def full(self):
+        ret = {
+            'dev': 'run',
+            'circuit': self.circuit,
+            'save': False,
+            'aliases': {k: f"{devtype_names[v.devtype]}_{v.circuit}" for k, v in self.alias_dict.items()}
+        }
+        return ret
+
+    async def set(self, save: bool = False):
+        if save is not None and bool(int(save)):
+            self.set_dirty()
+        return self.full()
 
 
 class DeviceList(dict):
@@ -227,6 +243,7 @@ TCPBUS = 26
 SERIALBUS = 27
 DEVICE_INFO = 28
 OWPOWER = 29
+RUN = 30
 
 # # corresponding device types names !! ORDER IS IMPORTANT
 devtype_names = (
@@ -260,6 +277,7 @@ devtype_names = (
     'serial_bus',
     'device_info',
     'owpower',
+    'run',
 )
 
 devtype_altnames = {

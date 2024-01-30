@@ -1823,6 +1823,20 @@ owbus_post_inp_schema = {
 
 owbus_post_inp_example = {"do_reset": True, "do_scan": True}
 
+run_post_inp_schema = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Neuron_Instruction",
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "save": {
+            "type": ["string", "number", "boolean"]
+        },
+    }
+}
+
+run_post_inp_example = {"save": True}
+
 owbus_post_out_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Neuron_Instruction",
@@ -1852,6 +1866,7 @@ schemas: Dict[str, Tuple[dict, dict]] = {
     'watchdog': (wd_post_inp_schema, wd_post_inp_example),
     '1wdevice': (owire_post_inp_schema, owire_post_inp_example),
     'owbus': (owbus_post_inp_schema, owbus_post_inp_example),
+    'run': (run_post_inp_schema, run_post_inp_example),
 }
 schemas['di'] = schemas['input']
 schemas['do'] = schemas['output']
