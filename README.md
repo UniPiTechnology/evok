@@ -2,7 +2,7 @@
 
 # EVOK - the UniPi API
 
-EVOK is the primary Web-services API for [NEURON], [AXON] and [UniPi 1.1] devices. It provides a RESTful interface over HTTP, a JSON-RPC interface, a WebSocket interface a SOAP interface and a bulk JSON interface to UniPi devices.
+EVOK is the primary Web-services API for [NEURON], [PATRON] and [UniPi 1.1] devices. It provides a RESTful interface over HTTP, a JSON-RPC interface, a WebSocket interface a SOAP interface and a bulk JSON interface to UniPi devices.
 
 Evok is still in active development, so any testing, feedback and contributions are very much welcome and appreciated.
 
@@ -19,7 +19,7 @@ EVOK also supports sending notifications via webhook.
 
 ### For more information see our documentation at [api-docs.io].
 
-## Installation process on AXON/Neuron PLCs using pre-build OS images (recommended)
+## Installation process on Patron/Neuron PLCs using pre-build OS images (recommended)
 
 The latest images for Axon/Neuron controllers can be downloaded from:
 
@@ -166,14 +166,13 @@ Apache License, Version 2.0
 ----
 Raspberry Pi is a trademark of the Raspberry Pi Foundation
 
-[api-docs.io]:https://evok-14.api-docs.io/1.11/
+[api-docs.io]:https://kb.unipi.technology/en:sw:02-apis:01-evok:apidoc
 [PUTTY]:http://www.putty.org/
 [github repository]:https://github.com/UniPiTechnology/evok
 [OpenSource image]:https://files.unipi.technology/s/public?path=%2FSoftware%2FOpen-Source%20Images
 [IndieGogo]:https://www.indiegogo.com/projects/unipi-the-universal-raspberry-pi-add-on-board
 [NEURON]:https://www.unipi.technology/products/unipi-neuron-3?categoryId=2
 [UniPi 1.1]:https://www.unipi.technology/products/unipi-1-1-1-1-lite-19?categoryId=1
-[Axon]:https://www.unipi.technology/products/unipi-axon-135?categoryId=13
 [PIGPIO]:http://abyz.co.uk/rpi/pigpio/
 [tornado]:https://pypi.python.org/pypi/tornado/
 [toro]:https://pypi.python.org/pypi/toro/
