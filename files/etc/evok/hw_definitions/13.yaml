@@ -46,7 +46,6 @@ modbus_features:
     min_v       : 0
     max_v       : 10
     val_reg     : 2
-    mode_reg    : 1019
   - type        : AI
     count       : 4
     modes       :

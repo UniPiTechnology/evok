@@ -102,7 +102,7 @@ class ModbusCacheMap(object):
 
                         # call force update callbacks in registered devices and check differences
                         for device in self.modbus_slave.eventable_devices:
-                            if device.check_new_data() is True:
+                            if await device.check_new_data() is True:
                                 changeset.append(device)
 
                         # reset communication flags
@@ -376,8 +376,11 @@ class Board(object):
         counter = 0
         while counter < max_count:
             board_val_reg = m_feature['val_reg']
+            modes = m_feature['modes']
+            reg_mode = m_feature.get('mode_reg', None)
             _ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter,
-                               dev_id=self.dev_id, major_group=self.major_group)
+                               dev_id=self.dev_id, major_group=self.major_group, modes=modes,
+                               regmode=reg_mode)
             self.__register_eventable_device(_ao)
             Devices.register_device(AO, _ao)
             counter+=1
@@ -386,8 +389,9 @@ class Board(object):
         counter = 0
         while counter < max_count:
             board_val_reg = m_feature['val_reg']
+            reg_mode = m_feature.get('mode_reg', None)
             _ao = AnalogOutputBrain("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter,
-                                    regmode=m_feature['mode_reg'], reg_res=m_feature['res_val_reg'],
+                                    regmode=reg_mode, reg_res=m_feature['res_val_reg'],
                                     dev_id=self.dev_id, major_group=self.major_group)
             self.__register_eventable_device(_ao)
             Devices.register_device(AO, _ao)
@@ -396,13 +400,12 @@ class Board(object):
     def parse_feature_ai(self, max_count, m_feature):
         counter = 0
         while counter < max_count:
-            board_val_reg = m_feature['val_reg']
-            tolerances = m_feature.get('tolerances')
             circuit = "%s_%02d" % (self.circuit, counter + 1)
             board_val_reg = m_feature['val_reg'] + counter * 2
+            modes = m_feature['modes']
             _ai = AnalogInput(circuit, self, board_val_reg,
                               regmode=m_feature['mode_reg'] + counter if m_feature.get('mode_reg', None) is not None else None,
-                              dev_id=self.dev_id, major_group=self.major_group, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
+                              dev_id=self.dev_id, major_group=self.major_group, modes=modes, legacy_mode=self.legacy_mode)
 
             self.__register_eventable_device(_ai)
             Devices.register_device(AI, _ai)
@@ -555,7 +558,7 @@ class Relay(object):
         await self.arm.modbus_slave.client.write_coil(self.coil, 1 if value else 0, slave=self.arm.modbus_address)
         return 1 if value else 0
 
-    def check_new_data(self):
+    async def check_new_data(self):
         if self.pwmdutyreg >= 0: # This instance supports PWM mode
             self.pwm_duty_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmdutyreg))[0]
             self.pwm_cycle_val = ((self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmcyclereg))[0] + 1)
@@ -746,7 +749,7 @@ class ULED(object):
     def value_delta(self, new_val):
         return (self.regvalue() ^ new_val) & self.bitmask
 
-    def check_new_data(self):
+    async def check_new_data(self):
         old_value = copy(self.value)
         self.value = 1 if (self.regvalue() & self.bitmask) else 0
         return old_value != self.value
@@ -822,7 +825,7 @@ class Watchdog(object):
                 'circuit': self.circuit,
                 'value': self.value}
 
-    def check_new_data(self):
+    async def check_new_data(self):
         old_value = copy(self.value)
         self.value = self.regvalue() & 0x03  # Only the two lowest bits contains watchdog status
         self.timeout = self.timeoutvalue()[0] if self.timeoutvalue() else 0
@@ -1075,7 +1078,7 @@ class Input():
         self.counter = None
         self.debounce = None
 
-    def check_new_data(self):
+    async def check_new_data(self):
         if 'DirectSwitch' in self.modes:
             curr_ds = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
             if (curr_ds & self.bitmask) > 0:
@@ -1215,7 +1218,7 @@ class AnalogOutputBrain:
         self.res_value = None
         self.mode = None
 
-    def check_new_data(self):
+    async def check_new_data(self):
         if self.is_voltage():
             self.mode = 'Voltage'
         elif self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0] == 1:
@@ -1323,7 +1326,7 @@ class AnalogOutput():
         self.offset = 0
         self.value = None
         self.res_value = None
-        self.mode = None
+        self.mode = list(modes.keys())[0] if len(modes) == 1 and self.regmode is None else None
         self.unit_name = None
 
     def get_mode_by_regvalue(self, regvalue: int):
@@ -1332,10 +1335,10 @@ class AnalogOutput():
                 return mode
         return None
 
-    def check_new_data(self):
+    async def check_new_data(self):
         if self.regmode is not None:
             mode_value = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
-            self.set(mode=self.get_mode_by_regvalue(mode_value))
+            await self.set(mode=self.get_mode_by_regvalue(mode_value))
 
         old_value = copy(self.value)
         old_res_value = copy(self.res_value)
@@ -1351,7 +1354,7 @@ class AnalogOutput():
                'glob_dev_id': self.dev_id
                }
         ret['value'] = self.value
-        ret['unit'] = self.modes[self.mode]['unit']
+        ret['unit'] = self.unit_name
         if self.alias != '':
             ret['alias'] = self.alias
         return ret
@@ -1400,7 +1403,7 @@ class AnalogInput():
         self.legacy_mode = legacy_mode
         self.regmode = regmode
         self.modes = modes if modes is not None else {}
-        self.mode = None
+        self.mode = list(modes.keys())[0] if len(modes) == 1 and self.regmode is None else None
         self.unit_name = unit_names[VOLT]
         self.major_group = major_group
         self.is_voltage = lambda: True
@@ -1413,10 +1416,10 @@ class AnalogInput():
                 return mode
         return None
 
-    def check_new_data(self):
+    async def check_new_data(self):
         if self.regmode is not None:
             mode_value = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
-            self.set(mode=self.get_mode_by_regvalue(mode_value))
+            await self.set(mode=self.get_mode_by_regvalue(mode_value))
 
         old_value = copy(self.value)
         self.value = self.regvalue()
