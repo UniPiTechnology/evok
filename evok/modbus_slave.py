@@ -1,5 +1,5 @@
 """
-  Code specific to Neuron devices
+  Code specific to Modbus devices
 ------------------------------------------
 """
 from copy import copy, deepcopy
@@ -654,7 +654,7 @@ class Relay(object):
 
                 self.mode = 'Simple'
                 await self.arm.modbus_slave.client.write_coil(self.coil, parsed_value, slave=self.arm.modbus_address)
-                if self.pwm_duty != 0:
+                if self.pwm_duty is not None and self.pwm_duty != 0:
                     self.pwm_duty = 0
                     await self.arm.modbus_slave.client.write_register(self.pwmdutyreg, round(self.pwm_duty), slave=self.arm.modbus_address) # Turn off PWM
 
