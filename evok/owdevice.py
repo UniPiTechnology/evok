@@ -13,6 +13,10 @@ MAX_LOSTINTERVAL = 300  # 5 minutes
 SUPPORTED_DEVICES = ["DS18S20", "DS18B20", "DS2438", "DS2408", "DS2413"]
 
 
+class NotSupportedError(Exception):
+    pass
+
+
 class MySensor(object):
     def __init__(self, addr, typ, bus, interval=None, dynamic=True, circuit=None, major_group=1, is_static=False):
         self.alias = ""
@@ -315,7 +319,7 @@ class OwBusDriver:
             await asyncio.sleep(0.05)
             self.do_scan()
         else:
-            logger.warning("1W reset is not supported!")
+            raise NotSupportedError("1W reset is not supported on this device!")
 
     # Running async tasks: scanning, poll, mon
     async def scanning(self, server):
