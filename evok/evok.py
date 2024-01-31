@@ -3,6 +3,7 @@ import argparse
 import asyncio
 
 import os
+import time
 from collections import OrderedDict
 
 import jsonschema
@@ -13,6 +14,7 @@ import tornado.web
 
 import logging
 from .log import logger
+
 logger.setLevel(logging.INFO)  # noqa
 
 from operator import methodcaller
@@ -362,11 +364,17 @@ class JSONBulkHandler(tornado.web.RequestHandler):
 
 
 class AliasTask:
+    SAVE_TIME = 60  # s
 
     def __init__(self, aliases, loop):
-        self.event = asyncio.Event()
+        self.dirty_timestamp = 0
+        self.dirty_trigger = asyncio.Event()
+        self.is_dirty = False
+        self.save_trigger = asyncio.Event()
         self.aliases = aliases
-        self.aliases.register_dirty_cb(lambda: self.event.set())
+        self.aliases.register_dirty_cb(lambda: self.dirty_trigger.set())
+        self.aliases.register_save_cb(lambda: self.save_trigger.set())
+        self.alias_task = None
         loop.add_callback(self.start)
 
     async def start(self):
@@ -377,15 +385,23 @@ class AliasTask:
 
     async def work(self):
         """ Wait for Event generated on setting alias and save aliases to file (in thread)"""
+        await asyncio.sleep(1)
+        self.save_trigger.clear()
+        self.dirty_trigger.clear()
         while True:
             await asyncio.sleep(1)
-            await self.event.wait()
-            try:
-                alias_dict = self.aliases.get_dict_to_save()
-                self.event.clear()
-                await asyncio.to_thread(config.save_aliases, alias_dict, '/var/lib/evok/alias.yaml')
-            except Exception as E:
-                logger.exception(E)
+            if self.dirty_trigger.is_set():
+                self.dirty_timestamp = time.time()
+                self.dirty_trigger.clear()
+                self.is_dirty = True
+            if (self.is_dirty and time.time() - self.dirty_timestamp >= self.SAVE_TIME) or self.save_trigger.is_set():
+                try:
+                    alias_dict = self.aliases.get_dict_to_save()
+                    self.is_dirty = False
+                    self.save_trigger.clear()
+                    await asyncio.to_thread(config.save_aliases, alias_dict, '/var/lib/evok/alias.yaml')
+                except Exception as E:
+                    logger.exception(E)
 
 
 def status_cb(device, *kwargs):
@@ -396,7 +412,6 @@ def status_cb(device, *kwargs):
 
 def config_cb(device, *kwargs):
     pass
-
 
 
 ################################ MAIN ################################

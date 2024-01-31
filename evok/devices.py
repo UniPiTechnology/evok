@@ -1,8 +1,7 @@
 from . import devents
-import yaml
 import re
 from copy import deepcopy
-from typing import Any, Type, Tuple, List, Mapping, Callable
+from typing import Any, Type, Tuple, List, Mapping, Callable, Union
 
 from .log import logger
 
@@ -23,7 +22,8 @@ class Aliases:
         self.devtype = 30
         self.circuit = 'alias'
         self.initial_dict = initial_dict
-        self.dirty_callback: Callable = None
+        self.dirty_callback: Union[None, Callable] = None
+        self.save_callback: Union[None, Callable] = None
 
     def __getitem__(self, key):
         return self.alias_dict.__getitem__(key)
@@ -34,9 +34,16 @@ class Aliases:
     def register_dirty_cb(self, func: Callable) -> None:
         self.dirty_callback = func
 
+    def register_save_cb(self, func: Callable) -> None:
+        self.save_callback = func
+
     def set_dirty(self) -> None:
         if self.dirty_callback:
             self.dirty_callback()
+
+    def set_force_save(self) -> None:
+        if self.save_callback:
+            self.save_callback()
 
     def validate(self, alias: str) -> None:
         # check duplicity
@@ -47,7 +54,7 @@ class Aliases:
             raise Exception(f"Invalid alias {alias}")
 
     def add(self, alias: str, device: Device, file_update: bool = False):
-        if (alias != device.alias):
+        if alias != device.alias:
             self.validate(alias)
         # delete old alias
         if device.alias: self.delete(device.alias)
@@ -56,6 +63,8 @@ class Aliases:
         # create new alias
         self.alias_dict[alias] = device
         if file_update:
+            self.set_force_save()
+        else:
             self.set_dirty()
 
     def delete(self, alias: str, file_update: bool = False) -> None:
@@ -63,11 +72,15 @@ class Aliases:
         if alias in self.alias_dict:
             del self.alias_dict[alias]
             if file_update:
+                self.set_force_save()
+            else:
                 self.set_dirty()
         # delete alias from initial dict
         if alias in self.initial_dict:
             del self.initial_dict[alias]
             if file_update:
+                self.set_force_save()
+            else:
                 self.set_dirty()
 
     def get_aliases_by_circuit(self, devtype: int, circuit: str):
@@ -91,7 +104,7 @@ class Aliases:
 
     async def set(self, save: bool = False):
         if save is not None and bool(int(save)):
-            self.set_dirty()
+            self.set_force_save()
         return self.full()
 
 
