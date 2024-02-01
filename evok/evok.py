@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import argparse
 import asyncio
+import contextlib
 
 import os
 import time
@@ -364,18 +365,22 @@ class JSONBulkHandler(tornado.web.RequestHandler):
 
 
 class AliasTask:
-    SAVE_TIME = 60  # s
+    SAVE_TIME = 300  # s
 
     def __init__(self, aliases, loop):
         self.dirty_timestamp = 0
         self.dirty_trigger = asyncio.Event()
-        self.is_dirty = False
         self.save_trigger = asyncio.Event()
         self.aliases = aliases
         self.aliases.register_dirty_cb(lambda: self.dirty_trigger.set())
-        self.aliases.register_save_cb(lambda: self.save_trigger.set())
+        self.aliases.register_save_cb(self.set_save_trigger)
         self.alias_task = None
         loop.add_callback(self.start)
+
+    def set_save_trigger(self):
+        if not self.dirty_trigger.is_set():
+            raise ValueError(f"Aliases is not dirty!")
+        self.save_trigger.set()
 
     async def start(self):
         self.alias_task = asyncio.create_task(self.work())
@@ -383,25 +388,24 @@ class AliasTask:
     def cancel(self):
         self.alias_task.cancel()
 
+    async def wait_for_save(self, timeout):
+        with contextlib.suppress(asyncio.TimeoutError):
+            await asyncio.wait_for(self.save_trigger.wait(), timeout)
+
     async def work(self):
         """ Wait for Event generated on setting alias and save aliases to file (in thread)"""
-        await asyncio.sleep(1)
         self.save_trigger.clear()
         self.dirty_trigger.clear()
         while True:
-            await asyncio.sleep(1)
-            if self.dirty_trigger.is_set():
-                self.dirty_timestamp = time.time()
+            await self.dirty_trigger.wait()
+            await self.wait_for_save(self.SAVE_TIME)
+            try:
+                self.save_trigger.clear()
                 self.dirty_trigger.clear()
-                self.is_dirty = True
-            if (self.is_dirty and time.time() - self.dirty_timestamp >= self.SAVE_TIME) or self.save_trigger.is_set():
-                try:
-                    alias_dict = self.aliases.get_dict_to_save()
-                    self.is_dirty = False
-                    self.save_trigger.clear()
-                    await asyncio.to_thread(config.save_aliases, alias_dict, '/var/lib/evok/alias.yaml')
-                except Exception as E:
-                    logger.exception(E)
+                alias_dict = self.aliases.get_dict_to_save()
+                await asyncio.to_thread(config.save_aliases, alias_dict, '/var/lib/evok/alias.yaml')
+            except Exception as E:
+                logger.exception(E)
 
 
 def status_cb(device, *kwargs):
