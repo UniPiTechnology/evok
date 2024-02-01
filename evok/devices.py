@@ -212,14 +212,15 @@ class DeviceList(dict):
 
     def set_alias(self, alias: str, device: Device, file_update: bool = False) -> None:
         try:
-            if (alias == '' or alias is None):
-                if device.alias: self.aliases.delete(device.alias, file_update)
-                device.alias = alias
-                logger.debug(f"Reset alias of {devtype_names[device.devtype]}[{device.circuit}]")
-            elif alias != device.alias:
-                self.aliases.add(alias, device, file_update)
-                device.alias = alias
-                logger.debug(f"Set alias {alias} of {devtype_names[device.devtype]}[{device.circuit}]")
+            if alias != device.alias:
+                if alias == '' or alias is None:
+                    if device.alias: self.aliases.delete(device.alias, file_update)
+                    device.alias = alias
+                    logger.debug(f"Reset alias of {devtype_names[device.devtype]}[{device.circuit}]")
+                elif alias != device.alias:
+                    self.aliases.add(alias, device, file_update)
+                    device.alias = alias
+                    logger.debug(f"Set alias {alias} of {devtype_names[device.devtype]}[{device.circuit}]")
         except Exception as E:
             logger.error(f"Error on setting alias {alias}: {str(E)}")
             raise E
