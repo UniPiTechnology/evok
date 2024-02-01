@@ -563,27 +563,36 @@ class Relay(object):
         return 1 if value else 0
 
     async def check_new_data(self):
+        is_change = False
         if self.pwmdutyreg >= 0: # This instance supports PWM mode
+            old_duty_val = copy(self.pwm_duty_val)
+            old_cycle_val = copy(self.pwm_cycle_val)
+            old_prescale_val = copy(self.pwm_prescale_val)
+
             self.pwm_duty_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmdutyreg))[0]
             self.pwm_cycle_val = ((self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmcyclereg))[0] + 1)
-            self.pwm_prescale_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmprescalereg))[0]
-            if (self.pwm_cycle_val > 0) and (self.pwm_prescale_val > 0):
-                self.pwm_freq = 48000000 / (self.pwm_cycle_val * self.pwm_prescale_val)
-            else:
-                self.pwm_freq = 0
-            if self.pwm_duty_val == 0:
-                self.pwm_duty = 0
-                self.mode = 'Simple'  # Mode field is for backward compatibility, will be deprecated soon
-            else:
-                self.pwm_duty = (100 / (float(self.pwm_cycle_val) / float(self.pwm_duty_val)))
-                self.pwm_duty = round(self.pwm_duty ,1) if self.pwm_duty % 1 else int(self.pwm_duty)
-                self.mode = 'PWM'  # Mode field is for backward compatibility, will be deprecated soon
+            self.pwm_prescale_val = ((self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmprescalereg))[0] + 1)
+
+            if (old_cycle_val != self.pwm_cycle_val or old_prescale_val != self.pwm_prescale_val or
+                    old_duty_val != self.pwm_duty_val):
+                is_change = True
+                if (self.pwm_cycle_val > 0) and (self.pwm_prescale_val > 0):
+                    self.pwm_freq = 48000000 / (self.pwm_cycle_val * self.pwm_prescale_val)
+                else:
+                    self.pwm_freq = 0
+
+                if self.pwm_duty_val == 0:
+                    self.pwm_duty = 0
+                    self.mode = 'Simple'  # Mode field is for backward compatibility, will be deprecated soon
+                else:
+                    self.pwm_duty = round((float(self.pwm_duty_val) / float(self.pwm_cycle_val)) * 100, 1)
+                    self.mode = 'PWM'  # Mode field is for backward compatibility, will be deprecated soon
         else: # This RELAY instance does not support PWM mode (no pwmdutyreg given)
             self.mode = 'Simple'
 
         old_value = copy(self.value)
         self.value = 1 if (self.regvalue() & self.bitmask) else 0
-        return old_value != self.value
+        return is_change or old_value != self.value
 
     async def set(self, value=None, timeout=None, mode=None, pwm_freq=None, pwm_duty=None, alias=None):
         """ Sets new on/off status. Disable pending timeouts """
@@ -604,39 +613,35 @@ class Relay(object):
 
             # Set PWM Freq
             if (pwm_freq is not None) and (pwm_freq > 0):
-                self.pwm_freq = pwm_freq;
-                self.pwm_delay_val = 48000000 / pwm_freq
-                if ((int(self.pwm_delay_val) % 50000) == 0) and ((self.pwm_delay_val / 50000) < 65535):
-                    self.pwm_cycle_val = 50000
-                    self.pwm_prescale_val = round(self.pwm_delay_val / 50000)
-                elif ((int(self.pwm_delay_val) % 10000) == 0) and ((self.pwm_delay_val / 10000) < 65535):
-                    self.pwm_cycle_val = 10000
-                    self.pwm_prescale_val = round(self.pwm_delay_val / 10000)
-                elif ((int(self.pwm_delay_val) % 5000) == 0) and ((self.pwm_delay_val / 5000) < 65535):
-                    self.pwm_cycle_val = 5000
-                    self.pwm_prescale_val = round(self.pwm_delay_val / 5000)
-                elif ((int(self.pwm_delay_val) % 1000) == 0) and ((self.pwm_delay_val / 1000) < 65535):
-                    self.pwm_cycle_val = 1000
-                    self.pwm_prescale_val = round(self.pwm_delay_val / 1000)
+                tmp_pwm_delay_val = 48000000 / pwm_freq
+                if ((int(tmp_pwm_delay_val) % 50000) == 0) and ((tmp_pwm_delay_val / 50000) < 65535):
+                    tmp_pwm_cycle_val = 50000
+                    tmp_pwm_prescale_val = round(tmp_pwm_delay_val / 50000)
+                elif ((int(tmp_pwm_delay_val) % 10000) == 0) and ((tmp_pwm_delay_val / 10000) < 65535):
+                    tmp_pwm_cycle_val = 10000
+                    tmp_pwm_prescale_val = round(tmp_pwm_delay_val / 10000)
+                elif ((int(tmp_pwm_delay_val) % 5000) == 0) and ((tmp_pwm_delay_val / 5000) < 65535):
+                    tmp_pwm_cycle_val = 5000
+                    tmp_pwm_prescale_val = round(tmp_pwm_delay_val / 5000)
+                elif ((int(tmp_pwm_delay_val) % 1000) == 0) and ((tmp_pwm_delay_val / 1000) < 65535):
+                    tmp_pwm_cycle_val = 1000
+                    tmp_pwm_prescale_val = round(tmp_pwm_delay_val / 1000)
                 else:
-                    self.pwm_prescale_val = round(sqrt(self.pwm_delay_val))
-                    self.pwm_cycle_val = round(self.pwm_prescale_val)
+                    tmp_pwm_prescale_val = round(sqrt(tmp_pwm_delay_val))
+                    tmp_pwm_cycle_val = round(tmp_pwm_prescale_val)
 
-                if self.pwm_duty > 0:
-                    self.pwm_duty_val = round(float(self.pwm_cycle_val) * float(self.pwm_duty / 100.0))
+                other_devs = {dev: dev.pwm_duty for dev in Devices.by_int(RELAY, major_group=self.major_group)}
 
-                other_devs = Devices.by_int(RELAY, major_group=self.major_group)  # All PWM outs in the same group share this registers
-                for other_dev in other_devs:
-                    other_dev.pwm_freq = self.pwm_freq
-                    other_dev.pwm_delay_val = self.pwm_delay_val
-                    other_dev.pwm_cycle_val = self.pwm_cycle_val
-                    other_dev.pwm_prescale_val = self.pwm_prescale_val
-                    if other_dev.pwm_duty > 0:
-                        await other_dev.set(pwm_duty=other_dev.pwm_duty)
+                await self.arm.modbus_slave.client.write_register(self.pwmcyclereg, tmp_pwm_cycle_val - 1, slave=self.arm.modbus_address)
+                await self.arm.modbus_slave.client.write_register(self.pwmprescalereg, tmp_pwm_prescale_val - 1, slave=self.arm.modbus_address)
 
-                await self.arm.modbus_slave.client.write_register(self.pwmcyclereg, self.pwm_cycle_val - 1, slave=self.arm.modbus_address)
-                await self.arm.modbus_slave.client.write_register(self.pwmprescalereg, self.pwm_prescale_val, slave=self.arm.modbus_address)
-                await self.arm.modbus_slave.client.write_register(self.pwmdutyreg, self.pwm_duty_val, slave=self.arm.modbus_address)
+                for other_dev, other_pwm_duty in other_devs.items():
+                    other_dev.pwm_freq = pwm_freq
+                    other_dev.pwm_delay_val = tmp_pwm_delay_val
+                    other_dev.pwm_cycle_val = tmp_pwm_cycle_val
+                    other_dev.pwm_prescale_val = tmp_pwm_prescale_val
+                    if other_dev.pwm_duty > 0 and other_dev is not self:
+                        await other_dev.set(pwm_duty=other_pwm_duty)
 
             # Set Binary value
             if value is not None:
@@ -659,12 +664,11 @@ class Relay(object):
                     await self.arm.modbus_slave.client.write_register(self.pwmdutyreg, round(self.pwm_duty), slave=self.arm.modbus_address) # Turn off PWM
 
             # Set PWM Duty
-            elif pwm_duty is not None and pwm_duty >= 0.0 and pwm_duty <= 100.0:
-                self.pwm_duty = pwm_duty
-                self.pwm_duty_val = round(float(self.pwm_cycle_val) * self.pwm_duty / 100.0)
+            elif pwm_duty is not None and 0.0 <= pwm_duty <= 100.0:
+                tmp_pwm_duty_val = round(float(self.pwm_cycle_val) * pwm_duty / 100.0)
                 if self.value != 0:
                     self.arm.modbus_slave.client.write_coil(self.coil, 0, slave=self.arm.modbus_address)
-                await self.arm.modbus_slave.client.write_register(self.pwmdutyreg, self.pwm_duty_val, slave=self.arm.modbus_address)
+                await self.arm.modbus_slave.client.write_register(self.pwmdutyreg, tmp_pwm_duty_val, slave=self.arm.modbus_address)
                 self.mode = 'PWM'
 
             if alias is not None:
