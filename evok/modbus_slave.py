@@ -519,6 +519,7 @@ class Relay(object):
         self.bitmask = mask
         self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg)[0]
         self.value = None
+        self.block_pwm = False
 
         self.forced_changes = False  # force_immediate_state_changes
 
@@ -564,29 +565,30 @@ class Relay(object):
 
     async def check_new_data(self):
         is_change = False
-        if self.pwmdutyreg >= 0: # This instance supports PWM mode
-            old_duty_val = copy(self.pwm_duty_val)
-            old_cycle_val = copy(self.pwm_cycle_val)
-            old_prescale_val = copy(self.pwm_prescale_val)
+        if self.pwmdutyreg >= 0:  # This instance supports PWM mode
+            if not self.block_pwm:
+                old_duty_val = copy(self.pwm_duty_val)
+                old_cycle_val = copy(self.pwm_cycle_val)
+                old_prescale_val = copy(self.pwm_prescale_val)
 
-            self.pwm_duty_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmdutyreg))[0]
-            self.pwm_cycle_val = ((self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmcyclereg))[0] + 1)
-            self.pwm_prescale_val = ((self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmprescalereg))[0] + 1)
+                self.pwm_duty_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmdutyreg))[0]
+                self.pwm_cycle_val = ((self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmcyclereg))[0] + 1)
+                self.pwm_prescale_val = ((self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmprescalereg))[0] + 1)
 
-            if (old_cycle_val != self.pwm_cycle_val or old_prescale_val != self.pwm_prescale_val or
-                    old_duty_val != self.pwm_duty_val):
-                is_change = True
-                if (self.pwm_cycle_val > 0) and (self.pwm_prescale_val > 0):
-                    self.pwm_freq = 48000000 / (self.pwm_cycle_val * self.pwm_prescale_val)
-                else:
-                    self.pwm_freq = 0
+                if (old_cycle_val != self.pwm_cycle_val or old_prescale_val != self.pwm_prescale_val or
+                        old_duty_val != self.pwm_duty_val):
+                    is_change = True
+                    if (self.pwm_cycle_val > 0) and (self.pwm_prescale_val > 0):
+                        self.pwm_freq = 48000000 / (self.pwm_cycle_val * self.pwm_prescale_val)
+                    else:
+                        self.pwm_freq = 0
 
-                if self.pwm_duty_val == 0:
-                    self.pwm_duty = 0
-                    self.mode = 'Simple'  # Mode field is for backward compatibility, will be deprecated soon
-                else:
-                    self.pwm_duty = round((float(self.pwm_duty_val) / float(self.pwm_cycle_val)) * 100, 1)
-                    self.mode = 'PWM'  # Mode field is for backward compatibility, will be deprecated soon
+                    if self.pwm_duty_val == 0:
+                        self.pwm_duty = 0
+                        self.mode = 'Simple'  # Mode field is for backward compatibility, will be deprecated soon
+                    else:
+                        self.pwm_duty = round((float(self.pwm_duty_val) / float(self.pwm_cycle_val)) * 100, 1)
+                        self.mode = 'PWM'  # Mode field is for backward compatibility, will be deprecated soon
         else: # This RELAY instance does not support PWM mode (no pwmdutyreg given)
             self.mode = 'Simple'
 
@@ -613,6 +615,7 @@ class Relay(object):
 
             # Set PWM Freq
             if (pwm_freq is not None) and (pwm_freq > 0):
+                self.block_pwm = True
                 tmp_pwm_delay_val = 48000000 / pwm_freq
                 if ((int(tmp_pwm_delay_val) % 50000) == 0) and ((tmp_pwm_delay_val / 50000) < 65535):
                     tmp_pwm_cycle_val = 50000
@@ -642,6 +645,7 @@ class Relay(object):
                     other_dev.pwm_prescale_val = tmp_pwm_prescale_val
                     if other_dev.pwm_duty > 0 and other_dev is not self:
                         await other_dev.set(pwm_duty=other_pwm_duty)
+                self.block_pwm = False
 
             # Set Binary value
             if value is not None:
