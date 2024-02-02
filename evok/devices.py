@@ -93,12 +93,16 @@ class Aliases:
                              for alias, device in self.alias_dict.items())))
         return aliases
 
+    @property
+    def aliases(self) -> dict:
+        return {k: f"{devtype_names[v.devtype]}_{v.circuit}" for k, v in self.alias_dict.items()}
+
     def full(self):
         ret = {
             'dev': 'run',
             'circuit': self.circuit,
             'save': False,
-            'aliases': {k: f"{devtype_names[v.devtype]}_{v.circuit}" for k, v in self.alias_dict.items()}
+            'aliases': self.aliases
         }
         return ret
 
@@ -181,9 +185,12 @@ class DeviceList(dict):
         try:
             return devdict[circuit]
         except KeyError:
-            if circuit in self.aliases and \
-                    devtype_names[self.aliases[circuit].devtype] == devtype:
-                return self.aliases[circuit]
+            if circuit not in self.aliases:
+                raise Exception(f"Circuit or alias with name '{circuit}' not defined!")
+            ret = self.aliases[circuit]
+            ret_name = devtype_names[ret.devtype]
+            if ret_name == devtype or ret_name == devtype_altnames[devtype]:
+                return ret
             else:
                 raise Exception(f"Invalid device circuit '{str(circuit)}' with devtype '{devtype}'")
 

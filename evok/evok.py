@@ -378,9 +378,8 @@ class AliasTask:
         loop.add_callback(self.start)
 
     def set_save_trigger(self):
-        if not self.dirty_trigger.is_set():
-            raise ValueError(f"Aliases is not dirty!")
-        self.save_trigger.set()
+        if self.dirty_trigger.is_set():
+            self.save_trigger.set()
 
     async def start(self):
         self.alias_task = asyncio.create_task(self.work())
