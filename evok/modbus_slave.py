@@ -803,7 +803,7 @@ class Watchdog(object):
         self.major_group = major_group
         self.legacy_mode = legacy_mode
         self.timeoutvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.toreg)
-        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.toreg)[0]
+        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg)[0]
         self.nvsavvalue = 0
         self.resetvalue = 0
         self.nv_save_coil = nv_save_coil
@@ -863,22 +863,23 @@ class Watchdog(object):
         if alias is not None:
             Devices.set_alias(alias, self)
 
-        if self.nv_save_coil >= 0 and nv_save is not None and nv_save != self.nvsavvalue:
-            if nv_save != 0:
-                self.nvsavvalue = 1
-            else:
-                self.nvsavvalue = 0
-            await self.arm.modbus_slave.client.write_coil(self.nv_save_coil, 1, slave=self.arm.modbus_address)
         if value is not None:
             value = int(value)
-
-        await self.arm.modbus_slave.client.write_register(self.valreg, 1 if value else 0, slave=self.arm.modbus_address)
+            await self.arm.modbus_slave.client.write_register(self.valreg, 1 if value else 0,
+                                                              slave=self.arm.modbus_address)
 
         if not (timeout is None):
             timeout = int(timeout)
             if timeout > 65535:
                 timeout = 65535
             await self.arm.modbus_slave.client.write_register(self.toreg, timeout, slave=self.arm.modbus_address)
+
+        if self.nv_save_coil >= 0 and nv_save is not None and nv_save != self.nvsavvalue:
+            if nv_save != 0:
+                self.nvsavvalue = 1
+            else:
+                self.nvsavvalue = 0
+            await self.arm.modbus_slave.client.write_coil(self.nv_save_coil, 1, slave=self.arm.modbus_address)
 
         if self.reset_coil >= 0 and reset is not None:
             if reset != 0:
