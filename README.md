@@ -1,10 +1,10 @@
-![unipi logo](https://github.com/UniPiTechnology/evok/raw/master/www/evok/js/jquery/images/unipi-logo-short-cmyk.svg?sanitize=true "UniPi logo")
+![unipi logo](https://github.com/UniPiTechnology/evok/raw/master/www/evok/js/jquery/images/unipi-logo-short-cmyk.svg?sanitize=true "Unipi logo")
 
 # EVOK - the Unipi API
 
-EVOK is the primary Web-services API for [NEURON], [PATRON] and [UniPi 1.1] devices.
+EVOK is the primary Web-services API for [NEURON], [PATRON], [GATE] and [Unipi 1.1] devices.
 It provides a RESTful interface over HTTP, a JSON-RPC interface,
-a WebSocket interface a SOAP interface and a bulk JSON interface to UniPi devices.
+a WebSocket interface and a bulk JSON interface to Unipi devices.
 
 We have webapp for evok, see [evok-web] for more information.
 
@@ -22,16 +22,15 @@ EVOK also supports sending notifications via webhook.
 
 ### For more information see our documentation at [api-docs.io].
 
-## Installation process on Unipi PLCs using pre-build OS images (recommended)
+## Installation process on Unipi controllers using pre-build OS images (recommended)
 
 The latest images for Unipi controllers can be downloaded from:
-
-[Unipi.technology Knowledge Base](https://kb.unipi.technology/en:files:software:os-images:)
+[Unipi Technology Knowledge Base](https://kb.unipi.technology/en:files:software:os-images)
 
 *NOTE: In Node-RED OS is evok preinstalled. 
 
 All necessary APT Unipi repositories are already preconfigured in the OS images.
-Therefore, all that's required is to login to the PLC via SSH
+Therefore, all that's required is to login to the controller via SSH
 (there is a large number of clients you can use, for windows we recommend using [PUTTY]).
 The default username for our images is "unipi" and the default password is "unipi.technology".
 
@@ -151,9 +150,9 @@ Raspberry Pi is a trademark of the Raspberry Pi Foundation
 [OpenSource image]:https://files.unipi.technology/s/public?path=%2FSoftware%2FOpen-Source%20Images
 [IndieGogo]:https://www.indiegogo.com/projects/unipi-the-universal-raspberry-pi-add-on-board
 [NEURON]:https://www.unipi.technology/products/unipi-neuron-3?categoryId=2
-[PATRON]:https://www.unipi.technology/products/unipi-patron-374?categoryId=30&categorySlug=unipi-patron
-[UniPi 1.1]:https://www.unipi.technology/products/unipi-1-1-1-1-lite-19?categoryId=1
-[PIGPIO]:http://abyz.co.uk/rpi/pigpio/
+[PATRON]:https://www.unipi.technology/products/unipi-patron-374
+[GATE]:https://www.unipi.technology/products/unipi-gate-388
+[Unipi 1.1]:https://www.unipi.technology/products/unipi-1-1-1-1-lite-19?categoryId=1
 [tornado]:https://pypi.python.org/pypi/tornado/
 [toro]:https://pypi.python.org/pypi/toro/
 [tornardorpc]:https://github.com/joshmarshall/tornadorpc
