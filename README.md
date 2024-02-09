@@ -20,7 +20,6 @@ APIs included in EVOK:
 
 EVOK also supports sending notifications via webhook.
 
----
 
 # Getting started
 - [Installation instructions](./docs/installation.md) - How to install evok on Unipi controllers
@@ -57,5 +56,5 @@ Apache License, Version 2.0
 [our forum]:http://forum.unipi.technology/
 [intructions below]:https://github.com/UniPiTechnology/evok#installing-evok-for-neuron
 [jsonrpclib]:https://github.com/joshmarshall/jsonrpclib
-[evok-web]:https://github.com/UniPiTechnology/evok-web
+[Evok-web]:https://github.com/UniPiTechnology/evok-web
 
