@@ -31,6 +31,7 @@ comm_channels:
         <device_name>:
         slave-id: <slave_id>
         model: <model_id
+        scan_frequency: 50
 ```
  - <bus_name>: Your choice, but cannot be duplicates!
  - <bus_type>:
@@ -42,6 +43,9 @@ comm_channels:
    - Source is in '.yaml' files in '/etc/evok/hw_definitions'.
    - examples: xS51, xS11,
    - For more information see [hw_definitions](./hw_definitions.md).
+ - scan_frequency:
+   - An optional parameter that determines how often values are read from the device.
+   - Default value is 50.
 
 ## Examples
 
@@ -111,5 +115,4 @@ comm_channels:
     interval: 10
     scan_interval: 60
     owpower: 1
-
 ```
