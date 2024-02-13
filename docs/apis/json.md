@@ -24,7 +24,7 @@ if __name__ == '__main__':
     print(ret.json())
 ```
 
-### Bash:
+### Curl:
 ```bash
 curl --request GET --url 'http://127.0.0.1/json/input/1_01/'
 ```
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     print(ret.json())
 ```
 
-### Bash:
+### Curl:
 ```bash
 curl --request POST --url 'http://127.0.0.1/json/output/1_01/' --data '{"value": 1}'
 ```

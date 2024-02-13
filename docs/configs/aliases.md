@@ -37,7 +37,7 @@ if __name__ == '__main__':
     print(ret.json())
 ```
 
-### Bash:
+### Curl:
 ```bash
 curl --request POST --url 'http://127.0.0.1/rest/output/1_01/' --data 'alias=my_relay'
 ```
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     print(ret.json())
 ```
 
-### Bash:
+### Curl:
 ```bash
 curl --request POST --url 'http://127.0.0.1/rest/output/1_01/' --data 'alias='
 ```
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     print(ret.json())
 ```
 
-### Bash:
+### Curl:
 ```bash
 curl --request POST --url 'http://127.0.0.1/rest/run/alias/' --data 'save=1'
 ```
