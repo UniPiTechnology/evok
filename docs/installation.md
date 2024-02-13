@@ -6,7 +6,7 @@
 
 The latest images for Unipi controllers, including those with Evok pre-installed,
 can be downloaded from the 
-[Unipi Technology Knowledge Base](https://kb.unipi.technology/en:files:software:os-images:00-start).
+[Unipi Technology Knowledge Base](https://kb.unipi.technology/os-images).
 
 All necessary APT Unipi repositories are already preconfigured in the OS images.
 Therefore, all that's required is to login to the controller via SSH.
