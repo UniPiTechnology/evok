@@ -105,7 +105,7 @@ def on_close(ws, status, message):
     
 def on_open(ws):
     print("WebSocket connection opened")
-    msg = {"cmd": "set", "dev": "output", "circuit": "1_01", "value": 1}
+    msg = {"cmd": "set", "dev": "relay", "circuit": "1_01", "value": 1}
     ws.send(json.dumps(msg))
     print("WebSocket send RO 1.01 to HIGH")
     ws.close()

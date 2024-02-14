@@ -33,13 +33,13 @@ def set_alias(host: str, dev_type: str, circuit: str, value: str):
     return requests.post(url=url, data=data)
 
 if __name__ == '__main__':
-    ret = set_alias(host='127.0.0.1', dev_type='output', circuit='1_01', value='my_relay')
+    ret = set_alias(host='127.0.0.1', dev_type='relay', circuit='1_01', value='my_relay')
     print(ret.json())
 ```
 
 ### Curl:
 ```bash
-curl --request POST --url 'http://127.0.0.1/rest/output/1_01/' --data 'alias=my_relay'
+curl --request POST --url 'http://127.0.0.1/rest/relay/1_01/' --data 'alias=my_relay'
 ```
 
 ### Output:
@@ -59,13 +59,13 @@ def set_alias(host: str, dev_type: str, circuit: str, value: str):
     return requests.post(url=url, data=data)
 
 if __name__ == '__main__':
-    ret = set_alias(host='127.0.0.1', dev_type='output', circuit='1_01', value='')
+    ret = set_alias(host='127.0.0.1', dev_type='relay', circuit='1_01', value='')
     print(ret.json())
 ```
 
 ### Curl:
 ```bash
-curl --request POST --url 'http://127.0.0.1/rest/output/1_01/' --data 'alias='
+curl --request POST --url 'http://127.0.0.1/rest/relay/1_01/' --data 'alias='
 ```
 
 ### Output:

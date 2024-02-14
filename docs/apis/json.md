@@ -47,13 +47,13 @@ def send_request(host: str, dev_type: str, circuit: str, value: bool):
     return requests.post(url=url, data=json.dumps(data))
 
 if __name__ == '__main__':
-    ret = send_request(host='127.0.0.1', dev_type='output', circuit='1_01', value=True)
+    ret = send_request(host='127.0.0.1', dev_type='relay', circuit='1_01', value=True)
     print(ret.json())
 ```
 
 ### Curl:
 ```bash
-curl --request POST --url 'http://127.0.0.1/json/output/1_01/' --data '{"value": 1}'
+curl --request POST --url 'http://127.0.0.1/json/relay/1_01/' --data '{"value": 1}'
 ```
 
 ### Output:
