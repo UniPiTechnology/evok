@@ -18,7 +18,3 @@ Run evok manually by executing the following command:
 
 You can then look through/paste the output of the script.
 
-## Developer Note
-
-Do you feel like contributing to EVOK, or perhaps have a neat idea for an improvement to our system? Great!
-We are open to all ideas. Get in touch with us via email to support@unipi.technology.

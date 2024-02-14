@@ -37,6 +37,26 @@ EVOK also supports sending notifications via webhook.
   - [Aliases](./docs/configs/aliases.md) - How Evok aliases works
 
 
+# What's news
+We have updated several functions and added some.
+- We rewrote the entire evok in python3.
+- We change alias saving system.
+  Now they are not saved permanently immediately after setting, but after 5 minutes
+  You can force permanent save via API.
+  For more information see [aliases](./docs/configs/aliases.md).
+- The configuration of the evok has been completely changed.
+  The configuration file is now in yaml.
+  Hardware configuration now has a tree structure.
+  You can find more information in the [evok configuration](./docs/configs/evok_configuration.md).
+- The device names in the API now match the name in the configuration.
+  So if you define a device, you can also choose a device name.
+  For more information see [evok configuration](./docs/configs/evok_configuration.md).
+
+## Developer Note
+
+Do you feel like contributing to EVOK, or perhaps have a neat idea for an improvement to our system? Great!
+We are open to all ideas. Get in touch with us via email to support@unipi.technology.
+
 License
 ============
 Apache License, Version 2.0
