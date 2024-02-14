@@ -13,7 +13,10 @@ The set aliases are initially stored only in the RAM.
 After 5 minutes it is permanently saved to Flash.
 The saving of all set aliases can be called up using the device '/run/alias'/
 
-We recommended setting aliases with [evok-web](https://github.com/UniPiTechnology/evok-web).
+Aliases can be set in a total of 3 ways:
+- Using the API
+- Using the [evok-web](https://github.com/UniPiTechnology/evok-web)
+- Manually writing to configuration file.
 
 
 # Examples
@@ -97,4 +100,28 @@ curl --request POST --url 'http://127.0.0.1/rest/run/alias/' --data 'save=1'
 ### Output:
 ```
 {'success': True, 'result': {'dev': 'run', 'circuit': 'alias', 'save': False, 'aliases': {'my_relay': 'relay_1_01'}}}
+```
+
+# Setting aliases manually
+
+You can set aliases manually in the alias config file.
+This option is especially suitable for transferring an alias from another device.
+
+The configuration file is located in '/var/lib/evok/aliases.yaml'.
+First require parameter is 'version'.
+This version affects the configuration file structure.
+Second parameter is list of aliases names 'aliases'.
+Each element in this list must contain 'circuit' and 'devtype' specifying the aliased device.
+Both of these parameters are available using the API.
+
+### Example:
+```yaml
+version: 2.0
+aliases:
+  my_input:
+    circuit: '1_01'
+    devtype: 2
+  my_relay:
+    circuit: '1_01'
+    devtype: 0
 ```
