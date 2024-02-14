@@ -18,6 +18,26 @@ This setting will be applied to protocols:
   
 More detailed settings of individual protocols can be found in separate sections.
 
+- Websocket
+   - enabled
+     - Options: true / false
+     - For enable/disable websocket API
+   - all_filtered
+     - Options: true / false
+     - 'All' WebSocket requests will be subject to the filtering set by 'filter'
+       
+- Webhook
+   - enabled
+      - Options: true / false
+      - For enable/disable webhook notifications
+   - address
+     - Address (with port) to which notifications should be sent
+   - device_mask
+     - Address (with port) to which notifications should be sent
+     - List of device types to notify on (written as a JSON list)
+   - complex_events 
+     - EVOK will send POST requests with the same data as WebSocket, rather than an empty GET request
+
 
 # Hardware configuration
 
