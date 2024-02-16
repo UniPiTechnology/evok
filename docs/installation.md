@@ -82,7 +82,6 @@ Note that after uninstalling Evok you have to reboot your device to ensure all t
 ----
 Raspberry Pi is a trademark of the Raspberry Pi Foundation
 
-[PUTTY]:http://www.putty.org/
 [our forum]:http://forum.unipi.technology/
 [evok-web]:https://github.com/UniPiTechnology/evok-web
 

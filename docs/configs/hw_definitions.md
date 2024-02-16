@@ -56,7 +56,7 @@ Each element contains the following parameters:
 - ...
   - Other commands depend on the specific type of device.
 
-Supported device types:
+## Supported device types:
 
 ### DO
 

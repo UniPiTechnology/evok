@@ -18,3 +18,4 @@ Run evok manually by executing the following command:
 
 You can then look through/paste the output of the script.
 
+[our forum]:http://forum.unipi.technology/

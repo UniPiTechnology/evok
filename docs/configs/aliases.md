@@ -11,12 +11,12 @@ There are several restrictions to aliases:
 
 The set aliases are initially stored only in the RAM.
 After 5 minutes it is permanently saved to Flash.
-The saving of all set aliases can be called up using the device '/run/alias'/
+The saving of all set aliases can be called up using the device '/run/alias'.
 
 Aliases can be set in a total of 3 ways:
 - Using the API
 - Using the [evok-web](https://github.com/UniPiTechnology/evok-web)
-- Manually writing to configuration file.
+- Manually writing to configuration file
 
 
 # Examples

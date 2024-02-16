@@ -10,11 +10,11 @@ To apply the configuration, it is necessary to restart evok with the command `sy
 
 In this section you can configure address and port for APIs listening.
 This setting will be applied to protocols:
- - REST
- - JSON
- - BULK
- - RPC
- - Websocket
+ - [REST](../apis/rest.md)
+ - [JSON](../apis/json.md)
+ - [BULK](../apis/bulk.md)
+ - [RPC](../apis/rpc.md)
+ - [Websocket](../apis/websocket.md)
   
 More detailed settings of individual protocols can be found in separate sections.
 
@@ -100,7 +100,7 @@ TCP_EXT:
 
 If the Debian package 'unipi-os-configurator' is installed,
 Evok can automatically create the hardware configuration for the running device.
-This feature can be enabled using the 'autogen' parameter.
+You can enable this feature with `autogen: true` in config.
 When this feature is enabled, Evok includes the file '/etc/evok/autogen.yaml'.
 This file contains the hardware configuration of the running device.
 'unipi-os-configurator' generates this file if a hardware change has been detected.

@@ -39,6 +39,8 @@ EVOK also supports sending notifications via webhook.
 
 # What's news
 We have updated several functions and added some.
+- New evok is available only on debian 12 (bookworm).
+  If you want new evok, you must reinstall your OS.
 - We rewrote the entire evok in python3.
 - We change alias saving system.
   Now they are not saved permanently immediately after setting, but after 5 minutes
@@ -51,6 +53,9 @@ We have updated several functions and added some.
 - The device names in the API now match the name in the configuration.
   So if you define a device, you can also choose a device name.
   For more information see [evok configuration](./docs/configs/evok_configuration.md).
+- The structure of the alias configuration file has been changed.
+  Evok automatically updates the configuration file if an old version is loaded.
+- Added option 'all' instead of circuit using API (/rest/relay/all).
 
 ## Developer Note
 
@@ -73,7 +78,6 @@ Apache License, Version 2.0
 [toro]:https://pypi.python.org/pypi/toro/
 [tornardorpc]:https://github.com/joshmarshall/tornadorpc
 [websocket Python library]:https://pypi.python.org/pypi/websocket-client/
-[our forum]:http://forum.unipi.technology/
 [intructions below]:https://github.com/UniPiTechnology/evok#installing-evok-for-neuron
 [jsonrpclib]:https://github.com/joshmarshall/jsonrpclib
 [Evok-web]:https://github.com/UniPiTechnology/evok-web
