@@ -39,24 +39,5 @@ class EvokModbusSerialClient(AsyncModbusSerialClient):
         return ret
 
 
-class EvokModbusTcpClient(AsyncModbusTcpClient):
-    instance_counter = 0
-
-    def __init__(self, host: str, port: int = 502, framer: Type[ModbusFramer] = ModbusSocketFramer,
-                 source_address: Tuple[str, int] = None, **kwargs: Any) -> None:
-        EvokModbusTcpClient.instance_counter += 1
-        super().__init__(host, port, framer, source_address, retries=0, **kwargs)
-        for method_name in ['read_holding_registers', 'read_input_registers', 'write_register', 'write_registers',
-                            'write_coil', 'connect']:
-            setattr(self, method_name, self.__block(getattr(self, method_name)))
-        self.lock = asyncio.Lock()
-        self.stime = time.time()
-        self.block_count = 0
-
-    def __block(self, operation: Callable):
-        async def ret(*args, **kwargs):
-            async with self.lock:
-                aret = await operation(*args, **kwargs)
-                return aret
-        return ret
+EvokModbusTcpClient = AsyncModbusTcpClient
 
