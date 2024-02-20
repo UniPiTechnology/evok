@@ -28,8 +28,6 @@ You can use the same commands to update your EVOK package distribution to a new 
 
 ## Installation process on Neuron/Unipi1.X family controllers with fresh RaspberryPi OS
 
-*Warning: if you have previously used the shell script install method noted below you will need to use a clean image!*
-
 In order to install EVOK on Neuron/Unipi1.X you will need an SD card with a standard (Lite) RaspberryPi OS.
 We recommended enable SSH via RaspberryPi OS imager.
 

@@ -56,6 +56,10 @@ We have updated several functions and added some.
 - The structure of the alias configuration file has been changed.
   Evok automatically updates the configuration file if an old version is loaded.
 - Added option 'all' instead of circuit using API (/rest/relay/all).
+- We have changed the mod switching method for AO and AI.
+  Now the measured value and the range are not set separately,
+  but one mode represents a combination of both properties.
+  
 
 ## Developer Note
 
