@@ -38,6 +38,7 @@ class ModbusCacheMap(object):
         self.modbus_slave: ModbusSlave = modbus_slave
         self.sem = Semaphore(1)
         self.frequency = {}
+        self.initial_read = True
         for m_reg_group in self.modbus_reg_map:
             self.frequency[m_reg_group['start_reg']] = 10000001  # frequency less than 1/10 million are not read on start
             m_reg_group['values'] = [None for i in range(m_reg_group['count'])]
@@ -106,7 +107,8 @@ class ModbusCacheMap(object):
                                 if await device.check_new_data() is True:
                                     changeset.append(device)
                             except Exception as E:
-                                m = f"Error while checking new data in device '{device.devtype}_{device.circuit}': {E}"
+                                m = (f"Error while checking new data in device '{devtype_names[device.devtype]}"
+                                     f"_{device.circuit}': {E}")
                                 logger.error(m)
 
                         # reset communication flags
