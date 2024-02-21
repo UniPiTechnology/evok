@@ -1,13 +1,8 @@
 --extra-index-url=https://www.piwheels.org/simple
-setuptools
-pymodbus==3.5.4
-tornado==6.3.3
-# toro
-# jsonrpclib
-jsonschema==2.6.0
-tornado-json
+pymodbus == 3.5.4
+pyserial == 3.5
+tornado == 6.3.3
+jsonschema == 2.6.0
+asyncowfs@git+https://github.com/UniPiTechnology/asyncowfs
+pyyaml == 6.0.1
 tornado-jsonrpc2==0.5
-# tornado-webservices
-pyyaml==6.0.1
-# onewire
-pyusb

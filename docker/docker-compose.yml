@@ -1,54 +1,19 @@
 version: '3.5'
 services:
-
   evok:
     build:
       context: .
       dockerfile: Dockerfile
-    image: bokula/evok:devel
+    image: evok
     restart: unless-stopped
-    command: ["python", "evok.py"]
     volumes:
-      - ./docker.evok.iris:/etc/evok.conf
-      - ./var/evok-alias.yaml:/var/evok/evok-alias.yaml
-    depends_on:
-      - modbus_tcp
-
-  nginx:
-    image: nginx
-    restart: unless-stopped
+      - type: bind
+        source: ./evok-alias.yaml
+        target: /var/evok/evok-alias.yaml
+      - type: bind
+        source: ./evok-config.yaml
+        target: /etc/evok/config.yaml
     ports:
-      - "8080:80"
-    volumes:
-      - ./docker-nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./www:/var/www
-    depends_on:
-      - evok
-
-  modbus_tcp:
-    image: bokula/unipi_modbus:devel
-    command: ["unipi_tcp_server", "-l", "0.0.0.0"]
-    restart: unless-stopped
-    ports: [ 502 ]
-    privileged: true
-    cap_drop: [ ALL ]
-#    device_cgroup_rules:
-#      - a 237:* rmw
-#    devices:
-#      - /dev/unipichannel11:/dev/unipichannel11
-#      - /dev/unipichannel22:/dev/unipichannel22
-
-## Modbus tcp potrebuje pristup k /dev/unipichannelXX pripadne /dev/unipispi
-##    to lze zajistit 
-##        a/ uvedenim pozadovanych zarizeni do sekce devices:
-##        b/ pouzitim sekce device_cgroup_rules:
-##        c/ privileged: true
-##
-##    Zpusob a/ musi znat vsechna puzivana jmena zarizeni
-##    a ty musi byt k dispozici pro spuosteni kontaineru
-##
-##    Zpusob b/ musi znat major cislo zarizeni, ktere je v nasem pripade nejiste
-##    a navic se musi vytvorit blokove zarizeni uvnitr kontaineru pomoci mkdev
-##
-##    Zpusob c/ neni nejbezpescnejsi ale nejjednodussi. Lze snizit pravomoce pomoci
-##    cap_drop: [ ALL ]
+      - "502:502"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
