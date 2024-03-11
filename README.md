@@ -85,4 +85,3 @@ Apache License, Version 2.0
 [intructions below]:https://github.com/UniPiTechnology/evok#installing-evok-for-neuron
 [jsonrpclib]:https://github.com/joshmarshall/jsonrpclib
 [Evok-web]:https://github.com/UniPiTechnology/evok-web
-
