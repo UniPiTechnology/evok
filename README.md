@@ -84,4 +84,4 @@ Apache License, Version 2.0
 [websocket Python library]:https://pypi.python.org/pypi/websocket-client/
 [intructions below]:https://github.com/UniPiTechnology/evok#installing-evok-for-neuron
 [jsonrpclib]:https://github.com/joshmarshall/jsonrpclib
-[Evok-web]:https://github.com/UniPiTechnology/evok-web
+[Evok-web]:https://github.com/UniPiTechnology/evok-web-jq
