@@ -15,7 +15,6 @@ logging:
   level: WARNING
   # ^ Minimum severity of messages to be logged, where minimum is CRITICAL.
   # ^ Options: [CRITICAL, ERROR, WARNING, INFO, DEBUG]
-  # file: /var/lib/evok/log.evok
 
 #   +--------------+
 #   | API settings |
