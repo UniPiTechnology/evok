@@ -45,6 +45,7 @@ class EvokWebHandlerBase(tornado.web.RequestHandler):
             logger.error(f"Error while processing get: {str(type(E).__name__)}: {str(E)}")
             self.write(json.dumps({'success': False, 'errors': {str(type(E).__name__): str(E)}}))
             self.set_status(status_code=404)
+        self.set_header('Content-Type', 'application/json')
         self.finish()
 
     async def post(self, dev, circuit, prop):
