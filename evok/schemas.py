@@ -101,7 +101,6 @@ di_post_inp_schema = {
     "type": "object",
     "additionalProperties": False,
     "properties": {
-        "value": { "type": ["number", "string"]},
         "counter": {
             "type": ["number", "string"],
             "minimum": 0,
