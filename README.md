@@ -59,6 +59,8 @@ We have updated several functions and added some.
 - We have changed the mod switching method for AO and AI.
   Now the measured value and the range are not set separately,
   but one mode represents a combination of both properties.
+- Modbus RTU durability has been improved.
+  Loss of communication with one device will not affect the functionality of the entire bus.
   
 
 ## Developer Note
