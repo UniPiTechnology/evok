@@ -187,6 +187,20 @@ owbus_post_inp_schema = {
 
 owbus_post_inp_example = {"do_reset": True, "do_scan": True}
 
+owpower_post_inp_schema = {
+    "$schema": SCHEMA,
+    "title": "OneWire_power",
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "interval": {
+            "type": ["number", "string", "boolean"]
+        },
+    }
+}
+
+owpower_post_inp_example = {"value": True}
+
 run_post_inp_schema = {
     "$schema": SCHEMA,
     "title": "running_evok_config",
@@ -212,6 +226,7 @@ schemas: Dict[str, Tuple[dict, dict]] = {
     'watchdog': (wd_post_inp_schema, wd_post_inp_example),
     '1wdevice': (owire_post_inp_schema, owire_post_inp_example),
     'owbus': (owbus_post_inp_schema, owbus_post_inp_example),
+    'owpower': (owpower_post_inp_schema, owpower_post_inp_example),
     'run': (run_post_inp_schema, run_post_inp_example),
 }
 schemas['di'] = schemas['input']

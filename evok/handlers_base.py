@@ -51,9 +51,9 @@ class EvokWebHandlerBase(tornado.web.RequestHandler):
     async def post(self, dev, circuit, prop):
         try:
             device = Devices.by_name(dev, circuit)
-            schema, example = schemas[dev]
             kw = self._get_kw()
-            if SCHEMA_VALIDATE:
+            if SCHEMA_VALIDATE and dev in schemas:
+                schema, example = schemas[dev]
                 jsonschema.validate(instance=kw, schema=schema)
             result = await device.set(**kw)
             self.write(json.dumps({'success': True, 'result': result}))
