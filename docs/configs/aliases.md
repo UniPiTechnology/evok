@@ -1,32 +1,28 @@
 # EVOK aliases
 
-There is also the possibility of aliasing device names, to allow devices to be given permanent names.
+It is possible to set aliases to devices, so they have more describing permanent names.
+
 There are several restrictions to aliases:
 
-- Every alias needs to globally unique, not just within its own class.
-- Aliases can only contain alphanumeric characters, underscores and dashes.
-- This is to allow devices to address via the alias using the APIs
-(i.e. setting an alias for a relay 1_01 to "bedroom_light" will allow it to be addressed both as /rest/relay/al_bedroom_light as well as /rest/relay/1_01)
+- Every alias needs to be globally unique, not just within its own class.
+- Aliases can only contain alphanumeric characters, underscores and dashes. This is to allow devices to address via the alias using the APIs (i.e. setting an alias for a `relay 1_01` to `bedroom_light` will allow it to be addressed both as `/rest/relay/al_bedroom_light` as well as `/rest/relay/1_01`)
 - Invalid aliases will be rejected by the API, with the previous alias remaining.
 
-The set aliases are initially stored only in the RAM.
-After 5 minutes it is permanently saved to Flash.
-The saving of all set aliases can be called up using the device '/run/alias'.
+The set aliases are initially stored only in the RAM, after 5 minutes they will be permanently saved to flash. Saving of all set aliases can be done by calling `/run/alias`.
 
 Aliases can be set in a total of 3 ways:
+
 - Using the API
-- Using the [evok-web](https://github.com/UniPiTechnology/evok-web)
-- Manually writing to configuration file
+- Using the [evok-web](https://github.com/UniPiTechnology/evok-web-jq)
+- Manually writing to the configuration file
 
+## Examples
 
-# Examples
+For python examples you need to have installed `requests` package. You can install it with command `pip3 install requests`.
 
-For python examples you need installed 'requests' package.
-You can install it with this command: `pip3 install requests`.
+### Setting alias DO 1_01 to my_relay
 
-## Setting alias DO 1_01 to my_relay
-
-### Python:
+#### Python:
 ```python
 import requests
 
@@ -40,19 +36,19 @@ if __name__ == '__main__':
     print(ret.json())
 ```
 
-### Curl:
+#### Curl:
 ```bash
 curl --request POST --url 'http://127.0.0.1/rest/relay/1_01/' --data 'alias=my_relay'
 ```
 
-### Output:
+#### Output:
 ```
 {'success': True, 'result': {'dev': 'relay', 'relay_type': 'digital', 'circuit': '1_01', 'value': 1, 'pending': False, 'mode': 'Simple', 'modes': ['Simple', 'PWM'], 'glob_dev_id': 2, 'pwm_freq': 4800.0, 'pwm_duty': 0, 'alias': 'my_relay'}}
 ```
 
-## Remove alias for DO 1_01
+### Remove alias for DO 1_01
 
-### Python:
+#### Python:
 ```python
 import requests
 
@@ -66,19 +62,19 @@ if __name__ == '__main__':
     print(ret.json())
 ```
 
-### Curl:
+#### Curl:
 ```bash
 curl --request POST --url 'http://127.0.0.1/rest/relay/1_01/' --data 'alias='
 ```
 
-### Output:
+#### Output:
 ```
 {'success': True, 'result': {'dev': 'relay', 'relay_type': 'digital', 'circuit': '1_01', 'value': 1, 'pending': False, 'mode': 'Simple', 'modes': ['Simple', 'PWM'], 'glob_dev_id': 2, 'pwm_freq': 4800.0, 'pwm_duty': 0}}
 ```
 
-## Force save alias to Flash
+### Force saving alias to flash
 
-### Python:
+#### Python:
 ```python
 import requests
 
@@ -92,27 +88,21 @@ if __name__ == '__main__':
     print(ret.json())
 ```
 
-### Curl:
+#### Curl:
 ```bash
 curl --request POST --url 'http://127.0.0.1/rest/run/alias/' --data 'save=1'
 ```
 
-### Output:
+#### Output:
 ```
 {'success': True, 'result': {'dev': 'run', 'circuit': 'alias', 'save': False, 'aliases': {'my_relay': 'relay_1_01'}}}
 ```
 
-# Setting aliases manually
+## Setting aliases manually
 
-You can set aliases manually in the alias config file.
-This option is especially suitable for transferring an alias from another device.
+You can set aliases manually in the alias config file. This option is especially suitable for transferring an alias from another device.
 
-The configuration file is located in '/var/lib/evok/aliases.yaml'.
-First require parameter is 'version'.
-This version affects the configuration file structure.
-Second parameter is list of aliases names 'aliases'.
-Each element in this list must contain 'circuit' and 'devtype' specifying the aliased device.
-Both of these parameters are available using the API.
+The configuration file is located in `/var/lib/evok/aliases.yaml`. First required parameter is `version`, it affects the configuration file structure. Second parameter is list of aliases names `aliases`, each element in this list must contain 'circuit' and 'devtype' specifying the aliased device. Both of these parameters are available using the API.
 
 ### Example:
 ```yaml
