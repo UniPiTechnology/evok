@@ -241,6 +241,7 @@ class ModbusSlave(object):
                'last_comm': 0x7fffffff,
                'slave_id': self.modbus_address,
                'modbus_type': self.modbus_type,
+               'scan_interval': self.scan_interval,
                }
         if self.alias != '':
             ret['alias'] = self.alias
