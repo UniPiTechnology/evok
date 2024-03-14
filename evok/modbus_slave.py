@@ -439,18 +439,22 @@ class Board(object):
 
             #self, circuit, arm, post, reg, dev_id=0, major_group=0
 
-            _offset = m_feature.get("offset",0)
-            _factor = m_feature.get("factor",1)
+            _offset = m_feature.get("offset", 0)
+            _factor = m_feature.get("factor", 1)
             _unit = m_feature.get("unit")
             _name = m_feature.get("name")
-            _valid_mask = m_feature.get('valid_mask_reg')
+            _valid_mask_reg = m_feature.get('valid_mask_reg')
             _post_write_action = m_feature.get('post_write')
             _datatype = m_feature.get('datatype')
+            _reg_type = m_feature.get("reg_type", "input")
 
-            _xgt = UnitRegister("{}_{}".format(self.circuit, board_val_reg + counter), self, board_val_reg + counter, reg_type="input",
+            _xgt = UnitRegister("{}_{}".format(self.circuit, board_val_reg + counter), self,
+                                board_val_reg + counter, reg_type=_reg_type,
                                 dev_id=self.dev_id, datatype=_datatype, major_group=self.major_group, offset=_offset, factor=_factor, unit=_unit,
-                                valid_mask=_valid_mask, name=_name, post_write=_post_write_action)
+                                valid_mask=1<<counter, valid_mask_reg=_valid_mask_reg, name=_name,
+                                post_write=_post_write_action)
 
+            self.__register_eventable_device(_xgt)
             Devices.register_device(UNIT_REGISTER, _xgt)
             counter+=1
 
@@ -895,7 +899,7 @@ class Watchdog(object):
 
 class UnitRegister():
 
-    def __init__(self, circuit, arm, reg, reg_type="input", dev_id=0, major_group=0, datatype=None, unit=None, offset=0, factor=1, valid_mask=None, name=None, post_write=None):
+    def __init__(self, circuit, arm, reg, reg_type="input", dev_id=0, major_group=0, datatype=None, unit=None, offset=0, factor=1, valid_mask_reg=None, valid_mask=None, name=None, post_write=None):
         # TODO - valid mask reg
         self.alias = ""
         self.devtype = UNIT_REGISTER
@@ -910,27 +914,41 @@ class UnitRegister():
         self.name = name
         self.post_write = post_write
         self.datatype = datatype
-        self.valid_mask_reg = valid_mask
+        self.valid_mask_reg = valid_mask_reg
+        self.valid_mask = valid_mask
         self.is_input = reg_type == "input"
+        self.is_valid = None
+        self.value = None
 
-    def valid_mask(self):
+    async def check_new_data(self):
+        old_value = copy(self.value)
+        old_valid_mask = copy(self.is_valid)
+        self.value = self.read_value()
+        self.is_valid = self.read_is_valid()
+        return old_value != self.value or old_valid_mask != self.is_valid
+
+    def read_is_valid(self):
         if self.valid_mask_reg is None:
             return 0
         try:
-            return self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valid_mask_reg, is_input=self.is_input)[0]
+            val = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valid_mask_reg, is_input=self.is_input)[0]
+            return bool(val & self.valid_mask)
         except ENoCacheRegister:
             return 0
 
-    def regvalue(self):
+    def read_value(self):
         try:
-            if self.datatype is None:
-                if self.factor == 1 and self.offset == 0:  # Reading RAW value - save some CPU time
-                    return self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, is_input=self.is_input)[0]
-                else:
-                    return (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, is_input=self.is_input)[0] * self.factor) + self.offset
+            if self.datatype is None or self.datatype == "signed16":
+                value = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg, is_input=self.is_input)[0]
             elif self.datatype == "float32":
-                # TODO - add factor and offset version
-                return self.__parse_float32(self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg, is_input=self.is_input))
+                value = self.__parse_float32(self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg, is_input=self.is_input))
+            else:
+                logger.warning(f"Unit register: Unsupported datatype {self.datatype}")
+                return None
+            if self.factor == 1 and self.offset == 0:  # Reading RAW value - save some CPU time
+                return value
+            else:
+                return (value * self.factor) + self.offset
         except ENoCacheRegister:
             return None
 
@@ -949,14 +967,14 @@ class UnitRegister():
 
         ret = {'dev': 'unit_register',
                'circuit': self.circuit,
-               'value': (self.regvalue()),
+               'value': self.value,
                'glob_dev_id': self.dev_id}
 
         if self.name is not None:
             ret['name'] = self.name
 
-        if self.valid_mask is not None:
-            ret['valid'] = "true" if (self.valid_mask() & (1 << self.valreg)) != 0 else "false"
+        if self.valid_mask_reg is not None:
+            ret['valid'] = self.is_valid
 
         if self.unit is not None:
             ret['unit'] = self.unit
@@ -968,17 +986,7 @@ class UnitRegister():
     def simple(self):
         return {'dev': 'unit_register',
                 'circuit': self.circuit,
-                'value': self.regvalue()}
-
-    @property
-    def value(self):
-        try:
-            if self.regvalue():
-                print("CTU " + str(self.circuit))
-                return self.regvalue()
-        except:
-            pass
-        return 0
+                'value': self.read_value()}
 
     def get(self):
         return self.full()
