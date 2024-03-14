@@ -78,7 +78,7 @@ class EvokWebHandlerBase(tornado.web.RequestHandler):
         result += map(lambda dev: dev.full(), Devices.by_int(OWPOWER))
         result += map(lambda dev: dev.full(), Devices.by_int(REGISTER))
         result += map(lambda dev: dev.full(), Devices.by_int(UNIT_REGISTER))
-        result += map(lambda dev: dev.full(), Devices.by_int(EXT_CONFIG))
+        result += map(lambda dev: dev.full(), Devices.by_int(OWBUS))
         result += map(lambda dev: dev.full(), Devices.by_int(DEVICE_INFO))
         return result
 
