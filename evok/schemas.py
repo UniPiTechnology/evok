@@ -193,7 +193,7 @@ owpower_post_inp_schema = {
     "type": "object",
     "additionalProperties": False,
     "properties": {
-        "interval": {
+        "value": {
             "type": ["number", "string", "boolean"]
         },
     }
