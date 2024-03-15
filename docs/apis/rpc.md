@@ -1,4 +1,4 @@
-# RPC EVOK API ([api-doc]())
+# RPC EVOK API
 
 The RPC (Remote Procedure Call) API is used for invoking procedures, functions or methods across a network. It is suitable for automated request.
 
@@ -8,7 +8,7 @@ For python examples you need installed 'requests' package. You can install it wi
 
 ### Reading DI 1.01
 
-#### Python:
+Python:
 
 ```python
 import requests
@@ -25,16 +25,15 @@ response = requests.post(url, json=payload).json()
 print(response)
 ```
 
-#### Output:
+Output:
 
-```
+```rs
 {'jsonrpc': '2.0', 'id': 0, 'result': [0, 50]}
 ```
 
-
 ### Setting DO 1.01 to HIGH
 
-#### Python:
+Python:
 
 ```python
 import requests
@@ -51,8 +50,8 @@ response = requests.post(url, json=payload).json()
 print(response)
 ```
 
-#### Output:
+Output:
 
-```
+```rs
 {'jsonrpc': '2.0', 'id': 0, 'result': 1}
 ```

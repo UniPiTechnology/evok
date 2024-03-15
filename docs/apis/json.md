@@ -1,4 +1,4 @@
-# JSON EVOK API ([api-doc]())
+# JSON EVOK API
 
 The JSON API provides a simple interface for sending and receiving data in a stateless, cacheable communications. This protocol do not support multiple write in one request. It is suitable for automated requests thanks JSON protocol, which is better machine-processed.
 
@@ -8,7 +8,7 @@ For python examples you need installed 'requests' package. You can install it wi
 
 ### Reading DI 1.01
 
-#### Python:
+Python:
 
 ```python
 import requests
@@ -22,22 +22,21 @@ if __name__ == '__main__':
     print(ret.json())
 ```
 
-#### Curl:
+Curl:
 
 ```bash
 curl --request GET --url 'http://127.0.0.1/json/input/1_01/'
 ```
 
-#### Output:
+Output:
 
-```
+```rs
 {"dev": "input", "circuit": "1_01", "value": 0, "debounce": 50, "counter_modes": ["Enabled", "Disabled"], "counter_mode": "Enabled", "counter": 0, "mode": "Simple", "modes": ["Simple", "DirectSwitch"], "glob_dev_id": 2}
 ```
 
-
 ### Setting DO 1.01 to HIGH
 
-#### Python:
+Python:
 
 ```python
 import requests, json
@@ -52,14 +51,14 @@ if __name__ == '__main__':
     print(ret.json())
 ```
 
-#### Curl:
+Curl:
 
 ```bash
 curl --request POST --url 'http://127.0.0.1/json/relay/1_01/' --data '{"value": 1}'
 ```
 
-#### Output:
+Output:
 
-```
+```rs
 {'success': True, 'result': {'dev': 'relay', 'relay_type': 'digital', 'circuit': '1_01', 'value': 0, 'pending': False, 'mode': 'Simple', 'modes': ['Simple', 'PWM'], 'glob_dev_id': 2, 'pwm_freq': 4800.0, 'pwm_duty': 0}}
 ```

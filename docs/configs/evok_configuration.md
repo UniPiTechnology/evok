@@ -6,34 +6,33 @@ Evok configuration is in '/etc/evok/config.yaml'. The default configuration is i
 
 In this section you can configure address and port for APIs listening. This setting will be applied to protocols:
 
- - [REST](../apis/rest.md)
- - [JSON](../apis/json.md)
- - [BULK](../apis/bulk.md)
- - [RPC](../apis/rpc.md)
- - [Websocket](../apis/websocket.md)
+- [REST](../apis/rest.md)
+- [JSON](../apis/json.md)
+- [BULK](../apis/bulk.md)
+- [RPC](../apis/rpc.md)
+- [Websocket](../apis/websocket.md)
   
 More detailed settings of individual protocols can be found in separate sections.
 
 - Websocket
-   - enabled
-     - Options: true / false
-     - For enable/disable websocket API
-   - all_filtered
-     - Options: true / false
-     - 'All' WebSocket requests will be subject to the filtering set by 'filter'
-       
-- Webhook
-   - enabled
-      - Options: true / false
-      - For enable/disable webhook notifications
-   - address
-     - Address (with port) to which notifications should be sent
-   - device_mask
-     - Address (with port) to which notifications should be sent
-     - List of device types to notify on (written as a JSON list)
-   - complex_events 
-     - EVOK will send POST requests with the same data as WebSocket, rather than an empty GET request
+  - enabled
+    - Options: true / false
+    - For enable/disable websocket API
+  - all_filtered
+    - Options: true / false
+    - 'All' WebSocket requests will be subject to the filtering set by 'filter'
 
+- Webhook
+  - enabled
+    - Options: true / false
+    - For enable/disable webhook notifications
+  - address
+    - Address (with port) to which notifications should be sent
+  - device_mask
+    - Address (with port) to which notifications should be sent
+    - List of device types to notify on (written as a JSON list)
+  - complex_events
+    - EVOK will send POST requests with the same data as WebSocket, rather than an empty GET request
 
 ## Hardware configuration
 
@@ -50,19 +49,20 @@ comm_channels:
         model: <model_id
         scan_frequency: 50
 ```
- - <bus_name>: Your choice, but cannot be duplicates!
- - <bus_type>:
-   - MODBUSTCP (specific settings: [hostname, port])
-   - MODBUSRTU (specific settings: [port, boudrate, parity])
- - <device_name>: Under this name, the device will be available in the API. Cannot be duplicates!
- - <model_id>:
-   - Defines a modbus register map.
-   - Source is in '.yaml' files in '/etc/evok/hw_definitions'.
-   - examples: xS51, xS11,
-   - For more information see [hw_definitions](./hw_definitions.md).
- - scan_frequency:
-   - An optional parameter that determines how often values are read from the device.
-   - Default value is 50.
+
+- <bus_name>: Your choice, but cannot be duplicates!
+- <bus_type>:
+  - MODBUSTCP (specific settings: [hostname, port])
+  - MODBUSRTU (specific settings: [port, boudrate, parity])
+- <device_name>: Under this name, the device will be available in the API. Cannot be duplicates!
+- <model_id>:
+  - Defines a modbus register map.
+  - Source is in '.yaml' files in '/etc/evok/hw_definitions'.
+  - examples: xS51, xS11,
+  - For more information see [hw_definitions](./hw_definitions.md).
+- scan_frequency:
+  - An optional parameter that determines how often values are read from the device.
+  - Default value is 50.
 
 ### Examples
 

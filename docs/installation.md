@@ -3,7 +3,7 @@
 ## Installation process on Unipi controllers using pre-build OS images (recommended)
 
 The latest images for Unipi controllers, including those with Evok pre-installed,
-can be downloaded from the 
+can be downloaded from the
 [Unipi Technology Knowledge Base](https://kb.unipi.technology/os-images).
 
 All necessary APT Unipi repositories are already preconfigured in the OS images.
@@ -33,6 +33,7 @@ The username and password for Raspberry Pi OS are set using the Raspberry Pi OS 
 After you connect to your controller execute the following commands:
 
 For Neuron:
+
 ```bash
 sudo su
 wget -qO - https://repo.unipi.technology/debian/raspberry-neuron.sh | bash
@@ -41,6 +42,7 @@ reboot
 ```
 
 For Unipi1.X:
+
 ```bash
 sudo su
 wget -qO - https://repo.unipi.technology/debian/raspberry-unipi1.sh | bash
@@ -75,6 +77,3 @@ Note that after uninstalling Evok you have to reboot your device to ensure all t
 ----
 
 Raspberry Pi is a trademark of the Raspberry Pi Foundation
-
-[our forum]:http://forum.unipi.technology/
-[evok-web]:https://github.com/UniPiTechnology/evok-web
