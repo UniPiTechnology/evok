@@ -22,7 +22,8 @@ For python examples you need to have installed `requests` package. You can insta
 
 ### Setting alias DO 1_01 to my_relay
 
-#### Python:
+Python:
+
 ```python
 import requests
 
@@ -36,19 +37,22 @@ if __name__ == '__main__':
     print(ret.json())
 ```
 
-#### Curl:
+Curl:
+
 ```bash
 curl --request POST --url 'http://127.0.0.1/rest/relay/1_01/' --data 'alias=my_relay'
 ```
 
-#### Output:
-```
+Output:
+
+```rs
 {'success': True, 'result': {'dev': 'relay', 'relay_type': 'digital', 'circuit': '1_01', 'value': 1, 'pending': False, 'mode': 'Simple', 'modes': ['Simple', 'PWM'], 'glob_dev_id': 2, 'pwm_freq': 4800.0, 'pwm_duty': 0, 'alias': 'my_relay'}}
 ```
 
 ### Remove alias for DO 1_01
 
-#### Python:
+Python:
+
 ```python
 import requests
 
@@ -62,19 +66,22 @@ if __name__ == '__main__':
     print(ret.json())
 ```
 
-#### Curl:
+Curl:
+
 ```bash
 curl --request POST --url 'http://127.0.0.1/rest/relay/1_01/' --data 'alias='
 ```
 
-#### Output:
-```
+Output:
+
+```rs
 {'success': True, 'result': {'dev': 'relay', 'relay_type': 'digital', 'circuit': '1_01', 'value': 1, 'pending': False, 'mode': 'Simple', 'modes': ['Simple', 'PWM'], 'glob_dev_id': 2, 'pwm_freq': 4800.0, 'pwm_duty': 0}}
 ```
 
 ### Force saving alias to flash
 
-#### Python:
+Python:
+
 ```python
 import requests
 
@@ -88,13 +95,15 @@ if __name__ == '__main__':
     print(ret.json())
 ```
 
-#### Curl:
+Curl:
+
 ```bash
 curl --request POST --url 'http://127.0.0.1/rest/run/alias/' --data 'save=1'
 ```
 
-#### Output:
-```
+Output:
+
+```rs
 {'success': True, 'result': {'dev': 'run', 'circuit': 'alias', 'save': False, 'aliases': {'my_relay': 'relay_1_01'}}}
 ```
 
@@ -104,7 +113,8 @@ You can set aliases manually in the alias config file. This option is especially
 
 The configuration file is located in `/var/lib/evok/aliases.yaml`. First required parameter is `version`, it affects the configuration file structure. Second parameter is list of aliases names `aliases`, each element in this list must contain 'circuit' and 'devtype' specifying the aliased device. Both of these parameters are available using the API.
 
-### Example:
+### Example
+
 ```yaml
 version: 2.0
 aliases:

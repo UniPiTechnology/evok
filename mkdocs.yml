@@ -1,0 +1,33 @@
+site_name: Evok documentation
+site_description: Unipi controllers API
+repo_url: https://github.com/UniPiTechnology/evok
+theme:
+  name: readthedocs
+  highlightjs: true
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        # See: https://mkdocstrings.github.io/python/usage/
+        python:
+          options:
+            docstring_style: sphinx
+markdown_extensions:
+  - markdown_include.include:
+      base_path: docs
+  - admonition
+nav:
+  - Installation: installation.md
+  - Available APIs: apis.md
+  - Debugging: debugging.md
+  - Configuration:
+    - General: configs/evok_configuration.md
+    - Aliases: configs/aliases.md
+    - HW definitions: configs/hw_definitions.md
+  - API details:
+      - Bulk: apis/bulk.md
+      - JSON: apis/json.md
+      - REST: apis/rest.md
+      - RPC: apis/rpc.md
+      - Webhook: apis/webhook.md
+      - WebSocket: apis/websocket.md
