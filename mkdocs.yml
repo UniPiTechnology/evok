@@ -21,8 +21,12 @@ nav:
   - Available APIs: apis.md
   - Debugging: debugging.md
   - Automation - Hints and Examples: automation-examples.md
+  - Configuration:
+    - General: configs/evok_configuration.md
+    - Aliases: configs/aliases.md
+    - HW definitions: configs/hw_definitions.md
   - API details:
-      - Bulk: apis/ulk.md
+      - Bulk: apis/bulk.md
       - JSON: apis/json.md
       - REST: apis/rest.md
       - RPC: apis/rpc.md
