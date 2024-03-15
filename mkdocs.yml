@@ -20,7 +20,6 @@ nav:
   - Installation: installation.md
   - Available APIs: apis.md
   - Debugging: debugging.md
-  - Automation - Hints and Examples: automation-examples.md
   - Configuration:
     - General: configs/evok_configuration.md
     - Aliases: configs/aliases.md
