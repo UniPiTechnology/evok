@@ -37,11 +37,13 @@ if __name__ == '__main__':
 ```
 
 #### Curl:
+
 ```bash
 curl --request POST --url 'http://127.0.0.1/rest/relay/1_01/' --data 'alias=my_relay'
 ```
 
 #### Output:
+
 ```
 {'success': True, 'result': {'dev': 'relay', 'relay_type': 'digital', 'circuit': '1_01', 'value': 1, 'pending': False, 'mode': 'Simple', 'modes': ['Simple', 'PWM'], 'glob_dev_id': 2, 'pwm_freq': 4800.0, 'pwm_duty': 0, 'alias': 'my_relay'}}
 ```
@@ -49,6 +51,7 @@ curl --request POST --url 'http://127.0.0.1/rest/relay/1_01/' --data 'alias=my_r
 ### Remove alias for DO 1_01
 
 #### Python:
+
 ```python
 import requests
 
@@ -63,11 +66,13 @@ if __name__ == '__main__':
 ```
 
 #### Curl:
+
 ```bash
 curl --request POST --url 'http://127.0.0.1/rest/relay/1_01/' --data 'alias='
 ```
 
 #### Output:
+
 ```
 {'success': True, 'result': {'dev': 'relay', 'relay_type': 'digital', 'circuit': '1_01', 'value': 1, 'pending': False, 'mode': 'Simple', 'modes': ['Simple', 'PWM'], 'glob_dev_id': 2, 'pwm_freq': 4800.0, 'pwm_duty': 0}}
 ```
@@ -75,6 +80,7 @@ curl --request POST --url 'http://127.0.0.1/rest/relay/1_01/' --data 'alias='
 ### Force saving alias to flash
 
 #### Python:
+
 ```python
 import requests
 
@@ -89,11 +95,13 @@ if __name__ == '__main__':
 ```
 
 #### Curl:
+
 ```bash
 curl --request POST --url 'http://127.0.0.1/rest/run/alias/' --data 'save=1'
 ```
 
 #### Output:
+
 ```
 {'success': True, 'result': {'dev': 'run', 'circuit': 'alias', 'save': False, 'aliases': {'my_relay': 'relay_1_01'}}}
 ```
@@ -105,6 +113,7 @@ You can set aliases manually in the alias config file. This option is especially
 The configuration file is located in `/var/lib/evok/aliases.yaml`. First required parameter is `version`, it affects the configuration file structure. Second parameter is list of aliases names `aliases`, each element in this list must contain 'circuit' and 'devtype' specifying the aliased device. Both of these parameters are available using the API.
 
 ### Example:
+
 ```yaml
 version: 2.0
 aliases:

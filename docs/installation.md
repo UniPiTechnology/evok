@@ -1,8 +1,6 @@
 # Installation guide
 
-
 ## Installation process on Unipi controllers using pre-build OS images (recommended)
-
 
 The latest images for Unipi controllers, including those with Evok pre-installed,
 can be downloaded from the 
@@ -24,7 +22,6 @@ In that case simply continue on with the next steps.
 Performing all the steps will ensure you have the latest version of the software installed.
 
 You can use the same commands to update your EVOK package distribution to a new version.
-
 
 ## Installation process on Neuron/Unipi1.X family controllers with fresh RaspberryPi OS
 
@@ -64,7 +61,6 @@ apt-get install -y evok
 reboot
 ```
 
-
 ## Uninstallation
 
 To uninstall EVOK please remove the evok package using the following apt command
@@ -76,10 +72,9 @@ reboot
 
 Note that after uninstalling Evok you have to reboot your device to ensure all the files and settings are gone.
 
-
 ----
+
 Raspberry Pi is a trademark of the Raspberry Pi Foundation
 
 [our forum]:http://forum.unipi.technology/
 [evok-web]:https://github.com/UniPiTechnology/evok-web
-

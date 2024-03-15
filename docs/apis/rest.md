@@ -1,17 +1,15 @@
 # REST EVOK API ([api-doc]())
 
-The REST API provides a simple interface for sending and receiving data in a stateless, cacheable communications.
-This protocol do not support multiple write in one request.
-It is suitable for hand-make requests.
+The REST API provides a simple interface for sending and receiving data in a stateless, cacheable communications. This protocol do not support multiple write in one request. It is suitable for hand-make requests.
 
 ## Examples
 
-For python examples you need installed 'requests' package.
-You can install it with this command: `pip3 install requests`.
+For python examples you need installed 'requests' package. You can install it with this command: `pip3 install requests`.
 
 ## Reading DI 1.01
 
 ### Python:
+
 ```python
 import requests
 
@@ -25,19 +23,21 @@ if __name__ == '__main__':
 ```
 
 ### Curl:
+
 ```bash
 curl --request GET --url 'http://127.0.0.1/rest/input/1_01/'
 ```
 
 ### Output:
+
 ```
 {"dev": "input", "circuit": "1_01", "value": 0, "debounce": 50, "counter_modes": ["Enabled", "Disabled"], "counter_mode": "Enabled", "counter": 0, "mode": "Simple", "modes": ["Simple", "DirectSwitch"], "glob_dev_id": 2}
 ```
 
-
 ## Setting DO 1.01 to HIGH
 
 ### Python:
+
 ```python
 import requests
 
@@ -52,11 +52,13 @@ if __name__ == '__main__':
 ```
 
 ### Curl:
+
 ```bash
 curl --request POST --url 'http://127.0.0.1/rest/relay/1_01/' --data 'value=1'
 ```
 
 ### Output:
+
 ```
 {"success": true, "result": {"dev": "relay", "relay_type": "digital", "circuit": "1_01", "value": 1, "pending": false, "mode": "Simple", "modes": ["Simple", "PWM"], "glob_dev_id": 2, "pwm_freq": 4800.0, "pwm_duty": 0}}
 ```
