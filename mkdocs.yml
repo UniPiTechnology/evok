@@ -22,9 +22,9 @@ nav:
   - Debugging: debugging.md
   - Automation - Hints and Examples: automation-examples.md
   - API details:
-      - Bulk: bulk.md
-      - JSON: json.md
-      - REST: rest.md
-      - RPC: rpc.md
-      - Webhook: webhook.md
-      - WebSocket: websocket.md
+      - Bulk: apis/ulk.md
+      - JSON: apis/json.md
+      - REST: apis/rest.md
+      - RPC: apis/rpc.md
+      - Webhook: apis/webhook.md
+      - WebSocket: apis/websocket.md
