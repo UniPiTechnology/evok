@@ -2,24 +2,18 @@
 
 # EVOK - the Unipi API
 
-EVOK is the primary Web-services API for [NEURON], [PATRON], [GATE] and [Unipi 1.1] devices.
-It provides a RESTful interface over HTTP, a JSON-RPC interface,
-a WebSocket interface and a bulk JSON interface to Unipi devices.
+EVOK is the primary API for accessing I/Os of [NEURON], [PATRON], [GATE] and [Unipi 1.1] devices including [Extension modules] by [Unipi technology].
 
-We have webapp for evok, see [evok-web] for more information.
-
-Evok is still in active development, so any testing, feedback and contributions are very much welcome and appreciated.
-
-APIs included in EVOK:
-
+It provides multiple ways to easilly access the I/Os of the devices, including:
 - RESTful WebForms API
 - RESTful JSON API
 - Bulk request JSON API
 - WebSocket API
 - JSON-RPC API
 
-EVOK also supports sending notifications via webhook.
+Besides that, EVOK also supports sending notifications via webhook.
 
+[evok-web] is a simple demo web application using Evok demonstrating its usage and allowing easy controll of the devices configured in Evok.
 
 # Getting started
 - [Installation instructions](./docs/installation.md) - How to install evok on Unipi controllers
@@ -37,36 +31,22 @@ EVOK also supports sending notifications via webhook.
   - [Aliases](./docs/configs/aliases.md) - How Evok aliases works
 
 
-# What's news
-We have updated several functions and added some.
-- New evok is available only on debian 12 (bookworm).
-  If you want new evok, you must reinstall your OS.
-- We rewrote the entire evok in python3.
-- We change alias saving system.
-  Now they are not saved permanently immediately after setting, but after 5 minutes
-  You can force permanent save via API.
-  For more information see [aliases](./docs/configs/aliases.md).
-- The configuration of the evok has been completely changed.
-  The configuration file is now in yaml.
-  Hardware configuration now has a tree structure.
-  You can find more information in the [evok configuration](./docs/configs/evok_configuration.md).
-- The device names in the API now match the name in the configuration.
-  So if you define a device, you can also choose a device name.
-  For more information see [evok configuration](./docs/configs/evok_configuration.md).
-- The structure of the alias configuration file has been changed.
-  Evok automatically updates the configuration file if an old version is loaded.
+# Major changes between Evok v2 and v3:
+- Evok v3 is based on Python3.
+- Updating Evok from v2 to v3 is unsupported.
+- Migration from Debian 10 is unsupported and it's recommended to start from a fresh operating system.
+- The configuration of Evok has been completely rewritten to yaml. Hardware configuration is using tree structure. See more information in the [evok configuration](./docs/configs/evok_configuration.md).
+- The device names in the API now match the name in the configuration. For more information see [evok configuration](./docs/configs/evok_configuration.md).
+- [Aliases](./docs/configs/aliases.md) system of I/Os has been rewritten and are saved 5mins after change, not immediately. Saving can be fored via API.
+- Structure of the aliases configuration file has been changed. Evok automatically updates the configuration file if an old version is loaded.
 - Added option 'all' instead of circuit using API (/rest/relay/all).
-- We have changed the mod switching method for AO and AI.
-  Now the measured value and the range are not set separately,
-  but one mode represents a combination of both properties.
-- Modbus RTU durability has been improved.
-  Loss of communication with one device will not affect the functionality of the entire bus.
-  
+- The mod switching method for AO and AI has been changed. Now the measured value and the range are not set separately, but one mode represents a combination of both properties.
+- Modbus RTU durability has been improved. Loss of communication with one device will not affect the functionality of the entire bus.  
+
 
 ## Developer Note
 
-Do you feel like contributing to EVOK, or perhaps have a neat idea for an improvement to our system? Great!
-We are open to all ideas. Get in touch with us via email to support@unipi.technology.
+Do you feel like contributing to EVOK, or perhaps have a neat idea for an improvement to our system? Feel free to open to contribute to this repository.
 
 License
 ============
@@ -87,3 +67,5 @@ Apache License, Version 2.0
 [intructions below]:https://github.com/UniPiTechnology/evok#installing-evok-for-neuron
 [jsonrpclib]:https://github.com/joshmarshall/jsonrpclib
 [Evok-web]:https://github.com/UniPiTechnology/evok-web-jq
+[Extension modules]:https://www.unipi.technology/products?category=32
+[Unipi technology]:https://www.unipi.technology/
