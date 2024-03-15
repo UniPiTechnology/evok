@@ -1,5 +1,5 @@
 site_name: Evok documentation
-site_description: Unipi controllers API 
+site_description: Unipi controllers API
 repo_url: https://github.com/UniPiTechnology/evok
 theme:
   name: readthedocs
@@ -14,17 +14,17 @@ plugins:
             docstring_style: sphinx
 markdown_extensions:
   - markdown_include.include:
-      base_path: .
+    base_path: docs
   - admonition
 nav:
-- Installation: installation.md
-- Available APIs: apis.md
-- Debugging: debugging.md
-- Automation - Hints and Examples: automation-examples.md
-- API details:
-  - Bulk: bulk.md
-  - JSON: json.md
-  - REST: rest.md
-  - RPC: rpc.md
-  - Webhook: webhook.md
-  - WebSocket: websocket.md
+  - Installation: installation.md
+  - Available APIs: apis.md
+  - Debugging: debugging.md
+  - Automation - Hints and Examples: automation-examples.md
+  - API details:
+      - Bulk: bulk.md
+      - JSON: json.md
+      - REST: rest.md
+      - RPC: rpc.md
+      - Webhook: webhook.md
+      - WebSocket: websocket.md
