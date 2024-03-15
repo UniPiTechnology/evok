@@ -2,11 +2,7 @@
 
 # EVOK - the Unipi API
 
-EVOK is the primary API for accessing I/Os of [NEURON], [PATRON], [GATE] and [Unipi 1.1] devices.
-It provides a RESTful interface over HTTP, a JSON-RPC interface,
-a WebSocket interface and a bulk JSON interface to Unipi devices.
-
-We have a webapp for evok, see [evok-web] for more information.
+EVOK is the primary API for accessing I/Os of [NEURON], [PATRON], [GATE] and [Unipi 1.1] devices including [Extension modules] by [Unipi technology].
 
 It provides multiple ways to easilly access the I/Os of the devices, including:
 - RESTful WebForms API
@@ -19,7 +15,7 @@ Besides that, EVOK also supports sending notifications via webhook.
 
 [evok-web] is a simple demo web application using Evok demonstrating its usage and allowing easy controll of the devices configured in Evok.
 
-## Getting started
+# Getting started
 - [Installation instructions](./docs/installation.md) - How to install evok on Unipi controllers
 - [Debugging](./docs/debugging.md) - How to debugging evok
 - [APIs](./docs/apis.md) - List of supported evok apis
@@ -35,27 +31,25 @@ Besides that, EVOK also supports sending notifications via webhook.
   - [Aliases](./docs/configs/aliases.md) - How Evok aliases works
 
 
-## What's new
-
-We have updated and added several functions.
-
-- New version of evok is available only on Debian 12 (bookworm). In order to get new evok, you must reinstall your OS.
-- Evok was rewritten in python3.
-- Alias saving system was changed. They are no longer saved permanently immediately after setting, but after 5 minutes. Permanent save force can be done via API. For more information see [aliases](./docs/configs/aliases.md).
-- The configuration of the evok has been completely changed. The configuration file now uses yaml. Hardware configuration is arranged in a tree structure. You can find more information in the [evok configuration](./docs/configs/evok_configuration.md).
-- Device names in the API now match their names in the configuration. For more information see [evok configuration](./docs/configs/evok_configuration.md).
-- The structure of the alias configuration file has been changed. Evok automatically updates the configuration file if an old version is loaded.
-- Added option 'all' was added instead of circuit using API (/rest/relay/all).
-- Mod switching method was changed for AO and AI. The measured value and the range are not set separately anymore, but one mode represents a combination of both properties.
+# Major changes between Evok v2 and v3:
+- Evok v3 is based on Python3.
+- Updating Evok from v2 to v3 is unsupported.
+- Migration from Debian 10 is unsupported and it's recommended to start from a fresh operating system.
+- The configuration of Evok has been completely rewritten to yaml. Hardware configuration is using tree structure. See more information in the [evok configuration](./docs/configs/evok_configuration.md).
+- The device names in the API now match the name in the configuration. For more information see [evok configuration](./docs/configs/evok_configuration.md).
+- [Aliases](./docs/configs/aliases.md) system of I/Os has been rewritten and are saved 5mins after change, not immediately. Saving can be fored via API.
+- Structure of the aliases configuration file has been changed. Evok automatically updates the configuration file if an old version is loaded.
+- Added option 'all' instead of circuit using API (/rest/relay/all).
+- The mod switching method for AO and AI has been changed. Now the measured value and the range are not set separately, but one mode represents a combination of both properties.
 - Modbus RTU durability has been improved. Loss of communication with one device will not affect the functionality of the entire bus.
+
 
 ## Developer Note
 
-Do you feel like contributing to EVOK, or perhaps have a neat idea for an improvement to our system? Great!
-We are open to all ideas. You can open an [issue](https://github.com/UniPiTechnology/evok/issues).
+Do you feel like contributing to EVOK, or perhaps have a neat idea for an improvement to our system? Feel free to open to contribute to this repository.
 
-## License
-
+License
+============
 Apache License, Version 2.0
 
 [PUTTY]:http://www.putty.org/
