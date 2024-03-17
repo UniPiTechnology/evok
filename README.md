@@ -16,7 +16,7 @@ Besides that, EVOK also supports sending notifications via webhook.
 
 [evok-web] is a simple demo web application using Evok demonstrating its usage and allowing easy control of the devices configured in Evok.
 
-# Getting started
+## Getting started
 
 - [Installation instructions](./docs/installation.md) - How to install evok on Unipi controllers
 - [Debugging](./docs/debugging.md) - How to debug evok
@@ -32,7 +32,7 @@ Besides that, EVOK also supports sending notifications via webhook.
   - [HW definitions](./docs/configs/hw_definitions.md) - How to configure Modbus map definitions
   - [Aliases](./docs/configs/aliases.md) - How Evok aliases works
 
-# Major changes between Evok v2 and v3
+## Major changes between Evok v2 and v3
 
 - Evok v3 is based on Python3.
 - Updating Evok from v2 to v3 is unsupported.
