@@ -13,7 +13,6 @@ theme:
 
 plugins:
   - search
-  - optimize
   - mkdocstrings:
       handlers:
         # See: https://mkdocstrings.github.io/python/usage/
