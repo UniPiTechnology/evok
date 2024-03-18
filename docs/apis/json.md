@@ -6,7 +6,7 @@ The JSON API provides a simple interface for sending and receiving data in a sta
 
 For python examples you need installed 'requests' package. You can install it with this command: `pip3 install requests`.
 
-### Reading DI 1.01
+### Reading DI
 
 === "Python"
 
@@ -22,7 +22,7 @@ For python examples you need installed 'requests' package. You can install it wi
         print(ret.json())
     ```
 
-=== "Curl"
+=== "curl"
 
     ```bash
     curl --request GET --url 'http://127.0.0.1/json/input/1_01/'
@@ -32,7 +32,7 @@ For python examples you need installed 'requests' package. You can install it wi
 {"dev": "input", "circuit": "1_01", "value": 0, "debounce": 50, "counter_modes": ["Enabled", "Disabled"], "counter_mode": "Enabled", "counter": 0, "mode": "Simple", "modes": ["Simple", "DirectSwitch"], "glob_dev_id": 2}
 ```
 
-### Setting DO 1.01 to HIGH
+### Setting DO to HIGH
 
 === "Python"
 
@@ -49,7 +49,7 @@ For python examples you need installed 'requests' package. You can install it wi
         print(ret.json())
     ```
 
-=== "Curl"
+=== "curl"
 
     ```bash
     curl --request POST --url 'http://127.0.0.1/json/relay/1_01/' --data '{"value": 1}'
