@@ -335,27 +335,37 @@ class Board(object):
         counter = 0
         while counter < max_count:
             board_val_reg = m_feature['val_reg']
-            # Hard PWM
-            if m_feature['type'] == 'DO' and m_feature.get('pwm_reg') and m_feature.get('pwm_ps_reg') and m_feature.get('pwm_c_reg'):
-                if not self.legacy_mode:
-                    _r = Relay("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
-                               dev_id=self.dev_id, major_group=self.major_group, pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
-                               pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
-                else:
-                    _r = Relay("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
-                               dev_id=self.dev_id, major_group=self.major_group, pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
-                               pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
-            # Soft PWM
-            elif m_feature['type'] == 'DO' and m_feature.get('pwm_reg') and m_feature.get('pwm_preset_reg') and m_feature.get('pwm_cpres_reg'):
-                    _r = Relay("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
-                               dev_id=self.dev_id, major_group=self.major_group, pwmpresetreg=m_feature['pwm_preset_reg'], pwmcustompresc=m_feature['pwm_cpres_reg'], digital_only=True,
-                               pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
-            else:
-                    _r = Relay("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
-                               dev_id=self.dev_id, major_group=self.major_group, legacy_mode=self.legacy_mode)
+            _r = Relay("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
+                       dev_id=self.dev_id, major_group=self.major_group, legacy_mode=self.legacy_mode)
             self.__register_eventable_device(_r)
             Devices.register_device(RELAY, _r)
-            counter+=1
+            counter += 1
+
+    def parse_feature_do(self, max_count, m_feature):
+        counter = 0
+        while counter < max_count:
+            board_val_reg = m_feature['val_reg']
+            # Hard PWM
+            if m_feature.get('pwm_reg') and m_feature.get('pwm_ps_reg') and m_feature.get('pwm_c_reg'):
+                if not self.legacy_mode:
+                    _r = Output("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
+                                dev_id=self.dev_id, major_group=self.major_group, pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
+                                pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
+                else:
+                    _r = Output("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
+                                dev_id=self.dev_id, major_group=self.major_group, pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
+                                pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
+            # Soft PWM
+            elif m_feature.get('pwm_reg') and m_feature.get('pwm_preset_reg') and m_feature.get('pwm_cpres_reg'):
+                _r = Output("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
+                            dev_id=self.dev_id, major_group=self.major_group, pwmpresetreg=m_feature['pwm_preset_reg'],
+                            pwmcustompresc=m_feature['pwm_cpres_reg'], digital_only=True,
+                            pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
+            else:
+                raise ValueError(f"Unexpected feature  {m_feature['type']}")
+            self.__register_eventable_device(_r)
+            Devices.register_device(OUTPUT, _r)
+            counter += 1
 
     def parse_feature_led(self, max_count, m_feature):
         counter = 0
@@ -464,8 +474,10 @@ class Board(object):
         max_count = m_feature.get('count', 1)
         if m_feature['type'] == 'DI':
             self.parse_feature_di(max_count, m_feature)
-        elif (m_feature['type'] == 'RO' or m_feature['type'] == 'DO'):
+        elif m_feature['type'] == 'RO':
             self.parse_feature_ro(max_count, m_feature)
+        elif m_feature['type'] == 'DO':
+            self.parse_feature_do(max_count, m_feature)
         elif m_feature['type'] == 'LED':
             self.parse_feature_led(max_count, m_feature)
         elif m_feature['type'] == 'WD':
@@ -501,15 +513,17 @@ class Board(object):
         return self.full()
 
 
-class Relay(object):
+class Output:
     pending_id = 0
-    def __init__(self, circuit, arm, coil, reg, mask, dev_id=0, major_group=0, pwmcyclereg=-1, pwmprescalereg=-1, pwmdutyreg=-1, pwmpresetreg=-1, pwmcustompresc=-1 ,legacy_mode=True, digital_only=False, modes=['Simple']):
+    def __init__(self, circuit, arm, coil, reg, mask, dev_id=0, major_group=0,
+                 pwmcyclereg=-1, pwmprescalereg=-1, pwmdutyreg=-1, pwmpresetreg=-1, pwmcustompresc=-1 ,
+                 legacy_mode=True, digital_only=False, modes=None):
         self.alias = ""
-        self.devtype = RELAY
+        self.devtype = OUTPUT
         self.dev_id = dev_id
         self.circuit = circuit
         self.arm = arm
-        self.modes = modes
+        self.modes = modes if modes is not None else ['Simple']
         # Soft-pwm
         self.pwmpresetreg = pwmpresetreg
         self.pwmcustompresc = pwmcustompresc
@@ -539,8 +553,7 @@ class Relay(object):
         self.forced_changes = False  # force_immediate_state_changes
 
     def full(self, forced_value=None):
-        ret =  {'dev': 'relay',
-                'relay_type': 'physical',
+        ret =  {'dev': 'output',
                 'circuit': self.circuit,
                 'value': self.value,
                 'pending': self.pending_id != 0,
@@ -548,7 +561,6 @@ class Relay(object):
                 'modes': self.modes,
                 'glob_dev_id': self.dev_id}
         if self.digital_only:
-            ret['relay_type'] = 'digital'
             ret['pwm_freq'] = self.pwm_freq
             ret['pwm_duty'] = self.pwm_duty
         if self.alias != '':
@@ -651,7 +663,7 @@ class Relay(object):
             if (pwm_freq is not None) and (pwm_freq > 0):
                 self.block_pwm = True
 
-            # Soft PWM
+                # Soft PWM
                 if self.pwmpresetreg >=0:
                     pwm_preset_val = 0
                     if pwm_freq in self.preset_map.values():
@@ -662,7 +674,6 @@ class Relay(object):
                         self.pwm_freq = round(1000 / (1 + pwm_prescaler),1)
                         await self.arm.modbus_slave.client.write_register(self.pwmpresetreg, 2, slave=self.arm.modbus_address)
                         await self.arm.modbus_slave.client.write_register(self.pwmcustompresc, pwm_prescaler, slave=self.arm.modbus_address)
-
 
                     other_devs = {dev: dev.pwm_duty for dev in Devices.by_int(RELAY, major_group=self.major_group)}
 
@@ -724,7 +735,7 @@ class Relay(object):
 
             # Set PWM Duty
             elif pwm_duty is not None and 0.0 <= pwm_duty <= 100.0:
-                if  self.pwmpresetreg >=0:
+                if self.pwmpresetreg >= 0:
                     tmp_pwm_duty_val = round(pwm_duty)
                 else:
                     tmp_pwm_duty_val = round(float(self.pwm_cycle_val) * pwm_duty / 100.0)
@@ -745,6 +756,81 @@ class Relay(object):
 
             self.pending_id = IOLoop.instance().add_timeout(
                 datetime.timedelta(seconds=float(timeout)), timercallback)
+
+            return self.full()
+
+        except Exception as E:
+            logger.error(f"Error in set DO: {E}")
+            raise E
+
+    def get(self):
+        return self.full()
+
+
+class Relay:
+
+    def __init__(self, circuit, arm, coil, reg, mask, dev_id=0, major_group=0, legacy_mode=True):
+        self.alias = ""
+        self.devtype = RELAY
+        self.dev_id = dev_id
+        self.circuit = circuit
+        self.arm = arm
+        self.major_group = major_group
+        self.legacy_mode = legacy_mode
+        self.coil = coil
+        self.valreg = reg
+        self.bitmask = mask
+        self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.valreg)[0]
+        self.value = None
+        self.block_pwm = False
+
+        self.forced_changes = False  # force_immediate_state_changes
+
+    def full(self, forced_value=None):
+        ret = {'dev': 'relay',
+               'circuit': self.circuit,
+               'value': self.value,
+               'glob_dev_id': self.dev_id}
+        if self.alias != '':
+            ret['alias'] = self.alias
+        if forced_value is not None:
+            ret['value'] = forced_value
+        return ret
+
+    def simple(self):
+        return {'dev': 'relay',
+                'circuit': self.circuit,
+                'value': self.value}
+
+    def get_state(self):
+        """ Returns ( status, is_pending )
+              current on/off status is taken from last mcp value without reading it from hardware
+              is_pending is Boolean
+        """
+        return self.value
+
+    async def set_state(self, value):
+        """ Sets new on/off status. Disable pending timeouts
+        """
+        await self.arm.modbus_slave.client.write_coil(self.coil, 1 if value else 0, slave=self.arm.modbus_address)
+        return 1 if value else 0
+
+    async def check_new_data(self):
+        old_value = copy(self.value)
+        self.value = 1 if (self.regvalue() & self.bitmask) else 0
+        return old_value != self.value
+
+    async def set(self, value=None, alias=None):
+        """ Sets new on/off status. Disable pending timeouts """
+        try:
+
+            # Set Binary value
+            if value is not None:
+                parsed_value = 1 if int(value) else 0
+                await self.arm.modbus_slave.client.write_coil(self.coil, parsed_value, slave=self.arm.modbus_address)
+
+            if alias is not None:
+                Devices.set_alias(alias, self)
 
             return self.full()
 

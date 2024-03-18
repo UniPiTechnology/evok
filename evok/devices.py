@@ -285,7 +285,7 @@ devtype_names = (
     'uart',
     'modbus_slave',
     'board',
-    'misc_output',
+    'output',
     'led',
     'watchdog',
     'register',
@@ -303,8 +303,8 @@ devtype_names = (
 
 devtype_altnames = {
     'di': 'input',
-    'output': 'relay',
-    'do': 'relay',
+    'do': 'output',
+    'ro': 'relay',
     'analoginput': 'ai',
     'analogoutput': 'ao',
     'eprom': 'ee',
