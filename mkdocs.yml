@@ -3,14 +3,24 @@ site_description: Unipi controllers API
 repo_url: https://github.com/UniPiTechnology/evok
 theme:
   name: material
+  features:
+    - content.action.edit
+    - navigation.expand
+    - navigation.instant
+    - navigation.instant.progress
+    - search.suggest
+    - toc.follow
+
 plugins:
   - search
+  - optimize
   - mkdocstrings:
       handlers:
         # See: https://mkdocstrings.github.io/python/usage/
         python:
           options:
             docstring_style: sphinx
+
 markdown_extensions:
   - markdown_include.include:
       base_path: docs
