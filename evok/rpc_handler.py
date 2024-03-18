@@ -103,8 +103,16 @@ class Handler(UserBasicHelper):
         relay = Devices.by_int(RELAY, str(circuit))
         return await relay.set_state(value)
 
-    async def relay_set_for_time(self, circuit, value, timeout):
-        relay = Devices.by_int(RELAY, str(circuit))
+    def output_get(self, circuit):
+        relay = Devices.by_int(OUTPUT, str(circuit))
+        return relay.get_state()
+
+    async def output_set(self, circuit, value):
+        relay = Devices.by_int(OUTPUT, str(circuit))
+        return await relay.set_state(value)
+
+    async def output_set_for_time(self, circuit, value, timeout):
+        relay = Devices.by_int(OUTPUT, str(circuit))
         if timeout <= 0:
             raise Exception('Invalid timeout %s' % str(timeout))
         return await relay.set(value, timeout)
