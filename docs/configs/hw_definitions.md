@@ -146,7 +146,7 @@ Relay output.
 
 Digital input.
 
-#### Parameters
+##### Parameters
 
 - val_reg
   - Value register address
