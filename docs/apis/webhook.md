@@ -8,9 +8,7 @@ For python examples you need installed 'flask' package. You can install it with 
 
 ### Creating simple Webhook server
 
-Python:
-
-```python
+```python title="Python"
 from flask import Flask, request
 import json
 
@@ -42,9 +40,7 @@ For more information see [Evok configuration](../configs/evok_configuration.md).
 
 After you change configuration you must restart the Evok with the command `systemctl restart evok`.
 
-Output:
-
-```bash
+```bash title="Output"
  * Serving Flask app 'server'
  * Debug mode: off
 WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
