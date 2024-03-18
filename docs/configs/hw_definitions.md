@@ -1,14 +1,12 @@
 # HW definitions
 
-HW definitions is in '/etc/evok/hw_definitions/'.
-Each file represents one modbus device.
+HW definitions is in '/etc/evok/hw_definitions/'. Each file represents one modbus device.
 
 ## File structure
 
 ### type
 
-The device code, which is then entered into the evok configuration.
-Ideally, it matches the file name.
+The device code, which is then entered into the evok configuration. Ideally, it matches the file name.
 
 ### modbus_register_blocks
 
@@ -16,48 +14,26 @@ Contains a list of modbus register groups. These registers must be placed consec
 
 - start_reg
 - count
-- frequency
-
-The default register type is 'holding'. You can change the register type to 'input' by setting the parameter 'type' to 'input'. The frequency parameter represents the number by which the frequency is divided. The actual frequency is then entered separately for each device. Learn more in [Evok configuration](./evok_configuration.md).
-
-#### Example
-
-```yaml
-modbus_register_blocks:
-  - start_reg   : 0
-    count       : 2
-    frequency   : 1
-  - start_reg   : 2
-    count       : 3
-    frequency   : 10
-  - start_reg   : 5
-    count       : 16
-    frequency   : 1
-  - start_reg   : 1000
-    count       : 32
-    frequency   : 5
-```
+- frequency - represents the number by which the frequency is divided. The actual frequency is then entered separately for each device. Learn more in [Evok configuration](./evok_configuration.md).
+- <type\> - register type, defaults to `holding`.
 
 ### modbus_features
 
 Contains a list of devices and their required parameters. Each element contains the following parameters:
 
-- type
-  - Specify device type
-  - You can find the supported device types below.
-- count
-  - Specifies the number of devices of this type.
-  - Register addresses are incremented based on this number.
-- ...
-  - Other commands depend on the specific type of device.
+- type - device type, supported devices are listed below.
+- count - number of devicesof the type, register addresses incremented based on this number
+
+Other commands depend on the specific type of device.
 
 ### Example
 
 ```yaml
 ---
-# Type is the name in your device as it is in evok.conf (the filename is not meaningful, as long as it ends in .yaml and is placed in the "/etc/hw_definitions/" folder)
+# Type is the name in your device as in evok.conf (the filename is not meaningful, it has to be .yaml file and be placed in the "/etc/hw_definitions/" folder)
 type: CUSTOM_MODBUS_DEVICE
-# This key defines which Modbus registers will be periodically read. Each block (also sometimes referred to as "group") is read once ever ["frequency"] read cycles
+
+# This key defines which Modbus registers will be periodically read. Each block (also sometimes referred to as "group") is read once every ["frequency"] read cycles
 modbus_register_blocks:
   - board_index : 1
     start_reg   : 0
@@ -67,10 +43,12 @@ modbus_register_blocks:
     start_reg   : 500
     count       : 8
     frequency   : 10
+    type        : input
   - board_index : 1
     start_reg   : 508
     count       : 8
     frequency   : 50
+
 # This defines the devices mapped to the registers above. As custom devices are very unlikely to support any Neuron features, the only devices which should be mapped are "REGISTER"s
 modbus_features:
   - type        : REGISTER
@@ -85,9 +63,7 @@ modbus_features:
 
 ### Supported device types
 
-#### DO
-
-Digital output.
+#### DO (digital output)
 
 ##### Parameters
 
@@ -121,9 +97,7 @@ Digital output.
     pwm_c_reg   : 1018
 ```
 
-#### RO
-
-Relay output.
+#### RO (relay output)
 
 ##### Parameters
 
@@ -142,9 +116,7 @@ Relay output.
     val_coil    : 0
 ```
 
-#### DI
-
-Digital input.
+#### DI (Digital input)
 
 ##### Parameters
 
@@ -189,9 +161,7 @@ Digital input.
     toggle_reg  : 1018
 ```
 
-#### AO
-
-Analog output.
+#### AO (analog output)
 
 ##### Parameters
 
@@ -221,9 +191,7 @@ Analog output.
     val_reg     : 2
 ```
 
-#### AI
-
-Analog input.
+#### AI (analog input)
 
 ##### Parameters
 
@@ -273,9 +241,7 @@ Analog input.
       range: [0, 100000]
 ```
 
-#### WD
-
-Watchdog
+#### WD (watchdog)
 
 ##### Parameters
 
@@ -299,9 +265,7 @@ Watchdog
     reset_coil  : 1002
 ```
 
-#### REGISTER
-
-Modbus register
+#### REGISTER (Modbus register)
 
 ##### Parameters
 
@@ -316,9 +280,7 @@ Modbus register
     start_reg   : 0
 ```
 
-#### UNIT_REGISTER
-
-Modbus unit register
+#### UNIT_REGISTER (Modbus unit register)
 
 ##### Parameters
 
