@@ -8,25 +8,25 @@ For python examples you need installed 'requests' package. You can install it wi
 
 ### Reading DI 1.01
 
-Python:
+=== "Python"
 
-```python
-import requests
+    ```python
+    import requests
 
-def get_request(host: str, dev_type: str, circuit: str):
-    url = f"http://{host}/json/{dev_type}/{circuit}"
-    return requests.get(url=url)
+    def get_request(host: str, dev_type: str, circuit: str):
+        url = f"http://{host}/json/{dev_type}/{circuit}"
+        return requests.get(url=url)
 
-if __name__ == '__main__':
-    ret = get_request(host='127.0.0.1', dev_type='input', circuit='1_01')
-    print(ret.json())
-```
+    if __name__ == '__main__':
+        ret = get_request(host='127.0.0.1', dev_type='input', circuit='1_01')
+        print(ret.json())
+    ```
 
-Curl:
+=== "Curl"
 
-```bash
-curl --request GET --url 'http://127.0.0.1/json/input/1_01/'
-```
+    ```bash
+    curl --request GET --url 'http://127.0.0.1/json/input/1_01/'
+    ```
 
 Output:
 
