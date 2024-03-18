@@ -50,12 +50,12 @@ comm_channels:
         scan_frequency: 50
 ```
 
-- <bus_name>: Your choice, but cannot be duplicates!
-- <bus_type>:
+- <bus_name\>: Your choice, but cannot be duplicates!
+- <bus_type\>:
   - MODBUSTCP (specific settings: [hostname, port])
   - MODBUSRTU (specific settings: [port, boudrate, parity])
-- <device_name>: Under this name, the device will be available in the API. Cannot be duplicates!
-- <model_id>:
+- <device_name\>: Under this name, the device will be available in the API. Cannot be duplicates!
+- <model_id\>:
   - Defines a modbus register map.
   - Source is in '.yaml' files in '/etc/evok/hw_definitions'.
   - examples: xS51, xS11,
