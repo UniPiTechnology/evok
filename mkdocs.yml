@@ -2,7 +2,7 @@ site_name: Evok documentation
 site_description: Unipi controllers API
 repo_url: https://github.com/UniPiTechnology/evok
 theme:
-  name: readthedocs
+  name: material
 plugins:
   - search
   - mkdocstrings:
