@@ -28,37 +28,33 @@ For python examples you need installed 'requests' package. You can install it wi
     curl --request GET --url 'http://127.0.0.1/json/input/1_01/'
     ```
 
-Output:
-
-```rs
+```rs title="Output"
 {"dev": "input", "circuit": "1_01", "value": 0, "debounce": 50, "counter_modes": ["Enabled", "Disabled"], "counter_mode": "Enabled", "counter": 0, "mode": "Simple", "modes": ["Simple", "DirectSwitch"], "glob_dev_id": 2}
 ```
 
 ### Setting DO 1.01 to HIGH
 
-Python:
+=== "Python"
 
-```python
-import requests, json
+    ```python
+    import requests, json
 
-def send_request(host: str, dev_type: str, circuit: str, value: bool):
-    url = f"http://{host}/json/{dev_type}/{circuit}"
-    data = {'value': str(int(value))}
-    return requests.post(url=url, data=json.dumps(data))
+    def send_request(host: str, dev_type: str, circuit: str, value: bool):
+        url = f"http://{host}/json/{dev_type}/{circuit}"
+        data = {'value': str(int(value))}
+        return requests.post(url=url, data=json.dumps(data))
 
-if __name__ == '__main__':
-    ret = send_request(host='127.0.0.1', dev_type='relay', circuit='1_01', value=True)
-    print(ret.json())
-```
+    if __name__ == '__main__':
+        ret = send_request(host='127.0.0.1', dev_type='relay', circuit='1_01', value=True)
+        print(ret.json())
+    ```
 
-Curl:
+=== "Curl"
 
-```bash
-curl --request POST --url 'http://127.0.0.1/json/relay/1_01/' --data '{"value": 1}'
-```
+    ```bash
+    curl --request POST --url 'http://127.0.0.1/json/relay/1_01/' --data '{"value": 1}'
+    ```
 
-Output:
-
-```rs
+```rs title="Output"
 {'success': True, 'result': {'dev': 'relay', 'relay_type': 'digital', 'circuit': '1_01', 'value': 0, 'pending': False, 'mode': 'Simple', 'modes': ['Simple', 'PWM'], 'glob_dev_id': 2, 'pwm_freq': 4800.0, 'pwm_duty': 0}}
 ```
