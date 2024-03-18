@@ -13,27 +13,20 @@ charset-normalizer==3.3.2
 click==8.1.7
     # via mkdocs
 colorama==0.4.6
-    # via
-    #   griffe
-    #   mkdocs-material
+    # via mkdocs-material
 ghp-import==2.1.0
     # via mkdocs
-griffe==0.36.9
-    # via mkdocstrings-python
 idna==3.6
     # via requests
 jinja2==3.1.2
     # via
     #   mkdocs
     #   mkdocs-material
-    #   mkdocstrings
 markdown==3.5.1
     # via
     #   markdown-include
     #   mkdocs
-    #   mkdocs-autorefs
     #   mkdocs-material
-    #   mkdocstrings
     #   pymdown-extensions
 markdown-include==0.8.1
     # via -r docs/requirements.in
@@ -41,27 +34,16 @@ markupsafe==2.1.3
     # via
     #   jinja2
     #   mkdocs
-    #   mkdocstrings
 mergedeep==1.3.4
     # via mkdocs
 mkdocs==1.5.3
     # via
     #   -r docs/requirements.in
-    #   mkdocs-autorefs
     #   mkdocs-material
-    #   mkdocstrings
-mkdocs-autorefs==0.5.0
-    # via mkdocstrings
 mkdocs-material==9.5.14
     # via -r docs/requirements.in
 mkdocs-material-extensions==1.3.1
     # via mkdocs-material
-mkdocstrings[python]==0.23.0
-    # via
-    #   -r docs/requirements.in
-    #   mkdocstrings-python
-mkdocstrings-python==1.7.3
-    # via mkdocstrings
 packaging==23.2
     # via mkdocs
 paginate==0.5.6
@@ -73,9 +55,7 @@ platformdirs==3.11.0
 pygments==2.17.2
     # via mkdocs-material
 pymdown-extensions==10.3.1
-    # via
-    #   mkdocs-material
-    #   mkdocstrings
+    # via mkdocs-material
 python-dateutil==2.8.2
     # via ghp-import
 pyyaml==6.0.1
