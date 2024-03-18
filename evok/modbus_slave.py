@@ -192,10 +192,9 @@ class ModbusSlave(object):
         logger.info(f"Reading the Modbus board on Modbus address {self.modbus_address}\t({self.circuit})")
         self.boards = list()
         try:
-            for defin in self.hw_dict.definitions:
-                if defin and (defin['type'] == self.device_model):
-                    self.hw_board_dict = defin
-                    break
+            if self.device_model not in self.hw_dict.definitions:
+                raise KeyError(f"readboards: Unsupported device model {self.device_model}! (check HW definitions)")
+            self.hw_board_dict = self.hw_dict.definitions[self.device_model]
             board = Board(self.evok_config, self.circuit, self.modbus_address, self, dev_id=self.dev_id,
                           major_group=self.major_group)
             await board.parse_definition(self.hw_dict)
@@ -503,9 +502,9 @@ class Board(object):
 
     async def parse_definition(self, hw_dict):
         try:
-            for defin in hw_dict.definitions:
-                if defin and (self.modbus_slave.device_model == defin['type']):
-                    await self.initialise_cache(defin);
+            for defin_name, defin in hw_dict.definitions.items():
+                if defin and (self.modbus_slave.device_model == defin_name):
+                    await self.initialise_cache(defin)
                     for m_feature in defin['modbus_features']:
                         self.parse_feature(m_feature)
                     return
@@ -1382,6 +1381,7 @@ class AnalogOutputBrain:
         self.value = None
         self.res_value = None
         self.mode = None
+        self.unit = None
 
     async def check_new_data(self):
         if self.is_voltage():
@@ -1390,6 +1390,7 @@ class AnalogOutputBrain:
             self.mode = 'Current'
         else:
             self.mode = 'Resistance'
+        self.unit = self.modes[self.mode]['unit']
 
         old_value = copy(self.value)
         old_res_value = copy(self.res_value)
@@ -1419,7 +1420,7 @@ class AnalogOutputBrain:
                'mode': self.mode,
                'modes': self.modes,
                'glob_dev_id': self.dev_id,
-               'unit': self.modes[self.mode]['unit']
+               'unit': self.unit
         }
 
         if self.mode == 'Resistance':

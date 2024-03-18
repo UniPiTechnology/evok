@@ -1,19 +1,15 @@
 import logging
 import os
 from typing import List, Dict, Union
-
 from tornado.ioloop import IOLoop
 
 from .modbus_unipi import EvokModbusSerialClient, EvokModbusTcpClient
-
 from .modbus_slave import ModbusSlave
-
 from . import owdevice
 
 import yaml
 from .devices import *
 
-# from neuron import WiFiAdapter
 
 class EvokConfigError(Exception):
     pass
@@ -25,7 +21,7 @@ class HWDict:
         :param dir_paths: path to dir for load
         :param paths: paths to config files
         """
-        self.definitions = []
+        self.definitions: Dict[str, List] = {}
         scope = list()
         if dir_paths is not None:
             for dp in dir_paths:
@@ -36,14 +32,14 @@ class HWDict:
             raise ValueError(f"HWDict: no scope!")
         for file_path in scope:
             if file_path.endswith(".yaml") and os.path.isfile(file_path):
+                file_name = file_path.split("/")[-1].replace(".yaml", "")
                 with open(file_path, 'r') as yfile:
                     ydata = yaml.load(yfile, Loader=yaml.SafeLoader)
                     if ydata is None:
                         logger.warning(f"Empty Definition file '{file_path}'! skipping...")
                         continue
-                    self.definitions.append(ydata)
-                    logger.info(f"YAML Definition loaded: {file_path}, type: {len(self.definitions[-1])}, "
-                                f"definition count {len(self.definitions) - 1}")
+                    self.definitions[file_name] = ydata
+                    logger.info(f"YAML Definition loaded: {file_path}, definition count {len(self.definitions) - 1}")
 
 
 class OWSensorDevice:
