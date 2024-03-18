@@ -1479,6 +1479,12 @@ class AnalogOutput:
 
 
 class AnalogInput:
+
+    endian_map={"little" : Endian.LITTLE,
+                "Little" : Endian.LITTLE,
+                "big" : Endian.BIG,
+                "Big" : Endian.BIG,}
+
     def __init__(self, circuit, arm, reg, regmode=None, dev_id=0, major_group=0, legacy_mode=True, modes=None):
         self.alias = ""
         self.devtype = AI
@@ -1490,13 +1496,49 @@ class AnalogInput:
         self.regmode = regmode
         self.modes = modes if modes is not None else {}
         self.mode = list(modes.keys())[0] if len(modes) == 1 and self.regmode is None else None
+        self.mode_value = None
         self.major_group = major_group
         self.is_voltage = lambda: True
         self.value = None
+        self.transformation = lambda registers: round(BinaryPayloadDecoder.fromRegisters(registers, Endian.BIG,
+                                                                                   Endian.LITTLE).decode_32bit_float(),3)
+
+        #logger.debug(f"AnalogInput.__init__ called, instance content {vars(self)}")
 
     def get_mode_by_regvalue(self, regvalue: int):
         for mode, data in self.modes.items():
             if regvalue == data['value']:
+                return mode
+        return None
+
+    def reload_mode(self, mode_value: int):
+        for mode, data in self.modes.items():
+            if mode_value == data['value']:
+                if data.get("transformation"):
+                    logger.debug("-------- TRANSFORMATION --------")
+                    logger.debug(f"Mode: {data['value']} -> {data['transformation']}")
+                    byteorder = AnalogInput.endian_map[data["transformation"].get("byteorder", "big")]
+                    wordorder = AnalogInput.endian_map[data["transformation"].get("wordorder", "little")]
+                    datatype = data["transformation"].get("datatype", "float32")
+                    decimals = data["transformation"].get("decimals", 3)
+                    ratio = data["transformation"].get("ratio", 1)
+                    logger.debug(f"{datatype} {byteorder} {wordorder} {decimals}")
+                    if datatype == "float32":
+                        self.transformation = lambda registers : round(BinaryPayloadDecoder.fromRegisters(registers,
+                                                                                                      byteorder=byteorder,
+                                                                                                      wordorder=wordorder).decode_32bit_float() * ratio,decimals)
+                    elif datatype == "int32":
+                        self.transformation = lambda registers: int(BinaryPayloadDecoder.fromRegisters(registers,
+                                                                                                         byteorder=byteorder,
+                                                                                                         wordorder=wordorder).decode_32bit_int() * ratio)
+                    elif datatype == "uint32" and (ratio, float) :
+                        self.transformation = lambda registers: round(float(BinaryPayloadDecoder.fromRegisters(registers,
+                                                                                                       byteorder=byteorder,
+                                                                                                       wordorder=wordorder).decode_32bit_uint() * ratio),decimals)
+                    elif datatype == "uint32":
+                        self.transformation = lambda registers: int(BinaryPayloadDecoder.fromRegisters(registers,
+                                                                                                       byteorder=byteorder,
+                                                                                                       wordorder=wordorder).decode_32bit_uint() * ratio)
                 return mode
         return None
 
@@ -1515,19 +1557,23 @@ class AnalogInput:
             return None
 
     async def check_new_data(self):
+        has_changed = False
         if self.regmode is not None:
-            mode_value = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
-            self.mode = self.get_mode_by_regvalue(mode_value)
+            old_mode_value = copy(self.mode_value)
+            self.mode_value = self.arm.modbus_slave.modbus_cache_map.get_register(1, self.regmode)[0]
+            if old_mode_value != self.mode_value:
+                self.mode = self.reload_mode(self.mode_value)
+                has_changed = True
 
         old_value = copy(self.value)
         self.value = self.regvalue()
-        return self.value != old_value
+        return self.value != old_value or has_changed
 
     def regvalue(self):
         try:
+            # TODO adaptive data length
             ret = self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg)
-            ret = BinaryPayloadDecoder.fromRegisters(ret, Endian.BIG, Endian.LITTLE).decode_32bit_float()
-            return round(float(ret), 3)
+            return self.transformation(ret)
         except ENoCacheRegister:
             return None
 
