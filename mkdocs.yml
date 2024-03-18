@@ -3,7 +3,6 @@ site_description: Unipi controllers API
 repo_url: https://github.com/UniPiTechnology/evok
 theme:
   name: readthedocs
-  highlightjs: true
 plugins:
   - search
   - mkdocstrings:
