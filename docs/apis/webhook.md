@@ -1,19 +1,14 @@
-# EVOK Webhook
+# Evok Webhook API
 
-The Webhook API provides a mechanism for pushing real-time updates to clients.
-Evok sends the changes to the specified hostname and port.
-A list of reflected devices can be defined.
-It is suitable for collecting information about the running of the application.
+The Webhook API provides a mechanism for pushing real-time updates to clients. Evok sends the changes to the specified hostname and port. A list of reflected devices can be defined. It is suitable for collecting information about the running of the application.
 
-#  Examples
+## Examples
 
-For python examples you need installed 'flask' package.
-You can install it with this command: `pip3 install flask`.
+For python examples you need installed 'flask' package. You can install it with this command: `pip3 install flask`.
 
-## Creating simple Webhook server
+### Creating simple Webhook server
 
-### Python:
-```python
+```python title="Python"
 from flask import Flask, request
 import json
 
@@ -29,10 +24,9 @@ if __name__=="__main__":
     app.run(host='127.0.0.1', port=8181)
 ```
 
-This code starts simple webhook server on localhost on port 8181.
-You can configure Evok for sending events on this server.
+This code starts simple webhook server on localhost on port 8181. You can configure Evok for sending events on this server.
 
-### Evok configuration:
+Evok configuration:
 
 For more information see [Evok configuration](../configs/evok_configuration.md).
 
@@ -44,10 +38,11 @@ For more information see [Evok configuration](../configs/evok_configuration.md).
     complex_events: true
 ```
 
-After you change configuration you must restart the Evok with the command `systemctl restart evok`.
+!!! note
 
-### Output:
-```
+    After you change configuration you must restart the Evok with the command `systemctl restart evok`.
+
+```bash title="Output"
  * Serving Flask app 'server'
  * Debug mode: off
 WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.

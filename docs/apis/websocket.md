@@ -1,21 +1,16 @@
-# Websocket EVOK API ([api-doc]())
+# Evok WebSocket API
 
-The WebSocket API allows for two-way communication between the client and server over an open connection.
-Evok sends changes to every connected client.
-A list of reflected devices can be defined.
-It is suitable if you need to immediately react to events in your application.
+The WebSocket API allows for two-way communication between the client and server over an open connection. Evok sends changes to every connected client. A list of reflected devices can be defined. It is suitable if you need to immediately react to events in your application.
 
 WIP
 
-# Examples
+## Examples
 
-For python examples you need installed 'websocket-client' package.
-You can install it with this command: `pip3 install websocket-client`.
+For python examples you need installed 'websocket-client' package. You can install it with this command: `pip3 install websocket-client`.
 
-## Listening on websocket without filter
+### Listening on websocket without filter
 
-### Python:
-```python
+```python title="Python"
 import websocket
 
 
@@ -37,8 +32,7 @@ if __name__ == "__main__":
     ws.run_forever()
 ```
 
-### Output:
-```
+```text title="Output"
 WebSocket connection opened
 Received message: [{"dev": "ai", "circuit": "2_01", "value": 132798232.0, "unit": "Ohm", "glob_dev_id": 3, "mode": "Resistance2W", "modes": {"Disabled": {"value": 0}, "Voltage10": {"value": 1, "unit": "V", "range": [0, 10]}, "Voltage2V5": {"value": 2, "unit": "V", "range": [0, 2.5]}, "Current20m": {"value": 3, "unit": "mA", "range": [0, 20]}, "Resistance3W": {"value": 4, "unit": "Ohm", "range": [0, 1960]}, "Resistance2W": {"value": 5, "unit": "Ohm", "range": [0, 100000]}}, "range": [0, 100000]}]
 Received message: [{"dev": "ai", "circuit": "3_01", "value": -0.004, "unit": "V", "glob_dev_id": 4, "mode": "Voltage10", "modes": {"Disabled": {"value": 0}, "Voltage10": {"value": 1, "unit": "V", "range": [0, 10]}, "Voltage2V5": {"value": 2, "unit": "V", "range": [0, 2.5]}, "Current20m": {"value": 3, "unit": "mA", "range": [0, 20]}, "Resistance3W": {"value": 4, "unit": "Ohm", "range": [0, 1960]}, "Resistance2W": {"value": 5, "unit": "Ohm", "range": [0, 100000]}}, "range": [0, 10]}]
@@ -50,10 +44,9 @@ Received message: [{"dev": "ai", "circuit": "2_04", "value": -0.003, "unit": "V"
 ...
 ```
 
-## Listening on websocket with filter on 'relay' and 'ao'
+### Listening on websocket with filter on 'relay' and 'ao'
 
-### Python:
-```python
+```python title="Python"
 import websocket, json
 
 
@@ -77,8 +70,7 @@ if __name__ == "__main__":
     ws.run_forever()
 ```
 
-### Output:
-```
+```text title="Output"
 WebSocket connection opened
 Received message: [{"dev": "relay", "relay_type": "digital", "circuit": "1_01", "value": 1, "pending": false, "mode": "Simple", "modes": ["Simple", "PWM"], "glob_dev_id": 2, "pwm_freq": 4800.0, "pwm_duty": 0}]
 Received message: [{"dev": "relay", "relay_type": "digital", "circuit": "1_04", "value": 1, "pending": false, "mode": "Simple", "modes": ["Simple", "PWM"], "glob_dev_id": 2, "pwm_freq": 4800.0, "pwm_duty": 0}]
@@ -89,9 +81,11 @@ Received message: [{"dev": "relay", "relay_type": "digital", "circuit": "1_04", 
 ...
 ```
 
-## Setting DO 1_01 on HIGH
-### Python:
-```python
+### Setting DO
+
+DO 1.01 will be set to HIGH.
+
+```python title="Python"
 import websocket, json
 
 
@@ -117,8 +111,7 @@ if __name__ == "__main__":
     ws.run_forever()
 ```
 
-### Output:
-```
+```text title="Output"
 WebSocket connection opened
 WebSocket send RO 1.01 to HIGH
 WebSocket connection closed

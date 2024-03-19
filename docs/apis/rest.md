@@ -1,62 +1,64 @@
-# REST EVOK API ([api-doc]())
+# Evok REST API
 
-The REST API provides a simple interface for sending and receiving data in a stateless, cacheable communications.
-This protocol do not support multiple write in one request.
-It is suitable for hand-make requests.
+The REST API provides a simple interface for sending and receiving data in a stateless, cacheable communications. This protocol do not support multiple write in one request. It is suitable for hand-make requests.
 
 ## Examples
 
-For python examples you need installed 'requests' package.
-You can install it with this command: `pip3 install requests`.
+For python examples you need installed 'requests' package. You can install it with this command: `pip3 install requests`.
 
-## Reading DI 1.01
+### Reading DI
 
-### Python:
-```python
-import requests
+Value of DI 1.01 will be returned.
 
-def get_request(host: str, dev_type: str, circuit: str):
-    url = f"http://{host}/rest/{dev_type}/{circuit}"
-    return requests.get(url=url)
+=== "Python"
 
-if __name__ == '__main__':
-    ret = get_request(host='127.0.0.1', dev_type='input', circuit='1_01')
-    print(ret.json())
-```
+    ```python
+    import requests
 
-### Curl:
-```bash
-curl --request GET --url 'http://127.0.0.1/rest/input/1_01/'
-```
+    def get_request(host: str, dev_type: str, circuit: str):
+        url = f"http://{host}/rest/{dev_type}/{circuit}"
+        return requests.get(url=url)
 
-### Output:
-```
+    if __name__ == '__main__':
+        ret = get_request(host='127.0.0.1', dev_type='input', circuit='1_01')
+        print(ret.json())
+    ```
+
+=== "curl"
+
+    ```bash
+    curl --request GET --url 'http://127.0.0.1/rest/input/1_01/'
+    ```
+
+```rs title="Output"
 {"dev": "input", "circuit": "1_01", "value": 0, "debounce": 50, "counter_modes": ["Enabled", "Disabled"], "counter_mode": "Enabled", "counter": 0, "mode": "Simple", "modes": ["Simple", "DirectSwitch"], "glob_dev_id": 2}
 ```
 
+### Setting DO
 
-## Setting DO 1.01 to HIGH
+DO 1.01, 1.02, 1.03, 1.04 will be set to HIGH.
 
-### Python:
-```python
-import requests
+=== "Python"
 
-def send_request(host: str, dev_type: str, circuit: str, value: bool):
-    url = f"http://{host}/rest/{dev_type}/{circuit}"
-    data = {'value': str(int(value))}
-    return requests.post(url=url, data=data)
+    ```python
+    import requests
 
-if __name__ == '__main__':
-    ret = send_request(host='127.0.0.1', dev_type='relay', circuit='1_01', value=True)
-    print(ret.json())
-```
+    def send_request(host: str, dev_type: str, circuit: str, value: bool):
+        url = f"http://{host}/rest/{dev_type}/{circuit}"
+        data = {'value': str(int(value))}
+        return requests.post(url=url, data=data)
 
-### Curl:
-```bash
-curl --request POST --url 'http://127.0.0.1/rest/relay/1_01/' --data 'value=1'
-```
+    if __name__ == '__main__':
+        ret = send_request(host='127.0.0.1', dev_type='relay', circuit='1_01', value=True)
+        print(ret.json())
+    ```
 
-### Output:
-```
+=== "curl"
+
+    ```bash
+    curl --request POST --url 'http://127.0.0.1/rest/relay/1_01/' --data 'value=1'
+    ```
+
+```rs title="Output"
 {"success": true, "result": {"dev": "relay", "relay_type": "digital", "circuit": "1_01", "value": 1, "pending": false, "mode": "Simple", "modes": ["Simple", "PWM"], "glob_dev_id": 2, "pwm_freq": 4800.0, "pwm_duty": 0}}
 ```

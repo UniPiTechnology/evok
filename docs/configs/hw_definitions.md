@@ -1,67 +1,34 @@
 # HW definitions
 
-HW definitions is in '/etc/evok/hw_definitions/'.
-Each file represents one modbus device.
+HW definitions is in '/etc/evok/hw_definitions/'. Each file represents one modbus device.
 
-# File structure
+## File structure
 
-## type
-The device code, which is then entered into the evok configuration.
-Ideally, it matches the file name.
+Name of the file is the device code, which is then entered into the Evok configuration.
 
-## modbus_register_blocks
+### modbus_register_blocks
 
-Contains a list of modbus register groups.
-These registers must be placed consecutively.
-When reading the device, it is read in one command.
-Each element contains the following parameters:
+Contains a list of modbus register groups. These registers must be placed consecutively. When reading the device, it is read in one command. Each element contains the following parameters:
+
 - start_reg
 - count
-- frequency
+- frequency - represents the number by which the frequency is divided. The actual frequency is then entered separately for each device. Learn more in [Evok configuration](./evok_configuration.md).
+- type - register type, defaults to `holding`.
 
-The default register type is 'holding'.
-You can change the register type to 'input' by setting the parameter 'type' to 'input'.
-The frequency parameter represents the number by which the frequency is divided.
-The actual frequency is then entered separately for each device.
-Learn more in [Evok configuration](./evok_configuration.md).
+### modbus_features
 
+Contains a list of devices and their required parameters. Each element contains the following parameters:
 
-### Example:
-```yaml
-modbus_register_blocks:
-  - start_reg   : 0
-    count       : 2
-    frequency   : 1
-  - start_reg   : 2
-    count       : 3
-    frequency   : 10
-  - start_reg   : 5
-    count       : 16
-    frequency   : 1
-  - start_reg   : 1000
-    count       : 32
-    frequency   : 5
-```
+- type - device type, supported devices are listed below.
+- count - number of devicesof the type, register addresses incremented based on this number
 
-## modbus_features
-Contains a list of devices and their required parameters.
-Each element contains the following parameters:
+Other commands depend on the specific type of device.
 
-- type
-  - Specify device type
-  - You can find the supported device types below.
-- count
-  - Specifies the number of devices of this type.
-  - Register addresses are incremented based on this number.
-- ...
-  - Other commands depend on the specific type of device.
+### Example
 
-## Example
 ```yaml
 ---
-# Type is the name in your device as it is in evok.conf (the filename is not meaningful, as long as it ends in .yaml and is placed in the "/etc/hw_definitions/" folder)
-type: CUSTOM_MODBUS_DEVICE
-# This key defines which Modbus registers will be periodically read. Each block (also sometimes referred to as "group") is read once ever ["frequency"] read cycles
+# This key defines which Modbus registers will be periodically read. Each block (also sometimes referred to as "group") is read once every ["frequency"] read cycles
 modbus_register_blocks:
   - board_index : 1
     start_reg   : 0
@@ -71,10 +38,12 @@ modbus_register_blocks:
     start_reg   : 500
     count       : 8
     frequency   : 10
+    type        : input
   - board_index : 1
     start_reg   : 508
     count       : 8
     frequency   : 50
+
 # This defines the devices mapped to the registers above. As custom devices are very unlikely to support any Neuron features, the only devices which should be mapped are "REGISTER"s
 modbus_features:
   - type        : REGISTER
@@ -87,29 +56,29 @@ modbus_features:
     start_reg     : 500
 ```
 
-## Supported device types:
+### Supported device types
 
-### DO
+#### DO (digital output)
 
-Digital output.
+##### Parameters
 
-#### Parameters:
-  - val_reg
+- val_reg
     - Value register address
     - bitmask
-  - pwm_reg
+- pwm_reg
     - PWM duty register address
-  - pwm_ps_reg
+- pwm_ps_reg
     - PWM prescale register address
-  - pwm_c_reg
+- pwm_c_reg
     - PWM cycle register address
-  - val_coil
+- val_coil
     - DO coil address
-  - modes
+- modes
     - List of available DO modes
     - Supported: [Simple, PWM]
 
-#### Example:
+##### Example
+
 ```yaml
   - type        : DO
     count       : 4
@@ -123,18 +92,18 @@ Digital output.
     pwm_c_reg   : 1018
 ```
 
-### RO
+#### RO (relay output)
 
-Relay output.
+##### Parameters
 
-#### Parameters:
-  - val_reg
+- val_reg
     - Value register address
     - bitmask
-  - val_coil
+- val_coil
     - RO coil address
 
-#### Example:
+##### Example
+
 ```yaml
   - type        : RO
     count       : 5
@@ -142,33 +111,33 @@ Relay output.
     val_coil    : 0
 ```
 
-### DI
+#### DI (Digital input)
 
-Digital input.
+##### Parameters
 
-#### Parameters:
-  - val_reg
+- val_reg
     - Value register address
     - bitmask
-  - counter_reg
+- counter_reg
     - Counter register address
     - Double register
-  - deboun_reg
+- deboun_reg
     - Debounce register address
-  - modes
+- modes
     - List of available DI modes
     - Supported: [Simple, DirectSwitch]
-  - ds_modes
+- ds_modes
     - List of available direct switch modes
     - Supported: [Simple, Inverted, Toggle]
-  - direct_reg
+- direct_reg
     - Direct switch register address
-  - polar_reg
+- polar_reg
     - Polarity register address
-  - toggle_reg
+- toggle_reg
     - Toggle register address
 
-#### Example:
+##### Example
+
 ```yaml
   - type        : DI
     count       : 4
@@ -187,24 +156,24 @@ Digital input.
     toggle_reg  : 1018
 ```
 
-### AO
+#### AO (analog output)
 
-Analog output.
+##### Parameters
 
-#### Parameters:
-  - val_reg
+- val_reg
     - Value register address
-  - modes 
+- modes
     - List of available modes
     - Every mode must define following parameters:
-      - unit
-        - Measure unit
-      - range
-        - Min and max measure values define in array
-  - mode_reg
+        - unit
+            - Measure unit
+        - range
+            - Min and max measure values define in array
+- mode_reg
     - Mode register address
 
-#### Example:
+##### Example
+
 ```yaml
   - type        : AO
     count       : 4
@@ -217,26 +186,26 @@ Analog output.
     val_reg     : 2
 ```
 
-### AI
+#### AI (analog input)
 
-Analog input.
+##### Parameters
 
-#### Parameters:
 - val_reg
-  - Value register address
+    - Value register address
 - mode_reg
     - Mode register address
 - modes
-  - List of available modes
-  - Every mode must define following parameters:
-    - value
-      - Value in mode_reg
-    - unit
-      - Measure unit
-    - range
-      - Min and max measure values define in array
+    - List of available modes
+    - Every mode must define following parameters:
+        - value
+            - Value in mode_reg
+        - unit
+            - Measure unit
+        - range
+            - Min and max measure values define in array
 
-#### Example:
+##### Example
+
 ```yaml
 - type        : AI
   count       : 4
@@ -267,21 +236,21 @@ Analog input.
       range: [0, 100000]
 ```
 
-### WD
+#### WD (watchdog)
 
-Watchdog
+##### Parameters
 
-#### Parameters:
 - val_reg
-  - Value register address
+    - Value register address
 - timeout_reg
-  - timeout register address
+    - timeout register address
 - nv_save_coil
     - nv save coil address
 - reset_coil
     - reset coil address
 
-#### Example:
+##### Example
+
 ```yaml
   - type        : WD
     count       : 1
@@ -291,37 +260,37 @@ Watchdog
     reset_coil  : 1002
 ```
 
-### REGISTER
+#### REGISTER (Modbus register)
 
-Modbus register
+##### Parameters
 
-#### Parameters:
 - start_reg
-  - Start modbus register address
+    - Start modbus register address
 
-#### Example:
+##### Example
+
 ```yaml
   - type        : REGISTER
     count       : 21
     start_reg   : 0
 ```
 
-### UNIT_REGISTER
+#### UNIT_REGISTER (Modbus unit register)
 
-Modbus unit register
+##### Parameters
 
-#### Parameters:
 - name
-  - Value name
+    - Value name
 - unit
-  - Value unit
+    - Value unit
 - value_reg
-  - Value register address
+    - Value register address
 - datatype
-  - value data type
-  - supported: [null, float32]
+    - value data type
+    - supported: [null, float32]
 
-#### Example:
+##### Example
+
 ```yaml
 - type        : UNIT_REGISTER
   name        : "temperature"
