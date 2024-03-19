@@ -32,7 +32,7 @@ For python examples you need installed 'requests' package. You can install it wi
 {"dev": "input", "circuit": "1_01", "value": 0, "debounce": 50, "counter_modes": ["Enabled", "Disabled"], "counter_mode": "Enabled", "counter": 0, "mode": "Simple", "modes": ["Simple", "DirectSwitch"], "glob_dev_id": 2}
 ```
 
-### Setting DO to HIGH
+### Setting DO
 
 === "Python"
 

@@ -81,7 +81,7 @@ Received message: [{"dev": "relay", "relay_type": "digital", "circuit": "1_04", 
 ...
 ```
 
-### Setting DO to HIGH
+### Setting DO
 
 ```python title="Python"
 import websocket, json
