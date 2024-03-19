@@ -18,6 +18,9 @@ markdown_extensions:
   - markdown_include.include:
       base_path: docs
   - admonition
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
 nav:
   - Installation: installation.md
   - Available APIs: apis.md

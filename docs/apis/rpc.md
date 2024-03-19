@@ -8,9 +8,7 @@ For python examples you need installed 'requests' package. You can install it wi
 
 ### Reading DI
 
-Python:
-
-```python
+```python  title="Python"
 import requests
 
 payload = {
@@ -25,17 +23,13 @@ response = requests.post(url, json=payload).json()
 print(response)
 ```
 
-Output:
-
-```rs
+```rs title="Output"
 {'jsonrpc': '2.0', 'id': 0, 'result': [0, 50]}
 ```
 
 ### Setting DO 1.01
 
-Python:
-
-```python
+```python  title="Python"
 import requests
 
 payload = {
@@ -50,8 +44,6 @@ response = requests.post(url, json=payload).json()
 print(response)
 ```
 
-Output:
-
-```rs
+```rs title="Output"
 {'jsonrpc': '2.0', 'id': 0, 'result': 1}
 ```
