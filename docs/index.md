@@ -18,3 +18,5 @@ Besides that, Evok also supports sending notifications via webhook.
 [PATRON]:https://www.unipi.technology/products/unipi-patron-374
 [GATE]:https://www.unipi.technology/products/unipi-gate-388
 [Unipi 1.1]:https://www.unipi.technology/products/unipi-1-1-1-1-lite-19?categoryId=1
+[Extension modules]:https://www.unipi.technology/products?category=32
+[Unipi technology]:https://www.unipi.technology/
