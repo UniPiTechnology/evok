@@ -68,19 +68,19 @@ modbus_features:
 ##### Parameters
 
 - val_reg
-  - Value register address
-  - bitmask
+    - Value register address
+    - bitmask
 - pwm_reg
-  - PWM duty register address
+    - PWM duty register address
 - pwm_ps_reg
-  - PWM prescale register address
+    - PWM prescale register address
 - pwm_c_reg
-  - PWM cycle register address
+    - PWM cycle register address
 - val_coil
-  - DO coil address
+    - DO coil address
 - modes
-  - List of available DO modes
-  - Supported: [Simple, PWM]
+    - List of available DO modes
+    - Supported: [Simple, PWM]
 
 ##### Example
 
@@ -102,10 +102,10 @@ modbus_features:
 ##### Parameters
 
 - val_reg
-  - Value register address
-  - bitmask
+    - Value register address
+    - bitmask
 - val_coil
-  - RO coil address
+    - RO coil address
 
 ##### Example
 
@@ -121,25 +121,25 @@ modbus_features:
 ##### Parameters
 
 - val_reg
-  - Value register address
-  - bitmask
+    - Value register address
+    - bitmask
 - counter_reg
-  - Counter register address
-  - Double register
+    - Counter register address
+    - Double register
 - deboun_reg
-  - Debounce register address
+    - Debounce register address
 - modes
-  - List of available DI modes
-  - Supported: [Simple, DirectSwitch]
+    - List of available DI modes
+    - Supported: [Simple, DirectSwitch]
 - ds_modes
-  - List of available direct switch modes
-  - Supported: [Simple, Inverted, Toggle]
+    - List of available direct switch modes
+    - Supported: [Simple, Inverted, Toggle]
 - direct_reg
-  - Direct switch register address
+    - Direct switch register address
 - polar_reg
-  - Polarity register address
+    - Polarity register address
 - toggle_reg
-  - Toggle register address
+    - Toggle register address
 
 ##### Example
 
@@ -166,16 +166,16 @@ modbus_features:
 ##### Parameters
 
 - val_reg
-  - Value register address
+    - Value register address
 - modes
-  - List of available modes
-  - Every mode must define following parameters:
-    - unit
-      - Measure unit
-    - range
-      - Min and max measure values define in array
+    - List of available modes
+    - Every mode must define following parameters:
+        - unit
+            - Measure unit
+        - range
+            - Min and max measure values define in array
 - mode_reg
-  - Mode register address
+    - Mode register address
 
 ##### Example
 
@@ -196,18 +196,18 @@ modbus_features:
 ##### Parameters
 
 - val_reg
-  - Value register address
+    - Value register address
 - mode_reg
-  - Mode register address
+    - Mode register address
 - modes
-  - List of available modes
-  - Every mode must define following parameters:
-    - value
-      - Value in mode_reg
-    - unit
-      - Measure unit
-    - range
-      - Min and max measure values define in array
+    - List of available modes
+    - Every mode must define following parameters:
+        - value
+            - Value in mode_reg
+        - unit
+            - Measure unit
+        - range
+            - Min and max measure values define in array
 
 ##### Example
 
@@ -246,13 +246,13 @@ modbus_features:
 ##### Parameters
 
 - val_reg
-  - Value register address
+    - Value register address
 - timeout_reg
-  - timeout register address
+    - timeout register address
 - nv_save_coil
-  - nv save coil address
+    - nv save coil address
 - reset_coil
-  - reset coil address
+    - reset coil address
 
 ##### Example
 
@@ -270,7 +270,7 @@ modbus_features:
 ##### Parameters
 
 - start_reg
-  - Start modbus register address
+    - Start modbus register address
 
 ##### Example
 
@@ -285,14 +285,14 @@ modbus_features:
 ##### Parameters
 
 - name
-  - Value name
+    - Value name
 - unit
-  - Value unit
+    - Value unit
 - value_reg
-  - Value register address
+    - Value register address
 - datatype
-  - value data type
-  - supported: [null, float32]
+    - value data type
+    - supported: [null, float32]
 
 ##### Example
 
