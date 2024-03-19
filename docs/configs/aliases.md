@@ -24,6 +24,8 @@ For python examples you need to have installed `requests` package. You can insta
 
 ### Setting alias for DO
 
+DO 1_01 will be called my_relay.
+
 === "Python"
 
     ```python
@@ -50,6 +52,8 @@ For python examples you need to have installed `requests` package. You can insta
 ```
 
 ### Removing alias for DO
+
+Alias of DO 1_01 will be removed.
 
 === "Python"
 

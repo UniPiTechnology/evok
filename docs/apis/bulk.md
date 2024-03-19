@@ -8,6 +8,8 @@ For python examples you need installed 'requests' package. You can install it wi
 
 ### Setting DOs to HIGH
 
+DO 1.01, 1.02, 1.03, 1.04 will be set to HIGH.
+
 ```python title="Python"
 import requests
 
@@ -26,6 +28,8 @@ print(requests.post(url, json=payload).json())
 ```
 
 ### Setting DOs to LOW
+
+DO 1.01, 1.02, 1.03, 1.04 will be set to LOW.
 
 ```python title="Python"
 import requests

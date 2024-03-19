@@ -83,6 +83,8 @@ Received message: [{"dev": "relay", "relay_type": "digital", "circuit": "1_04", 
 
 ### Setting DO
 
+DO 1.01 will be set to HIGH.
+
 ```python title="Python"
 import websocket, json
 

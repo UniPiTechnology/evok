@@ -8,6 +8,8 @@ For python examples you need installed 'requests' package. You can install it wi
 
 ### Reading DI
 
+Value of DI 1.01 will be returned.
+
 === "Python"
 
     ```python
@@ -33,6 +35,8 @@ For python examples you need installed 'requests' package. You can install it wi
 ```
 
 ### Setting DO
+
+DO 1.01, 1.02, 1.03, 1.04 will be set to HIGH.
 
 === "Python"
 

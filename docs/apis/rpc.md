@@ -8,6 +8,8 @@ For python examples you need installed 'requests' package. You can install it wi
 
 ### Reading DI
 
+Value of DI 1.01 will be returned.
+
 ```python  title="Python"
 import requests
 
@@ -28,6 +30,8 @@ print(response)
 ```
 
 ### Setting DO
+
+DO 1.01 will be set to HIGH.
 
 ```python  title="Python"
 import requests
