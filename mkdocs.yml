@@ -1,11 +1,17 @@
 site_name: Evok documentation
-site_description: Unipi controllers API
+site_url: https://evok.readthedocs.io/
+site_author: Unipi technology
+site_description: API of Unipi controllers
+copyright: Copyright &copy; 2014 - 2024 Unipi technology
 repo_url: https://github.com/UniPiTechnology/evok
 theme:
+  icon:
+    repo: fontawesome/brands/github
   name: material
   features:
     - content.action.edit
     - navigation.expand
+    - navigation.footer
     - navigation.instant
     - navigation.instant.progress
     - search.suggest
@@ -13,6 +19,7 @@ theme:
 
 plugins:
   - search
+  - privacy
 
 markdown_extensions:
   - markdown_include.include:
@@ -21,18 +28,25 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/UniPiTechnology
+
 nav:
+  - Introduction: index.md
   - Installation: installation.md
-  - Available APIs: apis.md
-  - Debugging: debugging.md
   - Configuration:
     - General: configs/evok_configuration.md
     - Aliases: configs/aliases.md
     - HW definitions: configs/hw_definitions.md
-  - API details:
+  - Available APIs: apis.md
+  - API examples:
       - Bulk: apis/bulk.md
       - JSON: apis/json.md
       - REST: apis/rest.md
       - RPC: apis/rpc.md
       - Webhook: apis/webhook.md
       - WebSocket: apis/websocket.md
+  - Debugging: debugging.md
