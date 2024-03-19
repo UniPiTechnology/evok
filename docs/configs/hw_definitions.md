@@ -4,9 +4,7 @@ HW definitions is in '/etc/evok/hw_definitions/'. Each file represents one modbu
 
 ## File structure
 
-### type
-
-The device code, which is then entered into the Evok configuration. Ideally, it matches the file name.
+Name of the file is the device code, which is then entered into the Evok configuration.
 
 ### modbus_register_blocks
 
@@ -15,7 +13,7 @@ Contains a list of modbus register groups. These registers must be placed consec
 - start_reg
 - count
 - frequency - represents the number by which the frequency is divided. The actual frequency is then entered separately for each device. Learn more in [Evok configuration](./evok_configuration.md).
-- <type\> - register type, defaults to `holding`.
+- type - register type, defaults to `holding`.
 
 ### modbus_features
 
@@ -30,9 +28,6 @@ Other commands depend on the specific type of device.
 
 ```yaml
 ---
-# Type is the name in your device as in evok.conf (the filename is not meaningful, it has to be .yaml file and be placed in the "/etc/hw_definitions/" folder)
-type: CUSTOM_MODBUS_DEVICE
-
 # This key defines which Modbus registers will be periodically read. Each block (also sometimes referred to as "group") is read once every ["frequency"] read cycles
 modbus_register_blocks:
   - board_index : 1

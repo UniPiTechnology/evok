@@ -22,7 +22,7 @@ Aliases can be set in a total of 3 ways:
 
 For python examples you need to have installed `requests` package. You can install it with command `pip3 install requests`.
 
-### Setting alias DO 1_01 to my_relay
+### Setting alias for DO
 
 === "Python"
 
@@ -49,7 +49,7 @@ For python examples you need to have installed `requests` package. You can insta
 {'success': True, 'result': {'dev': 'relay', 'relay_type': 'digital', 'circuit': '1_01', 'value': 1, 'pending': False, 'mode': 'Simple', 'modes': ['Simple', 'PWM'], 'glob_dev_id': 2, 'pwm_freq': 4800.0, 'pwm_duty': 0, 'alias': 'my_relay'}}
 ```
 
-### Remove alias for DO 1_01
+### Removing alias for DO
 
 === "Python"
 

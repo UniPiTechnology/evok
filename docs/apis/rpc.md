@@ -27,7 +27,7 @@ print(response)
 {'jsonrpc': '2.0', 'id': 0, 'result': [0, 50]}
 ```
 
-### Setting DO 1.01
+### Setting DO
 
 ```python  title="Python"
 import requests

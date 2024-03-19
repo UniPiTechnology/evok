@@ -6,7 +6,7 @@ The REST API provides a simple interface for sending and receiving data in a sta
 
 For python examples you need installed 'requests' package. You can install it with this command: `pip3 install requests`.
 
-### Reading DI 1.01
+### Reading DI
 
 === "Python"
 
