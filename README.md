@@ -1,6 +1,6 @@
-# EVOK - the Unipi API
+# Evok - the Unipi API
 
-EVOK is the primary API for accessing I/Os of [NEURON], [PATRON], [GATE] and [Unipi 1.1] devices including [Extension modules] by [Unipi technology].
+Evok is the primary API for accessing I/Os of [NEURON], [PATRON], [GATE] and [Unipi 1.1] devices including [Extension modules] by [Unipi technology].
 
 It provides multiple ways to easily access the I/Os of the devices, including:
 
@@ -10,25 +10,13 @@ It provides multiple ways to easily access the I/Os of the devices, including:
 - WebSocket API
 - JSON-RPC API
 
-Besides that, EVOK also supports sending notifications via webhook.
+Besides that, Evok also supports sending notifications via webhook.
 
 [evok-web] is a simple demo web application using Evok demonstrating its usage and allowing easy control of the devices configured in Evok.
 
-## Getting started
+## Documentation
 
-- [Installation instructions](./docs/installation.md) - How to install evok on Unipi controllers
-- [Debugging](./docs/debugging.md) - How to debug evok
-- [APIs](./docs/apis.md) - List of supported evok APIs
-  - [REST API](./docs/apis/rest.md)
-  - [JSON API](./docs/apis/json.md)
-  - [BULK API](./docs/apis/bulk.md)
-  - [Websocket](./docs/apis/websocket.md)
-  - [RPC API](./docs/apis/rpc.md)
-  - [Webhook](./docs/apis/webhook.md)
-- Configurations:
-  - [Evok configuration](./docs/configs/evok_configuration.md) - How to configure Evok devices and APIs
-  - [HW definitions](./docs/configs/hw_definitions.md) - How to configure Modbus map definitions
-  - [Aliases](./docs/configs/aliases.md) - How Evok aliases works
+Evok documentation can be found [here](https://evok.readthedocs.io/)
 
 ## Major changes between Evok v2 and v3
 
