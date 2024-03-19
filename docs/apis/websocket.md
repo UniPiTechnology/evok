@@ -89,7 +89,7 @@ Received message: [{"dev": "relay", "relay_type": "digital", "circuit": "1_04", 
 ...
 ```
 
-### Setting DO 1_01 on HIGH
+### Setting DO
 
 Python:
 

@@ -34,7 +34,7 @@ Output:
 {"dev": "input", "circuit": "1_01", "value": 0, "debounce": 50, "counter_modes": ["Enabled", "Disabled"], "counter_mode": "Enabled", "counter": 0, "mode": "Simple", "modes": ["Simple", "DirectSwitch"], "glob_dev_id": 2}
 ```
 
-### Setting DO 1.01 to HIGH
+### Setting DO
 
 Python:
 

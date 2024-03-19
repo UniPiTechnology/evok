@@ -6,7 +6,7 @@ The BULK API is designed to provide an efficient way for clients to update, crea
 
 For python examples you need installed 'requests' package. You can install it with this command: `pip3 install requests`.
 
-### Set DO 1.01, 1.02, 1.03, 1.04 to HIGH
+### Setting DOs to HIGH
 
 Python:
 
@@ -29,7 +29,7 @@ Output:
 {'individual_assignments': [{'dev': 'relay', 'relay_type': 'digital', 'circuit': '1_01', 'value': 0, 'pending': False, 'mode': 'Simple', 'modes': ['Simple', 'PWM'], 'glob_dev_id': 2, 'pwm_freq': 4800.0, 'pwm_duty': 0}, {'dev': 'relay', 'relay_type': 'digital', 'circuit': '1_02', 'value': 0, 'pending': False, 'mode': 'Simple', 'modes': ['Simple', 'PWM'], 'glob_dev_id': 2, 'pwm_freq': 4800.0, 'pwm_duty': 0}, {'dev': 'relay', 'relay_type': 'digital', 'circuit': '1_03', 'value': 0, 'pending': False, 'mode': 'Simple', 'modes': ['Simple', 'PWM'], 'glob_dev_id': 2, 'pwm_freq': 4800.0, 'pwm_duty': 0}, {'dev': 'relay', 'relay_type': 'digital', 'circuit': '1_04', 'value': 0, 'pending': False, 'mode': 'Simple', 'modes': ['Simple', 'PWM'], 'glob_dev_id': 2, 'pwm_freq': 4800.0, 'pwm_duty': 0}]}
 ```
 
-### Set DO 1.01, 1.02, 1.03, 1.04 to LOW
+### Setting DOs to LOW
 
 Python:
 
