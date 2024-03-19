@@ -12,8 +12,10 @@ In this section you can configure address and port for APIs listening. This sett
 - [RPC](../apis/rpc.md)
 - [Webhook](../apis/webhook.md)
 - [WebSocket](../apis/websocket.md)
-  
-More detailed settings of individual protocols can be found in separate sections.
+
+!!! info
+
+    More detailed settings of individual protocols can be found in separate sections.
 
 ### Websocket
 

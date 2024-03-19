@@ -8,7 +8,9 @@ There are several restrictions to aliases:
 - Aliases can only contain alphanumeric characters, underscores and dashes. This is to allow devices to address via the alias using the APIs (i.e. setting an alias for a `relay 1_01` to `bedroom_light` will allow it to be addressed both as `/rest/relay/al_bedroom_light` as well as `/rest/relay/1_01`)
 - Invalid aliases will be rejected by the API, with the previous alias remaining.
 
-The set aliases are initially stored only in the RAM, after 5 minutes they will be permanently saved to flash. Saving of all set aliases can be done by calling `/run/alias`.
+!!! warning
+
+    The set aliases are initially stored only in the RAM, after 5 minutes they will be permanently saved to flash. Saving of all set aliases can be done by calling `/run/alias`.
 
 Aliases can be set in a total of 3 ways:
 

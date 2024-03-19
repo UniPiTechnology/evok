@@ -38,7 +38,9 @@ For more information see [Evok configuration](../configs/evok_configuration.md).
     complex_events: true
 ```
 
-After you change configuration you must restart the Evok with the command `systemctl restart evok`.
+!!! note
+
+    After you change configuration you must restart the Evok with the command `systemctl restart evok`.
 
 ```bash title="Output"
  * Serving Flask app 'server'

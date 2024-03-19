@@ -6,7 +6,7 @@ The latest images for Unipi controllers, including those with Evok pre-installed
 
 All necessary APT Unipi repositories are already preconfigured in the OS images. Therefore, all that's required is to login to the controller via SSH. The default username for our images is "unipi" and the default password is "unipi.technology".
 
-```bash
+```bash title="Installing Evok"
 sudo su
 apt-get update
 apt-get install -y evok
@@ -52,14 +52,14 @@ reboot
 
 ## Uninstallation
 
-To uninstall Evok please remove the `evok` package using the following apt command
-
-```bash
+```bash title="Uninstalling Evok"
 sudo apt-get remove evok
 reboot
 ```
 
-Note that after uninstalling Evok you have to reboot your device to ensure all the files and settings are gone.
+!!! note
+
+    After uninstalling Evok, you have to reboot your device to ensure all the files and settings are gone.
 
 ----
 

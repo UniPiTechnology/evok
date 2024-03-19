@@ -10,4 +10,6 @@ systemctl stop evok
 /opt/evok/bin/evok -d
 ```
 
-You can examine or copy the output.
+!!! success
+
+    You can examine or copy the output.
