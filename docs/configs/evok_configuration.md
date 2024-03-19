@@ -1,6 +1,6 @@
-# EVOK configuration
+# Evok configuration
 
-Evok configuration is in '/etc/evok/config.yaml'. The default configuration is installed using the debian package. To apply the configuration, it is necessary to restart evok with the command `systemctl restart evok`.
+Evok configuration is located in `/etc/evok/config.yaml`. The default configuration is installed by the debian package. To apply the configuration, it is necessary to restart Evok with the command `systemctl restart evok`.
 
 ## API settings
 
@@ -10,29 +10,27 @@ In this section you can configure address and port for APIs listening. This sett
 - [JSON](../apis/json.md)
 - [BULK](../apis/bulk.md)
 - [RPC](../apis/rpc.md)
-- [Websocket](../apis/websocket.md)
+- [Webhook](../apis/webhook.md)
+- [WebSocket](../apis/websocket.md)
   
 More detailed settings of individual protocols can be found in separate sections.
 
-- Websocket
-  - enabled
-    - Options: true / false
-    - For enable/disable websocket API
-  - all_filtered
-    - Options: true / false
-    - 'All' WebSocket requests will be subject to the filtering set by 'filter'
+### Websocket
 
-- Webhook
-  - enabled
+- enabled - to enable/disable websocket API
+    - options: true / false
+- all_filtered - 'all' WebSocket requests will be subject to the filtering set by 'filter'
     - Options: true / false
-    - For enable/disable webhook notifications
-  - address
-    - Address (with port) to which notifications should be sent
-  - device_mask
+
+### Webhook
+
+- enabled - to enable/disable webhook notifications
+    - Options: true / false
+- address - address (with port) to which notifications should be sent
+- device_mask
     - Address (with port) to which notifications should be sent
     - List of device types to notify on (written as a JSON list)
-  - complex_events
-    - EVOK will send POST requests with the same data as WebSocket, rather than an empty GET request
+- complex_events - Evok will send POST requests with the same data as WebSocket, rather than an empty GET request
 
 ## Hardware configuration
 
@@ -50,19 +48,19 @@ comm_channels:
         scan_frequency: 50
 ```
 
-- <bus_name\>: Your choice, but cannot be duplicates!
+- <bus_name\>: Your choice, but can not have duplicates!
 - <bus_type\>:
-  - MODBUSTCP (specific settings: [hostname, port])
-  - MODBUSRTU (specific settings: [port, boudrate, parity])
-- <device_name\>: Under this name, the device will be available in the API. Cannot be duplicates!
+    - MODBUSTCP (specific settings: [hostname, port])
+    - MODBUSRTU (specific settings: [port, boudrate, parity])
+- <device_name\>: Under this name, the device will be available in the API. Can not have duplicates!
 - <model_id\>:
-  - Defines a modbus register map.
-  - Source is in '.yaml' files in '/etc/evok/hw_definitions'.
-  - examples: xS51, xS11,
-  - For more information see [hw_definitions](./hw_definitions.md).
+    - Defines a modbus register map.
+    - Source is located in '.yaml' files in '/etc/evok/hw_definitions'.
+    - examples: xS51, xS11,
+    - For more information see [hw_definitions](./hw_definitions.md).
 - scan_frequency:
-  - An optional parameter that determines how often values are read from the device.
-  - Default value is 50.
+    - An optional parameter that determines how often values are read from the device.
+    - Default value is 50.
 
 ### Examples
 
@@ -97,7 +95,7 @@ TCP_EXT:
 
 ## Autogen
 
-If the Debian package 'unipi-os-configurator' is installed, Evok can automatically create the hardware configuration for the running device. You can enable this feature with `autogen: true` in config. When this feature is enabled, Evok includes the file '/etc/evok/autogen.yaml'. This file contains the hardware configuration of the running device. 'unipi-os-configurator' generates this file if a hardware change has been detected. You can force the creation of this file using the command:
+If the Debian package `unipi-os-configurator` is installed, Evok can automatically create the hardware configuration for the running device. You can enable this feature with `autogen: true` in config. If this feature is enabled, Evok includes the file `/etc/evok/autogen.yaml`. This file contains the hardware configuration of the running device. `unipi-os-configurator` generates this file if a hardware change has been detected. You can force the creation of this file using the command:
 
 ```bash
 /opt/unipi/tools/os-configurator -f

@@ -1,4 +1,4 @@
-# EVOK APIs
+# Evok APIs
 
 For more information see our api documentation at [api-docs].
 

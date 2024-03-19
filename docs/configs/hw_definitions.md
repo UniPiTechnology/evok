@@ -6,7 +6,7 @@ HW definitions is in '/etc/evok/hw_definitions/'. Each file represents one modbu
 
 ### type
 
-The device code, which is then entered into the evok configuration. Ideally, it matches the file name.
+The device code, which is then entered into the Evok configuration. Ideally, it matches the file name.
 
 ### modbus_register_blocks
 

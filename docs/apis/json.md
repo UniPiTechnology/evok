@@ -1,4 +1,4 @@
-# JSON EVOK API
+# Evok JSON API
 
 The JSON API provides a simple interface for sending and receiving data in a stateless, cacheable communications. This protocol do not support multiple write in one request. It is suitable for automated requests thanks JSON protocol, which is better machine-processed.
 

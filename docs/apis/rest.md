@@ -1,4 +1,4 @@
-# REST EVOK API
+# Evok REST API
 
 The REST API provides a simple interface for sending and receiving data in a stateless, cacheable communications. This protocol do not support multiple write in one request. It is suitable for hand-make requests.
 

@@ -1,4 +1,4 @@
-# EVOK aliases
+# Evok aliases
 
 It is possible to set aliases to devices, so they have more describing permanent names.
 
