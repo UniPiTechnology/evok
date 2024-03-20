@@ -291,18 +291,17 @@ class Board(object):
         return await self.full()
 
     async def initialise_cache(self, cache_definition):
-        if cache_definition and (self.modbus_slave.device_model == cache_definition['type']):
-            if 'modbus_register_blocks' in cache_definition:
-                if self.modbus_slave.modbus_cache_map == None:
-                    self.modbus_slave.modbus_cache_map = ModbusCacheMap(cache_definition['modbus_register_blocks'], self.modbus_slave)
-                    await self.modbus_slave.modbus_cache_map.do_scan(initial=True, slave=self.modbus_address)
-                    await self.modbus_slave.modbus_cache_map.sem.acquire()
-                    self.modbus_slave.modbus_cache_map.sem.release()
-                else:
-                    await self.modbus_slave.modbus_cache_map.sem.acquire()
-                    self.modbus_slave.modbus_cache_map.sem.release()
+        if 'modbus_register_blocks' in cache_definition:
+            if self.modbus_slave.modbus_cache_map is None:
+                self.modbus_slave.modbus_cache_map = ModbusCacheMap(cache_definition['modbus_register_blocks'], self.modbus_slave)
+                await self.modbus_slave.modbus_cache_map.do_scan(initial=True, slave=self.modbus_address)
+                await self.modbus_slave.modbus_cache_map.sem.acquire()
+                self.modbus_slave.modbus_cache_map.sem.release()
             else:
-                raise Exception("HW Definition %s requires Modbus register blocks to be specified" % cache_definition['type'])
+                await self.modbus_slave.modbus_cache_map.sem.acquire()
+                self.modbus_slave.modbus_cache_map.sem.release()
+        else:
+            raise Exception("HW Definition %s requires Modbus register blocks to be specified" % cache_definition['type'])
 
     def __register_eventable_device(self, device):
         if hasattr(device, 'check_new_data'):
@@ -443,7 +442,6 @@ class Board(object):
             else:
                 _reg = Register("%s_%d" % (self.circuit, board_val_reg + counter), self, counter, board_val_reg + counter, dev_id=self.dev_id,
                                 major_group=self.major_group, legacy_mode=self.legacy_mode)
-            self.__register_eventable_device(_reg)
             Devices.register_device(REGISTER, _reg)
             counter+=1
 
@@ -1139,7 +1137,7 @@ class UnitRegister():
         return self.value
 
 
-class Register():
+class Register:
     def __init__(self, circuit, arm, post, reg, reg_type="holding", dev_id=0, major_group=0, legacy_mode=True):
         self.alias = ""
         self.devtype = REGISTER
