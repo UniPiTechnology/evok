@@ -2,7 +2,7 @@ openapi: 3.1.0
 x-stoplight:
   id: ilvxmjda44vjf
 info:
-  title: evokero
+  title: Evok
   summary: A web services API for Unipi products
   description: |
     ### <i class="fa-light fa-cubes"></i> Welcome to Evok REST API documentation <i class="fa-light fa-cubes">
@@ -14,7 +14,7 @@ info:
     name: Apache 2.0
     url: 'https://www.apache.org/licenses/LICENSE-2.0.html'
   version: 3.0.1
-  termsOfService: 'https://kb.unipi.technology/cs:sw:02-apis:01-evok?s[]=evok'
+  termsOfService: 'https://evok.readthedocs.io/'
 servers:
   - url: 'http://{unipi_device}:{port}'
     description: Remote Unipi device
@@ -787,11 +787,6 @@ paths:
         - Aliases
         - Generic getters
     parameters:
-      - schema:
-          type: string
-        name: format
-        in: path
-        required: true
       - name: format
         in: path
         required: true
