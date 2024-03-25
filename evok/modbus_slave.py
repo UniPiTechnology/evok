@@ -80,10 +80,12 @@ class ModbusCacheMap(object):
             group[group_index + i] = val.registers[i]
         return val.registers
 
-    async def do_scan(self, slave=0, initial=False):
+    async def do_scan(self, slave=0, initial=False) -> bool:
         if initial:
             await self.sem.acquire()
         changeset = []
+
+        scanned = False
         for m_reg_group in self.modbus_reg_map:
             m_reg_group: dict
             if (self.frequency[m_reg_group['start_reg']] >= m_reg_group['frequency']) or (self.frequency[m_reg_group['start_reg']] == 0):    # only read once for every [frequency] cycles
@@ -113,19 +115,7 @@ class ModbusCacheMap(object):
 
                         # reset communication flags
                         self.last_comm_time = time.time()
-                        if 'original_frequency' in m_reg_group:
-                            m_reg_group['frequency'] = m_reg_group['original_frequency']
-                            m_reg_group.pop('original_frequency')
-
-                except Exception as E:
-                    logger.warning(E)
-                    if 'original_frequency' not in m_reg_group:
-                        m_reg_group['original_frequency'] = int(m_reg_group['frequency'])
-                    elif m_reg_group['frequency'] < 2000:
-                        m_reg_group['frequency'] *= 2
-                        logger.info(f"Slowing down device "
-                                    f"'{self.modbus_slave.modbus_address}:{m_reg_group['start_reg']}': "
-                                    f"{m_reg_group['frequency']}")
+                        scanned = True
                 finally:
                     self.frequency[m_reg_group['start_reg']] = 1
             else:
@@ -136,6 +126,7 @@ class ModbusCacheMap(object):
             devents.status(proxy)
         if initial:
             self.sem.release()
+        return scanned
 
 
 class ModbusSlave(object):
@@ -155,13 +146,14 @@ class ModbusSlave(object):
         self.evok_config = evok_config
         self.do_scanning = False
         self.is_scanning = False
-        self.scanning_error_triggered = False
         self.major_group = major_group
         self.hw_board_dict = {}
         if scan_freq == 0:
-            self.scan_interval = 0
+            self.scan_interval = 0.0001
+            # scan_interval cannot be zero!! (slowing down device)
         else:
             self.scan_interval = 1.0 / scan_freq
+        self.scan_errors = 0
         self.scan_enabled = scan_enabled
         self.versions = []
         self.logfile = evok_config.logging.get("file", "./evok.log")
@@ -221,14 +213,19 @@ class ModbusSlave(object):
             return
         try:
             if self.modbus_cache_map is not None:
-                await self.modbus_cache_map.do_scan(slave=self.modbus_address)
-                self.scanning_error_triggered = False
+                if await self.modbus_cache_map.do_scan(slave=self.modbus_address) is True:
+                    if self.scan_errors:
+                        logger.info(f"Communication with device is back: '{self.circuit}'")
+                    self.scan_errors = 0
         except Exception as E:
-            if not self.scanning_error_triggered:
-                logger.debug(str(E))
-            self.scanning_error_triggered = True
+            if not self.scan_errors:
+                logger.error(f"{self.circuit}: Error while scanning: {E}")
+                logger.warning(f"Slowing down device: '{self.circuit}'")
+            self.scan_errors += 1
+
         if self.do_scanning and (self.scan_interval != 0):
-            self.loop.call_later(self.scan_interval, self.scan_boards)
+            interval = min(self.scan_interval*(2**self.scan_errors), 120)  # exponential growth with limitation [s]
+            self.loop.call_later(interval, self.scan_boards)
             self.is_scanning = True
         else:
             self.is_scanning = False
