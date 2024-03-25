@@ -1209,7 +1209,8 @@ class Register:
 
         return self.full()
 
-class Input():
+
+class Input:
     def __init__(self, circuit, arm, reg, mask, regcounter=None, regdebounce=None, regmode=None, regtoggle=None, regpolarity=None,
                  dev_id=0, major_group=0, modes=['Simple'], ds_modes=['Simple'], counter_modes=['Enabled', 'Disabled'], legacy_mode=True):
         self.alias = ""
@@ -1251,6 +1252,8 @@ class Input():
                     self.ds_mode = 'Inverted'
                 elif curr_ds_tgl & self.bitmask:
                     self.ds_mode = 'Toggle'
+            else:
+                self.mode = "Simple"
 
         old_value = copy(self.value)
         old_counter = copy(self.counter)
