@@ -1,0 +1,53 @@
+name: Bug Report
+description: File a bug report about Evok
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting the bug request, please try to provide as much information as possible.
+  - type: checkboxes
+    id: prereq
+    attributes:
+      label: Prerequisites
+      options:
+        - label: I am running the latest Evok version
+          required: true
+        - label: I have searched other [issues](https://github.com/UniPiTechnology/evok/issues)
+          required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+      placeholder: X does not work.
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Evok log
+      description: How to get a [log](https://evok.readthedocs.io/en/latest/debugging/)
+  - type: textarea
+    id: steps-reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Tell us how to reproduce the bug
+      placeholder: |
+        1. Go to there
+        2. Do this
+  - type: input
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: What is expected to happen
+    validations:
+      required: true
+  - type: input
+    id: actual-behavior
+    attributes:
+      label: Actual behavior
+      description: What is done currently
+    validations:
+      required: true
