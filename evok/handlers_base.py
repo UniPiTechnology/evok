@@ -1,4 +1,7 @@
 import json
+import logging
+import traceback
+
 from .schemas import schemas
 
 import jsonschema
@@ -43,6 +46,8 @@ class EvokWebHandlerBase(tornado.web.RequestHandler):
             self.write(json.dumps(result))
         except Exception as E:
             logger.error(f"Error while processing get: {str(type(E).__name__)}: {str(E)}")
+            if logger.level == logging.DEBUG:
+                traceback.print_exc()
             self.write(json.dumps({'success': False, 'errors': {str(type(E).__name__): str(E)}}))
             self.set_status(status_code=404)
         self.set_header('Content-Type', 'application/json')
@@ -59,6 +64,8 @@ class EvokWebHandlerBase(tornado.web.RequestHandler):
             self.write(json.dumps({'success': True, 'result': result}))
         except Exception as E:
             logger.error(f"Error while processing post: {str(type(E).__name__)}: {str(E)}")
+            if logger.level == logging.DEBUG:
+                traceback.print_exc()
             self.write(json.dumps({'success': False, 'errors': {str(type(E).__name__): str(E)}}))
             self.set_status(status_code=404)
         self.set_header('Content-Type', 'application/json')

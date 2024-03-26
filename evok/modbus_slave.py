@@ -112,6 +112,8 @@ class ModbusCacheMap(object):
                                 m = (f"Error while checking new data in device '{devtype_names[device.devtype]}"
                                      f"_{device.circuit}': {E}")
                                 logger.error(m)
+                                if logger.level == logging.DEBUG:
+                                    traceback.print_exc()
 
                         # reset communication flags
                         self.last_comm_time = time.time()
@@ -193,6 +195,8 @@ class ModbusSlave(object):
             self.boards.append(board)
         except ConnectionException as E:
             logger.error(f"No board detected on Modbus {self.modbus_address}\t({type(E).__name__}:{E})")
+            if logger.level == logging.DEBUG:
+                traceback.print_exc()
         except Exception as E:
             Devices.remove_global_device(self.dev_id)
             logger.exception(str(E))
@@ -220,6 +224,8 @@ class ModbusSlave(object):
         except Exception as E:
             if not self.scan_errors:
                 logger.error(f"{self.circuit}: Error while scanning: {E}")
+                if logger.level == logging.DEBUG:
+                    traceback.print_exc()
                 logger.warning(f"Slowing down device: '{self.circuit}'")
             self.scan_errors += 1
 
@@ -834,6 +840,8 @@ class Relay:
 
         except Exception as E:
             logger.error(f"Error in set RO: {E}")
+            if logger.level == logging.DEBUG:
+                traceback.print_exc()
             raise E
 
     def get(self):

@@ -1,3 +1,6 @@
+import logging
+import traceback
+
 from . import devents
 import re
 from copy import deepcopy
@@ -230,6 +233,8 @@ class DeviceList(dict):
                     logger.debug(f"Set alias {alias} of {devtype_names[device.devtype]}[{device.circuit}]")
         except Exception as E:
             logger.error(f"Error on setting alias {alias}: {str(E)}")
+            if logger.level == logging.DEBUG:
+                traceback.print_exc()
             raise E
 
 

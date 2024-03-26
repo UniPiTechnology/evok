@@ -83,7 +83,9 @@ class WhHandler:
                 else:
                     self.http_client.fetch(self.url, method="POST", body=json.dumps(outp))
         except Exception as E:
-            logger.exception(str(E))
+            logger.error(f"WhHandler error in event: {E}")
+            if logger.level == logging.DEBUG:
+                traceback.print_exc()
 
 
 class WsHandler(websocket.WebSocketHandler):
@@ -118,9 +120,10 @@ class WsHandler(websocket.WebSocketHandler):
                         outp += [single_dev]
                 if len(outp) > 0:
                     self.write_message(json.dumps(outp))
-        except Exception as e:
-            logger.error("Exc: %s", str(e))
-            pass
+        except Exception as E:
+            logger.error(f"WsHandler error in event: {E}")
+            if logger.level == logging.DEBUG:
+                traceback.print_exc()
 
     async def on_message(self, message):
         try:
@@ -195,7 +198,9 @@ class WsHandler(websocket.WebSocketHandler):
                     # send response only to the modbusclient_rs485 requesting full info
                 # nebo except Exception as e:
                 except Exception as E:
-                    logger.error("Exc: %s", str(E))
+                    logger.error(f"EsHandler error in request: {E}")
+                    if logger.level == logging.DEBUG:
+                        traceback.print_exc()
 
         except Exception as E:
             logger.debug("Skipping WS message: %s (%s)", message, str(E))
@@ -359,6 +364,8 @@ class JSONBulkHandler(tornado.web.RequestHandler):
             self.write(json.dumps(result))
         except Exception as E:
             logger.error(f"Error while processing get: {str(type(E).__name__)}: {str(E)}")
+            if logger.level == logging.DEBUG:
+                traceback.print_exc()
             self.write(json.dumps({'success': False, 'errors': {str(type(E).__name__): str(E)}}))
         finally:
             await self.finish()

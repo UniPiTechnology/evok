@@ -1,5 +1,6 @@
 import logging
 import os
+import traceback
 from typing import List, Dict, Union
 from tornado.ioloop import IOLoop
 
@@ -294,6 +295,8 @@ def create_devices(evok_config: EvokConfig, hw_dict):
 
                 else:
                     logger.error(f"Unknown bus type: '{bus_type}'! skipping...")
+                    if logger.level == logging.DEBUG:
+                        traceback.print_exc()
 
             except Exception as E:
                 logger.exception(f"Error in config section '{bus_type}:{device_name}' - {str(E)}")
