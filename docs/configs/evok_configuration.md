@@ -60,6 +60,7 @@ comm_channels:
     - Source is located in '.yaml' files in '/etc/evok/hw_definitions'.
     - examples: xS51, xS11,
     - For more information see [hw_definitions](./hw_definitions.md).
+- <slave_id\>: Address of the modbus device.
 - scan_frequency:
     - An optional parameter that determines how often values are read from the device.
     - Default value is 50.
