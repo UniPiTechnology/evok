@@ -23,5 +23,5 @@ You can obtain the version of Evok by executing following command:
 ```
 
 ```bash title="Output"
-Here be dragons
+v3.0.0
 ```
