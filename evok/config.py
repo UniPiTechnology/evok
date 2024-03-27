@@ -1,6 +1,4 @@
-import logging
 import os
-import traceback
 from typing import List, Dict, Union
 from tornado.ioloop import IOLoop
 
@@ -40,7 +38,7 @@ class HWDict:
                         logger.warning(f"Empty Definition file '{file_path}'! skipping...")
                         continue
                     self.definitions[file_name] = ydata
-                    logger.info(f"YAML Definition loaded: {file_path}, definition count {len(self.definitions) - 1}")
+                    logger.debug(f"YAML Definition loaded: {file_path}, definition count {len(self.definitions) - 1}")
 
 
 class OWSensorDevice:
@@ -134,7 +132,6 @@ class EvokConfig:
             except FileNotFoundError:
                 logger.warning(f"Config file {path} not found!")
         if check_autogen and final_conf.get('autogen', False):
-            logger.info(f"Including autogen....")
             return self.__get_final_conf(scope=['/etc/evok/autogen.yaml', *scope], check_autogen=False)
         return final_conf
 
@@ -242,15 +239,15 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                 Devices.register_device(DEVICE_INFO, bus_device_info)
 
         if 'devices' not in bus_data:
-            logging.info(f"Creating bus '{bus_name}' with type '{bus_type}'.")
+            logger.info(f"Creating bus '{bus_name}' with type '{bus_type}'.")
             continue
 
-        logging.info(f"Creating bus '{bus_name}' with type '{bus_type}' with devices.")
+        logger.info(f"Creating bus '{bus_name}' with type '{bus_type}' with devices.")
         for device_name, device_data in bus_data['devices'].items():
             if not device_data.get("enabled", True):
                 logger.info(f"^ Skipping disabled device '{device_name}'")
                 continue
-            logging.info(f"^ Creating device '{device_name}' with type '{bus_type}'")
+            logger.info(f"^ Creating device '{device_name}' with type '{bus_type}'")
             try:
                 if bus_type == 'OWBUS':
                     ow_type = device_data.get("type")

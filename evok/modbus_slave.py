@@ -183,7 +183,7 @@ class ModbusSlave(object):
             return ""
 
     async def readboards(self):
-        logger.info(f"Reading the Modbus board on Modbus address {self.modbus_address}\t({self.circuit})")
+        logger.info(f"Initial reading the Modbus board on Modbus address {self.modbus_address}\t({self.circuit})")
         self.boards = list()
         try:
             if self.device_model not in self.hw_dict.definitions:

@@ -4,8 +4,8 @@ import asyncio
 import contextlib
 
 import os
-import time
-from collections import OrderedDict
+import sys
+from importlib.metadata import version, PackageNotFoundError
 
 import jsonschema
 import tornado.httpserver
@@ -16,6 +16,7 @@ import tornado.web
 import logging
 from .log import logger
 
+logging.basicConfig(level=logging.WARNING)  # noqa
 logger.setLevel(logging.INFO)  # noqa
 
 from operator import methodcaller
@@ -39,6 +40,12 @@ if not os.path.isdir(config_path):
     config_path = os.path.dirname(os.path.realpath(__file__)) + '/evok'
     os.mkdir(config_path) if not os.path.exists(config_path) else None
 evok_config = config.EvokConfig(config_path)
+
+try:
+    evok_version = 'v' + version("evok")
+except PackageNotFoundError:
+    logger.error(f"Cannot detect evok version.")
+    evok_version = 'unknown'
 
 wh = None
 
@@ -265,7 +272,6 @@ class LoadAllHandler(UserCookieHelper, EvokWebHandlerBase):
 
 
 class VersionHandler(UserCookieHelper, tornado.web.RequestHandler):
-    version = 'Unspecified'
 
     def initialize(self):
         self.set_header("Access-Control-Allow-Origin", "*")
@@ -274,7 +280,7 @@ class VersionHandler(UserCookieHelper, tornado.web.RequestHandler):
         # TODO: ziskat verzy!!
 
     def get(self):
-        self.write(self.version)
+        self.write(evok_version)
         self.finish()
 
 
@@ -429,14 +435,26 @@ def config_cb(device, *kwargs):
 def main():
     arg_parser = argparse.ArgumentParser(prog='evok', description='')
     arg_parser.add_argument('-d', '--debug', action='store_true', default=False, help='Debug logging')
+    arg_parser.add_argument('-v', '--version', action='store_true', default=False, help='Print evok version')
+
+    args = arg_parser.parse_args()
+
+    if args.version:
+        print(evok_version)
+        sys.exit(0)
 
     log_level = evok_config.logging.get("level", "INFO").upper()
-    args = arg_parser.parse_args()
     if args.debug:
-        logger.setLevel(logging.DEBUG)
-    else:
-        logger.setLevel(log_level)
+        log_level = 'DEBUG'
+    if log_level == 'DEBUG':
+        # Debug level for pymodbus is too much!
+        logging.getLogger('pymodbus').setLevel(logging.INFO)
 
+    logger.info(f"Starting Evok {evok_version} using config directory '{config_path}'.")
+    logger.info(f"Setting logging level to '{log_level}'.")
+
+    logger.setLevel(log_level)
+    logging.basicConfig(level=log_level)
     log_file = evok_config.logging.get("file", None)
     if log_file is not None:
         # rotating file handler
@@ -446,8 +464,6 @@ def main():
         filelog_handler.setLevel(log_level)
         logger.addHandler(filelog_handler)
         # logging.getLogger('pymodbus').setLevel(logging.DEBUG)
-
-    logger.info(f"Starting using config file {config_path}")
 
     hw_dict = config.HWDict(dir_paths=[f'{config_path}/hw_definitions/'])
     config.load_aliases('/var/lib/evok/alias.yaml')
@@ -475,7 +491,7 @@ def main():
     #### prepare http server #####
     httpServerApi = tornado.httpserver.HTTPServer(app)
     httpServerApi.listen(port_api, address=address_api)
-    logger.info("HTTP server API listening on port: %d", port_api)
+    logger.info(f"HTTP server API listening on {address_api}:{port_api}")
 
     webhook_config = evok_config.get_api('webhook')
     if webhook_config.get("enabled", False):

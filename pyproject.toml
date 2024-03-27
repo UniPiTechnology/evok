@@ -24,6 +24,7 @@ dependencies = [
     'pyserial == 3.5',
     'tornado == 6.3.3',
     'jsonschema == 2.6.0',
+    'importlib_metadata == 7.1.0',
     'asyncowfs@git+https://github.com/UniPiTechnology/asyncowfs'
 #    'asyncowfs@file:///home/unipi/packages/evok-internal/asyncowfs'
 ]
