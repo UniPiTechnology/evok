@@ -19,6 +19,7 @@ class EvokModbusSerialClient(AsyncModbusSerialClient):
         for method_name in ['read_holding_registers', 'read_input_registers', 'write_register', 'write_registers',
                             'write_coil', 'connect']:
             setattr(self, method_name, self.__block(getattr(self, method_name)))
+        self.port = port
         self.lock = asyncio.Lock()
         self.stime = time.time()
         self.block_count = 0
@@ -46,6 +47,7 @@ class EvokModbusTcpClient(AsyncModbusTcpClient):
         for method_name in ['read_holding_registers', 'read_input_registers', 'write_register', 'write_registers',
                             'write_coil']:
             setattr(self, method_name, self.__block(getattr(self, method_name)))
+        self.host = host
         self.lock = asyncio.Lock()
         self.stime = time.time()
         self.block_count = 0

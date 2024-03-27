@@ -163,10 +163,15 @@ class ModbusSlave(object):
         self.loop: Union[None, IOLoop] = None
         self.circuit: Union[None, str] = circuit
         self.modbus_type = 'UNKNOWN'
-        if type(self.client) in [EvokModbusTcpClient, AsyncModbusTcpClient]:
+        self.modbus_spec = 'UNKNOWN'
+        if type(self.client) in [EvokModbusTcpClient]:
+            self.client: EvokModbusTcpClient
             self.modbus_type = 'TCP'
-        elif type(self.client) in [EvokModbusSerialClient, AsyncModbusSerialClient]:
+            self.modbus_spec = self.client.host
+        elif type(self.client) in [EvokModbusSerialClient]:
+            self.client: EvokModbusSerialClient
             self.modbus_type = 'RTU'
+            self.modbus_spec = self.client.port
 
     def get(self):
         return self.full()
@@ -243,6 +248,7 @@ class ModbusSlave(object):
                'last_comm': 0x7fffffff,
                'slave_id': self.modbus_address,
                'modbus_type': self.modbus_type,
+               'modbus_spec': self.modbus_spec,
                'scan_interval': self.scan_interval,
                }
         if self.alias != '':
