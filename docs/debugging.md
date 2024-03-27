@@ -13,3 +13,15 @@ systemctl stop evok
 !!! success
 
     You can examine or copy the output.
+
+## Determining the version of Evok
+
+You can obtain the version of Evok by executing following command:
+
+```bash
+/opt/evok/bin/evok -v
+```
+
+```bash title="Output"
+v3.0.0
+```
