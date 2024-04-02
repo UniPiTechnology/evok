@@ -87,7 +87,7 @@ You can switch to the beta version of Evok by adding the repository to apt sourc
     apt install -y evok
     ```
 
-=== "Unipi 1.1:
+=== "Unipi 1.1"
 
     ```bash
     echo "deb https://repo.unipi.technology/debian betaevok:bookworm main unipi1-main unipi1-test test" >> /etc/apt/sources.list.d/unipi.list
