@@ -50,6 +50,68 @@ apt-get install -y evok
 reboot
 ```
 
+### Beta version
+
+!!! danger
+    Do not use in production environment, use solely for development.
+    Beta version includes new features.
+    These features may change or be removed during development.
+
+There are several ways of getting beta version.
+
+#### Switching to beta repository
+
+You can switch to the beta version of Evok by adding the repository to apt sources:
+
+=== "Neuron"
+
+    ```bash
+    echo "deb https://repo.unipi.technology/debian betaevok:bookworm main neuron-main neuron-test test" >> /etc/apt/sources.list.d/unipi.list
+    apt update
+    apt install -y evok
+    ```
+
+=== "Patron"
+
+    ```bash
+    echo "deb https://repo.unipi.technology/debian betaevok:bookworm main patron-main patron-test test" >> /etc/apt/sources.list.d/unipi.list
+    apt update
+    apt install -y evok
+    ```
+
+=== "Gate"
+
+    ```bash
+    echo "deb https://repo.unipi.technology/debian betaevok:bookworm main g1-main g1-test test" >> /etc/apt/sources.list.d/unipi.list
+    apt update
+    apt install -y evok
+    ```
+
+=== "Unipi 1.1:
+
+    ```bash
+    echo "deb https://repo.unipi.technology/debian betaevok:bookworm main unipi1-main unipi1-test test" >> /etc/apt/sources.list.d/unipi.list
+    apt update
+    apt install -y evok
+    ```
+
+#### Installing beta OS image
+
+You can install Unipi image with beta sources.
+We recommend updating evok after beta image installation using:
+
+```bash title="Updating Evok"
+apt update
+apt install -y evok
+```
+
+##### Node-RED beta OS images
+
+- [Neuron](https://kb.unipi.technology/files:software:os-images:neuron-node-red-hidden)
+- [Patron](https://kb.unipi.technology/files:software:os-images:patron-node-red-hidden)
+- [Gate](https://kb.unipi.technology/files:software:os-images:g1-node-red-hidden)
+- [Unipi1](https://kb.unipi.technology/files:software:os-images:unipi1-node-red-hidden)
+
 ## Uninstallation
 
 ```bash title="Uninstalling Evok"
