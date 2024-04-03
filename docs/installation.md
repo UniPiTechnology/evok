@@ -50,7 +50,7 @@ apt-get install -y evok
 reboot
 ```
 
-### Beta version
+## Beta version
 
 !!! danger
     Do not use in production environment, use solely for development.
@@ -59,7 +59,7 @@ reboot
 
 There are several ways of getting beta version.
 
-#### Switching to beta repository
+### Switching to beta repository
 
 You can switch to the beta version of Evok by adding the repository to apt sources:
 
@@ -95,7 +95,7 @@ You can switch to the beta version of Evok by adding the repository to apt sourc
     apt install -y evok
     ```
 
-#### Installing beta OS image
+### Installing beta OS image
 
 You can install Unipi image with beta sources.
 We recommend updating evok after beta image installation using:
@@ -105,7 +105,7 @@ apt update
 apt install -y evok
 ```
 
-##### Node-RED beta OS images
+#### Node-RED beta OS images
 
 - [Neuron](https://kb.unipi.technology/files:software:os-images:neuron-node-red-hidden)
 - [Patron](https://kb.unipi.technology/files:software:os-images:patron-node-red-hidden)
