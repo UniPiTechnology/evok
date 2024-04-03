@@ -2,15 +2,15 @@
 
 ## Setting up repositories
 
-## Pre-built Unipi OS images
+### Pre-built Unipi OS images
 
 The latest images for Unipi controllers, including those with Evok pre-installed, can be downloaded from the [Unipi Technology Knowledge Base](https://kb.unipi.technology/os-images).
 
 All necessary APT Unipi repositories are already preconfigured in the OS images. Therefore, all that's required is to login to the controller via SSH. The default username for our images is "unipi" and the default password is "unipi.technology".
 
-You can proceed to [Installing and updating Evok] section.
+You can proceed to [Installing and updating Evok](#installing-and-updating-evok) section.
 
-## RaspberryPi OS
+### RaspberryPi OS
 
 In order to install Evok on Neuron/Unipi1.X with RaspberryPi OS, you will need an SD card with a standard (Lite) RaspberryPi OS. We recommend enabling SSH via RaspberryPi OS imager.
 
@@ -32,11 +32,11 @@ To add Evok repositories and install required modules, connect to your controlle
     reboot
     ```
 
-You can proceed to [Installing and updating Evok] section.
+You can proceed to [Installing and updating Evok](#installing-and-updating-evok) section.
 
 ## Installing and updating Evok
 
-Make sure you have [set up repositories] correctly first. This works both for installind and updating.
+Make sure you have [set up repositories](#setting-up-repositories) correctly first. This works both for installind and updating.
 
 ```bash title="Installing & updating Evok"
 sudo apt update
@@ -91,7 +91,7 @@ You can switch to the beta version of Evok by adding the repository to apt sourc
     apt update
     ```
 
-You can proceed to [Installing and updating Evok] section.
+You can proceed to [Installing and updating Evok](#installing-and-updating-evok) section.
 
 ### Installing beta OS image
 
