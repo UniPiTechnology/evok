@@ -2,7 +2,7 @@
 
 For more information see our [API documentation](https://unipitechnology.stoplight.io/docs/evok/).
 
-Evok APIs are listening on hostname `127.0.0.1` on port `8080` by default. You can change this behavior in [configuration](./configs/evok_configuration.md).
+Evok APIs are listening on IP `127.0.0.1` and port `8080` by default. You can change this behavior in [configuration](./configs/evok_configuration.md).
 
 ## REST ([doc](./apis/rest.md))
 
