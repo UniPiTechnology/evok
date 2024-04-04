@@ -1,32 +1,30 @@
 # Installation guide
 
-## Installation process on Unipi controllers using pre-build OS images (recommended)
+To install Evok, you will have to [set up the repositories](#setting-up-repositories) and then [install the package](#installing-and-updating-evok).
+
+## Setting up repositories
+
+This step varies by the platform used, either [Unipi images](#pre-built-unipi-os-images) or [RaspberryPi OS](#raspberrypi-os).
+
+### Pre-built Unipi OS images
 
 The latest images for Unipi controllers, including those with Evok pre-installed, can be downloaded from the [Unipi Technology Knowledge Base](https://kb.unipi.technology/os-images).
 
 All necessary APT Unipi repositories are already preconfigured in the OS images. Therefore, all that's required is to login to the controller via SSH. The default username for our images is "unipi" and the default password is "unipi.technology".
 
-```bash title="Installing Evok"
-sudo su
-apt-get update
-apt-get install -y evok
-reboot
-```
+You can proceed to [Installing and updating Evok](#installing-and-updating-evok) section.
 
-It is possible that some (or all) of the above steps have already been finished previously. In that case simply continue on with the next steps. Performing all the steps will ensure you have the latest version of the software installed. You can use the same commands to update your Evok package distribution to a new version.
+### RaspberryPi OS
 
-## Installation process on Neuron/Unipi1.X family controllers with fresh RaspberryPi OS
+In order to install Evok on Neuron/Unipi1.X with RaspberryPi OS, you will need an SD card with a standard (Lite) RaspberryPi OS. We recommend enabling SSH via [RaspberryPi OS imager](https://www.raspberrypi.com/software/).
 
-In order to install Evok on Neuron/Unipi1.X you will need an SD card with a standard (Lite) RaspberryPi OS. We recommended enable SSH via RaspberryPi OS imager.
-
-To install Evok itself first connect to your controller using SSH. The username and password for Raspberry Pi OS are set using the Raspberry Pi OS Imager. After you connect to your controller execute the following commands:
+To add Evok repositories and install required modules, connect to your controller using SSH. The username and password for Raspberry Pi OS are set using the Raspberry Pi OS Imager. After you connect to your controller execute the following commands:
 
 === "For Neuron"
 
     ```bash
     sudo su
     wget -qO - https://repo.unipi.technology/debian/raspberry-neuron.sh | bash
-    apt-get install -y evok
     reboot
     ```
 
@@ -35,20 +33,26 @@ To install Evok itself first connect to your controller using SSH. The username 
     ```bash
     sudo su
     wget -qO - https://repo.unipi.technology/debian/raspberry-unipi1.sh | bash
-    apt-get install -y evok
     reboot
     ```
 
-It is possible that some (or all) of the above steps have already been finished previously. In that case simply continue on with the next steps. Performing all the steps will ensure you have the latest version of the software installed.
+You can proceed to [Installing and updating Evok](#installing-and-updating-evok) section.
 
-You can use the following commands to update your Evok package distribution to a new version:
+## Installing and updating Evok
 
-```bash
-sudo su
-apt-get update
-apt-get install -y evok
-reboot
+Make sure you have [set up the repositories](#setting-up-repositories) correctly first. This works both for installind and updating.
+
+```bash title="Installing & updating Evok"
+sudo apt update
+sudo apt install -y evok
 ```
+
+!!! tip
+    If you wish, you can also install or update Evok-web.
+
+    ```bash title="Installing & updating Evok-web"
+    sudo apt install -y evok-web
+    ```
 
 ## Beta version
 
@@ -59,7 +63,7 @@ reboot
 
 There are several ways of getting beta version.
 
-### Switching to beta repository
+### Switching to the beta repository
 
 You can switch to the beta version of Evok by adding the repository to apt sources:
 
@@ -68,7 +72,6 @@ You can switch to the beta version of Evok by adding the repository to apt sourc
     ```bash
     echo "deb https://repo.unipi.technology/debian betaevok:bookworm main neuron-main neuron-test test" >> /etc/apt/sources.list.d/unipi.list
     apt update
-    apt install -y evok
     ```
 
 === "Patron"
@@ -76,7 +79,6 @@ You can switch to the beta version of Evok by adding the repository to apt sourc
     ```bash
     echo "deb https://repo.unipi.technology/debian betaevok:bookworm main patron-main patron-test test" >> /etc/apt/sources.list.d/unipi.list
     apt update
-    apt install -y evok
     ```
 
 === "Gate"
@@ -84,7 +86,6 @@ You can switch to the beta version of Evok by adding the repository to apt sourc
     ```bash
     echo "deb https://repo.unipi.technology/debian betaevok:bookworm main g1-main g1-test test" >> /etc/apt/sources.list.d/unipi.list
     apt update
-    apt install -y evok
     ```
 
 === "Unipi 1.1"
@@ -92,18 +93,14 @@ You can switch to the beta version of Evok by adding the repository to apt sourc
     ```bash
     echo "deb https://repo.unipi.technology/debian betaevok:bookworm main unipi1-main unipi1-test test" >> /etc/apt/sources.list.d/unipi.list
     apt update
-    apt install -y evok
     ```
+
+You can proceed to [Installing and updating Evok](#installing-and-updating-evok) section.
 
 ### Installing beta OS image
 
-You can install Unipi image with beta sources.
-We recommend updating evok after beta image installation using:
-
-```bash title="Updating Evok"
-apt update
-apt install -y evok
-```
+You can install Unipi image with beta repositories from below.
+We recommend updating evok after beta image installation, see [Installing and updating Evok] section.
 
 #### Node-RED beta OS images
 
@@ -115,7 +112,7 @@ apt install -y evok
 ## Uninstallation
 
 ```bash title="Uninstalling Evok"
-sudo apt-get remove evok
+sudo apt remove evok evok-web
 reboot
 ```
 
