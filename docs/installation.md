@@ -1,6 +1,10 @@
 # Installation guide
 
+To install Evok, you will have to [set up the repositories](#setting-up-repositories) and then [install the package](#installing-and-updating-evok).
+
 ## Setting up repositories
+
+This step varies by the platform used, either [Unipi images](#pre-built-unipi-os-images) or [RaspberryPi OS](#raspberrypi-os).
 
 ### Pre-built Unipi OS images
 
@@ -12,7 +16,7 @@ You can proceed to [Installing and updating Evok](#installing-and-updating-evok)
 
 ### RaspberryPi OS
 
-In order to install Evok on Neuron/Unipi1.X with RaspberryPi OS, you will need an SD card with a standard (Lite) RaspberryPi OS. We recommend enabling SSH via RaspberryPi OS imager.
+In order to install Evok on Neuron/Unipi1.X with RaspberryPi OS, you will need an SD card with a standard (Lite) RaspberryPi OS. We recommend enabling SSH via [RaspberryPi OS imager](https://www.raspberrypi.com/software/).
 
 To add Evok repositories and install required modules, connect to your controller using SSH. The username and password for Raspberry Pi OS are set using the Raspberry Pi OS Imager. After you connect to your controller execute the following commands:
 
@@ -36,7 +40,7 @@ You can proceed to [Installing and updating Evok](#installing-and-updating-evok)
 
 ## Installing and updating Evok
 
-Make sure you have [set up repositories](#setting-up-repositories) correctly first. This works both for installind and updating.
+Make sure you have [set up the repositories](#setting-up-repositories) correctly first. This works both for installind and updating.
 
 ```bash title="Installing & updating Evok"
 sudo apt update
