@@ -102,7 +102,7 @@ If the Debian package `unipi-os-configurator` is installed, Evok can automatical
 
 ```bash
 /opt/unipi/tools/os-configurator -f
-````
+```
 
 Autogen example:
 
