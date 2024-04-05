@@ -1,10 +1,10 @@
 # Evok Bulk API
 
-The Bulk API is designed to provide an efficient way for clients to update, create or delete large amounts of data. This protocol support multiple write in one request. It is suitable for automated requests thanks JSON protocol, which is better machine-processed.
+The Bulk API is designed to provide an efficient way for clients to update, create or delete large amounts of data. This protocol supports multiple writes in one request, but it is suitable for automated requests thanks JSON protocol, which is easily machine-processed.
 
 ## Examples
 
-For python examples you need installed 'requests' package. You can install it with this command: `pip3 install requests`.
+For python examples you need installed `requests` package. You can install it with this command: `pip3 install requests`.
 
 ### Setting DOs to HIGH
 

@@ -15,24 +15,24 @@ In this section you can configure address and port for APIs listening. This sett
 
 !!! info
 
-    More detailed settings of individual protocols can be found in separate sections.
+    More detailed settings of individual protocols can be found in their separate section.
 
 ### Websocket
 
-- enabled - to enable/disable websocket API
-    - options: true / false
-- all_filtered - 'all' WebSocket requests will be subject to the filtering set by 'filter'
-    - Options: true / false
+- `enabled` - enabling/disabling websocket API
+    - Options: `true` / `false`
+- `all_filtered` - all WebSocket requests will be subject to the filtering set by 'filter'
+    - Options: `true` / `false`
 
 ### Webhook
 
-- enabled - to enable/disable webhook notifications
-    - Options: true / false
-- address - address (with port) to which notifications should be sent
-- device_mask
+- `enabled` - enabling/disabling webhook notifications
+    - Options: `true` / `false`
+- `address` - address (with port) to which notifications should be sent
+- `device_mask`
     - Address (with port) to which notifications should be sent
     - List of device types to notify on (written as a JSON list)
-- complex_events - Evok will send POST requests with the same data as WebSocket, rather than an empty GET request
+- `complex_events` - Evok will send POST requests with the same data as WebSocket, rather than an empty GET request
 
 ## Hardware configuration
 
@@ -50,24 +50,24 @@ comm_channels:
         scan_frequency: 50
 ```
 
-- <bus_name\>: Your choice, but can not have duplicates!
-- <bus_type\>:
+- *<bus_name\>*: Your choice, but can not have duplicates!
+- *<bus_type\>*:
     - MODBUSTCP (specific settings: [hostname, port])
     - MODBUSRTU (specific settings: [port, boudrate, parity])
-- <device_name\>: Under this name, the device will be available in the API. Can not have duplicates!
-- <model_id\>:
+- *<device_name\>*: Under this name, the device will be available in the API. Can not have duplicates!
+- *<model_id\>*:
     - Defines a modbus register map.
     - Source is located in '.yaml' files in '/etc/evok/hw_definitions'.
     - examples: xS51, xS11,
     - For more information see [hw_definitions](./hw_definitions.md).
-- <slave_id\>: Address of the modbus device.
-- scan_frequency:
+- *<slave_id\>*: Address of the modbus device.
+- `scan_frequency`:
     - An optional parameter that determines how often values are read from the device.
     - Default value is 50.
 
 ### Examples
 
-Every example must be in section 'comm_channels'.
+Every example must be in section `comm_channels`.
 
 #### Define xS51 on /dev/ttyNS0
 
@@ -104,9 +104,7 @@ If the Debian package `unipi-os-configurator` is installed, Evok can automatical
 /opt/unipi/tools/os-configurator -f
 ```
 
-Autogen example:
-
-```yaml
+```yaml title="Autogen example"
 comm_channels:
   LOCAL_TCP:
     type: MODBUSTCP
