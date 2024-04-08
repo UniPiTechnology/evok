@@ -50,20 +50,23 @@ comm_channels:
         scan_frequency: 50
 ```
 
-- *<bus_name\>*: Your choice, but can not have duplicates!
-- *<bus_type\>*:
-    - MODBUSTCP (specific settings: [hostname, port])
-    - MODBUSRTU (specific settings: [port, boudrate, parity])
-- *<device_name\>*: Under this name, the device will be available in the API. Can not have duplicates!
+- *<bus_name\>*: Your choice, but has to be unique
+- *<bus_type\>* options:
+    - `MODBUSTCP`
+        - `hostname`
+        - `port`
+    - `MODBUSRTU`
+        - `port`: path to the device
+        - `boudrate`
+        - `parity`
+- *<device_name\>*: the device will be available in the API under this name. Has to be unique.
 - *<model_id\>*:
     - Defines a modbus register map.
     - Source is located in '.yaml' files in '/etc/evok/hw_definitions'.
     - examples: xS51, xS11,
     - For more information see [hw_definitions](./hw_definitions.md).
 - *<slave_id\>*: Address of the modbus device.
-- `scan_frequency`:
-    - An optional parameter that determines how often values are read from the device.
-    - Default value is 50.
+- `scan_frequency` - an optional parameter that determines how often values are read from the device (Default value is 50).
 
 ### Examples
 
