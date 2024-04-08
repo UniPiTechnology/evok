@@ -55,16 +55,16 @@ comm_channels:
 - <bus_name\>: Your choice, but can not have duplicates!
 - <bus_type\>:
     - MODBUSTCP
-      - hostname: Modbus TCP hostname
-      - port: Modbus TCP port (default: 502)
+        - hostname: Modbus TCP hostname
+        - port: Modbus TCP port (default: 502)
     - MODBUSRTU
-      - port: tty device path
-      - boudrate: Serial baud-rate
-      - parity: Serial parity (default: 'N')
+        - port: tty device path
+        - boudrate: Serial baud-rate
+        - parity: Serial parity (default: 'N')
     - OWBUS
-      - interval: Interval for updating values (default: 60)
-      - scan_interval: Internal for scan new devices (default: 300)
-      - owpower: Circuit of owpower device (for restarting bus; optional parameter)
+        - interval: Interval for updating values (default: 60)
+        - scan_interval: Internal for scan new devices (default: 300)
+        - owpower: Circuit of owpower device (for restarting bus; optional parameter)
 
 #### Device configuration:
 - <device_name\>: Under this name, the device will be available in the API. Can not have duplicates!
