@@ -19,19 +19,14 @@ In this section you can configure address and port for APIs listening. This sett
 
 ### Websocket
 
-- `enabled` - enabling/disabling websocket API
-    - Options: `true` / `false`
-- `all_filtered` - all WebSocket requests will be subject to the filtering set by 'filter'
-    - Options: `true` / `false`
+- `enabled` - enabling/disabling websocket API (`true` / `false`)
+- `all_filtered` - all WebSocket requests will be subject to the filtering set by 'filter' (`true` / `false`)
 
 ### Webhook
 
-- `enabled` - enabling/disabling webhook notifications
-    - Options: `true` / `false`
+- `enabled` - enabling/disabling webhook notifications (`true` / `false`)
 - `address` - address (with port) to which notifications should be sent
-- `device_mask`
-    - Address (with port) to which notifications should be sent
-    - List of device types to notify on (written as a JSON list)
+- `device_mask` - list of devices to notify on (written as a JSON list, same format as `address`)
 - `complex_events` - Evok will send POST requests with the same data as WebSocket, rather than an empty GET request
 
 ## Hardware configuration
@@ -53,12 +48,12 @@ comm_channels:
 - *<bus_name\>*: Your choice, but has to be unique
 - *<bus_type\>* options:
     - `MODBUSTCP`
-        - `hostname`
-        - `port`
+        - `hostname` - hostname of the Modbus server
+        - `port` - port of the Modbus server
     - `MODBUSRTU`
-        - `port`: path to the device
-        - `boudrate`
-        - `parity`
+        - `port` - path to the Modbus device
+        - `boudrate` - baudrate of the Modbus device
+        - `parity` - parity of the Modbus device (`N` / `E` / `O`)
 - *<device_name\>*: the device will be available in the API under this name. Has to be unique.
 - *<model_id\>*:
     - Defines a modbus register map.
