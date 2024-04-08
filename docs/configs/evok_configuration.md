@@ -45,16 +45,31 @@ comm_channels:
         ....: <specific settings>
     devices:
         <device_name>:
-        slave-id: <slave_id>
-        model: <model_id
-        scan_frequency: 50
+            slave-id: <slave_id>
+            model: <model_id
+            scan_frequency: 50
 ```
+
+#### Bus configuration:
 
 - <bus_name\>: Your choice, but can not have duplicates!
 - <bus_type\>:
-    - MODBUSTCP (specific settings: [hostname, port])
-    - MODBUSRTU (specific settings: [port, boudrate, parity])
+    - MODBUSTCP
+      - hostname: Modbus TCP hostname
+      - port: Modbus TCP port (default: 502)
+    - MODBUSRTU
+      - port: tty device path
+      - boudrate: Serial baud-rate
+      - parity: Serial parity (default: 'N')
+    - OWBUS
+      - interval: Interval for updating values (default: 60)
+      - scan_interval: Internal for scan new devices (default: 300)
+      - owpower: Circuit of owpower device (for restarting bus; optional parameter)
+
+#### Device configuration:
 - <device_name\>: Under this name, the device will be available in the API. Can not have duplicates!
+
+##### MODBUSTCP & MODBUSRTU device configuration:
 - <model_id\>:
     - Defines a modbus register map.
     - Source is located in '.yaml' files in '/etc/evok/hw_definitions'.
@@ -64,6 +79,11 @@ comm_channels:
 - scan_frequency:
     - An optional parameter that determines how often values are read from the device.
     - Default value is 50.
+      
+##### OWBUS device configuration:
+
+- type: 1W sensor type. Options: ["DS2408", "DS2406", "DS2404", "DS2413"]
+- address: 1W device address
 
 ### Examples
 
