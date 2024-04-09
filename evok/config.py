@@ -300,7 +300,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
 
 
 def load_aliases(path):
-    alias_dicts = HWDict(paths=[path]).definitions
+    alias_dicts = list(HWDict(paths=[path]).definitions.values())
     # HWDict returns List(), take only first item
     alias_conf = alias_dicts[0] if len(alias_dicts) > 0 else dict()
     version = alias_conf.get("version",None)

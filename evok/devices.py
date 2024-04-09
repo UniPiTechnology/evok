@@ -98,7 +98,9 @@ class Aliases:
 
     @property
     def aliases(self) -> dict:
-        return {k: f"{devtype_names[v.devtype]}_{v.circuit}" for k, v in self.alias_dict.items()}
+        return {k:{"circuit": f"{devtype_names[v.devtype]}_{v.circuit}",
+                   "devtype": v.devtype}
+                for k, v in self.alias_dict.items()}
 
     def full(self):
         ret = {
