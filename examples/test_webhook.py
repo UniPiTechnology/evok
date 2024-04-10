@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 @app.route('/', methods=['POST', 'GET'])
 def respond():
-    print(dict(request.values))
+    print(request.data.decode(), request.environ['CONTENT_TYPE'])
     return json.dumps({"status": "success"}), 200
 
 
