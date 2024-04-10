@@ -1,10 +1,10 @@
 # Evok REST API
 
-The REST API provides a simple interface for sending and receiving data in a stateless, cacheable communications. This protocol do not support multiple write in one request. It is suitable for hand-make requests.
+The REST API provides a simple interface for sending and receiving data in a stateless, cacheable communications. This protocol does not support multiple writes in one request, thus it is suitable mainly for hand-made requests.
 
 ## Examples
 
-For python examples you need installed 'requests' package. You can install it with this command: `pip3 install requests`.
+For python examples you need installed `requests` package. You can install it with this command: `pip3 install requests`.
 
 ### Reading DI
 

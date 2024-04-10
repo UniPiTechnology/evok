@@ -15,24 +15,19 @@ In this section you can configure address and port for APIs listening. This sett
 
 !!! info
 
-    More detailed settings of individual protocols can be found in separate sections.
+    More detailed settings of individual protocols can be found in their separate section.
 
 ### Websocket
 
-- enabled - to enable/disable websocket API
-    - options: true / false
-- all_filtered - 'all' WebSocket requests will be subject to the filtering set by 'filter'
-    - Options: true / false
+- `enabled` - enabling/disabling websocket API (`true` / `false`)
+- `all_filtered` - all WebSocket requests will be subject to the filtering set by 'filter' (`true` / `false`)
 
 ### Webhook
 
-- enabled - to enable/disable webhook notifications
-    - Options: true / false
-- address - address (with port) to which notifications should be sent
-- device_mask
-    - Address (with port) to which notifications should be sent
-    - List of device types to notify on (written as a JSON list)
-- complex_events - Evok will send POST requests with the same data as WebSocket, rather than an empty GET request
+- `enabled` - enabling/disabling webhook notifications (`true` / `false`)
+- `address` - address (with port) to which notifications should be sent
+- `device_mask` - list of devices to notify on (written as a JSON list, same format as `address`)
+- `complex_events` - Evok will send POST requests with the same data as WebSocket, rather than an empty GET request
 
 ## Hardware configuration
 
@@ -52,42 +47,42 @@ comm_channels:
 
 #### Bus configuration:
 
-- <bus_name\>: Your choice, but can not have duplicates!
-- <bus_type\>:
-    - MODBUSTCP
-        - hostname: Modbus TCP hostname
-        - port: Modbus TCP port (default: 502)
-    - MODBUSRTU
-        - port: tty device path
-        - boudrate: Serial baud-rate
-        - parity: Serial parity (default: 'N')
-    - OWBUS
-        - interval: Interval for updating values (default: 60)
-        - scan_interval: Internal for scan new devices (default: 300)
-        - owpower: Circuit of owpower device (for restarting bus; optional parameter)
+- *<bus_name\>*: Your choice, but has to be unique
+- *<bus_type\>* options:
+    - `MODBUSTCP`
+        - `hostname` - hostname of the Modbus server
+        - `port` - port of the Modbus server
+    - `MODBUSRTU`
+        - `port` - path to the Modbus device
+        - `boudrate` - baudrate of the Modbus device
+        - `parity` - parity of the Modbus device (`N` / `E` / `O`)
+    - `OWBUS`
+        - `interval`: Interval for updating values
+        - `scan_interval`: Internal for scan new devices
+        - `owpower`: Circuit of owpower device (for restarting bus; optional parameter)
 
 #### Device configuration:
-- <device_name\>: Under this name, the device will be available in the API. Can not have duplicates!
+- *<device_name\>*: Under this name, the device will be available in the API. Can not have duplicates!
 
 ##### MODBUSTCP & MODBUSRTU device configuration:
-- <model_id\>:
+
+- *<device_name\>*: the device will be available in the API under this name. Has to be unique.
+- *<model_id\>*:
     - Defines a modbus register map.
     - Source is located in '.yaml' files in '/etc/evok/hw_definitions'.
     - examples: xS51, xS11,
     - For more information see [hw_definitions](./hw_definitions.md).
-- <slave_id\>: Address of the modbus device.
-- scan_frequency:
-    - An optional parameter that determines how often values are read from the device.
-    - Default value is 50.
-      
+- *<slave_id\>*: Address of the modbus device.
+- `scan_frequency` - an optional parameter that determines how often values are read from the device (Default value is 50).
+     
 ##### OWBUS device configuration:
 
-- type: 1W sensor type. Options: ["DS2408", "DS2406", "DS2404", "DS2413"]
-- address: 1W device address
+- `type`: 1W sensor type. Options: ["DS2408", "DS2406", "DS2404", "DS2413"]
+- `address`: 1W device address
 
 ### Examples
 
-Every example must be in section 'comm_channels'.
+Every example must be in section `comm_channels`.
 
 #### Define xS51 on /dev/ttyNS0
 
@@ -124,9 +119,7 @@ If the Debian package `unipi-os-configurator` is installed, Evok can automatical
 /opt/unipi/tools/os-configurator -f
 ```
 
-Autogen example:
-
-```yaml
+```yaml title="Autogen example"
 comm_channels:
   LOCAL_TCP:
     type: MODBUSTCP

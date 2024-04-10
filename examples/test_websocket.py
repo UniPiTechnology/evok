@@ -13,7 +13,7 @@ def on_error(ws, error):
     print(f"Encountered an error: {error}")
 
 
-def on_close(ws):
+def on_close(ws, _, __):
     print("WebSocket connection closed")
 
 
@@ -24,9 +24,9 @@ def on_open(ws):
 
 
 if __name__ == "__main__":
-    ws = websocket.WebSocketApp(f"ws://{host}/ws",
-                                on_message=on_message,
-                                on_error=on_error,
-                                on_close=on_close)
-    ws.on_open = on_open
-    ws.run_forever()
+    _ws = websocket.WebSocketApp(f"ws://{host}/ws",
+                                 on_message=on_message,
+                                 on_error=on_error,
+                                 on_close=on_close)
+    _ws.on_open = on_open
+    _ws.run_forever()
