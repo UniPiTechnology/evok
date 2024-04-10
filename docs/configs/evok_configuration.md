@@ -62,11 +62,10 @@ comm_channels:
         - `owpower`: Circuit of owpower device (for restarting bus; optional parameter)
 
 #### Device configuration:
-- *<device_name\>*: Under this name, the device will be available in the API. Can not have duplicates!
+- *<device_name\>*: the device will be available in the API under this name. Has to be unique.
 
 ##### MODBUSTCP & MODBUSRTU device configuration:
 
-- *<device_name\>*: the device will be available in the API under this name. Has to be unique.
 - *<model_id\>*:
     - Defines a modbus register map.
     - Source is located in '.yaml' files in '/etc/evok/hw_definitions'.
