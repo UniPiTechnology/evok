@@ -74,7 +74,6 @@ class WhHandler:
         logger.debug(f"New WebHook connected {self.url}")
         if not ("all" in registered_ws):
             registered_ws["all"] = set()
-
         registered_ws["all"].add(self)
 
     def on_event(self, device):
@@ -86,9 +85,10 @@ class WhHandler:
         try:
             if len(outp) > 0:
                 if not self.complex_events:
-                    self.http_client.fetch(self.url, method="GET")
+                    self.http_client.fetch(self.url, method="GET", headers={"Content-Type": "application/json"})
                 else:
-                    self.http_client.fetch(self.url, method="POST", body=json.dumps(outp))
+                    self.http_client.fetch(self.url, method="POST", headers={"Content-Type": "application/json"},
+                                           body=json.dumps(outp))
         except Exception as E:
             logger.error(f"WhHandler error in event: {E}")
             if logger.level == logging.DEBUG:
@@ -110,7 +110,6 @@ class WsHandler(websocket.WebSocketHandler):
         logger.debug("New WebSocket client connected")
         if not ("all" in registered_ws):
             registered_ws["all"] = set()
-
         registered_ws["all"].add(self)
 
     def on_event(self, device):
@@ -277,7 +276,6 @@ class VersionHandler(UserCookieHelper, tornado.web.RequestHandler):
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
         self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-        # TODO: ziskat verzy!!
 
     def get(self):
         self.write(evok_version)
