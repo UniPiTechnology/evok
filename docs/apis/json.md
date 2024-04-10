@@ -1,10 +1,10 @@
 # Evok JSON API
 
-The JSON API provides a simple interface for sending and receiving data in a stateless, cacheable communications. This protocol do not support multiple write in one request. It is suitable for automated requests thanks JSON protocol, which is better machine-processed.
+The JSON API provides a simple interface for sending and receiving data in a stateless, cacheable communications. This protocol does not support multiple writes in one request, but it is suitable for automated requests thanks to JSON protocol, which is easily machine-processed.
 
 ## Examples
 
-For python examples you need installed 'requests' package. You can install it with this command: `pip3 install requests`.
+For python examples you need installed `requests` package. You can install it with this command: `pip3 install requests`.
 
 ### Reading DI
 

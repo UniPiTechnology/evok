@@ -1,10 +1,10 @@
 # Evok Webhook API
 
-The Webhook API provides a mechanism for pushing real-time updates to clients. Evok sends the changes to the specified hostname and port. A list of reflected devices can be defined. It is suitable for collecting information about the running of the application.
+The Webhook API provides a mechanism for pushing real-time updates to clients. Evok sends the changes to the specified hostname and port. A list of reflected devices can be defined. It is suitable for collecting information about the running application.
 
 ## Examples
 
-For python examples you need installed 'flask' package. You can install it with this command: `pip3 install flask`.
+For python examples you need installed `flask` package. You can install it with this command: `pip3 install flask`.
 
 ### Creating simple Webhook server
 
@@ -40,7 +40,7 @@ For more information see [Evok configuration](../configs/evok_configuration.md).
 
 !!! note
 
-    After you change configuration you must restart the Evok with the command `systemctl restart evok`.
+    After you change configuration, you have to restart the Evok with the command `systemctl restart evok`.
 
 ```bash title="Output"
  * Serving Flask app 'server'

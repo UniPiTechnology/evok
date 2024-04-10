@@ -4,7 +4,7 @@ The RPC (Remote Procedure Call) API is used for invoking procedures, functions o
 
 ## Examples
 
-For python examples you need installed 'requests' package. You can install it with this command: `pip3 install requests`.
+For python examples you need installed `requests` package. You can install it with this command: `pip3 install requests`.
 
 ### Reading DI
 
