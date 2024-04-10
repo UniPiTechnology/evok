@@ -63,7 +63,7 @@ sudo systemctl restart evok
 To read the logs from Evok in permanent debug mode, you can use following command. It also prints information about other related services.
 
 ```bash title="Viewing the Evok log"
-journalctl -e -u evok -u unipi-one-modbus
+journalctl -e -u evok
 ```
 
 You can scroll in the outuput via arrow keys.
