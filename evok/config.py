@@ -257,7 +257,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                     circuit = device_name
                     sensor = owdevice.MySensorFabric(address, ow_type, bus, interval=interval, circuit=circuit,
                                                      is_static=True)
-                    if ow_type in ["DS2408", "DS2406", "DS2404", "DS2413"]:
+                    if sensor is not None:
                         sensor = OWSensorDevice(sensor, dev_id=dev_counter)
                     dev_counter += 1
                     Devices.register_device(SENSOR, sensor)

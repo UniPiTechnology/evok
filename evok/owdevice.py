@@ -237,7 +237,7 @@ def MySensorFabric(address, typ, bus, interval=None, dynamic=True, circuit=None,
         return DS18B20(address, typ, bus, interval=interval, circuit=circuit)
     elif (typ == 'DS2438'):
         return DS2438(address, typ, bus, interval=interval, circuit=circuit)
-    elif (typ == 'DS2408') or (typ == 'DS2406') or (typ == 'DS2413'):
+    elif (typ == 'DS2408') or (typ == 'DS2406') or (typ == 'DS2404') or (typ == 'DS2413'):
         return DS2408(address, typ, bus, interval=interval, circuit=circuit, is_static=is_static)
     else:
         logger.debug("Unsupported 1wire device %s (%s) detected", typ, address)
