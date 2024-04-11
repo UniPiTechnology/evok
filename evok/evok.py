@@ -20,11 +20,15 @@ logging.basicConfig(level=logging.WARNING)  # noqa
 logger.setLevel(logging.INFO)  # noqa
 
 from operator import methodcaller
-from tornado import websocket
 from tornado import escape
-from .handlers_base import EvokWebHandlerBase, SCHEMA_VALIDATE
+from .handlers_base import EvokWebHandlerBase, SCHEMA_VALIDATE, registered_devents
 from urllib.parse import urlparse
 from .schemas import schemas
+
+from .handler_mqtt import MqttHandler
+from .handler_rpc import RpcHandler
+from .handler_webhook import WebhookHandler
+from .handler_websocket import WebsocketHandler, websocket_config
 
 import signal
 
@@ -40,6 +44,7 @@ if not os.path.isdir(config_path):
     config_path = os.path.dirname(os.path.realpath(__file__)) + '/evok'
     os.mkdir(config_path) if not os.path.exists(config_path) else None
 evok_config = config.EvokConfig(config_path)
+websocket_config.update(evok_config.get_api('websocket'))
 
 try:
     evok_version = 'v' + version("evok")
@@ -49,8 +54,6 @@ except PackageNotFoundError:
 
 wh = None
 
-from . import rpc_handler
-
 
 class UserCookieHelper:
     _passwords = []
@@ -58,167 +61,6 @@ class UserCookieHelper:
     def get_current_user(self):
         if len(self._passwords) == 0: return True
         return self.get_secure_cookie("user")
-
-
-registered_ws = {}
-
-
-class WhHandler:
-    def __init__(self, url, allowed_types, complex_events):
-        self.http_client = tornado.httpclient.AsyncHTTPClient()
-        self.url = url
-        self.allowed_types = allowed_types
-        self.complex_events = complex_events
-
-    def open(self):
-        logger.debug(f"New WebHook connected {self.url}")
-        if not ("all" in registered_ws):
-            registered_ws["all"] = set()
-        registered_ws["all"].add(self)
-
-    def on_event(self, device):
-        dev_all = device.full()
-        outp = []
-        for single_dev in dev_all:
-            if single_dev['dev'] in self.allowed_types:
-                outp += [single_dev]
-        try:
-            if len(outp) > 0:
-                if not self.complex_events:
-                    self.http_client.fetch(self.url, method="GET", headers={"Content-Type": "application/json"})
-                else:
-                    self.http_client.fetch(self.url, method="POST", headers={"Content-Type": "application/json"},
-                                           body=json.dumps(outp))
-        except Exception as E:
-            logger.error(f"WhHandler error in event: {E}")
-            if logger.level == logging.DEBUG:
-                traceback.print_exc()
-
-
-class WsHandler(websocket.WebSocketHandler):
-
-    def check_origin(self, origin):
-        # fix issue when Node-RED removes the 'prefix://'
-        parsed_origin = urlparse(origin)
-        origin = parsed_origin.netloc
-        origin = origin.lower()
-        # return origin == host or origin_origin == host
-        return True
-
-    def open(self):
-        self.filter = ["default"]
-        logger.debug("New WebSocket client connected")
-        if not ("all" in registered_ws):
-            registered_ws["all"] = set()
-        registered_ws["all"].add(self)
-
-    def on_event(self, device):
-        outp = []
-        try:
-            if len(self.filter) == 1 and self.filter[0] == "default":
-                self.write_message(json.dumps(device.full()))
-            else:
-                dev_all = device.full()
-                if 'dev' in dev_all:
-                    dev_all = [dev_all]
-                for single_dev in dev_all:
-                    if single_dev['dev'] in self.filter:
-                        outp += [single_dev]
-                if len(outp) > 0:
-                    self.write_message(json.dumps(outp))
-        except Exception as E:
-            logger.error(f"WsHandler error in event: {E}")
-            if logger.level == logging.DEBUG:
-                traceback.print_exc()
-
-    async def on_message(self, message):
-        try:
-            message = json.loads(message)
-            try:
-                cmd = message["cmd"]
-            except:
-                cmd = None
-            # get FULL state of each IO
-            if cmd == "all":
-                result = []
-                devices = [INPUT, RELAY, AI, AO, SENSOR]
-                if evok_config.get_api('websocket').get("all_filtered", False):
-                    if (len(self.filter) == 1 and self.filter[0] == "default"):
-                        for dev in devices:
-                            result += map(lambda dev: dev.full(), Devices.by_int(dev))
-                    else:
-                        for dev in range(0, 25):
-                            added_results = map(lambda dev: dev.full() if dev.full() is not None else '',
-                                                Devices.by_int(dev))
-                            for added_result in added_results:
-                                if added_result != '' and added_result['dev'] in self.filter:
-                                    result.append(added_result)
-                else:
-                    for dev in range(0, 25):
-                        added_results = map(lambda dev: dev.full() if dev.full() is not None else '',
-                                            Devices.by_int(dev))
-                        for added_result in added_results:
-                            if added_result != '':
-                                result.append(added_result)
-                await self.write_message(json.dumps(result))
-            # set device state
-            elif cmd == "filter":
-                devices = []
-                try:
-                    for single_dev in message["devices"]:
-                        if (str(single_dev) in devtype_names) or (str(single_dev) in devtype_altnames):
-                            devices += [single_dev]
-                    if len(devices) > 0 or len(message["devices"]) == 0:
-                        self.filter = devices
-                        if message["devices"][0] == "default":
-                            self.filter = ["default"]
-                    else:
-                        raise Exception("Invalid 'devices' argument: %s" % str(message["devices"]))
-                except Exception as E:
-                    logger.exception("Exc: %s", str(E))
-            elif cmd is not None:
-                dev = message["dev"]
-                circuit = message["circuit"]
-                try:
-                    value = message["value"]
-                except:
-                    value = None
-                try:
-                    device = Devices.by_name(dev, circuit)
-                    func = getattr(device, cmd)
-                    if value is not None:
-                        if type(value) == dict:
-                            result = await func(**value)
-                        else:
-                            result = await func(value)
-                    else:
-                        # Set other property than "value" (e.g. counter of an input)
-                        funcdata = {key: value for (key, value) in message.items() if
-                                    key not in ("circuit", "value", "cmd", "dev")}
-                        if len(funcdata) > 0:
-                            result = await func(**funcdata)
-                        else:
-                            result = await func()
-                    if cmd == "full":
-                        await self.write_message(json.dumps(result))
-                    # send response only to the modbusclient_rs485 requesting full info
-                # nebo except Exception as e:
-                except Exception as E:
-                    logger.error(f"EsHandler error in request: {E}")
-                    if logger.level == logging.DEBUG:
-                        traceback.print_exc()
-
-        except Exception as E:
-            logger.debug("Skipping WS message: %s (%s)", message, str(E))
-            # skip it since we do not understand this message....
-            pass
-
-    def on_close(self):
-        if ("all" in registered_ws) and (self in registered_ws["all"]):
-            registered_ws["all"].remove(self)
-            if len(registered_ws["all"]) == 0:
-                for neuron in Devices.by_int(MODBUS_SLAVE):
-                    neuron.stop_scanning()
 
 
 class LogoutHandler(tornado.web.RequestHandler):
@@ -419,8 +261,8 @@ class AliasTask:
 
 
 def status_cb(device, *kwargs):
-    if "all" in registered_ws:
-        for x in registered_ws['all']:
+    if "all" in registered_devents:
+        for x in registered_devents['all']:
             x.on_event(device)
 
 
@@ -470,7 +312,7 @@ def main():
     port_api = evok_config.apis.get("port", 8080)
 
     api_routes = [
-        (r"/rpc/?", rpc_handler.Handler),
+        (r"/rpc/?", RpcHandler),
         (r"/rest/all/?", LoadAllHandler),
         (r"/rest/([^/]+)/([^/]+)/?([^/]+)?/?", LegacyRestHandler),
         (r"/bulk/?", JSONBulkHandler),
@@ -480,7 +322,7 @@ def main():
     ]
 
     if evok_config.get_api('websocket').get('enabled', False):
-        api_routes.append((r"/ws/?", WsHandler))
+        api_routes.append((r"/ws/?", WebsocketHandler))
 
     app = tornado.web.Application(
         handlers=api_routes
@@ -496,10 +338,15 @@ def main():
         wh_address = webhook_config.get("address", "http://127.0.0.1:80/index.html")
         wh_types = webhook_config.get("device_mask", ["input", "sensor", "uart", "watchdog"])
         wh_complex = webhook_config.get("complex_events", False)
-        wh = WhHandler(wh_address, wh_types, wh_complex)
+        wh = WebhookHandler(wh_address, wh_types, wh_complex)
         wh.open()
 
     mainLoop = tornado.ioloop.IOLoop.instance()
+
+    mqtt_config = evok_config.get_api('mqtt')
+    if mqtt_config.get("enabled", False):
+        mqtt_handler = MqttHandler(conf_data=mqtt_config, loop=mainLoop)
+        mqtt_handler.start()
 
     #### prepare hardware according to config #####
     # prepare callbacks for config events

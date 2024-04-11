@@ -7,3 +7,4 @@ importlib_metadata == 7.1.0
 asyncowfs@git+https://github.com/UniPiTechnology/asyncowfs
 pyyaml == 6.0.1
 tornado-jsonrpc2==0.5
+aiomqtt == 2.0.1

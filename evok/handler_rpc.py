@@ -75,7 +75,7 @@ class UserBasicHelper(JSONRPCHandler):
             self._request_auth()
 
 
-class Handler(UserBasicHelper):
+class RpcHandler(UserBasicHelper):
 
     @tornado.web.authenticated
     async def post(self):

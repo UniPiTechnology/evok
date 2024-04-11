@@ -12,6 +12,8 @@ from .log import logger
 
 SCHEMA_VALIDATE = True
 
+registered_devents = {}
+
 
 class EvokWebHandlerBase(tornado.web.RequestHandler):
     def initialize(self):
