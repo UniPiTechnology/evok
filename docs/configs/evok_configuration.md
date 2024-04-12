@@ -58,7 +58,7 @@ comm_channels:
         - `parity` - parity of the Modbus device (`N` / `E` / `O`)
     - `OWBUS`
         - `interval` - interval of values updating
-        - `scan_interval` - new devices will be automatically assigned, 
+        - `scan_interval` - new devices will be automatically assigned
         - `owpower` - Circuit of owpower device (for restarting bus; optional parameter)
 
 ### Device configuration
@@ -123,7 +123,8 @@ TEMPM:
 ## Autogen
 
 If the Debian package `unipi-os-configurator` is installed,
-Evok can automatically create the hardware configuration for the running device.
+Evok can automatically create the hardware configuration for the running device,
+but it works only for Unipi devices.
 You can enable this feature with `autogen: true` in config.
 If this feature is enabled, Evok includes the file `/etc/evok/autogen.yaml`.
 This file contains the hardware configuration of the running device.
