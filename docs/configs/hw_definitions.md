@@ -28,32 +28,33 @@ Other commands depend on the specific type of device.
 
 ```yaml
 ---
-# This key defines which Modbus registers will be periodically read. Each block (also sometimes referred to as "group") is read once every ["frequency"] read cycles
+# This key defines which Modbus registers will be periodically read. Each block (also sometimes referred to as "group") is read once ever ["frequency"] read cycles
 modbus_register_blocks:
-  - board_index : 1
-    start_reg   : 0
-    count       : 10
-    frequency   : 1
-  - board_index : 1
-    start_reg   : 500
-    count       : 8
-    frequency   : 10
-    type        : input
-  - board_index : 1
-    start_reg   : 508
-    count       : 8
-    frequency   : 50
+    - start_reg   : 0
+      count       : 10
+      frequency   : 1
+
+    - start_reg   : 500
+      count       : 8
+      frequency   : 10
+
+    - start_reg   : 508
+      count       : 8
+      frequency   : 50
 
 # This defines the devices mapped to the registers above. As custom devices are very unlikely to support any Neuron features, the only devices which should be mapped are "REGISTER"s
-modbus_features:
-  - type        : REGISTER
-    major_group : 1
-    count       : 10
-    start_reg     : 0
-  - type        : REGISTER
-    major_group : 1
-    count       : 16
-    start_reg     : 500
+modbus_features: 
+    - type        : REGISTER
+      count       : 10
+      start_reg   : 0
+      
+    - type        : REGISTER
+      count       : 8
+      start_reg   : 500
+      
+    - type        : REGISTER
+      count       : 8
+      start_reg   : 508
 ```
 
 ### Supported device types
