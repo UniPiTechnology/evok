@@ -640,6 +640,7 @@ class Output:
                         self.mode = 'Simple'  # Mode field is for backward compatibility, will be deprecated soon
                     elif self.pwmpresetreg >=0:
                         self.pwm_duty = self.pwm_duty_val
+                        self.mode = 'PWM'  # Mode field is for backward compatibility, will be deprecated soon
                     else:
                         self.pwm_duty = round((float(self.pwm_duty_val) / float(self.pwm_cycle_val)) * 100, 1)
                         self.mode = 'PWM'  # Mode field is for backward compatibility, will be deprecated soon
@@ -721,7 +722,7 @@ class Output:
                         other_dev.pwm_prescale_val = tmp_pwm_prescale_val
                         if other_dev.pwm_duty > 0 and other_dev is not self:
                             await other_dev.set(pwm_duty=other_pwm_duty)
-                    self.block_pwm = False
+                self.block_pwm = False
 
             # Set Binary value
             if value is not None:
@@ -1622,14 +1623,13 @@ class AnalogInput:
         for mode, data in self.modes.items():
             if mode_value == data['value']:
                 if data.get("transformation"):
-                    logger.debug("-------- TRANSFORMATION --------")
-                    logger.debug(f"Mode: {data['value']} -> {data['transformation']}")
+                    #logger.debug(f"Mode: {data['value']} -> {data['transformation']}")
                     byteorder = AnalogInput.endian_map[data["transformation"].get("byteorder", "big")]
                     wordorder = AnalogInput.endian_map[data["transformation"].get("wordorder", "little")]
                     datatype = data["transformation"].get("datatype", "float32")
                     decimals = data["transformation"].get("decimals", 3)
                     ratio = data["transformation"].get("ratio", 1)
-                    logger.debug(f"{datatype} {byteorder} {wordorder} {decimals}")
+                    logger.debug(f"Aplying transformation on analog input {self.circuit}: {datatype} {byteorder} {wordorder} {decimals}")
                     if datatype == "float32":
                         self.transformation = lambda registers : round(BinaryPayloadDecoder.fromRegisters(registers,
                                                                                                       byteorder=byteorder,
