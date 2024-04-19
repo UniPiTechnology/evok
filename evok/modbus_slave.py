@@ -26,9 +26,10 @@ import time
 import subprocess
 
 
-def raise_if_null(val, register):
-    if val is not None: return val
-    raise ENoCacheRegister(f"No cached value of register {register}")
+def raise_if_null(data, index):
+    if index >= len(data) or data[index] is None:
+        raise ENoCacheRegister(f"No cached value of register '{index}'")
+    return data[index]
 
 
 class ModbusCacheMap(object):
@@ -45,25 +46,25 @@ class ModbusCacheMap(object):
 
     def __get_reg_group(self, index: int, is_input: bool):
         group = None
+        _index = None
         for m_reg_group in self.modbus_reg_map:
             group_is_input = m_reg_group.get('type', None) == 'input'
             if group_is_input is is_input and \
                     ((m_reg_group['start_reg']) <= index < (m_reg_group['count'] + m_reg_group['start_reg'])):
                 group = m_reg_group['values']
-                index -= m_reg_group['start_reg']
+                _index = index - m_reg_group['start_reg']
                 # print(f"index: '{index}' cont: '{count}'\tfind in: '{m_reg_group}'")
                 break
         if group is None:
-            raise ValueError(f"Unknown register {index}!")
-        return group, index
+            raise ValueError(f"get_reg_group: Unknown register {index}!")
+        return group, _index
 
     def get_register(self, count, index, is_input=False):
         try:
-            group, index = self.__get_reg_group(index=index, is_input=is_input)
-            ret = (raise_if_null(group[index + i], index + 1) for i in range(count))
-            return list(ret)
-        except KeyError as E:
-            raise Exception('Unknown register %d' % E.args[0])
+            group, _index = self.__get_reg_group(index=index, is_input=is_input)
+            return [raise_if_null(group, _index + i) for i in range(count)]
+        except (IndexError, KeyError) as E:
+            raise ValueError(f"get_register: get register {index} error: {E}")
 
     async def get_register_async(self, count, index, slave=0, is_input=False):
         group, group_index = self.__get_reg_group(index=index, is_input=is_input)
@@ -99,7 +100,7 @@ class ModbusCacheMap(object):
 
                     # check modbus response
                     if not isinstance(vals, ExceptionResponse) and not isinstance(vals, ModbusIOException) and\
-                       vals is not None:
+                       vals is not None and len(vals.registers) == m_reg_group['count']:
                         # update modbus cache
                         m_reg_group['values'] = vals.registers
 
