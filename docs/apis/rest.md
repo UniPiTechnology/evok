@@ -36,7 +36,7 @@ Value of DI 1.01 will be returned.
 
 ### Setting DO
 
-DO 1.01, 1.02, 1.03, 1.04 will be set to HIGH.
+DO 1.01 will be set to HIGH.
 
 === "Python"
 

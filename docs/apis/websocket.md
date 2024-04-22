@@ -8,7 +8,7 @@ WIP
 
 For python examples you need installed `websocket-client` package. You can install it with this command: `pip3 install websocket-client`.
 
-### Listening on websocket without filter
+### Listening on WebSocket without filter
 
 ```python title="Python"
 import websocket
@@ -44,7 +44,7 @@ Received message: [{"dev": "ai", "circuit": "2_04", "value": -0.003, "unit": "V"
 ...
 ```
 
-### Listening on websocket with filter on 'relay' and 'ao'
+### Listening on WebSocket with filter on 'relay' and 'ao'
 
 ```python title="Python"
 import websocket, json

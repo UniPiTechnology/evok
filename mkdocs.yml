@@ -43,10 +43,10 @@ nav:
     - HW definitions: configs/hw_definitions.md
   - Available APIs: apis.md
   - API examples:
-      - Bulk: apis/bulk.md
-      - JSON: apis/json.md
       - REST: apis/rest.md
-      - RPC: apis/rpc.md
-      - Webhook: apis/webhook.md
+      - JSON: apis/json.md
       - WebSocket: apis/websocket.md
+      - Bulk: apis/bulk.md
+      - Webhook: apis/webhook.md
+      - RPC: apis/rpc.md
   - Debugging: debugging.md
