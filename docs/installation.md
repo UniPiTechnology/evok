@@ -1,7 +1,7 @@
 # Installation guide
 
 Evok can be installed on Unipi OS or RaspberryPi OS.
-To install Evok, you will have to [prepared OS](#OS-preparation) and then [install the package](#installing-and-updating-evok).
+To install Evok, you will have to [prepare the OS](#OS-preparation) and then [install the package](#installing-and-updating-evok).
 
 ## OS preparation
 
@@ -41,7 +41,7 @@ You can proceed to [Installing and updating Evok](#installing-and-updating-evok)
 
 ## Installing and updating Evok
 
-Make sure you have [set up the repositories](#setting-up-repositories) correctly first. This works both for installind and updating.
+Make sure you have [prepared the OS](#OS-preparation) correctly first. This works both for installing and updating.
 
 ```bash title="Installing & updating Evok"
 sudo apt update
@@ -66,7 +66,7 @@ There are several ways of getting beta version.
 
 ### Switching to the beta repository
 
-**To be able use the beta version, you need to have [normal repositories](#setting-up-repositories) already installed**. You can switch to the beta version of Evok by adding the repository to the apt sources:
+**To be able use the beta version, you need to have [prepared OS](#OS-preparation) already installed**. You can switch to the beta version of Evok by adding the repository to the apt sources:
 
 === "Neuron"
 
