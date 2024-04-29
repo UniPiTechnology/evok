@@ -52,10 +52,13 @@ class OWSensorDevice:
 
 
 class TcpBusDevice:
+    count = 1
+
     def __init__(self, circuit: str, bus_driver: EvokModbusTcpClient, dev_id):
         self.dev_id = dev_id
         self.bus_driver = bus_driver
-        self.circuit = circuit
+        self.circuit = f"{circuit}_{self.count}"
+        self.count += 1
 
     def switch_to_async(self, loop: IOLoop):
         loop.add_callback(lambda: self.bus_driver.connect())
@@ -184,7 +187,11 @@ def hexint(value):
     return int(value)
 
 
+dev_counter = 0
+
+
 def create_devices(evok_config: EvokConfig, hw_dict):
+    global dev_counter
     dev_counter = 0
     for bus_name, bus_data in evok_config.get_comm_channels().items():
         bus_data: dict
@@ -210,11 +217,12 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                 return bus
 
         elif bus_type == 'MODBUSTCP':
-            dev_counter += 1
             modbus_server = bus_data.get("hostname", "127.0.0.1")
             modbus_port = bus_data.get("port", 502)
 
             def get_bus():
+                global dev_counter
+                dev_counter += 1
                 _bus_driver = EvokModbusTcpClient(host=modbus_server, port=modbus_port)
                 _bus = TcpBusDevice(circuit=bus_name, bus_driver=_bus_driver, dev_id=dev_counter)
                 Devices.register_device(TCPBUS, _bus)
