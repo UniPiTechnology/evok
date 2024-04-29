@@ -1,8 +1,9 @@
 # Installation guide
 
-To install Evok, you will have to [set up the repositories](#setting-up-repositories) and then [install the package](#installing-and-updating-evok).
+Evok can be installed on Unipi OS or RaspberryPi OS.
+To install Evok, you will have to [prepared OS](#OS-preparation) and then [install the package](#installing-and-updating-evok).
 
-## Setting up repositories
+## OS preparation
 
 This step varies by the platform used, either [Unipi images](#pre-built-unipi-os-images) or [RaspberryPi OS](#raspberrypi-os).
 
