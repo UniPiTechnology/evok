@@ -276,7 +276,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                     dev_counter += 1
                     Devices.register_device(MODBUS_SLAVE, slave)
 
-                    if bus_device_info is None:
+                    if bus_device_info is None or "device_info" in device_data:
                         device_info = {'model': device_name}
                         device_info.update(device_data.get("device_info", {}))
                         family = device_info.get("family", 'unknown')
