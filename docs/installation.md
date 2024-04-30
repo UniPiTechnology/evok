@@ -66,7 +66,7 @@ There are several ways of getting beta version.
 
 ### Switching to the beta repository
 
-**To be able use the beta version, you need to have [prepared OS](#OS-preparation) already installed**. You can switch to the beta version of Evok by adding the repository to the apt sources:
+**To be able use the beta version, you need to have the [OS prepared](#OS-preparation) already**. You can switch to the beta version of Evok by adding the repository to the apt sources:
 
 === "Neuron"
 
