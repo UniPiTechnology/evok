@@ -107,7 +107,7 @@ We recommend updating evok after beta image installation, see [Installing and up
 
 !!! note
 
-    This images has preinstalled Evok.
+    These images have Evok pre-installed.
 
 - [Neuron 32-bit](https://kb.unipi.technology/files:software:os-images:neuron-node-red-hidden)
 - [Neuron 64-bit](https://kb.unipi.technology/files:software:os-images:neuron64-node-red-hidden)
