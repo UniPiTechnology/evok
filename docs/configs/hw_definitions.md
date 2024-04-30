@@ -165,6 +165,7 @@ modbus_features:
     - Value register address
 - modes
     - List of available modes
+    - Modes are available in the API under these names
     - Every mode must define following parameters:
         - unit
             - Measure unit
@@ -197,6 +198,7 @@ modbus_features:
     - Mode register address
 - modes
     - List of available modes
+    - Modes are available in the API under these names
     - Every mode must define following parameters:
         - value
             - Value in mode_reg
