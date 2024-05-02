@@ -41,7 +41,7 @@ You can proceed to [Installing and updating Evok](#installing-and-updating-evok)
 
 ## Installing and updating Evok
 
-Make sure you have [prepared the OS](#OS-preparation) correctly first. This works both for installing and updating.
+Make sure you have [prepared the OS](#OS-preparation) correctly first. Following steps work both for installing and updating
 
 ```bash title="Installing & updating Evok"
 sudo apt update
