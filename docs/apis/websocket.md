@@ -44,7 +44,7 @@ Received message: [{"dev": "ai", "circuit": "2_04", "value": -0.003, "unit": "V"
 ...
 ```
 
-### Listening on WebSocket with filter on 'relay' and 'ao'
+### Listening on WebSocket with filter on 'do' and 'ao'
 
 ```python title="Python"
 import websocket, json
@@ -60,7 +60,7 @@ def on_close(ws, status, message):
     
 def on_open(ws):
     print("WebSocket connection opened")
-    msg = {"cmd": "filter", "devices": ["relay", "ao"]}
+    msg = {"cmd": "filter", "devices": ["do", "ao"]}
     ws.send(json.dumps(msg))
 
     
@@ -72,12 +72,12 @@ if __name__ == "__main__":
 
 ```text title="Output"
 WebSocket connection opened
-Received message: [{"dev": "relay", "relay_type": "digital", "circuit": "1_01", "value": 1, "pending": false, "mode": "Simple", "modes": ["Simple", "PWM"], "glob_dev_id": 2, "pwm_freq": 4800.0, "pwm_duty": 0}]
-Received message: [{"dev": "relay", "relay_type": "digital", "circuit": "1_04", "value": 1, "pending": false, "mode": "Simple", "modes": ["Simple", "PWM"], "glob_dev_id": 2, "pwm_freq": 4800.0, "pwm_duty": 0}]
+Received message: [{"dev": "do", "circuit": "1_01", "value": 1, "pending": false, "mode": "Simple", "modes": ["Simple", "PWM"], "glob_dev_id": 2, "pwm_freq": 4800.0, "pwm_duty": 0}]
+Received message: [{"dev": "do", "circuit": "1_04", "value": 1, "pending": false, "mode": "Simple", "modes": ["Simple", "PWM"], "glob_dev_id": 2, "pwm_freq": 4800.0, "pwm_duty": 0}]
 Received message: [{"dev": "ao", "circuit": "2_03", "mode": "Voltage", "modes": {"Voltage": {"unit": "V", "range": [0, 10]}}, "glob_dev_id": 3, "value": 5.9, "unit": "V", "range": [0, 10]}]
 Received message: [{"dev": "ao", "circuit": "2_04", "mode": "Voltage", "modes": {"Voltage": {"unit": "V", "range": [0, 10]}}, "glob_dev_id": 3, "value": 1.3, "unit": "V", "range": [0, 10]}]
-Received message: [{"dev": "relay", "relay_type": "digital", "circuit": "1_01", "value": 0, "pending": false, "mode": "Simple", "modes": ["Simple", "PWM"], "glob_dev_id": 2, "pwm_freq": 4800.0, "pwm_duty": 0}]
-Received message: [{"dev": "relay", "relay_type": "digital", "circuit": "1_04", "value": 0, "pending": false, "mode": "Simple", "modes": ["Simple", "PWM"], "glob_dev_id": 2, "pwm_freq": 4800.0, "pwm_duty": 0}]
+Received message: [{"dev": "do", "circuit": "1_01", "value": 0, "pending": false, "mode": "Simple", "modes": ["Simple", "PWM"], "glob_dev_id": 2, "pwm_freq": 4800.0, "pwm_duty": 0}]
+Received message: [{"dev": "do", "circuit": "1_04", "value": 0, "pending": false, "mode": "Simple", "modes": ["Simple", "PWM"], "glob_dev_id": 2, "pwm_freq": 4800.0, "pwm_duty": 0}]
 ...
 ```
 
@@ -99,7 +99,7 @@ def on_close(ws, status, message):
     
 def on_open(ws):
     print("WebSocket connection opened")
-    msg = {"cmd": "set", "dev": "relay", "circuit": "1_01", "value": 1}
+    msg = {"cmd": "set", "dev": "do", "circuit": "1_01", "value": 1}
     ws.send(json.dumps(msg))
     print("WebSocket send RO 1.01 to HIGH")
     ws.close()
