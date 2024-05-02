@@ -327,14 +327,14 @@ class Board(object):
             if 'start_index' in m_feature:
                 start_index = m_feature['start_index']
             if ('ds_modes' in m_feature) and ('direct_reg' in m_feature) and ('polar_reg' in m_feature) and ('toggle_reg' in m_feature):
-                _inp = Input("%s_%02d" % (self.circuit, counter + 1 + start_index), self, board_val_reg, 0x1 << (counter % 16),
-                             regdebounce=board_deboun_reg + counter, major_group=self.major_group, regcounter=board_counter_reg + (2 * counter), modes=m_feature['modes'],
-                             dev_id=self.dev_id, ds_modes=m_feature['ds_modes'], regmode=m_feature['direct_reg'], regtoggle=m_feature['toggle_reg'],
-                             regpolarity=m_feature['polar_reg'], legacy_mode=self.legacy_mode)
+                _inp = DigitalInput("%s_%02d" % (self.circuit, counter + 1 + start_index), self, board_val_reg, 0x1 << (counter % 16),
+                                    regdebounce=board_deboun_reg + counter, major_group=self.major_group, regcounter=board_counter_reg + (2 * counter), modes=m_feature['modes'],
+                                    dev_id=self.dev_id, ds_modes=m_feature['ds_modes'], regmode=m_feature['direct_reg'], regtoggle=m_feature['toggle_reg'],
+                                    regpolarity=m_feature['polar_reg'], legacy_mode=self.legacy_mode)
             else:
-                _inp = Input("%s_%02d" % (self.circuit, counter + 1 + start_index), self, board_val_reg, 0x1 << (counter % 16),
-                             regdebounce=board_deboun_reg + counter, major_group=self.major_group, regcounter=board_counter_reg + (2 * counter), modes=m_feature['modes'],
-                             dev_id=self.dev_id, legacy_mode=self.legacy_mode)
+                _inp = DigitalInput("%s_%02d" % (self.circuit, counter + 1 + start_index), self, board_val_reg, 0x1 << (counter % 16),
+                                    regdebounce=board_deboun_reg + counter, major_group=self.major_group, regcounter=board_counter_reg + (2 * counter), modes=m_feature['modes'],
+                                    dev_id=self.dev_id, legacy_mode=self.legacy_mode)
             self.__register_eventable_device(_inp)
             Devices.register_device(DI, _inp)
             counter+=1
@@ -356,19 +356,19 @@ class Board(object):
             # Hard PWM
             if m_feature.get('pwm_reg') and m_feature.get('pwm_ps_reg') and m_feature.get('pwm_c_reg'):
                 if not self.legacy_mode:
-                    _r = Output("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
-                                dev_id=self.dev_id, major_group=self.major_group, pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
-                                pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
+                    _r = DigitalOutput("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
+                                       dev_id=self.dev_id, major_group=self.major_group, pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
+                                       pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
                 else:
-                    _r = Output("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
-                                dev_id=self.dev_id, major_group=self.major_group, pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
-                                pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
+                    _r = DigitalOutput("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
+                                       dev_id=self.dev_id, major_group=self.major_group, pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
+                                       pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
             # Soft PWM
             elif m_feature.get('pwm_reg') and m_feature.get('pwm_preset_reg') and m_feature.get('pwm_cpres_reg'):
-                _r = Output("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
-                            dev_id=self.dev_id, major_group=self.major_group, pwmpresetreg=m_feature['pwm_preset_reg'],
-                            pwmcustompresc=m_feature['pwm_cpres_reg'], digital_only=True,
-                            pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
+                _r = DigitalOutput("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
+                                   dev_id=self.dev_id, major_group=self.major_group, pwmpresetreg=m_feature['pwm_preset_reg'],
+                                   pwmcustompresc=m_feature['pwm_cpres_reg'], digital_only=True,
+                                   pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
             else:
                 raise ValueError(f"Unexpected feature  {m_feature['type']}")
             self.__register_eventable_device(_r)
@@ -524,7 +524,7 @@ class Board(object):
         return self.full()
 
 
-class Output:
+class DigitalOutput:
     pending_id = 0
     def __init__(self, circuit, arm, coil, reg, mask, dev_id=0, major_group=0,
                  pwmcyclereg=-1, pwmprescalereg=-1, pwmdutyreg=-1, pwmpresetreg=-1, pwmcustompresc=-1 ,
@@ -564,7 +564,7 @@ class Output:
         self.forced_changes = False  # force_immediate_state_changes
 
     def full(self, forced_value=None):
-        ret =  {'dev': 'output',
+        ret =  {'dev': 'do',
                 'circuit': self.circuit,
                 'value': self.value,
                 'pending': self.pending_id != 0,
@@ -581,7 +581,7 @@ class Output:
         return ret
 
     def simple(self):
-        return {'dev': 'relay',
+        return {'dev': 'do',
                 'circuit': self.circuit,
                 'value': self.value}
 
@@ -799,7 +799,7 @@ class Relay:
         self.forced_changes = False  # force_immediate_state_changes
 
     def full(self, forced_value=None):
-        ret = {'dev': 'relay',
+        ret = {'dev': 'ro',
                'circuit': self.circuit,
                'value': self.value,
                'glob_dev_id': self.dev_id}
@@ -810,7 +810,7 @@ class Relay:
         return ret
 
     def simple(self):
-        return {'dev': 'relay',
+        return {'dev': 'ro',
                 'circuit': self.circuit,
                 'value': self.value}
 
@@ -1223,7 +1223,7 @@ class Register:
         return self.full()
 
 
-class Input:
+class DigitalInput:
     def __init__(self, circuit, arm, reg, mask, regcounter=None, regdebounce=None, regmode=None, regtoggle=None, regpolarity=None,
                  dev_id=0, major_group=0, modes=['Simple'], ds_modes=['Simple'], counter_modes=['Enabled', 'Disabled'], legacy_mode=True):
         self.alias = ""
@@ -1276,7 +1276,7 @@ class Input:
         return old_counter != self.counter or old_value != self.value
 
     def full(self):
-        ret = {'dev': 'input',
+        ret = {'dev': 'di',
                'circuit': self.circuit,
                'value': self.value,
                'debounce': self.debounce,
@@ -1295,12 +1295,12 @@ class Input:
 
     def simple(self):
         if self.counter_mode == 'Enabled':
-            return {'dev': 'input',
+            return {'dev': 'di',
                     'circuit': self.circuit,
                     'value': self.value,
                     'counter': self.counter}
         else:
-            return {'dev': 'input',
+            return {'dev': 'di',
                     'circuit': self.circuit,
                     'value': self.value}
 
