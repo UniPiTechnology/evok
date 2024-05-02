@@ -141,7 +141,7 @@ class WsHandler(websocket.WebSocketHandler):
             # get FULL state of each IO
             if cmd == "all":
                 result = []
-                devices = [INPUT, RELAY, AI, AO, SENSOR]
+                devices = [DI, RO, AI, AO, SENSOR]
                 if evok_config.get_api('websocket').get("all_filtered", False):
                     if (len(self.filter) == 1 and self.filter[0] == "default"):
                         for dev in devices:

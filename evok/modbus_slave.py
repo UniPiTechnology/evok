@@ -336,7 +336,7 @@ class Board(object):
                              regdebounce=board_deboun_reg + counter, major_group=self.major_group, regcounter=board_counter_reg + (2 * counter), modes=m_feature['modes'],
                              dev_id=self.dev_id, legacy_mode=self.legacy_mode)
             self.__register_eventable_device(_inp)
-            Devices.register_device(INPUT, _inp)
+            Devices.register_device(DI, _inp)
             counter+=1
 
     def parse_feature_ro(self, max_count, m_feature):
@@ -346,7 +346,7 @@ class Board(object):
             _r = Relay("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
                        dev_id=self.dev_id, major_group=self.major_group, legacy_mode=self.legacy_mode)
             self.__register_eventable_device(_r)
-            Devices.register_device(RELAY, _r)
+            Devices.register_device(RO, _r)
             counter += 1
 
     def parse_feature_do(self, max_count, m_feature):
@@ -372,7 +372,7 @@ class Board(object):
             else:
                 raise ValueError(f"Unexpected feature  {m_feature['type']}")
             self.__register_eventable_device(_r)
-            Devices.register_device(OUTPUT, _r)
+            Devices.register_device(DO, _r)
             counter += 1
 
     def parse_feature_led(self, max_count, m_feature):
@@ -530,7 +530,7 @@ class Output:
                  pwmcyclereg=-1, pwmprescalereg=-1, pwmdutyreg=-1, pwmpresetreg=-1, pwmcustompresc=-1 ,
                  legacy_mode=True, digital_only=False, modes=None):
         self.alias = ""
-        self.devtype = OUTPUT
+        self.devtype = DO
         self.dev_id = dev_id
         self.circuit = circuit
         self.arm = arm
@@ -687,7 +687,7 @@ class Output:
                         await self.arm.modbus_slave.client.write_register(self.pwmpresetreg, 2, slave=self.arm.modbus_address)
                         await self.arm.modbus_slave.client.write_register(self.pwmcustompresc, pwm_prescaler, slave=self.arm.modbus_address)
 
-                    other_devs = {dev: dev.pwm_duty for dev in Devices.by_int(RELAY, major_group=self.major_group)}
+                    other_devs = {dev: dev.pwm_duty for dev in Devices.by_int(RO, major_group=self.major_group)}
 
                     for other_dev, other_pwm_duty in other_devs.items():
                         other_dev.pwm_freq = self.pwm_freq
@@ -711,7 +711,7 @@ class Output:
                         tmp_pwm_prescale_val = round(sqrt(tmp_pwm_delay_val))
                         tmp_pwm_cycle_val = round(tmp_pwm_prescale_val)
 
-                    other_devs = {dev: dev.pwm_duty for dev in Devices.by_int(RELAY, major_group=self.major_group)}
+                    other_devs = {dev: dev.pwm_duty for dev in Devices.by_int(RO, major_group=self.major_group)}
 
                     await self.arm.modbus_slave.client.write_register(self.pwmcyclereg, tmp_pwm_cycle_val - 1, slave=self.arm.modbus_address)
                     await self.arm.modbus_slave.client.write_register(self.pwmprescalereg, tmp_pwm_prescale_val - 1, slave=self.arm.modbus_address)
@@ -783,7 +783,7 @@ class Relay:
 
     def __init__(self, circuit, arm, coil, reg, mask, dev_id=0, major_group=0, legacy_mode=True):
         self.alias = ""
-        self.devtype = RELAY
+        self.devtype = RO
         self.dev_id = dev_id
         self.circuit = circuit
         self.arm = arm
@@ -1227,7 +1227,7 @@ class Input:
     def __init__(self, circuit, arm, reg, mask, regcounter=None, regdebounce=None, regmode=None, regtoggle=None, regpolarity=None,
                  dev_id=0, major_group=0, modes=['Simple'], ds_modes=['Simple'], counter_modes=['Enabled', 'Disabled'], legacy_mode=True):
         self.alias = ""
-        self.devtype = INPUT
+        self.devtype = DI
         self.dev_id = dev_id
         self.circuit = circuit
         self.arm = arm

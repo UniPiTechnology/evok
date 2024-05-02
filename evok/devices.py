@@ -241,8 +241,8 @@ class DeviceList(dict):
 
 
 # # define device types constants
-RELAY = 0
-INPUT = 1
+RO = 0
+DI = 1
 AI = 2
 AO = 3
 EE = 4
@@ -258,7 +258,7 @@ UNIPI2 = 13
 UART = 14
 MODBUS_SLAVE = 15
 BOARD = 16
-OUTPUT = 17
+DO = 17
 LED = 18
 WATCHDOG = 19
 REGISTER = 20
@@ -275,8 +275,8 @@ RUN = 30
 
 # # corresponding device types names !! ORDER IS IMPORTANT
 devtype_names = (
-    'relay',
-    'input',
+    'ro',
+    'di',
     'ai',
     'ao',
     'ee',
@@ -292,7 +292,7 @@ devtype_names = (
     'uart',
     'modbus_slave',
     'board',
-    'output',
+    'do',
     'led',
     'watchdog',
     'register',
@@ -309,9 +309,9 @@ devtype_names = (
 )
 
 devtype_altnames = {
-    'di': 'input',
-    'do': 'output',
-    'ro': 'relay',
+    'input': 'di',
+    'output': 'do',
+    'relay': 'ro',
     'analoginput': 'ai',
     'analogoutput': 'ao',
     'eprom': 'ee',

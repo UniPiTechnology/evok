@@ -83,36 +83,36 @@ class Handler(UserBasicHelper):
 
     ###### Input ######
     def input_get(self, circuit):
-        inp = Devices.by_int(INPUT, str(circuit))
+        inp = Devices.by_int(DI, str(circuit))
         return inp.get()
 
     def input_get_value(self, circuit):
-        inp = Devices.by_int(INPUT, str(circuit))
+        inp = Devices.by_int(DI, str(circuit))
         return inp.get_value()
 
     def input_set(self, circuit, debounce):
-        inp = Devices.by_int(INPUT, str(circuit))
+        inp = Devices.by_int(DI, str(circuit))
         return inp.set(debounce=debounce)
 
     ###### Relay ######
     def relay_get(self, circuit):
-        relay = Devices.by_int(RELAY, str(circuit))
+        relay = Devices.by_int(RO, str(circuit))
         return relay.get_state()
 
     async def relay_set(self, circuit, value):
-        relay = Devices.by_int(RELAY, str(circuit))
+        relay = Devices.by_int(RO, str(circuit))
         return await relay.set_state(value)
 
     def output_get(self, circuit):
-        relay = Devices.by_int(OUTPUT, str(circuit))
+        relay = Devices.by_int(DO, str(circuit))
         return relay.get_state()
 
     async def output_set(self, circuit, value):
-        relay = Devices.by_int(OUTPUT, str(circuit))
+        relay = Devices.by_int(DO, str(circuit))
         return await relay.set_state(value)
 
     async def output_set_for_time(self, circuit, value, timeout):
-        relay = Devices.by_int(OUTPUT, str(circuit))
+        relay = Devices.by_int(DO, str(circuit))
         if timeout <= 0:
             raise Exception('Invalid timeout %s' % str(timeout))
         return await relay.set(value, timeout)
