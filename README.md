@@ -31,7 +31,8 @@ Our API can be found [here](https://unipitechnology.stoplight.io/docs/evok/nufpn
 - [Aliases](https://evok.readthedocs.io/en/latest/configs/aliases/) system of I/Os has been rewritten and are saved 5 mins after change, not immediately. Saving can be forced via API.
 - Structure of the aliases configuration file has been changed. Evok automatically updates the configuration file if an old version is loaded.
 - Added option 'all' instead of circuit using API (/rest/relay/all).
-- Relay entities are excluded from the 'output' endpoint and have a separate 'relay' endpoint.
+- Relay entities are excluded from the `output` endpoint and have a separate endpoint.
+- Refactor naming of I/Os to `di`, `do`, `ai`, `ao`, `ro`. Alternative names (`relay`, `input`, ...) is still available.
 - The mod switching method for AO and AI has been changed. Now the measured value and the range are not set separately, but one mode represents a combination of both properties.
 - Modbus RTU durability has been improved. Loss of communication with one device will not affect the functionality of the entire bus.
 - evok-web was split into separate [repository](https://github.com/UniPiTechnology/evok-web-jq) and has to be installed manually.
