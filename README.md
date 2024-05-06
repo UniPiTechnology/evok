@@ -15,42 +15,29 @@ Besides that, Evok also supports sending notifications via webhook.
 [evok-web] is a simple demo web application using Evok demonstrating its usage and allowing easy control of the devices configured in Evok.
 
 ## Documentation
+Installation, basic usage examples, configuration and further information can be found on [https://evok.readthedocs.io/](https://evok.readthedocs.io/)
 
-Evok documentation can be found [here](https://evok.readthedocs.io/).
-
-REST and JSON API documentation including syntax of all other API can be found on [Stoplight](https://unipitechnology.stoplight.io/docs/evok/nufpnwh01hk75-evok).
+Complete API documentation (REST and JSON API) including syntax of all other APIs can be found on [https://unipitechnology.stoplight.io/docs/evok](https://unipitechnology.stoplight.io/docs/evok)
 
 ## Major changes between Evok v2 and v3
 
 - Evok v3 is based on Python3.
 - Updating Evok from v2 to v3 is unsupported.
 - Migration from Debian 10 is unsupported and it's recommended to start from a fresh operating system.
-- The configuration of Evok has been completely rewritten to yaml. Hardware configuration is using tree structure. See more information in the [Evok configuration](https://evok.readthedocs.io/en/latest/configs/evok_configuration/).
-- Evok can communicate with more Modbus TCP servers.
-- The device names in the API now match the name in the configuration. For more information see [evok configuration](https://evok.readthedocs.io/en/latest/configs/evok_configuration/).
-- [Aliases](https://evok.readthedocs.io/en/latest/configs/aliases/) system of I/Os has been rewritten and are saved 5 mins after change, not immediately. Saving can be forced via API.
-- Structure of the aliases configuration file has been changed. Evok automatically updates the configuration file if an old version is loaded.
-- Modbus RTU durability has been improved. Loss of communication with one device will not affect the functionality of the entire bus.
-- Example website aka 'Unipi Control Panel' has been split into separate project [evok-web-jq](https://github.com/UniPiTechnology/evok-web-jq) and can be installed manually.
-- Added option 'all' instead of circuit using API (/rest/relay/all).
 - API breaking changes:
     - Relay entities are excluded from the `output` endpoint and have a separate endpoint `ro`.  Alternate access via `relay` is still available.
     - Digital output entities are excluded from the `output` endpoint and have a separate endpoint `do`. Alternate access via `output` is still available.
     - Digital input entities are excluded from the `input` endpoint and have a separate endpoint `di`. Alternate access via `input` is still available.
-    - The mod switching method for AO and AI has been changed. Now the measured value and the range are not set separately, but one mode represents a combination of both properties.
-- Removed entities:
-  - Eeprom
-  - i2cbus
-  - adchip
-  - mcp
-  - gpiobus
-  - pca9685
-  - unipi2
-  - uart
-  - wifi
-  - light_channel
-  - light_device
-  - ext_config
+    - The mode switching method for AO and AI has been changed. Now the measured value and the range are not set separately, but one mode represents a combination of both properties.
+- The configuration of Evok has been completely rewritten to yaml based on tree structure(old .conf structure is no longer supported). See more information in the [Evok configuration](https://evok.readthedocs.io/en/latest/configs/evok_configuration/).
+- Dropped support of rarely used functions/entities (Eeprom,i2cbus,adchip,mcp,gpiobus,pca9685,unipi2,uart,wifi,light_channel,light_device,ext_config)
+- Example website aka 'Unipi Control Panel' has been split into separate project [evok-web-jq](https://github.com/UniPiTechnology/evok-web-jq) and can be installed manually.
+- Added option 'all' instead of circuit using API (/rest/relay/all).
+- The device names in the API now match the name in the configuration. For more information see [evok configuration](https://evok.readthedocs.io/en/latest/configs/evok_configuration/).
+- [Aliases](https://evok.readthedocs.io/en/latest/configs/aliases/) system has been rewritten. Aliases are automatically saved 5 mins after a change, not immediately. Saving of aliases can be forced via API.
+- Aliases definition file structure has been changed. Evok automatically updates the aliases definition file if a version from Evok v2 is found.
+- Modbus RTU durability has been improved. Loss of communication with one device will not affect the functionality of the entire bus.
+- Added support to communicate with more Modbus TCP servers.
 
 ## Developer Note
 
