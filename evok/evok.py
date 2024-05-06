@@ -5,6 +5,7 @@ import contextlib
 
 import os
 import sys
+import traceback
 from importlib.metadata import version, PackageNotFoundError
 
 import jsonschema
@@ -143,22 +144,22 @@ class WsHandler(websocket.WebSocketHandler):
                 result = []
                 devices = [DI, RO, AI, AO, SENSOR]
                 if evok_config.get_api('websocket').get("all_filtered", False):
-                    if (len(self.filter) == 1 and self.filter[0] == "default"):
-                        for dev in devices:
-                            result += map(lambda dev: dev.full(), Devices.by_int(dev))
+                    if len(self.filter) == 1 and self.filter[0] == "default":
+                        for dev_num in devices:
+                            result += map(lambda dev: dev.full(), Devices.by_int(dev_num))
                     else:
-                        for dev in range(0, 25):
-                            added_results = map(lambda dev: dev.full() if dev.full() is not None else '',
-                                                Devices.by_int(dev))
+                        for dev_num in range(0, len(devtype_names)):
+                            added_results = map(lambda dev: dev.full() if hasattr(dev, "full") else None,
+                                                Devices.by_int(dev_num))
                             for added_result in added_results:
-                                if added_result != '' and added_result['dev'] in self.filter:
+                                if added_result is not None and added_result in self.filter:
                                     result.append(added_result)
                 else:
-                    for dev in range(0, 25):
-                        added_results = map(lambda dev: dev.full() if dev.full() is not None else '',
-                                            Devices.by_int(dev))
+                    for dev_num in range(0, len(devtype_names)):
+                        added_results = map(lambda dev: dev.full() if hasattr(dev, "full") else None,
+                                            Devices.by_int(dev_num))
                         for added_result in added_results:
-                            if added_result != '':
+                            if added_result is not None:
                                 result.append(added_result)
                 await self.write_message(json.dumps(result))
             # set device state
@@ -210,6 +211,8 @@ class WsHandler(websocket.WebSocketHandler):
 
         except Exception as E:
             logger.debug("Skipping WS message: %s (%s)", message, str(E))
+            if logger.level == logging.DEBUG:
+                traceback.print_exc()
             # skip it since we do not understand this message....
             pass
 
@@ -512,11 +515,11 @@ def main():
 
     alias_task = AliasTask(Devices.aliases, mainLoop)
 
-    for bustype in (OWBUS):
+    for bustype in [OWBUS]:
         for device in Devices.by_int(bustype):
             device.bus_driver.switch_to_async(mainLoop)
 
-    for bustype in (TCPBUS, SERIALBUS):
+    for bustype in [TCPBUS, SERIALBUS]:
         for device in Devices.by_int(bustype):
             device.switch_to_async(mainLoop)
 
