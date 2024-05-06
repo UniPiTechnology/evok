@@ -99,7 +99,7 @@ def on_open(ws):
     print("WebSocket connection opened")
     msg = {"cmd": "set", "dev": "do", "circuit": "1_01", "value": 1}
     ws.send(json.dumps(msg))
-    print("WebSocket send RO 1.01 to HIGH")
+    print("WebSocket send DO 1.01 to HIGH")
     ws.close()
 
     
@@ -111,6 +111,6 @@ if __name__ == "__main__":
 
 ```text title="Output"
 WebSocket connection opened
-WebSocket send RO 1.01 to HIGH
+WebSocket send DO 1.01 to HIGH
 WebSocket connection closed
 ```

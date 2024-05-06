@@ -34,7 +34,7 @@ For more information see [Evok configuration](../configs/evok_configuration.md).
   webhook:
     enabled: true
     address: http://127.0.0.1:8181
-    device_mask: ["do","ao"]
+    device_mask: ["do", "ro", "ao"]
     complex_events: true
 ```
 
