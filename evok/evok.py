@@ -148,14 +148,14 @@ class WsHandler(websocket.WebSocketHandler):
                         for dev_num in devices:
                             result += map(lambda dev: dev.full(), Devices.by_int(dev_num))
                     else:
-                        for dev_num in range(0, len(devtype_names)):
+                        for dev_num in devtype_names.keys():
                             added_results = map(lambda dev: dev.full() if hasattr(dev, "full") else None,
                                                 Devices.by_int(dev_num))
                             for added_result in added_results:
                                 if added_result is not None and added_result in self.filter:
                                     result.append(added_result)
                 else:
-                    for dev_num in range(0, len(devtype_names)):
+                    for dev_num in devtype_names.keys():
                         added_results = map(lambda dev: dev.full() if hasattr(dev, "full") else None,
                                             Devices.by_int(dev_num))
                         for added_result in added_results:
@@ -167,7 +167,7 @@ class WsHandler(websocket.WebSocketHandler):
                 devices = []
                 try:
                     for single_dev in message["devices"]:
-                        if (str(single_dev) in devtype_names) or (str(single_dev) in devtype_altnames):
+                        if (str(single_dev) in devtype_names.values()) or (str(single_dev) in devtype_altnames):
                             devices += [single_dev]
                     if len(devices) > 0 or len(message["devices"]) == 0:
                         self.filter = devices
