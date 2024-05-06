@@ -29,7 +29,7 @@ Our API can be found [here](https://unipitechnology.stoplight.io/docs/evok/nufpn
 - Evok can communicate with more Modbus TCP servers.
 - The device names in the API now match the name in the configuration. For more information see [evok configuration](https://evok.readthedocs.io/en/latest/configs/evok_configuration/).
 - [Aliases](https://evok.readthedocs.io/en/latest/configs/aliases/) system of I/Os has been rewritten and are saved 5 mins after change, not immediately. Saving can be forced via API.
-- Structure of the aliases configuration file has been changed. Evok automatically updates the configuration file if an old version is loaded.
+- Structure of the aliases configuration file has been changed. The old version alias configuration file is not supported.
 - Added option 'all' instead of circuit using API (/rest/relay/all).
 - Relay entities are excluded from the `output` endpoint and have a separate endpoint.
 - Refactor naming of I/Os to `di`, `do`, `ai`, `ao`, `ro`. Alternative names (`relay`, `input`, ...) is still available.
