@@ -494,7 +494,7 @@ def main():
     webhook_config = evok_config.get_api('webhook')
     if webhook_config.get("enabled", False):
         wh_address = webhook_config.get("address", "http://127.0.0.1:80/index.html")
-        wh_types = webhook_config.get("device_mask", ["input", "sensor", "uart", "watchdog"])
+        wh_types = webhook_config.get("device_mask", ["di", "sensor", "watchdog"])
         wh_complex = webhook_config.get("complex_events", False)
         wh = WhHandler(wh_address, wh_types, wh_complex)
         wh.open()

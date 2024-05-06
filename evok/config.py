@@ -303,13 +303,10 @@ def load_aliases(path):
     alias_dicts = list(HWDict(paths=[path]).definitions.values())
     # HWDict returns List(), take only first item
     alias_conf = alias_dicts[0] if len(alias_dicts) > 0 else dict()
-    version = alias_conf.get("version",None)
-    if version == 1.0:
-        # transform array to dict and rename dev_type -> devtype if version 1.0
-        result = dict(((rec["name"], {"circuit": rec.get("circuit",None), "devtype": rec.get("dev_type", None)}) \
-                       for rec in alias_conf.get("aliases", {}) \
-                       if rec.get("name", None) is not None))
-    elif version == 2.0:
+    version = str(alias_conf.get("version", "1.0"))
+    if version == "1.0":
+        raise EvokConfigError(f"Aliases file '{path}': Unsupported version '{version}' ('>=2.0' needed)")
+    elif version == "2.0":
         result = alias_conf.get("aliases", {})
     else:
         result = {}
