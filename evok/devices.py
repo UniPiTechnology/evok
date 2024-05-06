@@ -122,12 +122,14 @@ class DeviceList(dict):
 
     def __init__(self, altnames):
         super(DeviceList, self).__init__()
-        self._arr = []
+        self._arr = {}
         self.altnames = altnames
 
     def __setitem__(self, key, value):
-        if not (key in self.keys()): self._arr.append(value)
-        super(DeviceList, self).__setitem__(key, value)
+        data = {}
+        if not (key in self.keys()):
+            self._arr[key] = data
+        super(DeviceList, self).__setitem__(value, data)
 
     def __getitem__(self, key):
         try:
@@ -140,7 +142,7 @@ class DeviceList(dict):
 
     def remove_global_device(self, glob_dev_id):
         try:
-            for devtype_name in devtype_names:
+            for devtype_name in devtype_names.values():
                 to_delete = []
                 for dev_name in self[devtype_name]:
                     if ((self[devtype_name])[dev_name]).dev_id == glob_dev_id:
@@ -241,32 +243,20 @@ class DeviceList(dict):
 
 
 # # define device types constants
-RELAY = 0
-INPUT = 1
+RO = 0
+DO = 17
+DI = 1
 AI = 2
 AO = 3
-EE = 4
 SENSOR = 5
-I2CBUS = 6
-ADCHIP = 7
 OWBUS = 8
-MCP = 9
-GPIOBUS = 10
-PCA9685 = 11
 DS2408 = 12
-UNIPI2 = 13
-UART = 14
 MODBUS_SLAVE = 15
 BOARD = 16
-OUTPUT = 17
 LED = 18
 WATCHDOG = 19
 REGISTER = 20
-WIFI = 21
-LIGHT_CHANNEL = 22
-LIGHT_DEVICE = 23
 UNIT_REGISTER = 24
-EXT_CONFIG = 25
 TCPBUS = 26
 SERIALBUS = 27
 DEVICE_INFO = 28
@@ -274,55 +264,41 @@ OWPOWER = 29
 RUN = 30
 
 # # corresponding device types names !! ORDER IS IMPORTANT
-devtype_names = (
-    'relay',
-    'input',
-    'ai',
-    'ao',
-    'ee',
-    'sensor',
-    'i2cbus',
-    'adchip',
-    'owbus',
-    'mcp',
-    'gpiobus',
-    'pca9685',
-    'ds2408',
-    'unipi2',
-    'uart',
-    'modbus_slave',
-    'board',
-    'output',
-    'led',
-    'watchdog',
-    'register',
-    'wifi',
-    'light_channel',
-    'light_device',
-    'unit_register',
-    'ext_config',
-    'tcp_bus',
-    'serial_bus',
-    'device_info',
-    'owpower',
-    'run',
-)
+devtype_names = {
+    0: 'ro',
+    17: 'do',
+    1: 'di',
+    2: 'ai',
+    3: 'ao',
+    5: 'sensor',
+    8: 'owbus',
+    12: 'ds2408',
+    15: 'modbus_slave',
+    16: 'board',
+    18: 'led',
+    19: 'watchdog',
+    20: 'register',
+    24: 'unit_register',
+    26: 'tcp_bus',
+    27: 'serial_bus',
+    28: 'device_info',
+    29: 'owpower',
+    30: 'run',
+}
 
 devtype_altnames = {
-    'di': 'input',
-    'do': 'output',
-    'ro': 'relay',
+    'input': 'di',
+    'output': 'do',
+    'relay': 'ro',
     'analoginput': 'ai',
     'analogoutput': 'ao',
-    'eprom': 'ee',
     'wd': 'watchdog',
-    'rs485': 'uart',
     'temp': 'sensor'
 }
 
 Devices = DeviceList(devtype_altnames)
-for n in devtype_names:
-    Devices[n] = {}
+for num, name in devtype_names.items():
+    Devices[num] = name
 
 # define units
 NONE = 0

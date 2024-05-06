@@ -14,7 +14,7 @@ Value of DI 1.01 will be returned.
 import requests
 
 payload = {
-    "method": "input_get",
+    "method": "di_get",
     "params": ["1_01"],
     "jsonrpc": "2.0",
     "id": 0,
@@ -37,7 +37,7 @@ DO 1.01 will be set to HIGH.
 import requests
 
 payload = {
-    "method": "relay_set",
+    "method": "do_set",
     "params": ["1_01", '1'],
     "jsonrpc": "2.0",
     "id": 0,

@@ -18,7 +18,7 @@ Besides that, Evok also supports sending notifications via webhook.
 
 Evok documentation can be found [here](https://evok.readthedocs.io/).
 
-Our API can be found [here](https://unipitechnology.stoplight.io/docs/evok/nufpnwh01hk75-evok).
+REST and JSON API documentation including syntax of all other API can be found on [Stoplight](https://unipitechnology.stoplight.io/docs/evok/nufpnwh01hk75-evok).
 
 ## Major changes between Evok v2 and v3
 
@@ -30,11 +30,27 @@ Our API can be found [here](https://unipitechnology.stoplight.io/docs/evok/nufpn
 - The device names in the API now match the name in the configuration. For more information see [evok configuration](https://evok.readthedocs.io/en/latest/configs/evok_configuration/).
 - [Aliases](https://evok.readthedocs.io/en/latest/configs/aliases/) system of I/Os has been rewritten and are saved 5 mins after change, not immediately. Saving can be forced via API.
 - Structure of the aliases configuration file has been changed. Evok automatically updates the configuration file if an old version is loaded.
-- Added option 'all' instead of circuit using API (/rest/relay/all).
-- Relay entities are excluded from the 'output' endpoint and have a separate 'relay' endpoint.
-- The mod switching method for AO and AI has been changed. Now the measured value and the range are not set separately, but one mode represents a combination of both properties.
 - Modbus RTU durability has been improved. Loss of communication with one device will not affect the functionality of the entire bus.
-- evok-web was split into separate [repository](https://github.com/UniPiTechnology/evok-web-jq) and has to be installed manually.
+- Example website aka 'Unipi Control Panel' has been split into separate project [evok-web-jq](https://github.com/UniPiTechnology/evok-web-jq) and can be installed manually.
+- Added option 'all' instead of circuit using API (/rest/relay/all).
+- API breaking changes:
+    - Relay entities are excluded from the `output` endpoint and have a separate endpoint `ro`.  Alternate access via `relay` is still available.
+    - Digital output entities are excluded from the `output` endpoint and have a separate endpoint `do`. Alternate access via `output` is still available.
+    - Digital input entities are excluded from the `input` endpoint and have a separate endpoint `di`. Alternate access via `input` is still available.
+    - The mod switching method for AO and AI has been changed. Now the measured value and the range are not set separately, but one mode represents a combination of both properties.
+- Removed entities:
+  - Eeprom
+  - i2cbus
+  - adchip
+  - mcp
+  - gpiobus
+  - pca9685
+  - unipi2
+  - uart
+  - wifi
+  - light_channel
+  - light_device
+  - ext_config
 
 ## Developer Note
 

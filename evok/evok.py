@@ -5,6 +5,7 @@ import contextlib
 
 import os
 import sys
+import traceback
 from importlib.metadata import version, PackageNotFoundError
 
 import jsonschema
@@ -141,24 +142,24 @@ class WsHandler(websocket.WebSocketHandler):
             # get FULL state of each IO
             if cmd == "all":
                 result = []
-                devices = [INPUT, RELAY, AI, AO, SENSOR]
+                devices = [DI, RO, AI, AO, SENSOR]
                 if evok_config.get_api('websocket').get("all_filtered", False):
-                    if (len(self.filter) == 1 and self.filter[0] == "default"):
-                        for dev in devices:
-                            result += map(lambda dev: dev.full(), Devices.by_int(dev))
+                    if len(self.filter) == 1 and self.filter[0] == "default":
+                        for dev_num in devices:
+                            result += map(lambda dev: dev.full(), Devices.by_int(dev_num))
                     else:
-                        for dev in range(0, 25):
-                            added_results = map(lambda dev: dev.full() if dev.full() is not None else '',
-                                                Devices.by_int(dev))
+                        for dev_num in devtype_names.keys():
+                            added_results = map(lambda dev: dev.full() if hasattr(dev, "full") else None,
+                                                Devices.by_int(dev_num))
                             for added_result in added_results:
-                                if added_result != '' and added_result['dev'] in self.filter:
+                                if added_result is not None and added_result in self.filter:
                                     result.append(added_result)
                 else:
-                    for dev in range(0, 25):
-                        added_results = map(lambda dev: dev.full() if dev.full() is not None else '',
-                                            Devices.by_int(dev))
+                    for dev_num in devtype_names.keys():
+                        added_results = map(lambda dev: dev.full() if hasattr(dev, "full") else None,
+                                            Devices.by_int(dev_num))
                         for added_result in added_results:
-                            if added_result != '':
+                            if added_result is not None:
                                 result.append(added_result)
                 await self.write_message(json.dumps(result))
             # set device state
@@ -166,7 +167,7 @@ class WsHandler(websocket.WebSocketHandler):
                 devices = []
                 try:
                     for single_dev in message["devices"]:
-                        if (str(single_dev) in devtype_names) or (str(single_dev) in devtype_altnames):
+                        if (str(single_dev) in devtype_names.values()) or (str(single_dev) in devtype_altnames):
                             devices += [single_dev]
                     if len(devices) > 0 or len(message["devices"]) == 0:
                         self.filter = devices
@@ -210,6 +211,8 @@ class WsHandler(websocket.WebSocketHandler):
 
         except Exception as E:
             logger.debug("Skipping WS message: %s (%s)", message, str(E))
+            if logger.level == logging.DEBUG:
+                traceback.print_exc()
             # skip it since we do not understand this message....
             pass
 
@@ -494,7 +497,7 @@ def main():
     webhook_config = evok_config.get_api('webhook')
     if webhook_config.get("enabled", False):
         wh_address = webhook_config.get("address", "http://127.0.0.1:80/index.html")
-        wh_types = webhook_config.get("device_mask", ["input", "sensor", "uart", "watchdog"])
+        wh_types = webhook_config.get("device_mask", ["di", "sensor", "watchdog"])
         wh_complex = webhook_config.get("complex_events", False)
         wh = WhHandler(wh_address, wh_types, wh_complex)
         wh.open()
@@ -512,11 +515,11 @@ def main():
 
     alias_task = AliasTask(Devices.aliases, mainLoop)
 
-    for bustype in (I2CBUS, GPIOBUS, OWBUS):
+    for bustype in [OWBUS]:
         for device in Devices.by_int(bustype):
             device.bus_driver.switch_to_async(mainLoop)
 
-    for bustype in (ADCHIP, TCPBUS, SERIALBUS):
+    for bustype in [TCPBUS, SERIALBUS]:
         for device in Devices.by_int(bustype):
             device.switch_to_async(mainLoop)
 
@@ -531,10 +534,6 @@ def main():
 
     # graceful shutdown
     def shutdown():
-        for bus in Devices.by_int(I2CBUS):
-            bus.bus_driver.switch_to_sync()
-        for bus in Devices.by_int(GPIOBUS):
-            bus.bus_driver.switch_to_sync()
         alias_task.cancel()
         logger.info("Shutting down")
         tornado.ioloop.IOLoop.instance().stop()

@@ -66,7 +66,7 @@ paths:
               examples:
                 S167:
                   value:
-                    - dev: input
+                    - dev: di
                       circuit: '1_01'
                       value: 0
                       debounce: 30
@@ -80,7 +80,7 @@ paths:
                         - Simple
                         - DirectSwitch
                       glob_dev_id: 2
-                    - dev: input
+                    - dev: di
                       circuit: '1_02'
                       value: 0
                       debounce: 50
@@ -94,7 +94,7 @@ paths:
                         - Simple
                         - DirectSwitch
                       glob_dev_id: 2
-                    - dev: input
+                    - dev: di
                       circuit: '1_03'
                       value: 0
                       debounce: 50
@@ -108,7 +108,7 @@ paths:
                         - Simple
                         - DirectSwitch
                       glob_dev_id: 2
-                    - dev: input
+                    - dev: di
                       circuit: '1_04'
                       value: 0
                       debounce: 50
@@ -122,8 +122,7 @@ paths:
                         - Simple
                         - DirectSwitch
                       glob_dev_id: 2
-                    - dev: relay
-                      relay_type: digital
+                    - dev: do
                       circuit: '1_01'
                       value: 0
                       pending: false
@@ -134,8 +133,7 @@ paths:
                       glob_dev_id: 2
                       pwm_freq: 39.0625
                       pwm_duty: 0
-                    - dev: relay
-                      relay_type: digital
+                    - dev: do
                       circuit: '1_02'
                       value: 0
                       pending: false
@@ -146,8 +144,7 @@ paths:
                       glob_dev_id: 2
                       pwm_freq: 39.0625
                       pwm_duty: 0
-                    - dev: relay
-                      relay_type: digital
+                    - dev: do
                       circuit: '1_03'
                       value: 0
                       pending: false
@@ -158,8 +155,7 @@ paths:
                       glob_dev_id: 2
                       pwm_freq: 39.0625
                       pwm_duty: 0
-                    - dev: relay
-                      relay_type: digital
+                    - dev: do
                       circuit: '1_04'
                       value: 0
                       pending: false
@@ -267,9 +263,9 @@ paths:
         content: {}
       tags:
         - General command
-  '/{format}/input/{circuit}':
+  '/{format}/di/{circuit}':
     get:
-      summary: Read input object
+      summary: Read di object
       tags:
         - Binary input
       responses:
@@ -278,11 +274,11 @@ paths:
           content:
             text/html:
               schema:
-                $ref: '#/components/schemas/Input'
+                $ref: '#/components/schemas/Digital_input'
               examples:
                 Example:
                   value:
-                    dev: input
+                    dev: di
                     circuit: '1_01'
                     value: 0
                     debounce: 30
@@ -298,11 +294,11 @@ paths:
                     glob_dev_id: 2
             application/json:
               schema:
-                $ref: '#/components/schemas/Input'
+                $ref: '#/components/schemas/Digital_input'
               examples:
                 Example:
                   value:
-                    dev: input
+                    dev: di
                     circuit: '1_01'
                     value: 0
                     debounce: 30
@@ -352,11 +348,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Input_params'
+              $ref: '#/components/schemas/Digital_input_params'
             examples: {}
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Input_params'
+              $ref: '#/components/schemas/Digital_input_params'
             examples: {}
       description: Set one or more parameters related to any single binary input.
   '/{format}/owpower/{circuit}':
@@ -670,7 +666,7 @@ paths:
               examples:
                 Example:
                   value:
-                    dev: input
+                    dev: di
                     circuit: '1_01'
                     value: 0
                     debounce: 30
@@ -688,11 +684,11 @@ paths:
               schema:
                 allOf:
                   - $ref: '#/components/schemas/Device'
-                  - $ref: '#/components/schemas/Input'
+                  - $ref: '#/components/schemas/Digital_input'
               examples:
                 Example:
                   value:
-                    dev: input
+                    dev: di
                     circuit: '1_01'
                     value: 0
                     debounce: 30
@@ -745,7 +741,7 @@ paths:
               examples:
                 Example:
                   value:
-                    dev: input
+                    dev: di
                     circuit: '1_01'
                     value: 0
                     debounce: 30
@@ -765,7 +761,7 @@ paths:
               examples:
                 Example:
                   value:
-                    dev: input
+                    dev: di
                     circuit: '1_01'
                     value: 0
                     debounce: 30
@@ -848,11 +844,11 @@ paths:
               schema:
                 allOf:
                   - $ref: '#/components/schemas/Device'
-                  - $ref: '#/components/schemas/Input'
+                  - $ref: '#/components/schemas/Digital_input'
               examples:
                 Example:
                   value:
-                    dev: input
+                    dev: di
                     circuit: '1_01'
                     value: 0
                     debounce: 30
@@ -908,7 +904,7 @@ paths:
               examples:
                 Example:
                   value:
-                    dev: input
+                    dev: di
                     circuit: '1_01'
                     value: 0
                     debounce: 30
@@ -964,7 +960,7 @@ paths:
               examples:
                 Example:
                   value:
-                    dev: input
+                    dev: di
                     circuit: '1_01'
                     value: 0
                     debounce: 30
@@ -1041,7 +1037,7 @@ paths:
               examples:
                 Example:
                   value:
-                    dev: input
+                    dev: di
                     circuit: '1_01'
                     value: 0
                     debounce: 30
@@ -1059,11 +1055,11 @@ paths:
               schema:
                 allOf:
                   - $ref: '#/components/schemas/Device'
-                  - $ref: '#/components/schemas/Input'
+                  - $ref: '#/components/schemas/Digital_input'
               examples:
                 Example:
                   value:
-                    dev: input
+                    dev: di
                     circuit: '1_01'
                     value: 0
                     debounce: 30
@@ -1124,7 +1120,7 @@ paths:
       tags:
         - Watchdog
         - Setter
-  '/{format}/output/{circuit}':
+  '/{format}/do/{circuit}':
     get:
       summary: Read output object
       responses:
@@ -1133,11 +1129,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Relay'
+                $ref: '#/components/schemas/Digital_output'
               examples: {}
             text/html:
               schema:
-                $ref: '#/components/schemas/Relay'
+                $ref: '#/components/schemas/Digital_output'
               examples: {}
       description: Get **all** properties of single binary output including current value and parameters.
       operationId: read-output-object
@@ -1181,7 +1177,7 @@ paths:
                     x-stoplight:
                       id: jtn0bt4xp9yht
                   result:
-                    $ref: '#/components/schemas/Relay'
+                    $ref: '#/components/schemas/Digital_output'
                     x-stoplight:
                       id: a2nsiopwetife
       operationId: post-rest-output-circuit
@@ -1190,10 +1186,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Relay_params'
+              $ref: '#/components/schemas/Digital_output_params'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Relay_params'
+              $ref: '#/components/schemas/Digital_output_params'
       description: Set one or more parameters related to any single binary output.
       x-stoplight:
         id: 3479uzzy667vy
@@ -1338,7 +1334,7 @@ paths:
                   success:
                     $ref: '#/components/schemas/Status'
                   result:
-                    $ref: '#/components/schemas/Relay'
+                    $ref: '#/components/schemas/Analog_output'
       operationId: set-analog-output-circuit
       parameters: []
       requestBody:
@@ -1418,7 +1414,7 @@ paths:
                   success:
                     $ref: '#/components/schemas/Status'
                   result:
-                    $ref: '#/components/schemas/Relay'
+                    $ref: '#/components/schemas/Analog_input'
       operationId: set-analog-input-circuit
       parameters: []
       requestBody:
@@ -1633,7 +1629,33 @@ components:
           example: input
           description: device type (class)
           readOnly: true
-    Relay:
+    Relay_output:
+      allOf:
+        - type: object
+          properties:
+            pending:
+              type: boolean
+              example: false
+        - $ref: '#/components/schemas/Device'
+          x-stoplight:
+            id: 1vnsfsoo1yhkq
+        - $ref: '#/components/schemas/Relay_output_params'
+          x-stoplight:
+            id: 2b4dkqf8rzvj3
+    Relay_output_params:
+      x-stoplight:
+        id: kd8k08k6qruvr
+      description: User-configurable parameters of binary output device.
+      type: object
+      properties:
+        value:
+          example: 1
+          type:
+            - integer
+            - string
+            - boolean
+          description: Parameter for relay switch.
+    Digital_output:
       allOf:
         - type: object
           properties:
@@ -1648,19 +1670,13 @@ components:
             pending:
               type: boolean
               example: false
-            relay_type:
-              description: 'Transistor output (digital) or electromagnetic relay (physical). Only [digital] ouptuts supports PWM.'
-              enum:
-                - digital
-                - physical
-              example: digital
         - $ref: '#/components/schemas/Device'
           x-stoplight:
             id: 1vnsfsoo1yhkq
-        - $ref: '#/components/schemas/Relay_params'
+        - $ref: '#/components/schemas/Digital_output_params'
           x-stoplight:
-            id: 2b4dkqf8rzvj3
-    Relay_params:
+            id: 2b4dkqf8rzvj3  # TODO: ??? ids ???
+    Digital_output_params:
       x-stoplight:
         id: kd8k08k6qruvr
       description: User-configurable parameters of binary output device.
@@ -1686,8 +1702,8 @@ components:
             - PWM
           x-stoplight:
             id: tdz0fw91bflul
-    Input:
-      title: Input
+    Digital_input:
+      title: DigitalInput
       description: Instance of a single binary input
       allOf:
         - type: object
@@ -1718,7 +1734,7 @@ components:
                 - 0
                 - 1
               readOnly: true
-        - $ref: '#/components/schemas/Input_params'
+        - $ref: '#/components/schemas/Digital_input_params'
           x-stoplight:
             id: ihhyx4t4basxf
         - $ref: '#/components/schemas/Device'
@@ -1741,8 +1757,8 @@ components:
           type: string
           x-stoplight:
             id: hzfxf96rjvnv9
-    Input_params:
-      title: Input_params
+    Digital_input_params:
+      title: DigitalInput_params
       x-stoplight:
         id: k3r80ce41e3ta
       type: object
