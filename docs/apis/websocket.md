@@ -2,8 +2,6 @@
 
 The WebSocket API allows for two-way communication between the client and the server over an open connection. Evok sends changes to every connected client. A list of reflected devices can be defined. It is suitable for cases, where you need to immediately react to events in your application.
 
-WIP
-
 ## Examples
 
 For python examples you need installed `websocket-client` package. You can install it with this command: `pip3 install websocket-client`.
