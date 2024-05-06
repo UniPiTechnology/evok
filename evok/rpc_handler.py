@@ -178,20 +178,3 @@ class Handler(UserBasicHelper):
     def sensor_get_value(self, circuit):
         sens = Devices.by_int(SENSOR, str(circuit))
         return sens.get_value()
-
-    async def pca_set(self, circuit, channel, on, off):
-        pca = Devices.by_int(PCA9685, str(circuit))
-        return await pca.set(channel, on, off)
-
-    async def pca_set_pwm(self, circuit, channel, val):
-        pca = Devices.by_int(PCA9685, str(circuit))
-        return await pca.set_pwm(channel, val)
-
-    ###### EEprom ######
-    async def ee_read_byte(self, circuit, index):
-        ee = Devices.by_int(EE, str(circuit))
-        return await ee.read_byte(index)
-
-    async def ee_write_byte(self, circuit, index, value):
-        ee = Devices.by_int(EE, str(circuit))
-        return await ee.write_byte(index, value)

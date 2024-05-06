@@ -242,65 +242,41 @@ class DeviceList(dict):
 
 # # define device types constants
 RO = 0
-DI = 1
-AI = 2
-AO = 3
-EE = 4
+DO = 1
+DI = 2
+AI = 3
+AO = 4
 SENSOR = 5
-I2CBUS = 6
-ADCHIP = 7
-OWBUS = 8
-MCP = 9
-GPIOBUS = 10
-PCA9685 = 11
-DS2408 = 12
-UNIPI2 = 13
-UART = 14
-MODBUS_SLAVE = 15
-BOARD = 16
-DO = 17
-LED = 18
-WATCHDOG = 19
-REGISTER = 20
-WIFI = 21
-LIGHT_CHANNEL = 22
-LIGHT_DEVICE = 23
-UNIT_REGISTER = 24
-EXT_CONFIG = 25
-TCPBUS = 26
-SERIALBUS = 27
-DEVICE_INFO = 28
-OWPOWER = 29
-RUN = 30
+OWBUS = 6
+DS2408 = 7
+MODBUS_SLAVE = 8
+BOARD = 9
+LED = 10
+WATCHDOG = 11
+REGISTER = 12
+UNIT_REGISTER = 13
+TCPBUS = 14
+SERIALBUS = 15
+DEVICE_INFO = 16
+OWPOWER = 17
+RUN = 18
 
 # # corresponding device types names !! ORDER IS IMPORTANT
 devtype_names = (
     'ro',
+    'do',
     'di',
     'ai',
     'ao',
-    'ee',
     'sensor',
-    'i2cbus',
-    'adchip',
     'owbus',
-    'mcp',
-    'gpiobus',
-    'pca9685',
     'ds2408',
-    'unipi2',
-    'uart',
     'modbus_slave',
     'board',
-    'do',
     'led',
     'watchdog',
     'register',
-    'wifi',
-    'light_channel',
-    'light_device',
     'unit_register',
-    'ext_config',
     'tcp_bus',
     'serial_bus',
     'device_info',
@@ -314,9 +290,7 @@ devtype_altnames = {
     'relay': 'ro',
     'analoginput': 'ai',
     'analogoutput': 'ao',
-    'eprom': 'ee',
     'wd': 'watchdog',
-    'rs485': 'uart',
     'temp': 'sensor'
 }
 
