@@ -52,17 +52,20 @@ class OWSensorDevice:
 
 
 class TcpBusDevice:
+    count = 1
+
     def __init__(self, circuit: str, bus_driver: EvokModbusTcpClient, dev_id):
         self.dev_id = dev_id
         self.bus_driver = bus_driver
-        self.circuit = circuit
+        self.circuit = f"{circuit}_{self.count}"
+        self.count += 1
 
     def switch_to_async(self, loop: IOLoop):
         loop.add_callback(lambda: self.bus_driver.connect())
 
 
 class SerialBusDevice:
-    def __init__(self, circuit: str,  bus_driver: EvokModbusSerialClient, dev_id):
+    def __init__(self, circuit: str, bus_driver: EvokModbusSerialClient, dev_id):
         self.dev_id = dev_id
         self.bus_driver = bus_driver
         self.circuit = circuit
@@ -102,7 +105,7 @@ class DeviceInfo:
 class EvokConfig:
 
     def __init__(self, conf_dir_path: str):
-        data = self.__get_final_conf(scope=[conf_dir_path+'/config.yaml'])
+        data = self.__get_final_conf(scope=[conf_dir_path + '/config.yaml'])
         self.comm_channels: dict = self.__get_comm_channels(data)
         self.apis: dict = self.__get_apis_conf(data)
         self.logging: dict = self.__get_logging_conf(data)
@@ -184,7 +187,11 @@ def hexint(value):
     return int(value)
 
 
+dev_counter = 0
+
+
 def create_devices(evok_config: EvokConfig, hw_dict):
+    global dev_counter
     dev_counter = 0
     for bus_name, bus_data in evok_config.get_comm_channels().items():
         bus_data: dict
@@ -193,7 +200,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
             continue
         bus_type = bus_data['type']
 
-        bus = None
+        get_bus: Callable[[], Any] = lambda: None
         bus_device_info: Union[None, DeviceInfo] = None
         if bus_type == 'OWBUS':
             dev_counter += 1
@@ -206,13 +213,20 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                                        dev_id=dev_counter, owpower_circuit=owpower)
             Devices.register_device(OWBUS, bus)
 
+            def get_bus():
+                return bus
+
         elif bus_type == 'MODBUSTCP':
-            dev_counter += 1
             modbus_server = bus_data.get("hostname", "127.0.0.1")
             modbus_port = bus_data.get("port", 502)
-            bus_driver = EvokModbusTcpClient(host=modbus_server, port=modbus_port)
-            bus = TcpBusDevice(circuit=bus_name, bus_driver=bus_driver, dev_id=dev_counter)
-            Devices.register_device(TCPBUS, bus)
+
+            def get_bus():
+                global dev_counter
+                dev_counter += 1
+                _bus_driver = EvokModbusTcpClient(host=modbus_server, port=modbus_port)
+                _bus = TcpBusDevice(circuit=bus_name, bus_driver=_bus_driver, dev_id=dev_counter)
+                Devices.register_device(TCPBUS, _bus)
+                return _bus
 
         elif bus_type == "MODBUSRTU":
             dev_counter += 1
@@ -223,20 +237,22 @@ def create_devices(evok_config: EvokConfig, hw_dict):
             bus_driver = EvokModbusSerialClient(port=serial_port, baudrate=serial_baud_rate, parity=serial_parity,
                                                 stopbits=serial_stopbits, timeout=0.5)
             bus = SerialBusDevice(circuit=bus_name, bus_driver=bus_driver, dev_id=dev_counter)
-            Devices.register_device(SERIALBUS, bus)
+            Devices.register_device(SERIALBUS, get_bus)
 
-        if bus is not None:
-            bus_device_info_data = bus_data.get("device_info", None)  # noqa
-            if bus_device_info_data is not None:
-                bus_device_info_data: dict
-                family = bus_device_info_data.get("family", 'unknown')
-                model = bus_device_info_data.get("model", 'unknown')
-                sn = bus_device_info_data.get("sn", None)
-                board_count = bus_device_info_data.get("board_count", 1)
-                bus_device_info = DeviceInfo(family=family, model=model, sn=sn, board_count=board_count,
-                                             dev_id=dev_counter)
-                dev_counter += 1
-                Devices.register_device(DEVICE_INFO, bus_device_info)
+            def get_bus():
+                return bus
+
+        bus_device_info_data: None | dict = bus_data.get("device_info", None)
+        if bus_device_info_data is not None:
+            bus_device_info_data: dict
+            family = bus_device_info_data.get("family", 'unknown')
+            model = bus_device_info_data.get("model", 'unknown')
+            sn = bus_device_info_data.get("sn", None)
+            board_count = bus_device_info_data.get("board_count", 1)
+            bus_device_info = DeviceInfo(family=family, model=model, sn=sn, board_count=board_count,
+                                         dev_id=dev_counter)
+            dev_counter += 1
+            Devices.register_device(DEVICE_INFO, bus_device_info)
 
         if 'devices' not in bus_data:
             logger.info(f"Creating bus '{bus_name}' with type '{bus_type}'.")
@@ -255,7 +271,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                     interval = device_data.getintdef("interval", 15)
 
                     circuit = device_name
-                    sensor = owdevice.MySensorFabric(address, ow_type, bus, interval=interval, circuit=circuit,
+                    sensor = owdevice.MySensorFabric(address, ow_type, get_bus, interval=interval, circuit=circuit,
                                                      is_static=True)
                     if sensor is not None:
                         sensor = OWSensorDevice(sensor, dev_id=dev_counter)
@@ -270,7 +286,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                     circuit = f"{device_name}"
                     major_group = device_name
 
-                    slave = ModbusSlave(bus.bus_driver, circuit, evok_config, scanfreq, scan_enabled,
+                    slave = ModbusSlave(get_bus().bus_driver, circuit, evok_config, scanfreq, scan_enabled,
                                         hw_dict, device_model=device_model, slave_id=slave_id,
                                         dev_id=dev_counter, major_group=major_group)
                     dev_counter += 1
@@ -303,10 +319,10 @@ def load_aliases(path):
     alias_dicts = list(HWDict(paths=[path]).definitions.values())
     # HWDict returns List(), take only first item
     alias_conf = alias_dicts[0] if len(alias_dicts) > 0 else dict()
-    version = alias_conf.get("version",None)
+    version = alias_conf.get("version", None)
     if version == 1.0:
         # transform array to dict and rename dev_type -> devtype if version 1.0
-        result = dict(((rec["name"], {"circuit": rec.get("circuit",None), "devtype": rec.get("dev_type", None)}) \
+        result = dict(((rec["name"], {"circuit": rec.get("circuit", None), "devtype": rec.get("dev_type", None)}) \
                        for rec in alias_conf.get("aliases", {}) \
                        if rec.get("name", None) is not None))
     elif version == 2.0:
