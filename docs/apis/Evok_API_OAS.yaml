@@ -38,7 +38,7 @@ paths:
       summary: Get all circuits
       responses:
         '200':
-          description: Current data snapshot of all cicuits in the system.
+          description: Current data snapshot of all circuits in the system.
           content:
             application/json:
               schema:
@@ -255,16 +255,155 @@ paths:
         '404':
           description: User Not Found
       operationId: get-all-circuits
-      description: Retrieve the full information dump of all cictuits inside the system.
+      description: Retrieve the full information dump of all circuits inside the system.
       x-stoplight:
         id: m7p89alenp2u3
       tags:
         - General command
+  '/{format}/{device_type}/all':
+    parameters:
+      - name: format
+        in: path
+        required: true
+        schema:
+          type: string
+          examples: [json]
+          enum:
+            - json
+            - rest
+          default: json
+        description: Content type - use "json" for application/json OR "rest" for text/html eventual application/x-www-form-urlencoded (legacy)
+      - name: device_type
+        description: Device type
+        in: path
+        required: true
+        schema:
+          type: string
+          enum:
+            - di
+            - ai
+            - ao
+            - do
+            - wd
+            - led
+          examples: [di]
+    get:
+      summary: Get all circuits of device type
+      description: Read all devices of the same type present in the whole system.
+      tags:
+        - General command
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                uniqueItems: true
+                items:
+                  type: object
+                  $ref: '#/components/schemas/Device'
+                  x-stoplight:
+                    id: rnn7b379iocrf
+              examples:
+                Example 1:
+                  value:
+                    - dev: led
+                      circuit: '1_01'
+                      value: 0
+                      glob_dev_id: 2
+                    - dev: led
+                      circuit: '1_02'
+                      value: 0
+                      glob_dev_id: 2
+                    - dev: led
+                      circuit: '1_03'
+                      value: 0
+                      glob_dev_id: 2
+                    - dev: led
+                      circuit: '1_04'
+                      value: 0
+                      glob_dev_id: 2
+      operationId: get-format-device-all
+      x-stoplight:
+        id: 2a8zh84up8mp4
+  '/{format}/{device_type}/{circuit}/{parameter}':
+    get:
+      summary: Read any parameter from any device_type.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                x-examples:
+                  Example 1:
+                    value: 0
+                properties:
+                  value:
+                    type: integer
+                    examples: [0]
+              examples: {}
+            text/html:
+              schema:
+                type: object
+                x-examples:
+                  Example 1:
+                    value: 0
+                properties:
+                  value:
+                    type: integer
+                    examples: [0]
+              examples: {}
+      description: Retrieve any single parameter from any device_type.
+                   This is commonly used to quickly obtain the value without requiring additional data.
+                   **It's recommended to use this endpoint as input getter in most applications.**
+      operationId: read-input-object-parameter
+      x-stoplight:
+        id: ulh6qg2h9b0ue
+      tags:
+        - General command
+    parameters:
+      - schema:
+          type: string
+          examples: ['1_01', '1_02', '2_01', 'all']
+        name: circuit
+        in: path
+        required: true
+        description: Device circuit (or "all")
+      - $ref: '#/components/parameters/format'
+      - schema:
+          type: string
+          examples: ['value']
+          default: 'value'
+        name: parameter
+        in: path
+        required: true
+        description: Name of retrieved parameter
+      - schema:
+          type: string
+          examples: ['ro', 'do', 'di']
+          default: 'do'
+        name: device_type
+        in: path
+        required: true
+        description: Name of retrieved parameter
+  /version:
+    get:
+      summary: Get version
+      description: Read Evok version
+      tags:
+        - General command
+      responses: {}
+      operationId: get-version
+      x-stoplight:
+        id: pnta60tkpt5qz
   '/{format}/di/{circuit}':
     get:
       summary: Read di object
       tags:
-        - Binary input
+        - Digital input
       responses:
         '200':
           description: OK
@@ -311,7 +450,7 @@ paths:
                     glob_dev_id: 2
       x-stoplight:
         id: amptpwemaf9og
-      description: Get all properties of single binary input including current value and parameters.
+      description: Get all properties of single digital input including current value and parameters.
       operationId: read-input-object
     parameters:
       - schema:
@@ -335,7 +474,7 @@ paths:
     post:
       summary: Set input properties
       tags:
-        - Binary input
+        - Digital input
       responses: {}
       operationId: post-rest-input-circuit
       x-stoplight:
@@ -423,7 +562,7 @@ paths:
             schema:
               $ref: '#/components/schemas/Owpower_params'
             examples: {}
-      description: Set one or more parameters related to any single binary input.
+      description: Set one or more parameters related to any single onewire power.
       x-stoplight:
         id: cntpe16fuoa40
       tags:
@@ -444,7 +583,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Owbus'
               examples: {}
-      description: Get all properties of 1Wire bus power driver.
+      description: Get all properties of 1Wire bus driver.
       operationId: read-owbus-object
       tags:
         - 1Wire bus
@@ -454,7 +593,7 @@ paths:
     parameters:
       - schema:
           type: string
-          examples: ['1_01']
+          examples: ['1']
         name: circuit
         in: path
         required: true
@@ -577,79 +716,6 @@ paths:
         - Setter
       x-stoplight:
         id: 3puleq1259sd9
-  '/{format}/1wdevice/{circuit}':
-    get:
-      summary: Read 1Wire generic device
-      responses:
-        '200':
-          description: OK
-          content:
-            text/html:
-              schema:
-                $ref: '#/components/schemas/1WDevice'
-              examples: {}
-            application/json:
-              schema:
-                $ref: '#/components/schemas/1WDevice'
-              examples: {}
-      description: Get all properties of 1Wire generic device
-      operationId: read-1wdevice-object
-      tags:
-        - 1Wire bus
-        - Getter
-      x-stoplight:
-        id: gusu15byva0aq
-    parameters:
-      - schema:
-          type: string
-          examples: ['1_01']
-        name: circuit
-        in: path
-        required: true
-        description: Device circuit (or "all")
-      - name: format
-        in: path
-        required: true
-        schema:
-          type: string
-          examples: [json]
-          enum:
-            - json
-            - rest
-          default: json
-        description: Content type - use "json" for application/json OR "rest" for text/html eventual application/x-www-form-urlencoded (legacy)
-    post:
-      summary: Set 1Wire generic device interval
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  sucess:
-                    $ref: '#/components/schemas/Status'
-                  result:
-                    $ref: '#/components/schemas/Owbus_params'
-      operationId: post-rest-1wdevice-circuit
-      parameters: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/1WDevice_params'
-            examples: {}
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/1WDevice_params'
-            examples: {}
-      description: Set reading interval.
-      tags:
-        - 1Wire bus
-        - Setter
-      x-stoplight:
-        id: ty8l97l2nyrvb
   '/{format}/modbus_slave/{circuit}':
     get:
       summary: Read modbus_slave object
@@ -681,35 +747,17 @@ paths:
               schema:
                 allOf:
                   - $ref: '#/components/schemas/Device'
-                  - $ref: '#/components/schemas/Digital_input'
-              examples:
-                Example:
-                  value:
-                    dev: di
-                    circuit: '1_01'
-                    value: 0
-                    debounce: 30
-                    counter_modes:
-                      - Enabled
-                      - Disabled
-                    counter_mode: Enabled
-                    counter: 0
-                    mode: Simple
-                    modes:
-                      - Simple
-                      - DirectSwitch
-                    glob_dev_id: 2
+                  - $ref: '#/components/schemas/Modbus_slave'
       description: Get all properties of a single modbus slave.
       operationId: read-modbus_slave-object
       x-stoplight:
         id: f40ypdnngywl0
       tags:
-        - Generic getters
         - Getter
     parameters:
       - schema:
           type: string
-          examples: ['1_01']
+          examples: ['1', '2', '3', 'xS51']
         name: circuit
         in: path
         required: true
@@ -778,7 +826,7 @@ paths:
         id: 26e8a9ce2qamm
       tags:
         - Aliases
-        - Generic getters
+        - General command
     parameters:
       - name: format
         in: path
@@ -841,30 +889,12 @@ paths:
               schema:
                 allOf:
                   - $ref: '#/components/schemas/Device'
-                  - $ref: '#/components/schemas/Digital_input'
-              examples:
-                Example:
-                  value:
-                    dev: di
-                    circuit: '1_01'
-                    value: 0
-                    debounce: 30
-                    counter_modes:
-                      - Enabled
-                      - Disabled
-                    counter_mode: Enabled
-                    counter: 0
-                    mode: Simple
-                    modes:
-                      - Simple
-                      - DirectSwitch
-                    glob_dev_id: 2
+                  - $ref: '#/components/schemas/Device_info'
       description: Get all properties of a single modbus slave.
       operationId: read-device_info-object
       x-stoplight:
         id: 1fso3pj0wt5or
       tags:
-        - Generic getters
         - Getter
     parameters:
       - schema:
@@ -1070,7 +1100,7 @@ paths:
                       - Simple
                       - DirectSwitch
                     glob_dev_id: 2
-      description: Get all properties of internal watchdog.
+      description: Get all properties of internal [master watchdog](https://kb.unipi.technology).  # TODO
       operationId: read-watchdog-object
       x-stoplight:
         id: x2bt43slirtwx
@@ -1097,7 +1127,7 @@ paths:
           default: json
         description: Content type - use "json" for application/json OR "rest" for text/html eventual application/x-www-form-urlencoded (legacy)
     post:
-      summary: Set watchog properties
+      summary: Set watchdog properties
       responses: {}
       operationId: post-rest-watchdog-circuit
       parameters: []
@@ -1116,6 +1146,82 @@ paths:
         id: 4639ifdbw7mv5
       tags:
         - Watchdog
+        - Setter
+  '/{format}/ro/{circuit}':
+    get:
+      summary: Read output object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Relay_output'
+              examples: {}
+            text/html:
+              schema:
+                $ref: '#/components/schemas/Relay_output'
+              examples: {}
+      description: Get **all** properties of single binary output including current value and parameters.
+      operationId: read-relay-object
+      x-stoplight:
+        id: of5d651d6nyvn
+      tags:
+        - Relay output
+        - Getter
+    parameters:
+      - schema:
+          type: string
+          examples: ['2_01']
+        name: circuit
+        in: path
+        required: true
+        description: Device circuit (or "all")
+      - name: format
+        in: path
+        required: true
+        schema:
+          type: string
+          examples: [json]
+          enum:
+            - json
+            - rest
+          default: json
+        description: Content type - use "json" for application/json OR "rest" for text/html eventual application/x-www-form-urlencoded (legacy)
+    post:
+      summary: Set output properties
+      responses:
+        '200':
+          description: OK
+          headers: {}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/Status'
+                    x-stoplight:
+                      id: jtn0489xp9yht
+                  result:
+                    $ref: '#/components/schemas/Relay_output'
+                    x-stoplight:
+                      id: a2ns413wetife
+      operationId: post-rest-relay-circuit
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Relay_output_params'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Relay_output_params'
+      description: Set one or more parameters related to relay output.
+      x-stoplight:
+        id: 3479uzzy247vy
+      tags:
+        - Relay output
         - Setter
   '/{format}/do/{circuit}':
     get:
@@ -1137,7 +1243,7 @@ paths:
       x-stoplight:
         id: of5dmk226nyvn
       tags:
-        - Binary output
+        - Digital output
         - Getter
     parameters:
       - schema:
@@ -1187,11 +1293,11 @@ paths:
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/Digital_output_params'
-      description: Set one or more parameters related to any single binary output.
+      description: Set one or more parameters related to digital output.
       x-stoplight:
         id: 3479uzzy667vy
       tags:
-        - Binary output
+        - Digital output
         - Setter
   '/{format}/led/{circuit}':
     get:
@@ -1428,189 +1534,6 @@ paths:
         - Setter
       x-stoplight:
         id: nsu0vflqu8uxy
-  '/{format}/di/{circuit}/{parameter}':
-    get:
-      summary: Read binary input single parameter
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                x-examples:
-                  Example 1:
-                    value: 0
-                properties:
-                  value:
-                    type: integer
-                    examples: [0]
-              examples: {}
-            text/html:
-              schema:
-                type: object
-                x-examples:
-                  Example 1:
-                    value: 0
-                properties:
-                  value:
-                    type: integer
-                    examples: [0]
-              examples: {}
-      description: Retrieve any single parameter from binary input. This is commonly used to quickly obtain the input's value without requiring additional data. **It's recommended to use this endpoint as input getter in most applications.**
-      operationId: read-input-object-parameter
-      x-stoplight:
-        id: ulh6qg2h9b0ue
-      tags:
-        - Binary input
-        - Getter
-    parameters:
-      - schema:
-          type: string
-          examples: ['1_01']
-        name: circuit
-        in: path
-        required: true
-        description: Device circuit (or "all")
-      - $ref: '#/components/parameters/format'
-      - schema:
-          type: string
-          examples: [value]
-          default: value
-        name: parameter
-        in: path
-        required: true
-        description: Name of retrieved parameter
-  '/{format}/ai/{circuit}/{parameter}':
-    get:
-      summary: Read analog input single parameter
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                x-examples:
-                  Example 1:
-                    value: 0
-                properties:
-                  value:
-                    type: integer
-                    examples: [0]
-              examples: {}
-            text/html:
-              schema:
-                type: object
-                x-examples:
-                  Example 1:
-                    value: 0
-                properties:
-                  value:
-                    type: integer
-                    examples: [0]
-              examples: {}
-      description: Retrieve any single parameter from binary input. This is commonly used to quickly obtain the input's value without requiring additional data. **It's recommended to use this endpoint as input getter in most applications.**
-      operationId: read-analog-input-single-parameter
-      x-stoplight:
-        id: 0ax0bdbjdf12a
-      tags:
-        - Analog input
-        - Getter
-    parameters:
-      - schema:
-          type: string
-          examples: ['1_01']
-        name: circuit
-        in: path
-        required: true
-        description: Device circuit (or "all")
-      - $ref: '#/components/parameters/format'
-      - schema:
-          type: string
-          examples: [value]
-          default: value
-        name: parameter
-        in: path
-        required: true
-        description: Name of retrieved parameter
-  '/{format}/{device_type}/all':
-    parameters:
-      - name: format
-        in: path
-        required: true
-        schema:
-          type: string
-          examples: [json]
-          enum:
-            - json
-            - rest
-          default: json
-        description: Content type - use "json" for application/json OR "rest" for text/html eventual application/x-www-form-urlencoded (legacy)
-      - name: device_type
-        description: Device type
-        in: path
-        required: true
-        schema:
-          type: string
-          enum:
-            - di
-            - ai
-            - ao
-            - do
-            - wd
-            - led
-          examples: [di]
-    get:
-      summary: Get all circuits of device type
-      description: Read all devies of the same type present in the whole system.
-      tags:
-        - General command
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                uniqueItems: true
-                items:
-                  type: object
-                  $ref: '#/components/schemas/Device'
-                  x-stoplight:
-                    id: rnn7b379iocrf
-              examples:
-                Example 1:
-                  value:
-                    - dev: led
-                      circuit: '1_01'
-                      value: 0
-                      glob_dev_id: 2
-                    - dev: led
-                      circuit: '1_02'
-                      value: 0
-                      glob_dev_id: 2
-                    - dev: led
-                      circuit: '1_03'
-                      value: 0
-                      glob_dev_id: 2
-                    - dev: led
-                      circuit: '1_04'
-                      value: 0
-                      glob_dev_id: 2
-      operationId: get-format-device-all
-      x-stoplight:
-        id: 2a8zh84up8mp4
-  /version/:
-    get:
-      summary: Get version
-      description: Read Evok tool version
-      tags:
-        - Generic getters
-      responses: {}
-      operationId: get-version
-      x-stoplight:
-        id: pnta60tkpt5qz
 components:
   schemas:
     Device:
@@ -1634,6 +1557,13 @@ components:
         - $ref: '#/components/schemas/Relay_output_params'
           x-stoplight:
             id: 2b4dkqf8rzvj3
+      examples:
+        - circuit: 2_01
+          dev: ro
+          value: 0
+        - circuit: 2_02
+          dev: ro
+          value: 1
     Relay_output_params:
       x-stoplight:
         id: kd8k08k6qruvr
@@ -1647,6 +1577,16 @@ components:
             - string
             - boolean
           description: Parameter for relay switch.
+        circuit:
+          type: string
+          examples: [2_01, 2_02, 2_03, 2_04]
+          default: [2_01]
+          description: device identificator (unique within its device class)
+        dev:
+          type: string
+          examples: [ro, relay]
+          default: ro
+          description: device type (class)
     Digital_output:
       allOf:
         - type: object
@@ -1666,12 +1606,32 @@ components:
         - $ref: '#/components/schemas/Digital_output_params'
           x-stoplight:
             id: 2b4dkqf321vj3
+      examples:
+        - circuit: 1_01
+          dev: do
+          value: 0
+          modes: ["Simple", "PWM"]
+          mode: "Simple"
+          pwm_freq: 4800
+          pwm_duty: 0
+        - circuit: 1_02
+          dev: do
+          value: 0
+          modes: ["Simple", "PWM"]
+          mode: "PWM"
+          pwm_freq: 4800
+          pwm_duty: 10
     Digital_output_params:
       x-stoplight:
         id: kd8k08k6avar6
       description: User-configurable parameters of binary output device.
       type: object
       properties:
+        dev:
+          type: string
+          examples: [do, output]
+          default: do
+          description: device type (class)
         pwm_freq:
           type: integer
           examples: [50]
@@ -1730,6 +1690,25 @@ components:
         - $ref: '#/components/schemas/Device'
           x-stoplight:
             id: yhfck2i3sfh07
+      examples:
+        - circuit: 1_01
+          dev: di
+          value: 0
+          debounce: 50
+          counter_modes: ["Enabled", "Disabled"]
+          counter_mode: "Enabled"
+          counter: 0
+          modes: ["Simple", "DirectSwitch"]
+          mode: "Simple"
+        - circuit: 1_02
+          dev: di
+          value: 1
+          debounce: 200
+          counter_modes: ["Enabled", "Disabled"]
+          counter_mode: "Enabled"
+          counter: 121
+          modes: ["Simple", "DirectSwitch"]
+          mode: "Simple"
     Digital_input_params:
       title: DigitalInput_params
       x-stoplight:
@@ -1737,6 +1716,11 @@ components:
       type: object
       description: User-configurable parameters of binary input device.
       properties:
+        dev:
+          type: string
+          examples: [di, input]
+          default: di
+          description: device type (class)
         debounce:
           type: integer
           description: Debounce time in microseconds * 10
@@ -1764,6 +1748,11 @@ components:
       type: object
       description: User-defined params of any single analog output.
       properties:
+        dev:
+          type: string
+          examples: [ao, analogoutput]
+          default: ao
+          description: device type (class)
         value:
           type: number
           x-stoplight:
@@ -1788,6 +1777,11 @@ components:
       type: object
       description: User-defined params of any single analog input.
       properties:
+        dev:
+          type: string
+          examples: [ai, analoginput]
+          default: ai
+          description: device type (class)
         mode:
           description: Actual mode of the input. Not all modes are available on every input - see *modes* property.
           enum:
@@ -1849,6 +1843,19 @@ components:
                     maxItems: 2
                     items:
                       type: integer
+      examples:
+        - circuit: 2_01
+          dev: ao
+          value: 1.4
+          unit: "V"
+          mode: "Voltage"
+          modes:
+            Disabled:
+              value: 0
+            Voltage:
+              value: 1
+              unit: "V"
+              range: [0, 10]
     Analog_input:
       title: Analog_input
       x-stoplight:
@@ -1860,7 +1867,7 @@ components:
           properties:
             modes:
               readOnly: true
-              description: Supported modes is specify for device. This is all options.
+              description: Supported modes is specify for device.
               type: object
               examples:
                 - Disabled:
@@ -1897,12 +1904,50 @@ components:
                   unit:
                     type: string
                     examples: [V]
+      examples:
+        - circuit: 2_01
+          dev: ai
+          value: 2.2
+          unit: "V"
+          mode: "Voltage"
+          modes:
+            Disabled:
+              value: 0
+            Voltage:
+              value: 1
+              unit: "V"
+              range: [0, 10]
+            Current:
+              value: 2
+              unit: "mA"
+              range: [0, 20]
+        - circuit: 2_02
+          dev: ai
+          value: 10.3
+          unit: "mA"
+          mode: "Current"
+          modes:
+            Disabled:
+              value: 0
+            Voltage:
+              value: 1
+              unit: "V"
+              range: [0, 10]
+            Current:
+              value: 2
+              unit: "mA"
+              range: [0, 20]
     Led_params:
       title: Led_params
       x-stoplight:
         id: kzm0bs4t8n0ma
       type: object
       properties:
+        dev:
+          type: string
+          examples: [led]
+          default: led
+          description: device type (class)
         value:
           type:
             - string
@@ -1926,20 +1971,25 @@ components:
       x-examples:
         Example 1:
           dev: wd
-          circuit: '1_01'
+          circuit: 1_01
           value: 0
           timeout: 5000
           was_wd_reset: 0
           nv_save: 0
           glob_dev_id: 2
       properties:
+        dev:
+          type: string
+          examples: [wd]
+          default: wd
+          description: device type (class)
         value:
           type:
             - string
             - number
           description: Enable (1) or disable (0) watchog timer.
           default: 0
-          examples: ['1']
+          examples: [1]
         timeout:
           type: integer
           description: Watchdog timeout in msec
@@ -1973,6 +2023,13 @@ components:
                 - 0
                 - 1
               readOnly: true
+      examples:
+        - dev: wd
+          circuit: 1_01
+          value: 0
+          timeout: 5000
+          was_wd_reset: 0
+          nv_save: 0
     Modbus_slave:
       title: Modbus_slave
       x-stoplight:
@@ -2022,7 +2079,6 @@ components:
       examples:
         - dev: modbus_slave
           circuit: '1'
-          glob_dev_id: 2
           last_comm: 0.02690577507019043
           slave_id: 1
           modbus_type: TCP
@@ -2041,7 +2097,8 @@ components:
               type: string
               x-stoplight:
                 id: 54l2sfykxwq3e
-              examples: [Patron]
+              examples: [Patron, Neuron, UNIPI1]
+              default: Patron
         - type: object
           x-stoplight:
             id: 28yeqjeg54xc6
@@ -2050,6 +2107,7 @@ components:
               type: string
               x-stoplight:
                 id: quurag6l2ko4g
+              examples: [S103, S167, L533]
               default: S167
         - type: object
           x-stoplight:
@@ -2059,7 +2117,8 @@ components:
               type: integer
               x-stoplight:
                 id: jht5fxwjjthbz
-              examples: [81]
+              examples: [81, 44, 685]
+              default: 81
         - type: object
           x-stoplight:
             id: ggndd1dn27o1j
@@ -2068,7 +2127,24 @@ components:
               type: integer
               x-stoplight:
                 id: zp1sax4eow7ud
-              examples: [1]
+              examples: [1, 2, 3]
+              default: 1
+        - type: object
+          x-stoplight:
+            id: ggndd1dn27o1j
+          properties:
+            dev:
+              type: string
+              x-stoplight:
+                id: zp1sax4e5456d
+              default: "device_info"
+      examples:
+        - circuit: Patron_S167_81
+          dev: device_info
+          family: Patron
+          model: S167
+          sn: 81
+          board_count: 1
     Owpower:
       title: Owpower
       x-stoplight:
@@ -2080,8 +2156,8 @@ components:
           x-stoplight:
             id: v1mjtw820aaz4
       examples:
-        - circuit: '1'
-          dev: input
+        - circuit: 1
+          dev: owpower
           glob_dev_id: 2
           value: 1
     Owpower_params:
@@ -2098,7 +2174,7 @@ components:
               examples: [0]
               description: Set 1 to disable 1Wire bus power
       examples:
-        - circuit: '1'
+        - circuit: 1
           dev: input
           glob_dev_id: 2
           value: 1
@@ -2236,74 +2312,15 @@ components:
               examples: [DS18B20]
               description: sensor type
               readOnly: true
-    1WDevice_params:
-      title: 1WDevice_params
-      x-stoplight:
-        id: lqxiug1ktev5g
-      type: object
-      properties:
-        interval:
-          type: number
-          x-stoplight:
-            id: plk6id5idvhne
-          examples: [5]
-          default: 10
-          description: |
-            polling period [seconds]
-    1WDevice:
-      title: 1WDevice
-      x-stoplight:
-        id: e0ddnjj2201mb
-      allOf:
-        - $ref: '#/components/schemas/Device'
-        - $ref: '#/components/schemas/1WDevice_params'
-          x-stoplight:
-            id: pl7qbw3h5s97x
-        - type: object
-          x-stoplight:
-            id: 8oiywr341tkuc
-          properties:
-            time:
-              type: number
-              x-stoplight:
-                id: padnatc1nztky
-              description: the timestamp of the last captured valid value (is considered from the system boot).
-              examples: [4171.72855072]
-              readOnly: true
-            address:
-              type: string
-              x-stoplight:
-                id: dcs0s3xwghans
-              examples: ['"10.67C6697351FF.8D"']
-              description: address of the sensor
-              readOnly: true
-            lost:
-              type: boolean
-              x-stoplight:
-                id: 4afnx0c05zni2
-              default: false
-              description: 'if true, value is not actual (last sensor reading failed)'
-              readOnly: true
-            typ:
-              type: string
-              x-stoplight:
-                id: 5klzk7zhdo2xu
-              examples: [DS2438]
-              description: sensor type
-              readOnly: true
-      description: Generic 1Wire device other than DS18x20 (which are show as "temp" device class).
       examples:
-        - dev: 1wdevice
-          circuit: A64AEC29CDBAAB7D
-          humidity: 21.5088
-          vdd: 57.8876
-          vad: 86.1457
-          temp: 64.1983
-          vis: 24.1415
+        - dev: temp
+          circuit: 2895DCD509000035
+          address: 28.95DCD5090000.35
+          value: 23
           lost: false
-          time: 5962.859415957
+          time: 4306.778
           interval: 10
-          typ: DS2438
+          typ: DS18B20
     Register:
       title: Register
       x-stoplight:
@@ -2342,7 +2359,7 @@ components:
           x-stoplight:
             id: jz3obrqf6q8pd
           examples: [1]
-          description: Device number in hyerarchy
+          description: Device number in hierarchy
     Unit_register:
       title: Unit_register
       x-stoplight:
@@ -2471,26 +2488,26 @@ components:
           - led
         examples: [di]
 tags:
+  - name: General command
+    description: Other commands not directly couped with any specific device type
+  - name: Getter
+    description: Superclass of a getter ()
+  - name: Setter
+    description: Superclass of a setter ()
   - name: Analog input
     description: Superclass of analog inputs ()
   - name: Analog output
     description: Superclass of analog outputs ()
-  - name: Binary input
+  - name: Digital input
     description: Superclass of binary inputs ()
-  - name: Binary output
-    description: 'Superclass of all binary outputs (push-pull, open-collector, relays,...)'
-  - name: General command
-    description: Other commads not directly couped with any specific device type
-  - name: Getter
-    description: Superclass of a getter
-  - name: Setter
-    description: Superclass of binary indfbfdbputs ()
+  - name: Digital output
+    description: 'Superclass of all binary outputs (push-pull, open-collector, ...)'
+  - name: Relay output
+    description: Superclass of relay outputs ()
   - name: User LED
     description: Superclass of user LED
   - name: Watchdog
     description: Superclass of watchdog timer
-  - name: Generic getters
-    description: Other getters of "virtual" classes
   - name: 1Wire bus
     description: Classes coupled with OneWire bus implementation
   - name: Custom Modbus devices
