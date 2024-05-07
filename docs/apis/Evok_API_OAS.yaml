@@ -7,9 +7,9 @@ info:
   description: |
     ### <i class="fa-light fa-cubes"></i> Welcome to Evok REST API documentation <i class="fa-light fa-cubes">
   contact:
-    name: Unipi support
+    name: Evok support
     email: support@unipi.technology
-    url: 'https://kb.unipi.technology/'
+    url: 'https://github.com/UniPiTechnology/evok'
   license:
     name: Apache 2.0
     url: 'https://www.apache.org/licenses/LICENSE-2.0.html'
@@ -42,8 +42,7 @@ paths:
           content:
             application/json:
               schema:
-                type:
-                  - array
+                type: array
                 minItems: 1
                 uniqueItems: true
                 items:
@@ -259,8 +258,6 @@ paths:
       description: Retrieve the full information dump of all cictuits inside the system.
       x-stoplight:
         id: m7p89alenp2u3
-      requestBody:
-        content: {}
       tags:
         - General command
   '/{format}/di/{circuit}':
@@ -319,7 +316,7 @@ paths:
     parameters:
       - schema:
           type: string
-          example: '1_01'
+          examples: ['1_01']
         name: circuit
         in: path
         required: true
@@ -329,7 +326,7 @@ paths:
         required: true
         schema:
           type: string
-          example: json
+          examples: [json]
           enum:
             - json
             - rest
@@ -380,7 +377,7 @@ paths:
     parameters:
       - schema:
           type: string
-          example: '1_01'
+          examples: ['1_01']
         name: circuit
         in: path
         required: true
@@ -390,7 +387,7 @@ paths:
         required: true
         schema:
           type: string
-          example: json
+          examples: [json]
           enum:
             - json
             - rest
@@ -457,7 +454,7 @@ paths:
     parameters:
       - schema:
           type: string
-          example: '1_01'
+          examples: ['1_01']
         name: circuit
         in: path
         required: true
@@ -467,7 +464,7 @@ paths:
         required: true
         schema:
           type: string
-          example: json
+          examples: [json]
           enum:
             - json
             - rest
@@ -530,7 +527,7 @@ paths:
     parameters:
       - schema:
           type: string
-          example: '1_01'
+          examples: ['1_01']
         name: circuit
         in: path
         required: true
@@ -540,7 +537,7 @@ paths:
         required: true
         schema:
           type: string
-          example: json
+          examples: [json]
           enum:
             - json
             - rest
@@ -558,7 +555,7 @@ paths:
                 properties:
                   sucess:
                     $ref: '#/components/schemas/Status'
-                  '':
+                  temp:
                     $ref: '#/components/schemas/Temp'
                     x-stoplight:
                       id: u38ddede1rpq5
@@ -605,7 +602,7 @@ paths:
     parameters:
       - schema:
           type: string
-          example: '1_01'
+          examples: ['1_01']
         name: circuit
         in: path
         required: true
@@ -615,7 +612,7 @@ paths:
         required: true
         schema:
           type: string
-          example: json
+          examples: [json]
           enum:
             - json
             - rest
@@ -712,7 +709,7 @@ paths:
     parameters:
       - schema:
           type: string
-          example: '1_01'
+          examples: ['1_01']
         name: circuit
         in: path
         required: true
@@ -722,7 +719,7 @@ paths:
         required: true
         schema:
           type: string
-          example: json
+          examples: [json]
           enum:
             - json
             - rest
@@ -788,7 +785,7 @@ paths:
         required: true
         schema:
           type: string
-          example: json
+          examples: [json]
           enum:
             - json
             - rest
@@ -872,7 +869,7 @@ paths:
     parameters:
       - schema:
           type: string
-          example: '1_01'
+          examples: ['1_01']
         name: circuit
         in: path
         required: true
@@ -882,7 +879,7 @@ paths:
         required: true
         schema:
           type: string
-          example: json
+          examples: [json]
           enum:
             - json
             - rest
@@ -928,7 +925,7 @@ paths:
     parameters:
       - schema:
           type: string
-          example: '1_01'
+          examples: ['1_01']
         name: circuit
         in: path
         required: true
@@ -938,7 +935,7 @@ paths:
         required: true
         schema:
           type: string
-          example: json
+          examples: [json]
           enum:
             - json
             - rest
@@ -984,7 +981,7 @@ paths:
     parameters:
       - schema:
           type: string
-          example: '1_01'
+          examples: ['1_01']
         name: circuit
         in: path
         required: true
@@ -994,7 +991,7 @@ paths:
         required: true
         schema:
           type: string
-          example: json
+          examples: [json]
           enum:
             - json
             - rest
@@ -1083,7 +1080,7 @@ paths:
     parameters:
       - schema:
           type: string
-          example: '1_01'
+          examples: ['1_01']
         name: circuit
         in: path
         required: true
@@ -1093,7 +1090,7 @@ paths:
         required: true
         schema:
           type: string
-          example: json
+          examples: [json]
           enum:
             - json
             - rest
@@ -1145,7 +1142,7 @@ paths:
     parameters:
       - schema:
           type: string
-          example: '1_01'
+          examples: ['1_01']
         name: circuit
         in: path
         required: true
@@ -1155,7 +1152,7 @@ paths:
         required: true
         schema:
           type: string
-          example: json
+          examples: [json]
           enum:
             - json
             - rest
@@ -1221,7 +1218,7 @@ paths:
     parameters:
       - schema:
           type: string
-          example: '1_01'
+          examples: ['1_01']
         name: circuit
         in: path
         required: true
@@ -1231,7 +1228,7 @@ paths:
         required: true
         schema:
           type: string
-          example: json
+          examples: [json]
           enum:
             - json
             - rest
@@ -1304,7 +1301,7 @@ paths:
     parameters:
       - schema:
           type: string
-          example: '1_01'
+          examples: ['1_01']
         name: circuit
         in: path
         required: true
@@ -1314,7 +1311,7 @@ paths:
         required: true
         schema:
           type: string
-          example: json
+          examples: [json]
           enum:
             - json
             - rest
@@ -1384,7 +1381,7 @@ paths:
     parameters:
       - schema:
           type: string
-          example: '1_01'
+          examples: ['1_01']
         name: circuit
         in: path
         required: true
@@ -1394,7 +1391,7 @@ paths:
         required: true
         schema:
           type: string
-          example: json
+          examples: [json]
           enum:
             - json
             - rest
@@ -1431,7 +1428,7 @@ paths:
         - Setter
       x-stoplight:
         id: nsu0vflqu8uxy
-  '/{format}/input/{circuit}/{parameter}':
+  '/{format}/di/{circuit}/{parameter}':
     get:
       summary: Read binary input single parameter
       responses:
@@ -1447,7 +1444,7 @@ paths:
                 properties:
                   value:
                     type: integer
-                    example: 0
+                    examples: [0]
               examples: {}
             text/html:
               schema:
@@ -1458,7 +1455,7 @@ paths:
                 properties:
                   value:
                     type: integer
-                    example: 0
+                    examples: [0]
               examples: {}
       description: Retrieve any single parameter from binary input. This is commonly used to quickly obtain the input's value without requiring additional data. **It's recommended to use this endpoint as input getter in most applications.**
       operationId: read-input-object-parameter
@@ -1470,7 +1467,7 @@ paths:
     parameters:
       - schema:
           type: string
-          example: '1_01'
+          examples: ['1_01']
         name: circuit
         in: path
         required: true
@@ -1478,7 +1475,7 @@ paths:
       - $ref: '#/components/parameters/format'
       - schema:
           type: string
-          example: value
+          examples: [value]
           default: value
         name: parameter
         in: path
@@ -1500,7 +1497,7 @@ paths:
                 properties:
                   value:
                     type: integer
-                    example: 0
+                    examples: [0]
               examples: {}
             text/html:
               schema:
@@ -1511,7 +1508,7 @@ paths:
                 properties:
                   value:
                     type: integer
-                    example: 0
+                    examples: [0]
               examples: {}
       description: Retrieve any single parameter from binary input. This is commonly used to quickly obtain the input's value without requiring additional data. **It's recommended to use this endpoint as input getter in most applications.**
       operationId: read-analog-input-single-parameter
@@ -1523,7 +1520,7 @@ paths:
     parameters:
       - schema:
           type: string
-          example: '1_01'
+          examples: ['1_01']
         name: circuit
         in: path
         required: true
@@ -1531,7 +1528,7 @@ paths:
       - $ref: '#/components/parameters/format'
       - schema:
           type: string
-          example: value
+          examples: [value]
           default: value
         name: parameter
         in: path
@@ -1544,7 +1541,7 @@ paths:
         required: true
         schema:
           type: string
-          example: json
+          examples: [json]
           enum:
             - json
             - rest
@@ -1563,7 +1560,7 @@ paths:
             - do
             - wd
             - led
-          example: di
+          examples: [di]
     get:
       summary: Get all circuits of device type
       description: Read all devies of the same type present in the whole system.
@@ -1621,21 +1618,16 @@ components:
       properties:
         circuit:
           type: string
-          example: '1_01'
+          examples: ['1_01']
           description: device identificator (unique within its device class)
           readOnly: true
         dev:
           type: string
-          example: input
+          examples: [input]
           description: device type (class)
           readOnly: true
     Relay_output:
       allOf:
-        - type: object
-          properties:
-            pending:
-              type: boolean
-              example: false
         - $ref: '#/components/schemas/Device'
           x-stoplight:
             id: 1vnsfsoo1yhkq
@@ -1649,7 +1641,7 @@ components:
       type: object
       properties:
         value:
-          example: 1
+          examples: [1]
           type:
             - integer
             - string
@@ -1660,43 +1652,42 @@ components:
         - type: object
           properties:
             modes:
+              readOnly: true
               type: array
               description: Supported output modes
-              example:
+              examples:
                 - Simple
                 - PWM
               items:
                 type: string
-            pending:
-              type: boolean
-              example: false
         - $ref: '#/components/schemas/Device'
           x-stoplight:
             id: 1vnsfsoo1yhkq
         - $ref: '#/components/schemas/Digital_output_params'
           x-stoplight:
-            id: 2b4dkqf8rzvj3  # TODO: ??? ids ???
+            id: 2b4dkqf321vj3
     Digital_output_params:
       x-stoplight:
-        id: kd8k08k6qruvr
+        id: kd8k08k6avar6
       description: User-configurable parameters of binary output device.
       type: object
       properties:
         pwm_freq:
           type: integer
-          example: 50
+          examples: [50]
         pwm_duty:
           type: integer
-          example: 0
+          examples: [0]
           description: Parameter is mutually exclusive with *value*
         value:
-          example: 1
+          examples: [1]
           type:
             - integer
             - string
             - boolean
           description: Parameter is mutually exclusive with *pwm_duty*
         mode:
+          readOnly: true
           enum:
             - Simple
             - PWM
@@ -1725,9 +1716,8 @@ components:
               type: array
               items:
                 type: string
-              example:
-                - Simple
-                - DirectSwitch
+              examples:
+                - [Simple, DirectSwitch]
               readOnly: true
             value:
               enum:
@@ -1740,23 +1730,6 @@ components:
         - $ref: '#/components/schemas/Device'
           x-stoplight:
             id: yhfck2i3sfh07
-    Status:
-      title: Status
-      x-stoplight:
-        id: 4f5eyd4dy7nkm
-      type: boolean
-      default: true
-      description: Operation status
-    Alias:
-      title: Alias
-      x-stoplight:
-        id: wq67mdvgm576m
-      type: object
-      properties:
-        alias:
-          type: string
-          x-stoplight:
-            id: hzfxf96rjvnv9
     Digital_input_params:
       title: DigitalInput_params
       x-stoplight:
@@ -1766,13 +1739,13 @@ components:
       properties:
         debounce:
           type: integer
-          description: Debunce time in microseconds * 10
-          example: 100
+          description: Debounce time in microseconds * 10
+          examples: [100]
           default: 50
         counter:
           type: integer
           description: Current counter value
-          example: 0
+          examples: [0]
         counter_mode:
           enum:
             - Enabled
@@ -1796,7 +1769,7 @@ components:
           x-stoplight:
             id: 10dcjsr141agy
           format: float
-          example: 0.01
+          examples: [0.01]
           description: Desired/actual value of the output
         mode:
           x-stoplight:
@@ -1807,13 +1780,7 @@ components:
             - Current
             - Resistance
           default: Voltage
-          example: Voltage
-        frequency:
-          type: string
-          x-stoplight:
-            id: iyuyre9ie1b0k
-          deprecated: true
-          description: Only for Unipi 1.1 series
+          examples: [Voltage]
     Analog_input_params:
       title: Analog_inputs_params
       x-stoplight:
@@ -1824,10 +1791,14 @@ components:
         mode:
           description: Actual mode of the input. Not all modes are available on every input - see *modes* property.
           enum:
+            - Disabled
             - Voltage
+            - Voltage2V5
             - Current
+            - Resistance3W
+            - Resistance2W
           default: Voltage
-          example: Voltage
+          examples: [Voltage]
     Analog_output:
       title: Analog-output
       x-stoplight:
@@ -1842,27 +1813,22 @@ components:
         - type: object
           properties:
             modes:
+              readOnly: true
               description: All modes supported by this analog output.
               type: object
-              example:
-                Voltage:
-                  value: 0
-                  unit: V
-                  range:
-                    - 0
-                    - 10
-                Current:
-                  value: 1
-                  unit: mA
-                  range:
-                    - 0
-                    - 20
-                Resistance:
-                  value: 2
-                  unit: Ohm
-                  range:
-                    - 0
-                    - 2000
+              examples:
+                - Voltage:
+                    value: 0
+                    unit: V
+                    range:
+                      - 0
+                      - 10
+                  Current:
+                    value: 1
+                    unit: mA
+                    range:
+                      - 0
+                      - 20
               additionalProperties:
                 type: object
                 additionalProperties: false
@@ -1874,7 +1840,7 @@ components:
                       id: hwb837htaxqj7
                   unit:
                     type: string
-                    example: V
+                    examples: [V]
                   range:
                     type: array
                     x-stoplight:
@@ -1883,7 +1849,6 @@ components:
                     maxItems: 2
                     items:
                       type: integer
-              readOnly: true
     Analog_input:
       title: Analog_input
       x-stoplight:
@@ -1893,31 +1858,33 @@ components:
         - $ref: '#/components/schemas/Device'
         - type: object
           properties:
-            range:
-              description: Actual valid range of input value
-              $ref: '#/components/schemas/Range'
-          example:
-            range:
-              - 0
-              - 10
-        - type: object
-          properties:
             modes:
-              description: All modes supported by this analog output.
+              readOnly: true
+              description: Supported modes is specify for device. This is all options.
               type: object
-              example:
-                Voltage:
-                  value: 0
-                  unit: V
-                  range:
-                    - 0
-                    - 10
-                Current:
-                  value: 1
-                  unit: mA
-                  range:
-                    - 0
-                    - 20
+              examples:
+                - Disabled:
+                    value: 0
+                  Voltage:
+                    value: 1
+                    unit: V
+                    range: [0, 10]
+                  Voltage2V5:
+                    value: 2
+                    unit: V
+                    range: [0, 2.5]
+                  Current:
+                    value: 3
+                    unit: mA
+                    range: [0, 20]
+                  Resistance3W:
+                    value: 4
+                    unit: Ohm
+                    range: [0, 1960]
+                  Resistance2W:
+                    value: 5
+                    unit: Ohm
+                    range: [0, 100000]
               additionalProperties:
                 type: object
                 additionalProperties: false
@@ -1929,21 +1896,7 @@ components:
                       id: oc9vc05k0fjdh
                   unit:
                     type: string
-                    example: V
-                  range:
-                    $ref: '#/components/schemas/Range'
-    Range:
-      title: Range
-      x-stoplight:
-        id: zrfn3yai6rqd7
-      type: array
-      description: Range of a parameter
-      minItems: 2
-      maxItems: 2
-      items:
-        x-stoplight:
-          id: mf639n79t4r0t
-        type: number
+                    examples: [V]
     Led_params:
       title: Led_params
       x-stoplight:
@@ -1955,7 +1908,7 @@ components:
             - string
             - boolean
             - integer
-          example: 1
+          examples: [1]
           x-stoplight:
             id: 5qx17mlwxozy2
           description: Actual value of single user LED
@@ -1986,12 +1939,12 @@ components:
             - number
           description: Enable (1) or disable (0) watchog timer.
           default: 0
-          example: '1'
+          examples: ['1']
         timeout:
           type: integer
           description: Watchdog timeout in msec
           default: 5000
-          example: 3000
+          examples: [3000]
         nv_save:
           description: Store current settings to internal non-volatile memory. See manual fot details.
           enum:
@@ -2088,7 +2041,7 @@ components:
               type: string
               x-stoplight:
                 id: 54l2sfykxwq3e
-              example: Patron
+              examples: [Patron]
         - type: object
           x-stoplight:
             id: 28yeqjeg54xc6
@@ -2106,7 +2059,7 @@ components:
               type: integer
               x-stoplight:
                 id: jht5fxwjjthbz
-              example: 81
+              examples: [81]
         - type: object
           x-stoplight:
             id: ggndd1dn27o1j
@@ -2115,7 +2068,7 @@ components:
               type: integer
               x-stoplight:
                 id: zp1sax4eow7ud
-              example: 1
+              examples: [1]
     Owpower:
       title: Owpower
       x-stoplight:
@@ -2142,7 +2095,7 @@ components:
               enum:
                 - 1
                 - 0
-              example: 0
+              examples: [0]
               description: Set 1 to disable 1Wire bus power
       examples:
         - circuit: '1'
@@ -2163,7 +2116,7 @@ components:
           x-stoplight:
             id: oe0zf1uu764jp
           default: 10
-          example: 10
+          examples: [10]
         do_scan:
           type: boolean
           x-stoplight:
@@ -2181,7 +2134,7 @@ components:
           x-stoplight:
             id: hr153xbhtdbgp
           default: 60
-          example: 60
+          examples: [60]
     Owbus:
       title: Owbus_params
       x-stoplight:
@@ -2201,7 +2154,7 @@ components:
               type: string
               x-stoplight:
                 id: b7ywovg84k036
-              example: via OWFS
+              examples: [via OWFS]
               description: Access method to the bus
       examples:
         - dev: owbus
@@ -2224,7 +2177,7 @@ components:
           x-stoplight:
             id: k6iqij8wvobw8
           default: 10
-          example: 20
+          examples: [20]
           description: 'polling period [seconds]'
     Temp:
       x-examples:
@@ -2252,7 +2205,7 @@ components:
               type: number
               x-stoplight:
                 id: 2lexx5i71c7wz
-              example: 21.5
+              examples: [21.5]
               description: temperature in Celsius degrees
               readOnly: true
             time:
@@ -2260,13 +2213,13 @@ components:
               x-stoplight:
                 id: 1w88mzucuc8uc
               description: the timestamp of the last captured valid value (is considered from the system boot).
-              example: 4171.72855072
+              examples: [4171.72855072]
               readOnly: true
             address:
               type: string
               x-stoplight:
                 id: n8u8x3w8nl496
-              example: '"10.67C6697351FF.8D"'
+              examples: ['"10.67C6697351FF.8D"']
               description: address of the sensor
               readOnly: true
             lost:
@@ -2280,7 +2233,7 @@ components:
               type: string
               x-stoplight:
                 id: 9fznblkc5zyzx
-              example: DS18B20
+              examples: [DS18B20]
               description: sensor type
               readOnly: true
     1WDevice_params:
@@ -2293,7 +2246,7 @@ components:
           type: number
           x-stoplight:
             id: plk6id5idvhne
-          example: 5
+          examples: [5]
           default: 10
           description: |
             polling period [seconds]
@@ -2315,13 +2268,13 @@ components:
               x-stoplight:
                 id: padnatc1nztky
               description: the timestamp of the last captured valid value (is considered from the system boot).
-              example: 4171.72855072
+              examples: [4171.72855072]
               readOnly: true
             address:
               type: string
               x-stoplight:
                 id: dcs0s3xwghans
-              example: '"10.67C6697351FF.8D"'
+              examples: ['"10.67C6697351FF.8D"']
               description: address of the sensor
               readOnly: true
             lost:
@@ -2335,7 +2288,7 @@ components:
               type: string
               x-stoplight:
                 id: 5klzk7zhdo2xu
-              example: DS2438
+              examples: [DS2438]
               description: sensor type
               readOnly: true
       description: Generic 1Wire device other than DS18x20 (which are show as "temp" device class).
@@ -2369,7 +2322,7 @@ components:
               type: integer
               x-stoplight:
                 id: hkfy9ja8fp1xt
-              example: 69
+              examples: [69]
               minimum: 0
               maximum: 655535
               description: raw register input
@@ -2388,7 +2341,7 @@ components:
           type: integer
           x-stoplight:
             id: jz3obrqf6q8pd
-          example: 1
+          examples: [1]
           description: Device number in hyerarchy
     Unit_register:
       title: Unit_register
@@ -2409,18 +2362,18 @@ components:
               type: number
               x-stoplight:
                 id: aqz0wn45se7n3
-              example: 458.16
+              examples: [458.16]
             unit:
               type: string
               x-stoplight:
                 id: rraxvehor64x2
-              example: ppm
+              examples: [ppm]
               description: physical quantity
             name:
               type: string
               x-stoplight:
                 id: 1qcdan04g2jnl
-              example: CO2
+              examples: [CO2]
               description: name of physical quantity
             valid:
               type: boolean
@@ -2447,7 +2400,7 @@ components:
                 x-stoplight:
                   id: hxfaoodapkxym
                 type: string
-                example: kujda
+                examples: [kujda]
                 readOnly: true
         - $ref: '#/components/schemas/Aliases_params'
           x-stoplight:
@@ -2471,6 +2424,23 @@ components:
             id: p20kj1i60jljw
           description: Force saves actual aliases list to non-volatile memory
           default: false
+    Status:
+      title: Status
+      x-stoplight:
+        id: 4f5eyd4dy7nkm
+      type: boolean
+      default: true
+      description: Operation status
+    Alias:
+      title: Alias
+      x-stoplight:
+        id: wq67mdvgm576m
+      type: object
+      properties:
+        alias:
+          type: string
+          x-stoplight:
+            id: hzfxf96rjvnv9
   securitySchemes: {}
   parameters:
     format:
@@ -2479,7 +2449,7 @@ components:
       required: true
       schema:
         type: string
-        example: json
+        examples: [json]
         enum:
           - json
           - rest
@@ -2499,7 +2469,7 @@ components:
           - do
           - wd
           - led
-        example: di
+        examples: [di]
 tags:
   - name: Analog input
     description: Superclass of analog inputs ()
