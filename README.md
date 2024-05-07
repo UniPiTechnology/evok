@@ -17,7 +17,7 @@ Besides that, Evok also supports sending notifications via webhook.
 ## Documentation
 Installation, basic usage examples, configuration and further information can be found on [https://evok.readthedocs.io/](https://evok.readthedocs.io/)
 
-Complete API documentation (REST and JSON API) including syntax of all other APIs can be found on [https://unipitechnology.stoplight.io/docs/evok](https://unipitechnology.stoplight.io/docs/evok)
+Complete API documentation (REST and JSON API) including syntax of all other APIs can be found on [https://unipitechnology.stoplight.io/docs/evok](https://unipitechnology.stoplight.io/docs/evok) and is also released in OpenAPI format [Evok_API_OAS.yaml](docs/apis/Evok_API_OAS.yaml?raw=1)
 
 ## Major changes between Evok v2 and v3
 
