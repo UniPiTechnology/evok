@@ -4,7 +4,7 @@ import traceback
 from . import devents
 import re
 from copy import deepcopy
-from typing import Any, Type, Tuple, List, Mapping, Callable, Union
+from typing import Any, Callable, Union
 
 from .log import logger
 
@@ -18,13 +18,19 @@ Device = Any
 
 
 class Aliases:
-    alias_dict: Mapping[str, Device] = {}
-    initial_dict: Mapping[str, Mapping[str, str]] = {}
+    alias_dict: dict[str, Device] = {}
+    initial_dict: dict[str, dict[str, str]] = {}
 
-    def __init__(self, initial_dict: Mapping[str, Mapping[str, str]]):
-        self.devtype = 30
+    def __init__(self, initial_dict: dict[str, dict[str, str]]):
+        self.devtype = 'run'
         self.circuit = 'alias'
-        self.initial_dict = initial_dict
+        for key, value in initial_dict.items():
+            try:
+                value['devtype'] = num_to_devtype_name[int(value['devtype'])]
+                logger.warning(f"Aliases: Detected old devtype '{key}'! Upgrading...")
+            except ValueError:
+                pass
+            self.initial_dict[key] = value
         self.dirty_callback: Union[None, Callable] = None
         self.save_callback: Union[None, Callable] = None
 
@@ -90,7 +96,7 @@ class Aliases:
         return list((alias for alias, rec in self.initial_dict.items() \
                      if (rec.get("devtype", None) == devtype) and (rec.get("circuit", None) == circuit)))
 
-    def get_dict_to_save(self) -> Mapping[str, Mapping[str, str]]:
+    def get_dict_to_save(self) -> dict[str, dict[str, str]]:
         aliases = deepcopy(self.initial_dict)
         aliases.update(dict(((alias, {"circuit": device.circuit, "devtype": device.devtype})
                              for alias, device in self.alias_dict.items())))
@@ -98,7 +104,7 @@ class Aliases:
 
     @property
     def aliases(self) -> dict:
-        return {k:{"circuit": f"{devtype_names[v.devtype]}_{v.circuit}",
+        return {k:{"circuit": f"{v.devtype}_{v.circuit}",
                    "devtype": v.devtype}
                 for k, v in self.alias_dict.items()}
 
@@ -122,14 +128,10 @@ class DeviceList(dict):
 
     def __init__(self, altnames):
         super(DeviceList, self).__init__()
-        self._arr = {}
         self.altnames = altnames
 
     def __setitem__(self, key, value):
-        data = {}
-        if not (key in self.keys()):
-            self._arr[key] = data
-        super(DeviceList, self).__setitem__(value, data)
+        super(DeviceList, self).__setitem__(key, value)
 
     def __getitem__(self, key):
         try:
@@ -138,11 +140,11 @@ class DeviceList(dict):
             return super(DeviceList, self).__getitem__(self.altnames[key])
 
     def remove_item(self, key, value):
-        del (self[devtype_names[key]])[value.circuit]
+        del (self[key])[value.circuit]
 
     def remove_global_device(self, glob_dev_id):
         try:
-            for devtype_name in devtype_names.values():
+            for devtype_name in num_to_devtype_name.values():
                 to_delete = []
                 for dev_name in self[devtype_name]:
                     if ((self[devtype_name])[dev_name]).dev_id == glob_dev_id:
@@ -152,9 +154,9 @@ class DeviceList(dict):
         except KeyError as E:
             logger.warning(f"Trying to remove non-existing global device ({E})")
 
-    def by_int(self, devtypeid, circuit=None, major_group=None):
+    def by_int(self, devtype_name, circuit=None, major_group=None):
         circuit = str(circuit) if circuit is not None else None
-        devdict = self._arr[devtypeid]
+        devdict = self[devtype_name]
         if circuit is None:
             if major_group is not None:
                 outp = []
@@ -179,7 +181,7 @@ class DeviceList(dict):
             if circuit in self.aliases:
                 return self.aliases[circuit]
             else:
-                raise Exception(f'Invalid device circuit number {str(circuit)} with devtypeid {devtypeid}')
+                raise Exception(f'Invalid device circuit number {str(circuit)} with devtypeid {devtype_name}')
 
     def by_name(self, devtype, circuit=None):
         try:
@@ -195,34 +197,31 @@ class DeviceList(dict):
             if circuit not in self.aliases:
                 raise Exception(f"Circuit or alias with name '{circuit}' not defined!")
             ret = self.aliases[circuit]
-            ret_name = devtype_names[ret.devtype]
+            ret_name = ret.devtype
             if ret_name == devtype or ret_name == devtype_altnames[devtype]:
                 return ret
             else:
                 raise Exception(f"Invalid device circuit '{str(circuit)}' with devtype '{devtype}'")
 
-    def register_device(self, devtype, device):
+    def register_device(self, devtype_name, device):
         """ can be called with devtype = INTEGER or NAME
         """
-        if devtype is None:
+        if devtype_name is None:
             raise Exception('Device type must contain INTEGER or NAME')
-        if type(devtype) is int:
-            devdict = self._arr[devtype]
-        else:
-            devdict = self[devtype]
+        devdict = self[devtype_name]
 
         devdict[str(device.circuit)] = device
         # assign saved alias
-        for alias in self.aliases.get_aliases_by_circuit(devtype, str(device.circuit)):
+        for alias in self.aliases.get_aliases_by_circuit(devtype_name, str(device.circuit)):
             try:
                 self.aliases.add(alias, device)
                 device.alias = alias
-                logger.info(f"Set alias {alias} to {devtype_names[devtype]}[{device.circuit}]")
+                logger.info(f"Set alias {alias} to {devtype_name}[{device.circuit}]")
             except Exception as E:
                 logger.warning(f"Error on setting saved alias: {str(E)}")
 
         devents.config(device)
-        logger.debug(f"Registered new device '{devtype_names[devtype]}' with circuit {device.circuit} \t ({device})")
+        logger.debug(f"Registered new device '{devtype_name}' with circuit {device.circuit} \t ({device})")
 
     def set_alias(self, alias: str, device: Device, file_update: bool = False) -> None:
         try:
@@ -230,11 +229,11 @@ class DeviceList(dict):
                 if alias == '' or alias is None:
                     if device.alias: self.aliases.delete(device.alias, file_update)
                     device.alias = alias
-                    logger.debug(f"Reset alias of {devtype_names[device.devtype]}[{device.circuit}]")
+                    logger.debug(f"Reset alias of {device.devtype}[{device.circuit}]")
                 elif alias != device.alias:
                     self.aliases.add(alias, device, file_update)
                     device.alias = alias
-                    logger.debug(f"Set alias {alias} of {devtype_names[device.devtype]}[{device.circuit}]")
+                    logger.debug(f"Set alias {alias} of {device.devtype}[{device.circuit}]")
         except Exception as E:
             logger.error(f"Error on setting alias {alias}: {str(E)}")
             if logger.level == logging.DEBUG:
@@ -243,29 +242,29 @@ class DeviceList(dict):
 
 
 # # define device types constants
-RO = 0
-DO = 17
-DI = 1
-AI = 2
-AO = 3
-SENSOR = 5
-OWBUS = 8
-DS2408 = 12
-MODBUS_SLAVE = 15
-BOARD = 16
-LED = 18
-WATCHDOG = 19
-REGISTER = 20
-UNIT_REGISTER = 24
-TCPBUS = 26
-SERIALBUS = 27
-DEVICE_INFO = 28
-OWPOWER = 29
-RUN = 30
-NV_SAVE = 31
+RO = "ro"
+DO = "do"
+DI = "di"
+AI = "ai"
+AO = "ao"
+SENSOR = "sensor"
+OWBUS = "owbus"
+DS2408 = "ds2408"
+MODBUS_SLAVE = "modbus_slave"
+BOARD = "board"
+LED = "led"
+WATCHDOG = "watchdog"
+REGISTER = "register"
+UNIT_REGISTER = "unit_register"
+TCPBUS = "tcp_bus"
+SERIALBUS = "serial_bus"
+DEVICE_INFO = "device_info"
+OWPOWER = "owpower"
+RUN = "run"
+NV_SAVE = "nv_save"
 
 # # corresponding device types names !! ORDER IS IMPORTANT
-devtype_names = {
+num_to_devtype_name = {
     0: 'ro',
     17: 'do',
     1: 'di',
@@ -289,7 +288,9 @@ devtype_names = {
 }
 
 devtype_altnames = {
+    'digitalinput': 'di',
     'input': 'di',
+    'digitaloutput': 'do',
     'output': 'do',
     'relay': 'ro',
     'analoginput': 'ai',
@@ -299,8 +300,8 @@ devtype_altnames = {
 }
 
 Devices = DeviceList(devtype_altnames)
-for num, name in devtype_names.items():
-    Devices[num] = name
+for _key in num_to_devtype_name.values():
+    Devices[_key] = {}
 
 # define units
 NONE = 0

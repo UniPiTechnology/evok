@@ -110,7 +110,7 @@ class ModbusCacheMap(object):
                                 if await device.check_new_data() is True:
                                     changeset.append(device)
                             except Exception as E:
-                                m = (f"Error while checking new data in device '{devtype_names[device.devtype]}"
+                                m = (f"Error while checking new data in device '{device.devtype}"
                                      f"_{device.circuit}': {E}")
                                 logger.error(m)
                                 if logger.level == logging.DEBUG:

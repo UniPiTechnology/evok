@@ -309,7 +309,7 @@ def save_aliases(alias_dict, path):
     try:
         logger.info(f"Saving alias file {path}")
         with open(path, 'w+') as yfile:
-            yfile.write(yaml.dump({"version": 2.0, "aliases": alias_dict}))
+            yfile.write(yaml.dump({"version": "2.0", "aliases": alias_dict}))
         os.system('sync')
     except Exception as E:
         logger.exception(str(E))
