@@ -1534,6 +1534,42 @@ paths:
         - Setter
       x-stoplight:
         id: nsu0vflqu8uxy
+  '/{format}/nv_save/{circuit}':
+    post:
+      summary: Save non-volatile memory
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sucess:
+                    $ref: '#/components/schemas/Status'
+                    x-stoplight:
+                      id: tdywhtb4zc5ct
+                  result:
+                    $ref: '#/components/schemas/NvSave'
+                    x-stoplight:
+                      id: 38n1ghv9tgxjx
+      operationId: post-rest-owpower-circuit
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NvSave_params'
+            examples: {}
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NvSave_params'
+            examples: {}
+      x-stoplight:
+        id: cntpe16fuoa40
+      tags:
+        - Non-volatile saver
+        - Setter
 components:
   schemas:
     Device:
@@ -1996,7 +2032,7 @@ components:
           default: 5000
           examples: [3000]
         nv_save:
-          description: Store current settings to internal non-volatile memory. See manual fot details.
+          description: __Deprecated__. Store current settings to internal non-volatile memory. See manual fot details.
           enum:
             - 1
           writeOnly: true
@@ -2178,6 +2214,31 @@ components:
           dev: input
           glob_dev_id: 2
           value: 1
+      type: object
+    NvSave:
+      title: Non-volatile saver
+      x-stoplight:
+        id: 9asdag6c28oh8
+      allOf:
+        - $ref: '#/components/schemas/Device'
+        - $ref: '#/components/schemas/NvSave_params'
+          x-stoplight:
+            id: v1acasdg64az4
+      examples:
+        - dev: nv_save
+          circuit: 1
+          value: 1
+    NvSave_params:
+      title: Non-volatile saver parameters
+      x-stoplight:
+        id: 3smde561a60l5
+      allOf:
+        - properties:
+            value:
+              enum:
+                - 1
+              examples: [1]
+              description: Set 1 to disable 1Wire bus power
       type: object
     Owbus_params:
       title: Owbus_params
@@ -2512,6 +2573,8 @@ tags:
     description: Classes coupled with OneWire bus implementation
   - name: Custom Modbus devices
     description: User-defined Modbus maps
+  - name: Non-volatile saver
+    description: Device for manage save Non-volatile memory.
   - name: Aliases
     description: Superclass of all stuff related to aliases
 

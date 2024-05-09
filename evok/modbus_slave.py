@@ -391,6 +391,12 @@ class Board(object):
         self.__register_eventable_device(_owpower)
         Devices.register_device(OWPOWER, _owpower)
 
+    def parse_feature_nv_save(self, m_feature):
+        _nv_save = NvSave(f"{self.circuit}", self, m_feature['val_coil'], dev_id=self.dev_id,
+                          major_group=self.major_group)
+        self.__register_eventable_device(_nv_save)
+        Devices.register_device(NV_SAVE, _nv_save)
+
     def parse_feature_wd(self, max_count, m_feature):
         counter = 0
         while counter < max_count:
@@ -505,6 +511,8 @@ class Board(object):
             self.parse_feature_unit_register(max_count, m_feature)
         elif m_feature['type'] == 'OWPOWER':
             self.parse_feature_owpower(m_feature)
+        elif m_feature['type'] == 'NV_SAVE':
+            self.parse_feature_nv_save(m_feature)
         else:
             logging.warning("Unknown feature: " + str(m_feature['type']) + " at board: " + str(self.major_group))
 
@@ -859,7 +867,7 @@ class Relay:
 class OwPower(object):
     def __init__(self, circuit, arm, coil, dev_id=0, major_group=0):
         self.alias = ""
-        self.devtype = LED
+        self.devtype = OWPOWER
         self.dev_id = dev_id
         self.circuit = circuit
         self.arm = arm
@@ -876,6 +884,39 @@ class OwPower(object):
 
     def simple(self):
         return {'dev': 'owpower', 'circuit': self.circuit, 'value': self.value}
+
+    async def set(self, value=None, alias=None):
+        """ Sets new on/off status. Disable pending timeouts
+        """
+        if alias is not None:
+            Devices.set_alias(alias, self)
+        if value is not None:
+            value = bool(int(value))
+            self.value = value
+            await self.arm.modbus_slave.client.write_coil(self.coil, 1 if value else 0, slave=self.arm.modbus_address)
+        return self.full()
+
+    def get(self):
+        return self.full()
+
+
+class NvSave(object):
+    def __init__(self, circuit, arm, coil, dev_id=0, major_group=0):
+        self.alias = ""
+        self.devtype = NV_SAVE
+        self.dev_id = dev_id
+        self.circuit = circuit
+        self.arm = arm
+        self.major_group = major_group
+        self.coil = coil
+        self.value = 0
+        self.simple = self.full
+
+    def full(self):
+        ret = {'dev': 'nv_save', 'circuit': self.circuit, 'value': self.value}
+        if self.alias != '':
+            ret['alias'] = self.alias
+        return ret
 
     async def set(self, value=None, alias=None):
         """ Sets new on/off status. Disable pending timeouts

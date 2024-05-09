@@ -262,6 +262,7 @@ SERIALBUS = 27
 DEVICE_INFO = 28
 OWPOWER = 29
 RUN = 30
+NV_SAVE = 31
 
 # # corresponding device types names !! ORDER IS IMPORTANT
 devtype_names = {
@@ -284,6 +285,7 @@ devtype_names = {
     28: 'device_info',
     29: 'owpower',
     30: 'run',
+    31: 'nv_save',
 }
 
 devtype_altnames = {
