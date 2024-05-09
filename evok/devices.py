@@ -255,7 +255,7 @@ BOARD = "board"
 LED = "led"
 WATCHDOG = "watchdog"
 REGISTER = "register"
-UNIT_REGISTER = "unit_register"
+DATA_POINT = "data_point"
 TCPBUS = "tcp_bus"
 SERIALBUS = "serial_bus"
 DEVICE_INFO = "device_info"
@@ -278,7 +278,7 @@ num_to_devtype_name = {
     18: 'led',
     19: 'watchdog',
     20: 'register',
-    24: 'unit_register',
+    24: 'data_point',
     26: 'tcp_bus',
     27: 'serial_bus',
     28: 'device_info',

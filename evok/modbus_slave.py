@@ -453,7 +453,7 @@ class Board(object):
             Devices.register_device(REGISTER, _reg)
             counter+=1
 
-    def parse_feature_unit_register(self, max_count, m_feature):
+    def parse_feature_data_point(self, max_count, m_feature):
         counter = 0
         board_val_reg = m_feature['value_reg']
         while counter < max_count:
@@ -469,14 +469,14 @@ class Board(object):
             _datatype = m_feature.get('datatype')
             _reg_type = m_feature.get("reg_type", "input")
 
-            _xgt = UnitRegister("{}_{}".format(self.circuit, board_val_reg + counter), self,
-                                board_val_reg + counter, reg_type=_reg_type, datatype=_datatype,
-                                major_group=self.major_group, offset=_offset, factor=_factor, unit=_unit,
-                                valid_mask=1 << counter, valid_mask_reg=_valid_mask_reg, name=_name,
-                                post_write=_post_write_action)
+            _xgt = DataPoint("{}_{}".format(self.circuit, board_val_reg + counter), self,
+                             board_val_reg + counter, reg_type=_reg_type, datatype=_datatype,
+                             major_group=self.major_group, offset=_offset, factor=_factor, unit=_unit,
+                             valid_mask=1 << counter, valid_mask_reg=_valid_mask_reg, name=_name,
+                             post_write=_post_write_action)
 
             self.__register_eventable_device(_xgt)
-            Devices.register_device(UNIT_REGISTER, _xgt)
+            Devices.register_device(DATA_POINT, _xgt)
             counter+=1
 
     def parse_feature(self, m_feature):
@@ -500,7 +500,7 @@ class Board(object):
         elif m_feature['type'] == 'REGISTER':
             self.parse_feature_register(max_count, m_feature)
         elif m_feature['type'] == 'UNIT_REGISTER':
-            self.parse_feature_unit_register(max_count, m_feature)
+            self.parse_feature_data_point(max_count, m_feature)
         elif m_feature['type'] == 'OWPOWER':
             self.parse_feature_owpower(m_feature)
         elif m_feature['type'] == 'NV_SAVE':
@@ -1076,12 +1076,12 @@ class Watchdog(object):
         return self.full()
 
 
-class UnitRegister():
+class DataPoint():
 
     def __init__(self, circuit, arm, reg, reg_type="input", major_group=0, datatype=None, unit=None, offset=0, factor=1, valid_mask_reg=None, valid_mask=None, name=None, post_write=None):
         # TODO - valid mask reg
         self.alias = ""
-        self.devtype = UNIT_REGISTER
+        self.devtype = DATA_POINT
         self.circuit = circuit
         self.arm = arm
         self.major_group = major_group
@@ -1143,7 +1143,7 @@ class UnitRegister():
 
     def full(self):
 
-        ret = {'dev': 'unit_register',
+        ret = {'dev': 'data_point',
                'circuit': self.circuit,
                'value': self.value,
                }
@@ -1162,7 +1162,7 @@ class UnitRegister():
         return ret
 
     def simple(self):
-        return {'dev': 'unit_register',
+        return {'dev': 'data_point',
                 'circuit': self.circuit,
                 'value': self.read_value()}
 
