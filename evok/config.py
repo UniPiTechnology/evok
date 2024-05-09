@@ -42,8 +42,7 @@ class HWDict:
 
 
 class OWSensorDevice:
-    def __init__(self, sensor_dev, dev_id):
-        self.dev_id = dev_id
+    def __init__(self, sensor_dev):
         self.sensor_dev = sensor_dev
         self.circuit = sensor_dev.circuit
 
@@ -52,8 +51,7 @@ class OWSensorDevice:
 
 
 class TcpBusDevice:
-    def __init__(self, circuit: str, bus_driver: EvokModbusTcpClient, dev_id):
-        self.dev_id = dev_id
+    def __init__(self, circuit: str, bus_driver: EvokModbusTcpClient):
         self.bus_driver = bus_driver
         self.circuit = circuit
 
@@ -62,8 +60,7 @@ class TcpBusDevice:
 
 
 class SerialBusDevice:
-    def __init__(self, circuit: str,  bus_driver: EvokModbusSerialClient, dev_id):
-        self.dev_id = dev_id
+    def __init__(self, circuit: str,  bus_driver: EvokModbusSerialClient):
         self.bus_driver = bus_driver
         self.circuit = circuit
 
@@ -73,15 +70,13 @@ class SerialBusDevice:
 
 
 class DeviceInfo:
-    def __init__(self, family: str, model: str, sn: Union[None, int], board_count: int,
-                 dev_id):
+    def __init__(self, family: str, model: str, sn: Union[None, int], board_count: int):
         """
         :param family: [Neuron, Patron, UNIPI1, Iris]
         :param model: [S103, M533, ...]
         :param sn: serial number
         :param board_count: number of boards
         """
-        self.dev_id = dev_id
         self.family: str = family
         self.model: str = model
         self.sn: Union[None, int] = sn
@@ -185,7 +180,6 @@ def hexint(value):
 
 
 def create_devices(evok_config: EvokConfig, hw_dict):
-    dev_counter = 0
     for bus_name, bus_data in evok_config.get_comm_channels().items():
         bus_data: dict
         if not bus_data.get("enabled", True):
@@ -196,33 +190,30 @@ def create_devices(evok_config: EvokConfig, hw_dict):
         bus = None
         bus_device_info: Union[None, DeviceInfo] = None
         if bus_type == 'OWBUS':
-            dev_counter += 1
             interval = bus_data.get("interval", 60)
             scan_interval = bus_data.get("scan_interval", 300)
             owpower = bus_data.get("owpower", None)
 
             circuit = bus_name
             bus = owdevice.OwBusDriver(circuit, interval=interval, scan_interval=scan_interval,
-                                       dev_id=dev_counter, owpower_circuit=owpower)
+                                       owpower_circuit=owpower)
             Devices.register_device(OWBUS, bus)
 
         elif bus_type == 'MODBUSTCP':
-            dev_counter += 1
             modbus_server = bus_data.get("hostname", "127.0.0.1")
             modbus_port = bus_data.get("port", 502)
             bus_driver = EvokModbusTcpClient(host=modbus_server, port=modbus_port)
-            bus = TcpBusDevice(circuit=bus_name, bus_driver=bus_driver, dev_id=dev_counter)
+            bus = TcpBusDevice(circuit=bus_name, bus_driver=bus_driver)
             Devices.register_device(TCPBUS, bus)
 
         elif bus_type == "MODBUSRTU":
-            dev_counter += 1
             serial_port = bus_data["port"]
             serial_baud_rate = bus_data.get("baudrate", 19200)
             serial_parity = bus_data.get("parity", 'N')
             serial_stopbits = bus_data.get("stopbits", 1)
             bus_driver = EvokModbusSerialClient(port=serial_port, baudrate=serial_baud_rate, parity=serial_parity,
                                                 stopbits=serial_stopbits, timeout=0.5)
-            bus = SerialBusDevice(circuit=bus_name, bus_driver=bus_driver, dev_id=dev_counter)
+            bus = SerialBusDevice(circuit=bus_name, bus_driver=bus_driver)
             Devices.register_device(SERIALBUS, bus)
 
         if bus is not None:
@@ -233,9 +224,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                 model = bus_device_info_data.get("model", 'unknown')
                 sn = bus_device_info_data.get("sn", None)
                 board_count = bus_device_info_data.get("board_count", 1)
-                bus_device_info = DeviceInfo(family=family, model=model, sn=sn, board_count=board_count,
-                                             dev_id=dev_counter)
-                dev_counter += 1
+                bus_device_info = DeviceInfo(family=family, model=model, sn=sn, board_count=board_count)
                 Devices.register_device(DEVICE_INFO, bus_device_info)
 
         if 'devices' not in bus_data:
@@ -258,8 +247,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                     sensor = owdevice.MySensorFabric(address, ow_type, bus, interval=interval, circuit=circuit,
                                                      is_static=True)
                     if sensor is not None:
-                        sensor = OWSensorDevice(sensor, dev_id=dev_counter)
-                    dev_counter += 1
+                        sensor = OWSensorDevice(sensor)
                     Devices.register_device(SENSOR, sensor)
 
                 elif bus_type in ['MODBUSTCP', 'MODBUSRTU']:
@@ -272,8 +260,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
 
                     slave = ModbusSlave(bus.bus_driver, circuit, evok_config, scanfreq, scan_enabled,
                                         hw_dict, device_model=device_model, slave_id=slave_id,
-                                        dev_id=dev_counter, major_group=major_group)
-                    dev_counter += 1
+                                        major_group=major_group)
                     Devices.register_device(MODBUS_SLAVE, slave)
 
                     if bus_device_info is None or "device_info" in device_data:
@@ -286,9 +273,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                         if model[:2].lower() in ['xs', 'xm', 'xl', 'xg'] and family == 'unknown':
                             family = 'Extension'
                         Devices.register_device(DEVICE_INFO,
-                                                DeviceInfo(family=family, model=model, sn=sn, board_count=board_count,
-                                                           dev_id=dev_counter))
-                        dev_counter += 1
+                                                DeviceInfo(family=family, model=model, sn=sn, board_count=board_count))
 
                 else:
                     logger.error(f"Unknown bus type: '{bus_type}'! skipping...")

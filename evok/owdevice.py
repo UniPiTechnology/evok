@@ -246,10 +246,9 @@ def MySensorFabric(address, typ, bus, interval=None, dynamic=True, circuit=None,
 
 class OwBusDriver:
 
-    def __init__(self, circuit, dev_id, interval=60, scan_interval=300, major_group=1,
+    def __init__(self, circuit, interval=60, scan_interval=300, major_group=1,
                  owpower_circuit=None):
         self.bus_driver = self
-        self.dev_id = dev_id
         self.devtype = devices.OWBUS
         self.circuit = circuit
         self.major_group = major_group

@@ -78,7 +78,6 @@ paths:
                       modes:
                         - Simple
                         - DirectSwitch
-                      glob_dev_id: 2
                     - dev: di
                       circuit: '1_02'
                       value: 0
@@ -92,7 +91,6 @@ paths:
                       modes:
                         - Simple
                         - DirectSwitch
-                      glob_dev_id: 2
                     - dev: di
                       circuit: '1_03'
                       value: 0
@@ -106,7 +104,6 @@ paths:
                       modes:
                         - Simple
                         - DirectSwitch
-                      glob_dev_id: 2
                     - dev: di
                       circuit: '1_04'
                       value: 0
@@ -120,7 +117,6 @@ paths:
                       modes:
                         - Simple
                         - DirectSwitch
-                      glob_dev_id: 2
                     - dev: do
                       circuit: '1_01'
                       value: 0
@@ -129,7 +125,6 @@ paths:
                       modes:
                         - Simple
                         - PWM
-                      glob_dev_id: 2
                       pwm_freq: 39.0625
                       pwm_duty: 0
                     - dev: do
@@ -140,7 +135,6 @@ paths:
                       modes:
                         - Simple
                         - PWM
-                      glob_dev_id: 2
                       pwm_freq: 39.0625
                       pwm_duty: 0
                     - dev: do
@@ -151,7 +145,6 @@ paths:
                       modes:
                         - Simple
                         - PWM
-                      glob_dev_id: 2
                       pwm_freq: 39.0625
                       pwm_duty: 0
                     - dev: do
@@ -162,14 +155,12 @@ paths:
                       modes:
                         - Simple
                         - PWM
-                      glob_dev_id: 2
                       pwm_freq: 39.0625
                       pwm_duty: 0
                     - dev: ai
                       circuit: '1_01'
                       value: 0.013
                       unit: V
-                      glob_dev_id: 2
                       mode: Voltage
                       modes:
                         Voltage:
@@ -209,42 +200,34 @@ paths:
                           range:
                             - 0
                             - 2000
-                      glob_dev_id: 2
                       unit: V
                       value: 0
                     - dev: led
                       circuit: '1_01'
                       value: 0
-                      glob_dev_id: 2
                     - dev: led
                       circuit: '1_02'
                       value: 0
-                      glob_dev_id: 2
                     - dev: led
                       circuit: '1_03'
                       value: 0
-                      glob_dev_id: 2
                     - dev: led
                       circuit: '1_04'
                       value: 0
-                      glob_dev_id: 2
                     - dev: wd
                       circuit: '1_01'
                       value: 0
                       timeout: 5000
                       was_wd_reset: 0
                       nv_save: 0
-                      glob_dev_id: 2
                     - dev: modbus_slave
                       circuit: '1'
-                      glob_dev_id: 2
                       last_comm: 0.021920204162597656
                       slave_id: 1
                       modbus_type: TCP
                     - dev: owpower
                       circuit: '1'
                       value: 0
-                      glob_dev_id: 2
                     - dev: device_info
                       family: Patron
                       model: S167
@@ -311,19 +294,15 @@ paths:
                     - dev: led
                       circuit: '1_01'
                       value: 0
-                      glob_dev_id: 2
                     - dev: led
                       circuit: '1_02'
                       value: 0
-                      glob_dev_id: 2
                     - dev: led
                       circuit: '1_03'
                       value: 0
-                      glob_dev_id: 2
                     - dev: led
                       circuit: '1_04'
                       value: 0
-                      glob_dev_id: 2
       operationId: get-format-device-all
       x-stoplight:
         id: 2a8zh84up8mp4
@@ -427,7 +406,6 @@ paths:
                     modes:
                       - Simple
                       - DirectSwitch
-                    glob_dev_id: 2
             application/json:
               schema:
                 $ref: '#/components/schemas/Digital_input'
@@ -447,7 +425,6 @@ paths:
                     modes:
                       - Simple
                       - DirectSwitch
-                    glob_dev_id: 2
       x-stoplight:
         id: amptpwemaf9og
       description: Get all properties of single digital input including current value and parameters.
@@ -742,7 +719,6 @@ paths:
                     modes:
                       - Simple
                       - DirectSwitch
-                    glob_dev_id: 2
             application/json:
               schema:
                 allOf:
@@ -799,7 +775,6 @@ paths:
                     modes:
                       - Simple
                       - DirectSwitch
-                    glob_dev_id: 2
             application/json:
               schema:
                 $ref: '#/components/schemas/Aliases'
@@ -819,7 +794,6 @@ paths:
                     modes:
                       - Simple
                       - DirectSwitch
-                    glob_dev_id: 2
       description: Read all set aliases
       operationId: read-aliases-object
       x-stoplight:
@@ -944,7 +918,6 @@ paths:
                     modes:
                       - Simple
                       - DirectSwitch
-                    glob_dev_id: 2
       description: Get RAW modbus register value. Used for custom user-defined Modbus devices.
       operationId: read-register-object
       tags:
@@ -1000,7 +973,6 @@ paths:
                     modes:
                       - Simple
                       - DirectSwitch
-                    glob_dev_id: 2
       description: Get unit modbus register value. Used for custom user-defined Modbus devices.
       operationId: read-unit_egister-object
       tags:
@@ -1050,8 +1022,6 @@ paths:
                     type: integer
                   nv_save:
                     type: integer
-                  glob_dev_id:
-                    type: integer
                 x-examples:
                   Example 1:
                     dev: wd
@@ -1060,7 +1030,6 @@ paths:
                     timeout: 5000
                     was_wd_reset: 0
                     nv_save: 0
-                    glob_dev_id: 2
               examples:
                 Example:
                   value:
@@ -1077,7 +1046,6 @@ paths:
                     modes:
                       - Simple
                       - DirectSwitch
-                    glob_dev_id: 2
             application/json:
               schema:
                 allOf:
@@ -1099,7 +1067,6 @@ paths:
                     modes:
                       - Simple
                       - DirectSwitch
-                    glob_dev_id: 2
       description: Get all properties of internal [master watchdog](https://kb.unipi.technology).  # TODO
       operationId: read-watchdog-object
       x-stoplight:
@@ -2012,7 +1979,6 @@ components:
           timeout: 5000
           was_wd_reset: 0
           nv_save: 0
-          glob_dev_id: 2
       properties:
         dev:
           type: string
@@ -2194,7 +2160,6 @@ components:
       examples:
         - circuit: 1
           dev: owpower
-          glob_dev_id: 2
           value: 1
     Owpower_params:
       title: Owpower_params
@@ -2212,7 +2177,6 @@ components:
       examples:
         - circuit: 1
           dev: input
-          glob_dev_id: 2
           value: 1
       type: object
     NvSave:
@@ -2389,7 +2353,6 @@ components:
       description: Main part of a custom user-defined Modbus device
       allOf:
         - $ref: '#/components/schemas/Device'
-        - $ref: '#/components/schemas/Glob_dev_id'
           x-stoplight:
             id: oveidtl26z04i
         - type: object
@@ -2408,26 +2371,12 @@ components:
         - dev: register
           circuit: living_room_28_inp
           value: 16256
-          glob_dev_id: 5
-    Glob_dev_id:
-      title: Glob_dev_id
-      x-stoplight:
-        id: zrzv132qfbl6d
-      type: object
-      properties:
-        glob_dev_id:
-          type: integer
-          x-stoplight:
-            id: jz3obrqf6q8pd
-          examples: [1]
-          description: Device number in hierarchy
     Unit_register:
       title: Unit_register
       x-stoplight:
         id: ptcf7sfa7wr7i
       allOf:
         - $ref: '#/components/schemas/Device'
-        - $ref: '#/components/schemas/Glob_dev_id'
           x-stoplight:
             id: 7c3e9bj55hrjw
         - type: object

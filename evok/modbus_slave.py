@@ -136,13 +136,12 @@ class ModbusSlave(object):
 
     def __init__(self, client: Union[EvokModbusTcpClient, EvokModbusSerialClient],
                  circuit, evok_config, scan_freq, scan_enabled, hw_dict, slave_id=1,
-                 major_group=1, device_model='unspecified', dev_id=0):
+                 major_group=1, device_model='unspecified'):
         self.alias = ""
         self.devtype = MODBUS_SLAVE
         self.modbus_cache_map = None
         self.eventable_devices = list()
         self.boards = list()
-        self.dev_id = dev_id
         self.hw_dict = hw_dict
         self.modbus_address = slave_id
         self.device_model = device_model
@@ -195,8 +194,7 @@ class ModbusSlave(object):
             if self.device_model not in self.hw_dict.definitions:
                 raise KeyError(f"readboards: Unsupported device model {self.device_model}! (check HW definitions)")
             self.hw_board_dict = self.hw_dict.definitions[self.device_model]
-            board = Board(self.evok_config, self.circuit, self.modbus_address, self, dev_id=self.dev_id,
-                          major_group=self.major_group)
+            board = Board(self.evok_config, self.circuit, self.modbus_address, self)
             await board.parse_definition(self.hw_dict)
             self.boards.append(board)
         except ConnectionException as E:
@@ -204,7 +202,6 @@ class ModbusSlave(object):
             if logger.level == logging.DEBUG:
                 traceback.print_exc()
         except Exception as E:
-            Devices.remove_global_device(self.dev_id)
             logger.exception(str(E))
             pass
 
@@ -245,7 +242,6 @@ class ModbusSlave(object):
     def full(self):
         ret = {'dev': 'modbus_slave',
                'circuit': self.circuit,
-               'glob_dev_id': self.dev_id,
                'last_comm': 0x7fffffff,
                'slave_id': self.modbus_address,
                'modbus_type': self.modbus_type,
@@ -284,10 +280,9 @@ class Proxy(object):
 
 
 class Board(object):
-    def __init__(self, evok_config, circuit, modbus_address, modbus_slave: ModbusSlave, major_group=1, dev_id=0):
+    def __init__(self, evok_config, circuit, modbus_address, modbus_slave: ModbusSlave, major_group=1):
         self.alias = ""
         self.devtype = BOARD
-        self.dev_id = dev_id
         self.evok_config = evok_config
         self.circuit = circuit
         self.legacy_mode = True
@@ -329,12 +324,12 @@ class Board(object):
             if ('ds_modes' in m_feature) and ('direct_reg' in m_feature) and ('polar_reg' in m_feature) and ('toggle_reg' in m_feature):
                 _inp = DigitalInput("%s_%02d" % (self.circuit, counter + 1 + start_index), self, board_val_reg, 0x1 << (counter % 16),
                                     regdebounce=board_deboun_reg + counter, major_group=self.major_group, regcounter=board_counter_reg + (2 * counter), modes=m_feature['modes'],
-                                    dev_id=self.dev_id, ds_modes=m_feature['ds_modes'], regmode=m_feature['direct_reg'], regtoggle=m_feature['toggle_reg'],
+                                    ds_modes=m_feature['ds_modes'], regmode=m_feature['direct_reg'], regtoggle=m_feature['toggle_reg'],
                                     regpolarity=m_feature['polar_reg'], legacy_mode=self.legacy_mode)
             else:
                 _inp = DigitalInput("%s_%02d" % (self.circuit, counter + 1 + start_index), self, board_val_reg, 0x1 << (counter % 16),
                                     regdebounce=board_deboun_reg + counter, major_group=self.major_group, regcounter=board_counter_reg + (2 * counter), modes=m_feature['modes'],
-                                    dev_id=self.dev_id, legacy_mode=self.legacy_mode)
+                                    legacy_mode=self.legacy_mode)
             self.__register_eventable_device(_inp)
             Devices.register_device(DI, _inp)
             counter+=1
@@ -344,7 +339,7 @@ class Board(object):
         while counter < max_count:
             board_val_reg = m_feature['val_reg']
             _r = Relay("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
-                       dev_id=self.dev_id, major_group=self.major_group, legacy_mode=self.legacy_mode)
+                      major_group=self.major_group, legacy_mode=self.legacy_mode)
             self.__register_eventable_device(_r)
             Devices.register_device(RO, _r)
             counter += 1
@@ -357,16 +352,16 @@ class Board(object):
             if m_feature.get('pwm_reg') and m_feature.get('pwm_ps_reg') and m_feature.get('pwm_c_reg'):
                 if not self.legacy_mode:
                     _r = DigitalOutput("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
-                                       dev_id=self.dev_id, major_group=self.major_group, pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
+                                       major_group=self.major_group, pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
                                        pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
                 else:
                     _r = DigitalOutput("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
-                                       dev_id=self.dev_id, major_group=self.major_group, pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
+                                       major_group=self.major_group, pwmcyclereg=m_feature['pwm_c_reg'], pwmprescalereg=m_feature['pwm_ps_reg'], digital_only=True,
                                        pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
             # Soft PWM
             elif m_feature.get('pwm_reg') and m_feature.get('pwm_preset_reg') and m_feature.get('pwm_cpres_reg'):
                 _r = DigitalOutput("%s_%02d" % (self.circuit, counter + 1), self, m_feature['val_coil'] + counter, board_val_reg, 0x1 << (counter % 16),
-                                   dev_id=self.dev_id, major_group=self.major_group, pwmpresetreg=m_feature['pwm_preset_reg'],
+                                   major_group=self.major_group, pwmpresetreg=m_feature['pwm_preset_reg'],
                                    pwmcustompresc=m_feature['pwm_cpres_reg'], digital_only=True,
                                    pwmdutyreg=m_feature['pwm_reg'] + counter, modes=m_feature['modes'], legacy_mode=self.legacy_mode)
             else:
@@ -379,21 +374,19 @@ class Board(object):
         counter = 0
         while counter < max_count:
             board_val_reg = m_feature['val_reg']
-            _led = ULED("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg, 0x1 << (counter % 16), m_feature['val_coil'] + counter,
-                        dev_id=self.dev_id, major_group=self.major_group, legacy_mode=self.legacy_mode)
+            _led = ULED("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg, 0x1 << (counter % 16),
+                        m_feature['val_coil'] + counter, major_group=self.major_group, legacy_mode=self.legacy_mode)
             self.__register_eventable_device(_led)
             Devices.register_device(LED, _led)
             counter+=1
 
     def parse_feature_owpower(self, m_feature):
-        _owpower = OwPower(f"{self.circuit}", self, m_feature['val_coil'], dev_id=self.dev_id,
-                           major_group=self.major_group)
+        _owpower = OwPower(f"{self.circuit}", self, m_feature['val_coil'], major_group=self.major_group)
         self.__register_eventable_device(_owpower)
         Devices.register_device(OWPOWER, _owpower)
 
     def parse_feature_nv_save(self, m_feature):
-        _nv_save = NvSave(f"{self.circuit}", self, m_feature['val_coil'], dev_id=self.dev_id,
-                          major_group=self.major_group)
+        _nv_save = NvSave(f"{self.circuit}", self, m_feature['val_coil'], major_group=self.major_group)
         self.__register_eventable_device(_nv_save)
         Devices.register_device(NV_SAVE, _nv_save)
 
@@ -403,7 +396,7 @@ class Board(object):
             board_val_reg = m_feature['val_reg']
             board_timeout_reg = m_feature['timeout_reg']
             _wd = Watchdog("%s_%02d" % (self.circuit, counter + 1), self, counter, board_val_reg + counter, board_timeout_reg + counter,
-                           dev_id=self.dev_id, major_group=self.major_group, nv_save_coil=m_feature['nv_sav_coil'], reset_coil=m_feature['reset_coil'],
+                           major_group=self.major_group, nv_save_coil=m_feature['nv_sav_coil'], reset_coil=m_feature['reset_coil'],
                            legacy_mode=self.legacy_mode)
             self.__register_eventable_device(_wd)
             Devices.register_device(WATCHDOG, _wd)
@@ -416,8 +409,7 @@ class Board(object):
             modes = m_feature['modes']
             reg_mode = m_feature.get('mode_reg', None)
             _ao = AnalogOutput("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter,
-                               dev_id=self.dev_id, major_group=self.major_group, modes=modes,
-                               regmode=reg_mode)
+                               major_group=self.major_group, modes=modes, regmode=reg_mode)
             self.__register_eventable_device(_ao)
             Devices.register_device(AO, _ao)
             counter+=1
@@ -428,8 +420,7 @@ class Board(object):
             board_val_reg = m_feature['val_reg']
             reg_mode = m_feature.get('mode_reg', None)
             _ao = AnalogOutputBrain("%s_%02d" % (self.circuit, counter + 1), self, board_val_reg + counter,
-                                    regmode=reg_mode, reg_res=m_feature['res_val_reg'],
-                                    dev_id=self.dev_id, major_group=self.major_group)
+                                    regmode=reg_mode, reg_res=m_feature['res_val_reg'], major_group=self.major_group)
             self.__register_eventable_device(_ao)
             Devices.register_device(AO, _ao)
             counter+=1
@@ -442,7 +433,7 @@ class Board(object):
             modes = m_feature['modes']
             _ai = AnalogInput(circuit, self, board_val_reg,
                               regmode=m_feature['mode_reg'] + counter if m_feature.get('mode_reg', None) is not None else None,
-                              dev_id=self.dev_id, major_group=self.major_group, modes=modes, legacy_mode=self.legacy_mode)
+                              major_group=self.major_group, modes=modes, legacy_mode=self.legacy_mode)
 
             self.__register_eventable_device(_ai)
             Devices.register_device(AI, _ai)
@@ -453,11 +444,12 @@ class Board(object):
         while counter < max_count:
             board_val_reg = m_feature['start_reg']
             if 'reg_type' in m_feature and m_feature['reg_type'] == 'input':
-                _reg = Register("%s_%d_inp" % (self.circuit, board_val_reg + counter), self, counter, board_val_reg + counter, reg_type='input', dev_id=self.dev_id,
+                _reg = Register("%s_%d_inp" % (self.circuit, board_val_reg + counter), self, counter,
+                                board_val_reg + counter, reg_type='input',
                                 major_group=self.major_group, legacy_mode=self.legacy_mode)
             else:
-                _reg = Register("%s_%d" % (self.circuit, board_val_reg + counter), self, counter, board_val_reg + counter, dev_id=self.dev_id,
-                                major_group=self.major_group, legacy_mode=self.legacy_mode)
+                _reg = Register("%s_%d" % (self.circuit, board_val_reg + counter), self, counter,
+                                board_val_reg + counter, major_group=self.major_group, legacy_mode=self.legacy_mode)
             Devices.register_device(REGISTER, _reg)
             counter+=1
 
@@ -466,7 +458,7 @@ class Board(object):
         board_val_reg = m_feature['value_reg']
         while counter < max_count:
 
-            #self, circuit, arm, post, reg, dev_id=0, major_group=0
+            #self, circuit, arm, post, reg, major_group=0
 
             _offset = m_feature.get("offset", 0)
             _factor = m_feature.get("factor", 1)
@@ -478,9 +470,9 @@ class Board(object):
             _reg_type = m_feature.get("reg_type", "input")
 
             _xgt = UnitRegister("{}_{}".format(self.circuit, board_val_reg + counter), self,
-                                board_val_reg + counter, reg_type=_reg_type,
-                                dev_id=self.dev_id, datatype=_datatype, major_group=self.major_group, offset=_offset, factor=_factor, unit=_unit,
-                                valid_mask=1<<counter, valid_mask_reg=_valid_mask_reg, name=_name,
+                                board_val_reg + counter, reg_type=_reg_type, datatype=_datatype,
+                                major_group=self.major_group, offset=_offset, factor=_factor, unit=_unit,
+                                valid_mask=1 << counter, valid_mask_reg=_valid_mask_reg, name=_name,
                                 post_write=_post_write_action)
 
             self.__register_eventable_device(_xgt)
@@ -534,12 +526,11 @@ class Board(object):
 
 class DigitalOutput:
     pending_id = 0
-    def __init__(self, circuit, arm, coil, reg, mask, dev_id=0, major_group=0,
+    def __init__(self, circuit, arm, coil, reg, mask, major_group=0,
                  pwmcyclereg=-1, pwmprescalereg=-1, pwmdutyreg=-1, pwmpresetreg=-1, pwmcustompresc=-1 ,
                  legacy_mode=True, digital_only=False, modes=None):
         self.alias = ""
         self.devtype = DO
-        self.dev_id = dev_id
         self.circuit = circuit
         self.arm = arm
         self.modes = modes if modes is not None else ['Simple']
@@ -578,7 +569,7 @@ class DigitalOutput:
                 'pending': self.pending_id != 0,
                 'mode': self.mode,
                 'modes': self.modes,
-                'glob_dev_id': self.dev_id}
+                }
         if self.digital_only:
             ret['pwm_freq'] = self.pwm_freq
             ret['pwm_duty'] = self.pwm_duty
@@ -789,10 +780,9 @@ class DigitalOutput:
 
 class Relay:
 
-    def __init__(self, circuit, arm, coil, reg, mask, dev_id=0, major_group=0, legacy_mode=True):
+    def __init__(self, circuit, arm, coil, reg, mask, major_group=0, legacy_mode=True):
         self.alias = ""
         self.devtype = RO
-        self.dev_id = dev_id
         self.circuit = circuit
         self.arm = arm
         self.major_group = major_group
@@ -810,7 +800,7 @@ class Relay:
         ret = {'dev': 'ro',
                'circuit': self.circuit,
                'value': self.value,
-               'glob_dev_id': self.dev_id}
+               }
         if self.alias != '':
             ret['alias'] = self.alias
         if forced_value is not None:
@@ -865,10 +855,9 @@ class Relay:
 
 
 class OwPower(object):
-    def __init__(self, circuit, arm, coil, dev_id=0, major_group=0):
+    def __init__(self, circuit, arm, coil, major_group=0):
         self.alias = ""
         self.devtype = OWPOWER
-        self.dev_id = dev_id
         self.circuit = circuit
         self.arm = arm
         self.major_group = major_group
@@ -877,7 +866,7 @@ class OwPower(object):
         self.simple = self.full
 
     def full(self):
-        ret = {'dev': 'owpower', 'circuit': self.circuit, 'value': self.value, 'glob_dev_id': self.dev_id}
+        ret = {'dev': 'owpower', 'circuit': self.circuit, 'value': self.value}
         if self.alias != '':
             ret['alias'] = self.alias
         return ret
@@ -901,10 +890,9 @@ class OwPower(object):
 
 
 class NvSave(object):
-    def __init__(self, circuit, arm, coil, dev_id=0, major_group=0):
+    def __init__(self, circuit, arm, coil, major_group=0):
         self.alias = ""
         self.devtype = NV_SAVE
-        self.dev_id = dev_id
         self.circuit = circuit
         self.arm = arm
         self.major_group = major_group
@@ -934,10 +922,9 @@ class NvSave(object):
 
 
 class ULED(object):
-    def __init__(self, circuit, arm, post, reg, mask, coil, dev_id=0, major_group=0, legacy_mode=True):
+    def __init__(self, circuit, arm, post, reg, mask, coil, major_group=0, legacy_mode=True):
         self.alias = ""
         self.devtype = LED
-        self.dev_id = dev_id
         self.circuit = circuit
         self.arm = arm
         self.major_group = major_group
@@ -949,7 +936,7 @@ class ULED(object):
         self.value = None
 
     def full(self):
-        ret = {'dev': 'led', 'circuit': self.circuit, 'value': self.value, 'glob_dev_id': self.dev_id}
+        ret = {'dev': 'led', 'circuit': self.circuit, 'value': self.value}
         if self.alias != '':
             ret['alias'] = self.alias
         return ret
@@ -993,10 +980,10 @@ class ULED(object):
 
 
 class Watchdog(object):
-    def __init__(self, circuit, arm, post, reg, timeout_reg, nv_save_coil=-1, reset_coil=-1, wd_reset_ro_coil=-1, dev_id=0, major_group=0, legacy_mode=True):
+    def __init__(self, circuit, arm, post, reg, timeout_reg, nv_save_coil=-1, reset_coil=-1, wd_reset_ro_coil=-1,
+                 major_group=0, legacy_mode=True):
         self.alias = ""
         self.devtype = WATCHDOG
-        self.dev_id = dev_id
         self.circuit = circuit
         self.arm = arm
         self.major_group = major_group
@@ -1023,7 +1010,7 @@ class Watchdog(object):
                'timeout': self.timeout,
                'was_wd_reset': self.was_wd_boot_value,
                'nv_save' :self.nvsavvalue,
-               'glob_dev_id': self.dev_id}
+               }
         if self.alias != '':
             ret['alias'] = self.alias
         return ret
@@ -1091,11 +1078,10 @@ class Watchdog(object):
 
 class UnitRegister():
 
-    def __init__(self, circuit, arm, reg, reg_type="input", dev_id=0, major_group=0, datatype=None, unit=None, offset=0, factor=1, valid_mask_reg=None, valid_mask=None, name=None, post_write=None):
+    def __init__(self, circuit, arm, reg, reg_type="input", major_group=0, datatype=None, unit=None, offset=0, factor=1, valid_mask_reg=None, valid_mask=None, name=None, post_write=None):
         # TODO - valid mask reg
         self.alias = ""
         self.devtype = UNIT_REGISTER
-        self.dev_id = dev_id
         self.circuit = circuit
         self.arm = arm
         self.major_group = major_group
@@ -1160,7 +1146,7 @@ class UnitRegister():
         ret = {'dev': 'unit_register',
                'circuit': self.circuit,
                'value': self.value,
-               'glob_dev_id': self.dev_id}
+               }
 
         if self.name is not None:
             ret['name'] = self.name
@@ -1192,10 +1178,9 @@ class UnitRegister():
 
 
 class Register:
-    def __init__(self, circuit, arm, post, reg, reg_type="holding", dev_id=0, major_group=0, legacy_mode=True):
+    def __init__(self, circuit, arm, post, reg, reg_type="holding", major_group=0, legacy_mode=True):
         self.alias = ""
         self.devtype = REGISTER
-        self.dev_id = dev_id
         self.circuit = circuit
         self.arm = arm
         self.major_group = major_group
@@ -1216,7 +1201,7 @@ class Register:
         ret = {'dev': 'register',
                'circuit': self.circuit,
                'value': self.regvalue(),
-               'glob_dev_id': self.dev_id}
+               }
         if self.alias != '':
             ret['alias'] = self.alias
         return ret
@@ -1266,10 +1251,9 @@ class Register:
 
 class DigitalInput:
     def __init__(self, circuit, arm, reg, mask, regcounter=None, regdebounce=None, regmode=None, regtoggle=None, regpolarity=None,
-                 dev_id=0, major_group=0, modes=['Simple'], ds_modes=['Simple'], counter_modes=['Enabled', 'Disabled'], legacy_mode=True):
+                 major_group=0, modes=['Simple'], ds_modes=['Simple'], counter_modes=['Enabled', 'Disabled'], legacy_mode=True):
         self.alias = ""
         self.devtype = DI
-        self.dev_id = dev_id
         self.circuit = circuit
         self.arm = arm
         self.modes = modes
@@ -1326,7 +1310,7 @@ class DigitalInput:
                'counter': self.counter if self.counter_mode == 'Enabled' else 0,
                'mode': self.mode,
                'modes': self.modes,
-               'glob_dev_id': self.dev_id }
+               }
         if self.mode == 'DirectSwitch':
             ret['ds_mode'] = self.ds_mode
             ret['ds_modes'] = self.ds_modes
@@ -1405,10 +1389,9 @@ class DigitalInput:
 
 
 class AnalogOutputBrain:
-    def __init__(self, circuit, arm, reg, regmode=None, reg_res=0, dev_id=0, major_group=0):
+    def __init__(self, circuit, arm, reg, regmode=None, reg_res=0, major_group=0):
         self.alias = ""
         self.devtype = AO
-        self.dev_id = dev_id
         self.circuit = circuit
         self.reg = reg
         self.regmode = regmode
@@ -1474,7 +1457,6 @@ class AnalogOutputBrain:
                'circuit': self.circuit,
                'mode': self.mode,
                'modes': self.modes,
-               'glob_dev_id': self.dev_id,
                'unit': self.unit
         }
 
@@ -1534,10 +1516,9 @@ class AnalogOutputBrain:
 
 
 class AnalogOutput:
-    def __init__(self, circuit, arm, reg, regmode=None, dev_id=0, modes=None, major_group=0):
+    def __init__(self, circuit, arm, reg, regmode=None, modes=None, major_group=0):
         self.alias = ""
         self.devtype = AO
-        self.dev_id = dev_id
         self.circuit = circuit
         self.reg = reg
         self.regvalue = lambda: self.arm.modbus_slave.modbus_cache_map.get_register(1, self.reg)[0]
@@ -1586,7 +1567,6 @@ class AnalogOutput:
                'circuit': self.circuit,
                'mode': self.mode,
                'modes': self.modes,
-               'glob_dev_id':self.dev_id,
                'value': self.value,
                'unit': self.unit_name,
                'range': self.range,
@@ -1635,10 +1615,9 @@ class AnalogInput:
                 "big" : Endian.BIG,
                 "Big" : Endian.BIG,}
 
-    def __init__(self, circuit, arm, reg, regmode=None, dev_id=0, major_group=0, legacy_mode=True, modes=None):
+    def __init__(self, circuit, arm, reg, regmode=None, major_group=0, legacy_mode=True, modes=None):
         self.alias = ""
         self.devtype = AI
-        self.dev_id = dev_id
         self.circuit = circuit
         self.valreg = reg
         self.arm = arm
@@ -1743,7 +1722,6 @@ class AnalogInput:
                'circuit': self.circuit,
                'value': self.value,
                'unit': self.unit_name,
-               'glob_dev_id': self.dev_id,
                'mode': self.mode,
                'modes': self.modes,
                'range': self.range,
