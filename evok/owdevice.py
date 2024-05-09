@@ -262,7 +262,7 @@ class OwBusDriver:
     def full(self):
         return {'dev': 'owbus',
                 'circuit': self.circuit,
-                'bus': 'via OWFS',
+                'bus': 'OWFS',
                 'scan_interval': self.scan_interval,
                 'interval': self.interval,
                 'do_scan': False,

@@ -189,7 +189,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
 
         bus = None
         bus_device_info: Union[None, DeviceInfo] = None
-        if bus_type == 'OWBUS':
+        if bus_type == 'OWFS':
             interval = bus_data.get("interval", 60)
             scan_interval = bus_data.get("scan_interval", 300)
             owpower = bus_data.get("owpower", None)
