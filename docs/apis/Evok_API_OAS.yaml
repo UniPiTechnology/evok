@@ -32,8 +32,19 @@ servers:
         default: '8080'
         description: TCP port on what API listen on. Can be modified in the config file.
 paths:
-  /rest/all:
-    parameters: []
+  /{format}/all:
+    parameters:
+      - name: format
+        in: path
+        required: true
+        schema:
+          type: string
+          examples: [json]
+          enum:
+            - json
+            - rest
+          default: json
+        description: Content type - use "json" for application/json OR "rest" for text/html.
     get:
       summary: Get all circuits
       responses:
@@ -58,10 +69,6 @@ paths:
                       type: string
                       x-stoplight:
                         id: xha9b9v3qscbv
-                    value:
-                      type: number
-                      x-stoplight:
-                        id: xf2bz9bwig4v1
               examples:
                 S167:
                   value:
@@ -253,7 +260,7 @@ paths:
             - json
             - rest
           default: json
-        description: Content type - use "json" for application/json OR "rest" for text/html
+        description: Content type - use "json" for application/json OR "rest" for text/html.
       - name: device_type
         description: Device type
         in: path
@@ -286,7 +293,7 @@ paths:
                   x-stoplight:
                     id: rnn7b379iocrf
               examples:
-                Example 1:
+                led:
                   value:
                     - dev: led
                       circuit: '1_01'
@@ -387,7 +394,11 @@ paths:
           content:
             text/html:
               schema:
-                $ref: '#/components/schemas/Digital_input'
+                anyOf:
+                - $ref: '#/components/schemas/Digital_input'
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/Digital_input'
               examples:
                 1_01:
                   value:
@@ -406,62 +417,65 @@ paths:
                       - DirectSwitch
                 all:
                   value:
-                    list:
-                      - dev: di
-                        circuit: '1_01'
-                        value: 0
-                        debounce: 30
-                        counter_modes:
-                          - Enabled
-                          - Disabled
-                        counter_mode: Enabled
-                        counter: 0
-                        mode: Simple
-                        modes:
-                          - Simple
-                          - DirectSwitch
-                      - dev: di
-                        circuit: '1_02'
-                        value: 0
-                        debounce: 30
-                        counter_modes:
-                          - Enabled
-                          - Disabled
-                        counter_mode: Enabled
-                        counter: 0
-                        mode: Simple
-                        modes:
-                          - Simple
-                          - DirectSwitch
-                      - dev: di
-                        circuit: '1_03'
-                        value: 0
-                        debounce: 30
-                        counter_modes:
-                          - Enabled
-                          - Disabled
-                        counter_mode: Enabled
-                        counter: 0
-                        mode: Simple
-                        modes:
-                          - Simple
-                          - DirectSwitch
-                      - dev: di
-                        circuit: '1_04'
-                        value: 0
-                        debounce: 30
-                        counter_modes:
-                          - Enabled
-                          - Disabled
-                        counter_mode: Enabled
-                        counter: 0
-                        mode: Simple
-                        modes:
-                          - Simple
-                          - DirectSwitch
+                    - dev: di
+                      circuit: '1_01'
+                      value: 0
+                      debounce: 30
+                      counter_modes:
+                        - Enabled
+                        - Disabled
+                      counter_mode: Enabled
+                      counter: 0
+                      mode: Simple
+                      modes:
+                        - Simple
+                        - DirectSwitch
+                    - dev: di
+                      circuit: '1_02'
+                      value: 0
+                      debounce: 30
+                      counter_modes:
+                        - Enabled
+                        - Disabled
+                      counter_mode: Enabled
+                      counter: 0
+                      mode: Simple
+                      modes:
+                        - Simple
+                        - DirectSwitch
+                    - dev: di
+                      circuit: '1_03'
+                      value: 0
+                      debounce: 30
+                      counter_modes:
+                        - Enabled
+                        - Disabled
+                      counter_mode: Enabled
+                      counter: 0
+                      mode: Simple
+                      modes:
+                        - Simple
+                        - DirectSwitch
+                    - dev: di
+                      circuit: '1_04'
+                      value: 0
+                      debounce: 30
+                      counter_modes:
+                        - Enabled
+                        - Disabled
+                      counter_mode: Enabled
+                      counter: 0
+                      mode: Simple
+                      modes:
+                        - Simple
+                        - DirectSwitch
             application/json:
               schema:
-                $ref: '#/components/schemas/Digital_input'
+                anyOf:
+                  - $ref: '#/components/schemas/Digital_input'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Digital_input'
               examples:
                 1_01:
                   value:
@@ -480,59 +494,58 @@ paths:
                       - DirectSwitch
                 all:
                   value:
-                    list:
-                      - dev: di
-                        circuit: '1_01'
-                        value: 0
-                        debounce: 30
-                        counter_modes:
-                          - Enabled
-                          - Disabled
-                        counter_mode: Enabled
-                        counter: 0
-                        mode: Simple
-                        modes:
-                          - Simple
-                          - DirectSwitch
-                      - dev: di
-                        circuit: '1_02'
-                        value: 0
-                        debounce: 30
-                        counter_modes:
-                          - Enabled
-                          - Disabled
-                        counter_mode: Enabled
-                        counter: 0
-                        mode: Simple
-                        modes:
-                          - Simple
-                          - DirectSwitch
-                      - dev: di
-                        circuit: '1_03'
-                        value: 0
-                        debounce: 30
-                        counter_modes:
-                          - Enabled
-                          - Disabled
-                        counter_mode: Enabled
-                        counter: 0
-                        mode: Simple
-                        modes:
-                          - Simple
-                          - DirectSwitch
-                      - dev: di
-                        circuit: '1_04'
-                        value: 0
-                        debounce: 30
-                        counter_modes:
-                          - Enabled
-                          - Disabled
-                        counter_mode: Enabled
-                        counter: 0
-                        mode: Simple
-                        modes:
-                          - Simple
-                          - DirectSwitch
+                    - dev: di
+                      circuit: '1_01'
+                      value: 0
+                      debounce: 30
+                      counter_modes:
+                        - Enabled
+                        - Disabled
+                      counter_mode: Enabled
+                      counter: 0
+                      mode: Simple
+                      modes:
+                        - Simple
+                        - DirectSwitch
+                    - dev: di
+                      circuit: '1_02'
+                      value: 0
+                      debounce: 30
+                      counter_modes:
+                        - Enabled
+                        - Disabled
+                      counter_mode: Enabled
+                      counter: 0
+                      mode: Simple
+                      modes:
+                        - Simple
+                        - DirectSwitch
+                    - dev: di
+                      circuit: '1_03'
+                      value: 0
+                      debounce: 30
+                      counter_modes:
+                        - Enabled
+                        - Disabled
+                      counter_mode: Enabled
+                      counter: 0
+                      mode: Simple
+                      modes:
+                        - Simple
+                        - DirectSwitch
+                    - dev: di
+                      circuit: '1_04'
+                      value: 0
+                      debounce: 30
+                      counter_modes:
+                        - Enabled
+                        - Disabled
+                      counter_mode: Enabled
+                      counter: 0
+                      mode: Simple
+                      modes:
+                        - Simple
+                        - DirectSwitch
       x-stoplight:
         id: amptpwemaf9og
       description: Get all properties of single (or all) digital input including current value and parameters.
@@ -555,7 +568,7 @@ paths:
             - json
             - rest
           default: json
-        description: Content type - use "json" for application/json OR "rest" for text/html
+        description: Content type - use "json" for application/json OR "rest" for text/html.
     post:
       summary: Set digital input properties
       tags:
@@ -587,7 +600,12 @@ paths:
             text/html:
               schema:
                 $ref: '#/components/schemas/Owpower'
-              examples: {}
+              examples:
+                1:
+                  value:
+                    dev: owpower
+                    circuit: '1'
+                    value: 0
             application/json:
               schema:
                 $ref: '#/components/schemas/Owpower'
@@ -617,7 +635,7 @@ paths:
             - json
             - rest
           default: json
-        description: Content type - use "json" for application/json OR "rest" for text/html
+        description: Content type - use "json" for application/json OR "rest" for text/html.
     post:
       summary: Set 1-Wire power supply
       responses:
@@ -628,7 +646,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  sucess:
+                  success:
                     $ref: '#/components/schemas/Status'
                     x-stoplight:
                       id: tdywhtb4zc5ct
@@ -664,11 +682,29 @@ paths:
             text/html:
               schema:
                 $ref: '#/components/schemas/Owbus'
-              examples: {}
+              examples:
+                OWBUS:
+                  value:
+                    dev: owbus
+                    circuit: OWBUS
+                    bus: OWFS
+                    scan_interval: 60
+                    interval: 10
+                    do_scan: false
+                    do_reset: false
             application/json:
               schema:
                 $ref: '#/components/schemas/Owbus'
-              examples: {}
+              examples:
+                OWBUS:
+                  value:
+                    dev: owbus
+                    circuit: OWBUS
+                    bus: OWFS
+                    scan_interval: 60
+                    interval: 10
+                    do_scan: false
+                    do_reset: false
       description: Get all properties of 1Wire bus driver.
       operationId: read-owbus-object
       tags:
@@ -694,7 +730,7 @@ paths:
             - json
             - rest
           default: json
-        description: Content type - use "json" for application/json OR "rest" for text/html
+        description: Content type - use "json" for application/json OR "rest" for text/html.
     post:
       summary: Set 1-Wire properties
       responses:
@@ -705,7 +741,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  sucess:
+                  success:
                     $ref: '#/components/schemas/Status'
                   result:
                     $ref: '#/components/schemas/Owbus_params'
@@ -738,11 +774,29 @@ paths:
             text/html:
               schema:
                 $ref: '#/components/schemas/Temp'
-              examples: {}
+              examples:
+                2895DCD509000035:
+                  value:
+                    dev: temp
+                    circuit: 2895DCD509000035
+                    address: 28.95DCD5090000.35
+                    value: 22.8
+                    lost: false
+                    time: 246690.722
+                    type: DS18B20
             application/json:
               schema:
                 $ref: '#/components/schemas/Temp'
-              examples: {}
+              examples:
+                2895DCD509000035:
+                  value:
+                    dev: temp
+                    circuit: 2895DCD509000035
+                    address: 28.95DCD5090000.35
+                    value: 22.8
+                    lost: false
+                    time: 246690.722
+                    type: DS18B20
       description: Get all properties of 1Wire temperature sensor
       operationId: read-temp-object
       tags:
@@ -768,7 +822,7 @@ paths:
             - json
             - rest
           default: json
-        description: Content type - use "json" for application/json OR "rest" for text/html
+        description: Content type - use "json" for application/json OR "rest" for text/html.
     post:
       summary: Set 1Wire temperature sensor interval
       responses:
@@ -779,7 +833,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  sucess:
+                  success:
                     $ref: '#/components/schemas/Status'
                   temp:
                     $ref: '#/components/schemas/Temp'
@@ -792,11 +846,29 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Temp_params'
-            examples: {}
+            examples:
+              2895DCD509000035:
+                value:
+                  dev: temp
+                  circuit: 2895DCD509000035
+                  address: 28.95DCD5090000.35
+                  value: 22.8
+                  lost: false
+                  time: 246690.722
+                  type: DS18B20
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/Temp_params'
-            examples: {}
+            examples:
+              2895DCD509000035:
+                value:
+                  dev: temp
+                  circuit: 2895DCD509000035
+                  address: 28.95DCD5090000.35
+                  value: 22.8
+                  lost: false
+                  time: 246690.722
+                  type: DS18B20
       description: Set reading interval.
       tags:
         - 1Wire bus
@@ -814,25 +886,65 @@ paths:
               schema:
                 $ref: '#/components/schemas/Modbus_slave'
               examples:
-                Example:
+                1:
                   value:
-                    dev: di
-                    circuit: '1_01'
-                    value: 0
-                    debounce: 30
-                    counter_modes:
-                      - Enabled
-                      - Disabled
-                    counter_mode: Enabled
-                    counter: 0
-                    mode: Simple
-                    modes:
-                      - Simple
-                      - DirectSwitch
+                    dev: modbus_slave
+                    circuit: 1
+                    last_comm: 0.0296688079833984
+                    slave_id: 1
+                    modbus_type: TCP
+                    modbus_spec: 127.0.0.1
+                    scan_interval: 0.02
+                2:
+                  value:
+                    dev: modbus_slave
+                    circuit: 2
+                    last_comm: 0.0698413684651396
+                    slave_id: 2
+                    modbus_type: TCP
+                    modbus_spec: 127.0.0.1
+                    scan_interval: 0.02
+                3:
+                  value:
+                    dev: modbus_slave
+                    circuit: 3
+                    last_comm: 0.0324178964541674
+                    slave_id: 3
+                    modbus_type: TCP
+                    modbus_spec: 127.0.0.1
+                    scan_interval: 0.02
             application/json:
               schema:
                 allOf:
                   - $ref: '#/components/schemas/Modbus_slave'
+              examples:
+                1:
+                  value:
+                    dev: modbus_slave
+                    circuit: 1
+                    last_comm: 0.0296688079833984
+                    slave_id: 1
+                    modbus_type: TCP
+                    modbus_spec: 127.0.0.1
+                    scan_interval: 0.02
+                2:
+                  value:
+                    dev: modbus_slave
+                    circuit: 2
+                    last_comm: 0.0698413684651396
+                    slave_id: 2
+                    modbus_type: TCP
+                    modbus_spec: 127.0.0.1
+                    scan_interval: 0.02
+                3:
+                  value:
+                    dev: modbus_slave
+                    circuit: 3
+                    last_comm: 0.0324178964541674
+                    slave_id: 3
+                    modbus_type: TCP
+                    modbus_spec: 127.0.0.1
+                    scan_interval: 0.02
       description: Get all properties of a single modbus slave.
       operationId: read-modbus_slave-object
       x-stoplight:
@@ -858,7 +970,7 @@ paths:
             - json
             - rest
           default: json
-        description: Content type - use "json" for application/json OR "rest" for text/html
+        description: Content type - use "json" for application/json OR "rest" for text/html.
   '/{format}/device_info/{circuit}':
     get:
       summary: Read device_info object
@@ -868,15 +980,49 @@ paths:
           content:
             text/html:
               schema:
-                type: array
+                type: object
                 items:
                   $ref: '#/components/schemas/Device_info'
                   x-stoplight:
                     id: fgfocg5p53ifk
+              examples:
+                Neuron_L533_0:
+                  value:
+                    dev: device_info
+                    family: Neuron
+                    model: L533
+                    sn: 0
+                    board_count: 3
+                    circuit: Neuron_L533_0
+                Patron_S167_81:
+                  value:
+                    dev: device_info
+                    family: Patron
+                    model: S167
+                    sn: 81
+                    board_count: 1
+                    circuit: Patron_S167_81
             application/json:
               schema:
                 allOf:
                   - $ref: '#/components/schemas/Device_info'
+              examples:
+                Neuron_L533_0:
+                  value:
+                    dev: device_info
+                    family: Neuron
+                    model: L533
+                    sn: 0
+                    board_count: 3
+                    circuit: Neuron_L533_0
+                Patron_S167_81:
+                  value:
+                    dev: device_info
+                    family: Patron
+                    model: S167
+                    sn: 81
+                    board_count: 1
+                    circuit: Patron_S167_81
       description: Get all properties of a single modbus slave.
       operationId: read-device_info-object
       x-stoplight:
@@ -902,7 +1048,7 @@ paths:
             - json
             - rest
           default: json
-        description: Content type - use "json" for application/json OR "rest" for text/html
+        description: Content type - use "json" for application/json OR "rest" for text/html.
   '/{format}/register/{circuit}':
     get:
       summary: Read Modbus register
@@ -913,6 +1059,12 @@ paths:
             text/html:
               schema:
                 $ref: '#/components/schemas/Register'
+              examples:
+                Example:
+                  value:
+                    dev: register
+                    circuit: '1_1000'
+                    value: 1556
             application/json:
               schema:
                 $ref: '#/components/schemas/Register'
@@ -947,7 +1099,7 @@ paths:
             - json
             - rest
           default: json
-        description: Content type - use "json" for application/json OR "rest" for text/html
+        description: Content type - use "json" for application/json OR "rest" for text/html.
     post:
       summary: Write Modbus register
       responses:
@@ -964,8 +1116,8 @@ paths:
                 Example:
                   value:
                     dev: register
-                    circuit: '1_1000'
-                    value: 1556
+                    circuit: '2_0'
+                    value: 0
       description: Write RAW modbus register value. Used for custom user-defined Modbus devices.
       operationId: write-register-object
       tags:
@@ -1027,7 +1179,7 @@ paths:
             - json
             - rest
           default: json
-        description: Content type - use "json" for application/json OR "rest" for text/html
+        description: Content type - use "json" for application/json OR "rest" for text/html.
   '/{format}/wd/{circuit}':
     get:
       summary: Read watchdog object
@@ -1120,7 +1272,7 @@ paths:
             - json
             - rest
           default: json
-        description: Content type - use "json" for application/json OR "rest" for text/html
+        description: Content type - use "json" for application/json OR "rest" for text/html.
     post:
       summary: Set watchdog properties
       responses: {}
@@ -1182,7 +1334,7 @@ paths:
             - json
             - rest
           default: json
-        description: Content type - use "json" for application/json OR "rest" for text/html
+        description: Content type - use "json" for application/json OR "rest" for text/html.
     post:
       summary: Set Relay value
       responses:
@@ -1258,7 +1410,7 @@ paths:
             - json
             - rest
           default: json
-        description: Content type - use "json" for application/json OR "rest" for text/html
+        description: Content type - use "json" for application/json OR "rest" for text/html.
     post:
       summary: Set output properties
       responses:
@@ -1334,7 +1486,7 @@ paths:
             - json
             - rest
           default: json
-        description: Content type - use "json" for application/json OR "rest" for text/html
+        description: Content type - use "json" for application/json OR "rest" for text/html.
     post:
       summary: Set led properties
       responses:
@@ -1411,7 +1563,7 @@ paths:
             - json
             - rest
           default: json
-        description: Content type - use "json" for application/json OR "rest" for text/html
+        description: Content type - use "json" for application/json OR "rest" for text/html.
     post:
       summary: Set analog output value/properties
       responses:
@@ -1489,7 +1641,7 @@ paths:
             - json
             - rest
           default: json
-        description: Content type - use "json" for application/json OR "rest" for text/html
+        description: Content type - use "json" for application/json OR "rest" for text/html.
     post:
       summary: Set analog Input value/properties
       responses:
@@ -1533,7 +1685,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  sucess:
+                  success:
                     $ref: '#/components/schemas/Status'
                     x-stoplight:
                       id: tdywhtb4zc5ct
@@ -1555,7 +1707,7 @@ paths:
       x-stoplight:
         id: cntpe16fuoa40
       tags:
-        - Non-volatile saver
+        - Non-volatile memory
         - Setter
     parameters:
       - name: format
@@ -1568,10 +1720,10 @@ paths:
             - json
             - rest
           default: json
-        description: Content type - use "json" for application/json OR "rest" for text/html
+        description: Content type - use "json" for application/json OR "rest" for text/html.
       - schema:
           type: string
-          examples: ['1_01']
+          examples: ['1', '2', '3']
         name: circuit
         in: path
         required: true
@@ -1645,7 +1797,7 @@ paths:
             - json
             - rest
           default: json
-        description: Content type - use "json" for application/json OR "rest" for text/html
+        description: Content type - use "json" for application/json OR "rest" for text/html.
     post:
       summary: Force save aliases
       description: Read more [here](https://evok.readthedocs.io/en/latest/configs/aliases/).
@@ -2380,7 +2532,7 @@ components:
           examples: [0]
           description: Set 0 to disable 1Wire bus power
     NvSave:
-      title: Non-volatile saver
+      title: Non-volatile memory
       x-stoplight:
         id: 9asdag6c28oh8
       allOf:
@@ -2497,7 +2649,7 @@ components:
           lost: false
           time: 4171.72855072
           interval: 10
-          typ: DS18S20
+          type: DS18S20
       allOf:
         - $ref: '#/components/schemas/Temp_params'
           x-stoplight:
@@ -2534,7 +2686,7 @@ components:
               default: false
               description: 'if true, value is not actual (last sensor reading failed)'
               readOnly: true
-            typ:
+            type:
               type: string
               x-stoplight:
                 id: 9fznblkc5zyzx
@@ -2549,13 +2701,38 @@ components:
           lost: false
           time: 4306.778
           interval: 10
-          typ: DS18B20
+          type: DS18B20
+    Register_params:
+      title: Modbus register params
+      x-stoplight:
+        id: ko08u836jnd6w
+      type: object
+      description: User-defined params of any modbus register.
+      properties:
+        dev:
+          type: string
+          examples: [register]
+          default: register
+          description: device type (class)
+          readOnly: true
+        circuit:
+          type: string
+          examples: ["1_0", "1_1", "1_1000", "2_1", "2_2"]
+          readOnly: true
+        value:
+          type: number
+          x-stoplight:
+            id: 10dcjsr141agy
+          format: integer
+          examples: [0 ,5, 200]
+          description: Desired/actual value of the register
     Register:
-      title: Register
+      title: Modbus register
       x-stoplight:
         id: ecwet1h8clvtd
       description: Main part of a custom user-defined Modbus device
       allOf:
+        - $ref: '#/components/schemas/Aliases_params'
         - type: object
           x-stoplight:
             id: ajd6yqf4kfve2
@@ -2728,7 +2905,7 @@ tags:
     description: Superclass of Device info.
   - name: Modbus slave
     description: Information about modbus slave (last_comm, modbus_spec, scan_interval, ...)
-  - name: Non-volatile saver
+  - name: Non-volatile memory
     description: Device for manage save Non-volatile memory.
   - name: Aliases
     description: Superclass of all stuff related to aliases
