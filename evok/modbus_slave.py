@@ -499,7 +499,7 @@ class Board(object):
             self.parse_feature_ai(max_count, m_feature)
         elif m_feature['type'] == 'REGISTER':
             self.parse_feature_register(max_count, m_feature)
-        elif m_feature['type'] == 'UNIT_REGISTER':
+        elif m_feature['type'] == 'DATA_POINT':
             self.parse_feature_data_point(max_count, m_feature)
         elif m_feature['type'] == 'OWPOWER':
             self.parse_feature_owpower(m_feature)
