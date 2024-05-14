@@ -373,7 +373,14 @@ paths:
       description: Read Evok version
       tags:
         - General
-      responses: {}
+      responses:
+        '200':
+          description: OK
+          content:
+            text/html:
+              examples:
+                version:
+                  value: "v3.0.1"
       operationId: get-version
       x-stoplight:
         id: pnta60tkpt5qz
@@ -585,7 +592,7 @@ paths:
       description: Set one or more parameters related to any single digital input.
   '/{format}/owpower/{circuit}':
     get:
-      summary: Read 1-Wire power driver
+      summary: Read 1-Wire power supply driver
       responses:
         '200':
           description: OK
@@ -603,12 +610,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Owpower'
               examples: {}
-      description: Get all properties of 1-Wire bus power driver.
+      description: Get all properties of 1-Wire bus power supply driver.
       operationId: read-owpower-object
       x-stoplight:
         id: o7wdcugimlbly
       tags:
-        - 1Wire bus
+        - 1-Wire bus
         - Getter
     parameters:
       - schema:
@@ -654,20 +661,18 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Owpower_params'
-            examples: {}
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/Owpower_params'
-            examples: {}
       description: Set one or more parameters related to any single onewire power.
       x-stoplight:
         id: cntpe16fuoa40
       tags:
-        - 1Wire bus
+        - 1-Wire bus
         - Setter
   '/{format}/owbus/{circuit}':
     get:
-      summary: Read 1-Wire driver
+      summary: Read 1-Wire
       responses:
         '200':
           description: OK
@@ -701,7 +706,7 @@ paths:
       description: Get all properties of 1Wire bus driver.
       operationId: read-owbus-object
       tags:
-        - 1Wire bus
+        - 1-Wire bus
         - Getter
       x-stoplight:
         id: 8dmow7nxxtutd
@@ -737,7 +742,7 @@ paths:
                   success:
                     $ref: '#/components/schemas/Status'
                   result:
-                    $ref: '#/components/schemas/Owbus_params'
+                    $ref: '#/components/schemas/Owbus'
       operationId: post-rest-owbus-circuit
       parameters: []
       requestBody:
@@ -745,21 +750,19 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Owbus_params'
-            examples: {}
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/Owbus_params'
-            examples: {}
       description: Set default reading interval or scanning interval.
                    Can be also used to force scan or invoke buse-reset.
       tags:
-        - 1Wire bus
+        - 1-Wire bus
         - Setter
       x-stoplight:
         id: pb226k2jw0w0t
   '/{format}/temp/{circuit}':
     get:
-      summary: Read 1Wire temperature sensor
+      summary: Read 1-Wire temperature sensor
       responses:
         '200':
           description: OK
@@ -790,10 +793,10 @@ paths:
                     lost: false
                     time: 246690.722
                     type: DS18B20
-      description: Get all properties of 1Wire temperature sensor
+      description: Get all properties of 1-Wire temperature sensor
       operationId: read-temp-object
       tags:
-        - 1Wire bus
+        - 1-Wire bus
         - Getter
       x-stoplight:
         id: 3ibdsg6n5zquz
@@ -817,7 +820,7 @@ paths:
           default: json
         description: Content type - use "json" for application/json OR "rest" for text/html.
     post:
-      summary: Set 1Wire temperature sensor interval
+      summary: Set 1-Wire temperature sensor interval
       responses:
         '200':
           description: OK
@@ -839,32 +842,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Temp_params'
-            examples:
-              2895DCD509000035:
-                value:
-                  dev: temp
-                  circuit: 2895DCD509000035
-                  address: 28.95DCD5090000.35
-                  value: 22.8
-                  lost: false
-                  time: 246690.722
-                  type: DS18B20
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/Temp_params'
-            examples:
-              2895DCD509000035:
-                value:
-                  dev: temp
-                  circuit: 2895DCD509000035
-                  address: 28.95DCD5090000.35
-                  value: 22.8
-                  lost: false
-                  time: 246690.722
-                  type: DS18B20
       description: Set reading interval.
       tags:
-        - 1Wire bus
+        - 1-Wire bus
         - Setter
       x-stoplight:
         id: 3puleq1259sd9
@@ -1098,19 +1081,26 @@ paths:
       responses:
         '200':
           description: OK
+          headers: {}
           content:
-            text/html:
-              schema:
-                $ref: '#/components/schemas/Register'
             application/json:
               schema:
-                $ref: '#/components/schemas/Register'
-              examples:
-                Example:
-                  value:
-                    dev: register
-                    circuit: '2_0'
-                    value: 0
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/Status'
+                  result:
+                    $ref: '#/components/schemas/Register'
+                    x-stoplight:
+                      id: vl5wpaas93pas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Register_params'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Register_params'
       description: Write RAW modbus register value. Used for custom user-defined Modbus devices.
       operationId: write-register-object
       tags:
@@ -1451,7 +1441,7 @@ paths:
     parameters:
       - schema:
           type: string
-          examples: ['2_01', '2_02', '2_03', '2_04']
+          examples: ['2_01', '2_02', '2_03', '2_04', 'all']
         name: circuit
         in: path
         required: true
@@ -1523,7 +1513,7 @@ paths:
     parameters:
       - schema:
           type: string
-          examples: ['1_01', '1_02', '1_03', '1_04']
+          examples: ['1_01', '1_02', '1_03', '1_04', 'all']
         name: circuit
         in: path
         required: true
@@ -1655,7 +1645,7 @@ paths:
     parameters:
       - schema:
           type: string
-          examples: ['1_01', '1_02', '1_03', '1_03']
+          examples: ['1_01', '1_02', '1_03', '1_03', 'all']
         name: circuit
         in: path
         required: true
@@ -1982,7 +1972,11 @@ paths:
   '/{format}/nv_save/{circuit}':
     post:
       summary: Save non-volatile memory
-      description: Trigger save current configuration to non-volatile memory.
+      description: Variable NV_save serves for saving the actual group settings as a default settings.
+        This setting (PWM, PWM_prescale, PWM_cycle, debounce, UART_config, DO, AO, AO_sw, DS_enable, DS_polarity,
+        DS_toggle) is loaded during the group reboot, when MWD function activates, when using Reboot
+        variable or when disconnected from power supply and reconnected again.
+        More information is in manual of specify Unipi controller.
       responses:
         '200':
           description: OK
@@ -2193,6 +2187,28 @@ paths:
                     circuit: 1_01
                     value: 0
                     alias: "debug-led"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                alias:
+                  type: string
+                  x-stoplight:
+                    id: asdopkfa410aw
+                  description: Alias value
+                  examples: [light_living_room, switch_living_room]
+                  default: "debug-led"
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                alias:
+                  type: string
+                  x-stoplight:
+                    id: asdopkfa410aw
+                  description: Alias value
+                  examples: [light_living_room, switch_living_room]
+                  default: "debug-led"
       operationId: write-alias-parameter
       x-stoplight:
         id: ulh6qg2h9b0ue
@@ -2219,6 +2235,7 @@ paths:
 components:
   schemas:
     Relay_output:
+      title: Relay output
       allOf:
         - $ref: '#/components/schemas/Relay_output_params'
           x-stoplight:
@@ -2231,6 +2248,7 @@ components:
           dev: ro
           value: 1
     Relay_output_params:
+      title: Relay output params
       x-stoplight:
         id: kd8k08k6qruvr
       description: User-configurable parameters of relay output device.
@@ -2243,17 +2261,8 @@ components:
             - string
             - boolean
           description: Parameter for relay switch.
-        circuit:
-          type: string
-          examples: [2_01, 2_02, 2_03, 2_04]
-          default: 2_01
-          description: device identificator (unique within its device class)
-        dev:
-          type: string
-          examples: [ro, relay]
-          default: ro
-          description: device type (class)
     Digital_output:
+      title: Digital output
       allOf:
         - type: object
           properties:
@@ -2284,21 +2293,12 @@ components:
           pwm_freq: 4800
           pwm_duty: 10
     Digital_output_params:
+      title: Digital output params
       x-stoplight:
         id: kd8k08k6avar6
       description: User-configurable parameters of single digital output device.
       type: object
       properties:
-        dev:
-          type: string
-          examples: [do, output, digitaloutput]
-          default: do
-          description: device type (class)
-          readOnly: true
-        circuit:
-          type: string
-          examples: ["1_01", "1_02", "1_03", "1_04"]
-          readOnly: true
         pwm_freq:
           type: integer
           examples: [50, 1000, 50000]
@@ -2323,7 +2323,7 @@ components:
           x-stoplight:
             id: tdz0fw91bflul
     Digital_input:
-      title: DigitalInput
+      title: Digital input
       description: Instance of a digital input
       allOf:
         - type: object
@@ -2376,22 +2376,12 @@ components:
           modes: ["Simple", "DirectSwitch"]
           mode: "Simple"
     Digital_input_params:
-      title: DigitalInput_params
+      title: Digital input params
       x-stoplight:
         id: k3r80ce41e3ta
       type: object
       description: User-configurable parameters of single digital input device.
       properties:
-        dev:
-          type: string
-          examples: [di, input, digitalinput]
-          default: di
-          description: device type (class)
-          readOnly: true
-        circuit:
-          type: string
-          examples: ["1_01", "1_02", "1_03", "1_04"]
-          readOnly: true
         debounce:
           type: integer
           description: Debounce time in miliseconds/10 (10 == 1ms).
@@ -2413,28 +2403,18 @@ components:
           default: Simple
           description: 'For info about DirectSwitch, read the manual. Feature NOT available on all inputs.'
     Analog_output_params:
-      title: Analog_output_params
+      title: Analog output params
       x-stoplight:
         id: ko08u836jnd6w
       type: object
       description: User-defined params of any single analog output.
       properties:
-        dev:
-          type: string
-          examples: [ao, analogoutput]
-          default: ao
-          description: device type (class)
-          readOnly: true
-        circuit:
-          type: string
-          examples: ["1_01", "2_01", "2_02", "2_03", "2_04"]
-          readOnly: true
         value:
           type: number
           x-stoplight:
             id: 10dcjsr141agy
           format: float
-          examples: [0.01]
+          examples: [0.01, 2.1, 3, 5.5]
           description: Desired/actual value of the output
         mode:
           x-stoplight:
@@ -2447,22 +2427,12 @@ components:
           default: Voltage
           examples: [Voltage]
     Analog_input_params:
-      title: Analog_inputs_params
+      title: Analog inputs params
       x-stoplight:
         id: pbyjriak41ldu
       type: object
       description: User-defined params of any single analog input.
       properties:
-        dev:
-          type: string
-          examples: [ai, analoginput]
-          default: ai
-          description: device type (class)
-          readOnly: true
-        circuit:
-          type: string
-          examples: ["1_01", "2_01", "2_02", "2_03", "2_04"]
-          readOnly: true
         mode:
           description: Actual mode of the analog input. Not all modes are available on every input - see *modes* property.
           enum:
@@ -2475,7 +2445,7 @@ components:
           default: Voltage
           examples: [Voltage]
     Analog_output:
-      title: Analog-output
+      title: Analog output
       x-stoplight:
         id: 2ovrjp93gjanf
       allOf:
@@ -2535,7 +2505,7 @@ components:
               unit: "V"
               range: [0, 10]
     Analog_input:
-      title: Analog_input
+      title: Analog input
       x-stoplight:
         id: vbqyhhnguvagi
       allOf:
@@ -2624,21 +2594,11 @@ components:
               unit: "mA"
               range: [0, 20]
     Led_params:
-      title: Led_params
+      title: LED params
       x-stoplight:
         id: kzm0bs4t8n0ma
       type: object
       properties:
-        dev:
-          type: string
-          examples: [led]
-          default: led
-          description: device type (class)
-          readOnly: true
-        circuit:
-          type: string
-          examples: ["1_01", "1_02", "1_03", "1_04"]
-          readOnly: true
         value:
           type:
             - string
@@ -2656,7 +2616,7 @@ components:
           circuit: 1_02
           value: 1
     Led:
-      title: Led
+      title: LED
       x-stoplight:
         id: gpgqdqty1w38v
       allOf:
@@ -2664,6 +2624,7 @@ components:
           x-stoplight:
             id: c5mebewyuho7p
     Watchdog_params:
+      title: Master Watchdog params
       type: object
       x-examples:
         Example 1:
@@ -2674,16 +2635,6 @@ components:
           was_wd_reset: 0
           nv_save: 0
       properties:
-        dev:
-          type: string
-          examples: [wd]
-          default: wd
-          description: device type (class)
-          readOnly: true
-        circuit:
-          type: string
-          examples: ["1_01", "1_02", "1_03"]
-          readOnly: true
         value:
           type:
             - string
@@ -2730,7 +2681,7 @@ components:
                 - 1
               readOnly: true
     Modbus_slave:
-      title: Modbus_slave
+      title: Modbus slave
       x-stoplight:
         id: unoehfu4bco8h
       allOf:
@@ -2782,7 +2733,7 @@ components:
           modbus_type: TCP
           scan_interval: 0.02
     Device_info:
-      title: Device_info
+      title: Device info
       x-stoplight:
         id: nvwkm6mty77qz
       allOf:
@@ -2829,12 +2780,6 @@ components:
         - type: object
           x-stoplight:
             id: ggndd1dn27o1j
-          properties:
-            dev:
-              type: string
-              x-stoplight:
-                id: zp1sax4e5456d
-              default: "device_info"
       examples:
         - dev: device_info
           circuit: Patron_S167_81
@@ -2843,7 +2788,7 @@ components:
           sn: 81
           board_count: 1
     Owpower:
-      title: Owpower
+      title: 1-Wire power supply
       x-stoplight:
         id: 9b4mib6c28oh8
       description: Power supply of 1-Wire bus.
@@ -2856,6 +2801,7 @@ components:
           dev: owpower
           value: 1
     Owpower_params:
+      title: 1-Wire power supply params
       type: object
       x-examples:
         1:
@@ -2863,22 +2809,12 @@ components:
           circuit: 1
           value: 0
       properties:
-        dev:
-          type: string
-          examples: [owpower]
-          default: owpower
-          description: device type (class)
-          readOnly: true
-        circuit:
-          type: string
-          examples: ["1"]
-          readOnly: true
         value:
           enum:
             - 1
             - 0
           examples: [0]
-          description: Set 0 to disable 1Wire bus power
+          description: Set 0 to disable 1-Wire bus power
     NvSave:
       title: Non-volatile memory
       x-stoplight:
@@ -2892,6 +2828,7 @@ components:
           circuit: 1
           value: 0
     NvSave_params:
+      title: Non-volatile memory params
       type: object
       x-examples:
         1:
@@ -2899,39 +2836,25 @@ components:
           circuit: 1
           value: 0
       properties:
-        dev:
-          type: string
-          examples: [nv_save]
-          default: nv_save
-          description: device type (class)
-          readOnly: true
-        circuit:
-          type:
-            - string
-            - number
-            - boolean
-          examples: ["1", "2", "3"]
-          readOnly: true
         value:
           enum:
             - 0
             - 1
           examples: [1]
+          default: 1
           description: Set 1 to save to non-volatile memory.
     Owbus_params:
-      title: Owbus_params
+      title: 1-Wire bus params
       x-stoplight:
         id: w5f5dlhrhyy1h
       type: object
       properties:
         interval:
-          type:
-            - string
-            - number
+          type: number
           x-stoplight:
             id: oe0zf1uu764jp
+          examples: [10, 20, 30]
           default: 10
-          examples: [10]
         do_scan:
           type: boolean
           x-stoplight:
@@ -2943,15 +2866,13 @@ components:
             id: t2hfgb2ga6hca
           default: false
         scan_interval:
-          type:
-            - string
-            - number
+          type: number
           x-stoplight:
             id: hr153xbhtdbgp
+          examples: [60, 120, 600]
           default: 60
-          examples: [60]
     Owbus:
-      title: Owbus_params
+      title: 1-Wire bus
       x-stoplight:
         id: r32q0saop7uvf
       allOf:
@@ -2977,21 +2898,20 @@ components:
           do_scan: false
           do_reset: false
     Temp_params:
-      title: Temp_params
+      title: Temperature sensor params
       x-stoplight:
         id: grevutt2c5wsh
       type: object
       properties:
         interval:
-          type:
-            - string
-            - number
+          type: number
           x-stoplight:
             id: k6iqij8wvobw8
+          examples: [10, 20, 30]
           default: 10
-          examples: [20]
           description: 'polling period [seconds]'
     Temp:
+      title: Temperature sensor
       x-examples:
         Example 1:
           dev: temp
@@ -3061,22 +2981,13 @@ components:
       type: object
       description: User-defined params of any modbus register.
       properties:
-        dev:
-          type: string
-          examples: [register]
-          default: register
-          description: device type (class)
-          readOnly: true
-        circuit:
-          type: string
-          examples: ["1_0", "1_1", "1_1000", "2_1", "2_2"]
-          readOnly: true
         value:
-          type: number
+          type: integer
           x-stoplight:
             id: 10dcjsr141agy
           format: integer
           examples: [0 ,5, 200]
+          default: 1
           description: Desired/actual value of the register
     Register:
       title: Modbus register
@@ -3177,7 +3088,7 @@ components:
               devtype: "di"
               circuit: "1_01"
     Aliases_params:
-      title: Aliases_params
+      title: Alias params
       x-stoplight:
         id: xhzlcnvn8d3zj
       type: object
@@ -3255,7 +3166,7 @@ tags:
     description: Superclass of user LED
   - name: Master Watchdog
     description: Superclass of watchdog timer
-  - name: 1Wire bus
+  - name: 1-Wire bus
     description: Classes coupled with OneWire bus implementation
   - name: Modbus register
     description: User-defined Modbus maps
