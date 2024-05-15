@@ -66,11 +66,11 @@ Circuit is created at the initialization of the Evok and its creation depends on
 | Modbus register     | *register*     | <device_name\>_<register_address\>                |
 
 - <device_name\>: Name defined in [Evok configuration].
-  - examples: 1, 2, 3, IAQ, xS51, xS18.
+    - examples: 1, 2, 3, IAQ, xS51, xS18.
 - <count\>: Sequence number (is based on the 'count' parameter in the [HW definition]).
-  - examples: 01, 02, 03, 04, 05, 06, 10, 11, 12.
+    - examples: 01, 02, 03, 04, 05, 06, 10, 11, 12.
 - <1-Wire_address\>: 1-Wire device address without dots.
-  - examples: 2895DCD509000035 (28.95DCD5090000.35),
+    - examples: 2895DCD509000035 (28.95DCD5090000.35),
 - <register_address\>: Modbus register address (is based on the 'count' parameter in the [HW definition]).
     - examples: 0, 1, 12, 1000, 1100.
 
