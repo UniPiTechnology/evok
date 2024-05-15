@@ -38,3 +38,41 @@ The Webhook API provides a mechanism for pushing real-time updates to clients. E
 ## RPC ([doc](./apis/rpc.md))
 
 The RPC (Remote Procedure Call) API is used for invoking procedures, functions or methods across a network.
+
+# Device circuit
+
+Circuit is the identifier of a concrete entity.
+It must always be unique within a device type group.
+Circuit is created at the initialization of the Evok and its creation depends on the device type for which it is defined.
+
+**Circuit creation table:**
+
+| Device type name    | Key            | Circuit format                                    |
+|---------------------|----------------|---------------------------------------------------|
+| Relay               | *ro*           | \<device_name\>_\<count\>                         |
+| Digital Output      | *do*           | \<device_name\>_\<count\>                         |
+| Digital Input       | *di*           | \<device_name\>_\<count\>                         |
+| Analog Output       | *ao*           | \<device_name\>_\<count\>                         |
+| Analog Input        | *ai*           | \<device_name\>_\<count\>                         |
+| User LED            | *led*          | \<device_name\>_\<count\>                         |
+| Master Watchdog     | *wd*           | \<device_name\>_\<count\>                         |
+| 1-Wire bus          | *owbus*        | \<device_name\>                                   |
+| 1-Wire power        | *owpower*      | \<device_name\>                                   |
+| Temp sensor         | *temp*         | \<device_name\>_\<1-Wire_address\>                |
+| Non-volatile memory | *nvsave*       | \<device_name\>                                   |
+| Modbus slave        | *modbus_slave* | \<device_name\>                                   |
+| Device info         | *device_info*  | \<family_name\>_\<device_name\>_\<serial_number\> |
+| Data point          | *data_point*   | \<device_name\>_\<register_address>\>             |
+| Modbus register     | *register*     | \<device_name\>_\<register_address\>              |
+
+- \<device_name\>: Name defined in [Evok configuration].
+  - examples: 1, 2, 3, IAQ, xS51, xS18.
+- \<count\>: Sequence number (is based on the 'count' parameter in the [HW definition]).
+  - examples: 01, 02, 03, 04, 05, 06, 10, 11, 12.
+- \<1-Wire_address\>: 1-Wire device address without dots.
+  - examples: 2895DCD509000035 (28.95DCD5090000.35),
+- \<register_address\>: Modbus register address (is based on the 'count' parameter in the [HW definition]).
+    - examples: 0, 1, 12, 1000, 1100.
+
+[Evok configuration]:./configs/evok_configuration.md#device-configuration
+[HW definition]:./configs/hw_definitions.md#modbus_features
