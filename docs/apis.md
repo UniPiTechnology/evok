@@ -47,23 +47,23 @@ Circuit is created at the initialization of the Evok and its creation depends on
 
 **Circuit creation table:**
 
-| Device type name    | Key            | Circuit format                                    |
-|---------------------|----------------|---------------------------------------------------|
-| Relay               | *ro*           | <device_name\>_<count\>                           |
-| Digital Output      | *do*           | <device_name\>_<count\>                           |
-| Digital Input       | *di*           | <device_name\>_<count\>                           |
-| Analog Output       | *ao*           | <device_name\>_<count\>                           |
-| Analog Input        | *ai*           | <device_name\>_<count\>                           |
-| User LED            | *led*          | <device_name\>_<count\>                           |
-| Master Watchdog     | *wd*           | <device_name\>_<count\>                           |
-| 1-Wire bus          | *owbus*        | <device_name\>                                    |
-| 1-Wire power        | *owpower*      | <device_name\>                                    |
-| Temp sensor         | *temp*         | <device_name\>_<1-Wire_address\>                  |
-| Non-volatile memory | *nvsave*       | <device_name\>                                    |
-| Modbus slave        | *modbus_slave* | <device_name\>                                    |
-| Device info         | *device_info*  | <family_name\>_<device_name\>_<serial_number\>    |
-| Data point          | *data_point*   | <device_name\>_<register_address>\>               |
-| Modbus register     | *register*     | <device_name\>_<register_address\>                |
+| Device type name    | Key            | Circuit format                                  |
+|---------------------|----------------|-------------------------------------------------|
+| Relay               | *ro*           | <device_name\>_<count\>                         |
+| Digital Output      | *do*           | <device_name\>_<count\>                         |
+| Digital Input       | *di*           | <device_name\>_<count\>                         |
+| Analog Output       | *ao*           | <device_name\>_<count\>                         |
+| Analog Input        | *ai*           | <device_name\>_<count\>                         |
+| User LED            | *led*          | <device_name\>_<count\>                         |
+| Master Watchdog     | *wd*           | <device_name\>_<count\>                         |
+| 1-Wire bus          | *owbus*        | <device_name\>                                  |
+| 1-Wire power        | *owpower*      | <device_name\>                                  |
+| Temp sensor         | *temp*         | <device_name\>_<1-Wire_address\>                |
+| Non-volatile memory | *nvsave*       | <device_name\>                                  |
+| Modbus slave        | *modbus_slave* | <device_name\>                                  |
+| Device info         | *device_info*  | <family_name\>\_<device_name\>_<serial_number\> |
+| Data point          | *data_point*   | <device_name\>_<register_address\>              |
+| Modbus register     | *register*     | <device_name\>_<register_address\>              |
 
 - <device_name\>: Name defined in [Evok configuration].
     - examples: 1, 2, 3, IAQ, xS51, xS18.
