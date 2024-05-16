@@ -41,36 +41,35 @@ The RPC (Remote Procedure Call) API is used for invoking procedures, functions o
 
 # Device circuit
 
-Circuit is the identifier of a concrete entity.
-It must always be unique within a device type group.
-Circuit is created at the initialization of the Evok and its creation depends on the device type for which it is defined.
+Circuit is a unique identifier of a particular entity (input, output, or function) of each device.
+The circuit is created automatically during initialization of Evok according to the table below.
 
 **Circuit creation table:**
 
-| Device type name    | Key            | Circuit format                                  |
-|---------------------|----------------|-------------------------------------------------|
-| Relay               | *ro*           | <device_name\>_<count\>                         |
-| Digital Output      | *do*           | <device_name\>_<count\>                         |
-| Digital Input       | *di*           | <device_name\>_<count\>                         |
-| Analog Output       | *ao*           | <device_name\>_<count\>                         |
-| Analog Input        | *ai*           | <device_name\>_<count\>                         |
-| User LED            | *led*          | <device_name\>_<count\>                         |
-| Master Watchdog     | *wd*           | <device_name\>_<count\>                         |
-| 1-Wire bus          | *owbus*        | <device_name\>                                  |
-| 1-Wire power        | *owpower*      | <device_name\>                                  |
-| Temp sensor         | *temp*         | <device_name\>_<1-Wire_address\>                |
-| Non-volatile memory | *nvsave*       | <device_name\>                                  |
-| Modbus slave        | *modbus_slave* | <device_name\>                                  |
-| Device info         | *device_info*  | <family_name\>\_<device_name\>_<serial_number\> |
-| Data point          | *data_point*   | <device_name\>_<register_address\>              |
-| Modbus register     | *register*     | <device_name\>_<register_address\>              |
+| Device type name    | Key            | Circuit format                                  | Examples                      |
+|---------------------|----------------|-------------------------------------------------|-------------------------------|
+| Relay               | *ro*           | <device_name\>_<number\>                        | 2_01, xS11_02                 |
+| Digital Output      | *do*           | <device_name\>_<number\>                        | 1_01, 1_02                    |
+| Digital Input       | *di*           | <device_name\>_<number\>                        | 1_01, xS11_02                 |
+| Analog Output       | *ao*           | <device_name\>_<number\>                        | 1_01, xS51_02                 |
+| Analog Input        | *ai*           | <device_name\>_<number\>                        | 1_01, xS51_02                 |
+| User LED            | *led*          | <device_name\>_<number\>                        | 1_01, 2_02                    |
+| Master Watchdog     | *wd*           | <device_name\>_<number\>                        | 1_01, 1_02                    |
+| 1-Wire bus          | *owbus*        | <device_name\>                                  | 1                             |
+| 1-Wire power        | *owpower*      | <device_name\>                                  | 1                             |
+| Temp sensor         | *temp*         | <1-Wire_address\>                               | 1_2895DCD509000035            | 
+| Non-volatile memory | *nvsave*       | <device_name\>                                  | 1, 2, xS51                    |
+| Modbus slave        | *modbus_slave* | <device_name\>                                  | 1, 2, IAQ                     |
+| Device info         | *device_info*  | <family_name\>\_<device_name\>_<serial_number\> | Neuron_L533_0, Patron_S167_81 |
+| Data point          | *data_point*   | <device_name\>_<register_address\>              | IAQ_0, IAQ_6, IAQ_10          |
+| Modbus register     | *register*     | <device_name\>_<register_address\>              | 1_0, 1_1, 1_1000              |
 
 - <device_name\>: Name defined in [Evok configuration].
     - examples: 1, 2, 3, IAQ, xS51, xS18.
-- <count\>: Sequence number (is based on the 'count' parameter in the [HW definition]).
+- <number\>: Sequence number (is based on the 'count' parameter in the [HW definition]).
     - examples: 01, 02, 03, 04, 05, 06, 10, 11, 12.
 - <1-Wire_address\>: 1-Wire device address without dots.
-    - examples: 2895DCD509000035 (28.95DCD5090000.35),
+    - examples: 2895DCD509000035 (from 1-Wire address: `28.95DCD5090000.35`),
 - <register_address\>: Modbus register address (is based on the 'count' parameter in the [HW definition]).
     - examples: 0, 1, 12, 1000, 1100.
 
