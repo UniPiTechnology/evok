@@ -64,13 +64,13 @@ The circuit is created automatically during initialization of Evok according to 
 | Data point          | *data_point*   | <device_name\>_<register_address\>              | `IAQ_0`, `IAQ_6`, `IAQ_10`        |
 | Modbus register     | *register*     | <device_name\>_<register_address\>              | `1_0`, `1_1`, `1_1000`            |
 
-- <device_name\>: Name defined in [Evok configuration].
+- *<device_name\>*: Name defined in [Evok configuration].
     - examples: `1`, `2`, `3`, `IAQ`, `xS51`, `xS18`.
-- <number\>: Sequence number (is based on the 'count' parameter in the [HW definition]).
+- *<number\>*: Sequence number (is based on the 'count' parameter in the [HW definition]).
     - examples: `01`, `02`, `03`, `04`, `05`, `06`, `10`, `11`, `12`.
-- <1-Wire_address\>: 1-Wire device address without dots.
+- *<1-Wire_address\>*: 1-Wire device address without dots.
     - examples: `2895DCD509000035` (from 1-Wire address: `28.95DCD5090000.35`),
-- <register_address\>: Modbus register address (is based on the 'count' parameter in the [HW definition]).
+- *<register_address\>*: Modbus register address (is based on the 'count' parameter in the [HW definition]).
     - examples: `0`, `1`, `12`, `1000`, `1100`.
 
 [Evok configuration]:./configs/evok_configuration.md#device-configuration
