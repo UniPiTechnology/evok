@@ -59,7 +59,7 @@ comm_channels:
     - `OWBUS`
         - `interval` - interval of values updating
         - `scan_interval` - new devices will be automatically assigned
-        - `owpower` - Circuit of owpower device (for restarting bus; optional parameter)
+        - `owpower` - [Circuit](../circuit.md) of owpower device (for restarting bus; optional parameter)
 
 ### Device configuration
 

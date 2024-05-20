@@ -42,6 +42,7 @@ nav:
     - Aliases: configs/aliases.md
     - HW definitions: configs/hw_definitions.md
   - Available APIs: apis.md
+  - Device circuit: circuit.md
   - API examples:
       - REST: apis/rest.md
       - JSON: apis/json.md

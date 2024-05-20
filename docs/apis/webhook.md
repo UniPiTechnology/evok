@@ -62,3 +62,6 @@ Press CTRL+C to quit
 127.0.0.1 - - [12/Feb/2024 13:55:06] "POST / HTTP/1.1" 200 -
 ...
 ```
+
+!!! tip
+You can learn more about the circuit parameter [here](../circuit.md)

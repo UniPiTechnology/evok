@@ -51,3 +51,6 @@ print(response)
 ```rs title="Output"
 {'jsonrpc': '2.0', 'id': 0, 'result': 1}
 ```
+
+!!! tip
+You can learn more about the circuit parameter [here](../circuit.md)
