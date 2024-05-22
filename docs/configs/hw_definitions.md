@@ -278,7 +278,7 @@ modbus_features:
     start_reg   : 0
 ```
 
-#### UNIT_REGISTER (Modbus unit register)
+#### DATA_POINT (Data point)
 
 ##### Parameters
 
@@ -295,7 +295,7 @@ modbus_features:
 ##### Example
 
 ```yaml
-- type        : UNIT_REGISTER
+- type        : DATA_POINT
   name        : "temperature"
   count       : 1
   value_reg   : 0

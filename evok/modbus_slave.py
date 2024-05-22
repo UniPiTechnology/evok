@@ -1121,7 +1121,7 @@ class DataPoint():
             elif self.datatype == "float32":
                 value = self.__parse_float32(self.arm.modbus_slave.modbus_cache_map.get_register(2, self.valreg, is_input=self.is_input))
             else:
-                logger.warning(f"Unit register: Unsupported datatype {self.datatype}")
+                logger.warning(f"Data point: Unsupported datatype {self.datatype}")
                 return None
             if self.factor == 1 and self.offset == 0:  # Reading RAW value - save some CPU time
                 return value
@@ -1139,7 +1139,7 @@ class DataPoint():
         if alias is not None:
             Devices.set_alias(alias, self)
 
-        raise Exception("Unit_register object is read-only")
+        raise Exception("Data point object is read-only")
 
     def full(self):
 
