@@ -123,3 +123,7 @@ aliases:
     circuit: '1_01'
     devtype: 0
 ```
+
+
+!!! tip
+    You can learn more about the circuit parameter [here](../circuit.md)

@@ -62,3 +62,6 @@ DO 1.01 will be set to HIGH.
 ```rs title="Output"
 {"success": true, "result": {"dev": "do", "circuit": "1_01", "value": 1, "pending": false, "mode": "Simple", "modes": ["Simple", "PWM"], "glob_dev_id": 2, "pwm_freq": 4800.0, "pwm_duty": 0}}
 ```
+
+!!! tip
+    You can learn more about the circuit parameter [here](../circuit.md)

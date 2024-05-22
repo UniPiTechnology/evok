@@ -114,3 +114,6 @@ WebSocket connection opened
 WebSocket send DO 1.01 to HIGH
 WebSocket connection closed
 ```
+
+!!! tip
+    You can learn more about the circuit parameter [here](../circuit.md)

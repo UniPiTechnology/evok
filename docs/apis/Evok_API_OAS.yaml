@@ -349,7 +349,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all")
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
       - $ref: '#/components/parameters/format'
       - schema:
           type: string
@@ -559,7 +559,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all")
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
       - name: format
         in: path
         required: true
@@ -624,7 +624,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all")
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
       - name: format
         in: path
         required: true
@@ -717,7 +717,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all")
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
       - name: format
         in: path
         required: true
@@ -807,7 +807,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all")
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
       - name: format
         in: path
         required: true
@@ -935,7 +935,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all")
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
       - name: format
         in: path
         required: true
@@ -1013,7 +1013,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all")
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
       - name: format
         in: path
         required: true
@@ -1064,7 +1064,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all")
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
       - name: format
         in: path
         required: true
@@ -1193,7 +1193,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all")
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
       - name: format
         in: path
         required: true
@@ -1314,7 +1314,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all")
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
       - name: format
         in: path
         required: true
@@ -1445,7 +1445,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all")
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
       - name: format
         in: path
         required: true
@@ -1517,7 +1517,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all")
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
       - name: format
         in: path
         required: true
@@ -1649,7 +1649,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all")
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
       - name: format
         in: path
         required: true
@@ -1760,7 +1760,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all")
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
       - name: format
         in: path
         required: true
@@ -1926,7 +1926,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all")
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
       - name: format
         in: path
         required: true
@@ -2024,7 +2024,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all")
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
   '/{format}/run/alias':
     get:
       summary: Read aliases
@@ -2222,7 +2222,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all")
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
       - $ref: '#/components/parameters/format'
       - schema:
           type: string
