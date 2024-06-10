@@ -17,6 +17,10 @@ APIs included in EVOK:
 
 EVOK also supports sending notifications via webhook.
 
+### Evok v3 ###
+
+A new version of [Evok v3 is currently being developed in the dev-bookworm](https://github.com/UniPiTechnology/evok/tree/dev-bookworm) branch and is open for testing a bugreporting.
+
 ### For more information see our documentation at [api-docs.io].
 
 ## Installation process on Patron/Neuron/Axon PLCs using pre-build OS images (recommended)
