@@ -33,7 +33,7 @@ Complete API documentation (REST and JSON API) including syntax of all other API
 - Dropped support of rarely used functions/entities (Eeprom,i2cbus,adchip,mcp,gpiobus,pca9685,unipi2,uart,wifi,light_channel,light_device,ext_config)
 - Example website aka 'Unipi Control Panel' has been split into separate project [evok-web-jq](https://github.com/UniPiTechnology/evok-web-jq) and can be installed manually.
 - Added option 'all' instead of circuit using API (/rest/relay/all).
-- The device names in the API now match the name in the configuration. For more information see [evok configuration](https://evok.readthedocs.io/en/latest/configs/evok_configuration/).
+- The device names in the API now match the name in the configuration. For more information see [evok configuration](https://evok.readthedocs.io/en/latest/configs/evok_configuration/#device-configuration).
 - [Aliases](https://evok.readthedocs.io/en/latest/configs/aliases/) system has been rewritten. Aliases are automatically saved 5 mins after a change, not immediately. Saving of aliases can be forced via API.
 - Aliases definition file structure has been changed. Evok automatically updates the aliases definition file if a version from Evok v2 is found.
 - Modbus RTU durability has been improved. Loss of communication with one device will not affect the functionality of the entire bus.
