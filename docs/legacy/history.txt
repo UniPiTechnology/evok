@@ -1,7 +1,0 @@
-Release 2.0
-	- First fully-compatible Neuron release
-	- Includes api-docs.io documentation
-Release 2.0.1
-	- Added support for Neuron lighting controllers
-	- Improved JSON-RPC handling for Neuron
-	- Improved WebSocket compatibility

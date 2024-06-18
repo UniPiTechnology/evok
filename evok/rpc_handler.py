@@ -1,23 +1,55 @@
 #!/usr/bin/python
+import base64
+import functools
+import inspect
+from typing import Awaitable, Optional
 
-import tornado
 import tornado.ioloop
 
-from tornadorpc_evok.json import JSONRPCHandler
-import tornadorpc_evok as tornadorpc
-from tornado import gen
+from tornado_jsonrpc2 import JSONRPCHandler
+from tornado_jsonrpc2.exceptions import MethodNotFound
 
-import time
-import datetime
-import json
-
-import config
-
-from devices import *
+from .devices import *
 
 
-class userBasicHelper():
+async def create_response(request, backend):
+    try:
+        method = getattr(backend, request.method)
+    except AttributeError:
+        raise MethodNotFound(f"Method '{request.method}' not found!")
+
+    awaitable = False
+    if inspect.isawaitable(method) or inspect.iscoroutine(method) or inspect.iscoroutinefunction(method):
+        awaitable = True
+
+    try:
+        params = request.params
+    except AttributeError:
+        if awaitable:
+            return await method()
+        else:
+            return method()
+
+    if isinstance(params, list):
+        if awaitable:
+            return await method(*params)
+        else:
+            return method(*params)
+    elif isinstance(params, dict):
+        if awaitable:
+            return await method(**params)
+        else:
+            return method(**params)
+
+
+class UserBasicHelper(JSONRPCHandler):
     _passwords = []
+
+    def initialize(self, response_creator: Awaitable = None, version: Optional[str] = None):
+        if response_creator is None:
+            response_creator = functools.partial(create_response,
+                                                 backend=self)
+        super().initialize(response_creator=response_creator, version=version)
 
     def _request_auth(self):
         self.set_header('WWW-Authenticate', 'Basic realm=tmr')
@@ -43,42 +75,47 @@ class userBasicHelper():
             self._request_auth()
 
 
-class Handler(userBasicHelper, JSONRPCHandler):
+class Handler(UserBasicHelper):
+
     @tornado.web.authenticated
-    def post(self):
-        JSONRPCHandler.post(self)
+    async def post(self):
+        await JSONRPCHandler.post(self)
 
     ###### Input ######
     def input_get(self, circuit):
-        inp = Devices.by_int(INPUT, str(circuit))
+        inp = Devices.by_int(DI, str(circuit))
         return inp.get()
 
     def input_get_value(self, circuit):
-        inp = Devices.by_int(INPUT, str(circuit))
+        inp = Devices.by_int(DI, str(circuit))
         return inp.get_value()
 
     def input_set(self, circuit, debounce):
-        inp = Devices.by_int(INPUT, str(circuit))
+        inp = Devices.by_int(DI, str(circuit))
         return inp.set(debounce=debounce)
 
     ###### Relay ######
     def relay_get(self, circuit):
-        relay = Devices.by_int(RELAY, str(circuit))
+        relay = Devices.by_int(RO, str(circuit))
         return relay.get_state()
 
-    @tornadorpc.coroutine
-    def relay_set(self, circuit, value):
-        relay = Devices.by_int(RELAY, str(circuit))
-        result = yield relay.set_state(value)
-        raise gen.Return(result)
+    async def relay_set(self, circuit, value):
+        relay = Devices.by_int(RO, str(circuit))
+        return await relay.set_state(value)
 
-    @tornadorpc.coroutine
-    def relay_set_for_time(self, circuit, value, timeout):
-        relay = Devices.by_int(RELAY, str(circuit))
+    def output_get(self, circuit):
+        relay = Devices.by_int(DO, str(circuit))
+        return relay.get_state()
+
+    async def output_set(self, circuit, value):
+        relay = Devices.by_int(DO, str(circuit))
+        return await relay.set_state(value)
+
+    async def output_set_for_time(self, circuit, value, timeout):
+        relay = Devices.by_int(DO, str(circuit))
         if timeout <= 0:
             raise Exception('Invalid timeout %s' % str(timeout))
-        result = yield relay.set(value, timeout)
-        raise gen.Return(result)
+        return await relay.set(value, timeout)
 
     ###### Analog Input ######
     def ai_get(self, circuit):
@@ -101,20 +138,16 @@ class Handler(userBasicHelper, JSONRPCHandler):
         ai = Devices.by_int(AI, str(circuit))
         return ai.set(bits=bits, gain=gain, interval=interval)
 
-    #def ai_measure(self, circuit):
+    # def ai_measure(self, circuit):
 
     ###### Analog Output (0-10V) ######
-    @tornadorpc.coroutine
-    def ao_set_value(self, circuit, value):
+    async def ao_set_value(self, circuit, value):
         ao = Devices.by_int(AO, str(circuit))
-        result = yield ao.set_value(value)
-        raise gen.Return(result)
+        return await ao.set_value(value)
 
-    @tornadorpc.coroutine
-    def ao_set(self, circuit, value, frequency):
+    async def ao_set(self, circuit, value, frequency):
         ao = Devices.by_int(AO, str(circuit))
-        result = yield ao.set(value, frequency)
-        raise gen.Return(result)
+        return await ao.set(value, frequency)
 
     ###### OwBus (1wire bus) ######
     def owbus_get(self, circuit):
@@ -145,28 +178,3 @@ class Handler(userBasicHelper, JSONRPCHandler):
     def sensor_get_value(self, circuit):
         sens = Devices.by_int(SENSOR, str(circuit))
         return sens.get_value()
-
-    @tornadorpc.coroutine
-    def pca_set(self, circuit, channel, on, off):
-        pca = Devices.by_int(PCA9685, str(circuit))
-        result = yield pca.set(channel, on, off)
-        raise gen.Return(result)
-
-    @tornadorpc.coroutine
-    def pca_set_pwm(self, circuit, channel, val):
-        pca = Devices.by_int(PCA9685, str(circuit))
-        result = yield pca.set_pwm(channel, val)
-        raise gen.Return(result)
-
-    ###### EEprom ######
-    @tornadorpc.coroutine
-    def ee_read_byte(self, circuit, index):
-        ee = Devices.by_int(EE, str(circuit))
-        result = yield ee.read_byte(index)
-        raise gen.Return(result)
-
-    @tornadorpc.coroutine
-    def ee_write_byte(self, circuit, index, value):
-        ee = Devices.by_int(EE, str(circuit))
-        result = yield ee.write_byte(index, value)
-        raise gen.Return(result)

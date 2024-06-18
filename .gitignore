@@ -2,3 +2,5 @@ Makefile
 evok/Makefile
 *.pyc
 .idea/
+.venv
+venv/

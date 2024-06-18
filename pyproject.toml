@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "evok"
+version = "2.5.8"
+authors = [
+  { name="Martin Triska", email="triska@unipi.technology" },
+  { name="Miroslav Ondra", email="bokula@unipi.technology" },
+  { name="Patrik Kratochvil", email="kratochvil@unipi.technology" },
+]
+description = "Web service bridge for Unipi PLCs"
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    'pymodbus == 3.5.4',
+    'pyserial == 3.5',
+    'tornado == 6.3.3',
+    'jsonschema == 2.6.0',
+    'importlib_metadata == 7.1.0',
+    'asyncowfs@git+https://github.com/UniPiTechnology/asyncowfs'
+#    'asyncowfs@file:///home/unipi/packages/evok-internal/asyncowfs'
+]
+
+[tool.setuptools]
+packages = ["evok"]
+
+[project.scripts]
+evok = "evok.evok:main"
+
+[project.urls]
+"Homepage" = "https://github.com/pypa/sampleproject"
+"Bug Tracker" = "https://github.com/pypa/sampleproject/issues"
