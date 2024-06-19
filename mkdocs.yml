@@ -4,6 +4,7 @@ site_author: Unipi technology
 site_description: API of Unipi controllers
 copyright: Copyright &copy; 2014 - 2024 Unipi technology
 repo_url: https://github.com/UniPiTechnology/evok
+edit_uri: edit/main/docs/
 theme:
   icon:
     repo: fontawesome/brands/github
