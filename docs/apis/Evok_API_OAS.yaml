@@ -592,22 +592,40 @@ paths:
           content:
             text/html:
               schema:
-                $ref: '#/components/schemas/Owpower'
+                anyOf:
+                  - $ref: '#/components/schemas/Owpower'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Owpower'
               examples:
                 1:
                   value:
                     dev: owpower
                     circuit: '1'
                     value: 0
+                all:
+                  value:
+                    - dev: owpower
+                      circuit: '1'
+                      value: 0
             application/json:
               schema:
-                $ref: '#/components/schemas/Owpower'
+                anyOf:
+                  - $ref: '#/components/schemas/Owpower'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Owpower'
               examples:
                 1:
                   value:
                     dev: owpower
                     circuit: '1'
                     value: 0
+                all:
+                  value:
+                    - dev: owpower
+                      circuit: '1'
+                      value: 0
       description: Get all properties of 1-Wire bus power supply driver.
       operationId: read-owpower-object
       x-stoplight:
@@ -677,7 +695,11 @@ paths:
           content:
             text/html:
               schema:
-                $ref: '#/components/schemas/Owbus'
+                anyOf:
+                  - $ref: '#/components/schemas/Owbus'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Owbus'
               examples:
                 OWBUS:
                   value:
@@ -688,9 +710,22 @@ paths:
                     interval: 10
                     do_scan: false
                     do_reset: false
+                all:
+                  value:
+                    - dev: owbus
+                      circuit: OWBUS
+                      bus: OWFS
+                      scan_interval: 60
+                      interval: 10
+                      do_scan: false
+                      do_reset: false
             application/json:
               schema:
-                $ref: '#/components/schemas/Owbus'
+                anyOf:
+                  - $ref: '#/components/schemas/Owbus'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Owbus'
               examples:
                 OWBUS:
                   value:
@@ -701,6 +736,15 @@ paths:
                     interval: 10
                     do_scan: false
                     do_reset: false
+                all:
+                  value:
+                    - dev: owbus
+                      circuit: OWBUS
+                      bus: OWFS
+                      scan_interval: 60
+                      interval: 10
+                      do_scan: false
+                      do_reset: false
       description: Get all properties of 1Wire bus driver.
       operationId: read-owbus-object
       tags:
@@ -767,7 +811,11 @@ paths:
           content:
             text/html:
               schema:
-                $ref: '#/components/schemas/Temp'
+                anyOf:
+                  - $ref: '#/components/schemas/Temp'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Temp'
               examples:
                 2895DCD509000035:
                   value:
@@ -778,9 +826,22 @@ paths:
                     lost: false
                     time: 246690.722
                     type: DS18B20
+                all:
+                  value:
+                    - dev: temp
+                      circuit: 2895DCD509000035
+                      address: 28.95DCD5090000.35
+                      value: 22.8
+                      lost: false
+                      time: 246690.722
+                      type: DS18B20
             application/json:
               schema:
-                $ref: '#/components/schemas/Temp'
+                anyOf:
+                  - $ref: '#/components/schemas/Temp'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Temp'
               examples:
                 2895DCD509000035:
                   value:
@@ -791,6 +852,15 @@ paths:
                     lost: false
                     time: 246690.722
                     type: DS18B20
+                all:
+                  value:
+                    - dev: temp
+                      circuit: 2895DCD509000035
+                      address: 28.95DCD5090000.35
+                      value: 22.8
+                      lost: false
+                      time: 246690.722
+                      type: DS18B20
       description: Get all properties of 1-Wire temperature sensor
       operationId: read-temp-object
       tags:
@@ -858,12 +928,16 @@ paths:
           content:
             text/html:
               schema:
-                $ref: '#/components/schemas/Modbus_slave'
+                anyOf:
+                  - $ref: '#/components/schemas/Modbus_slave'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Modbus_slave'
               examples:
                 1:
                   value:
                     dev: modbus_slave
-                    circuit: 1
+                    circuit: "1"
                     last_comm: 0.0296688079833984
                     slave_id: 1
                     modbus_type: TCP
@@ -872,7 +946,7 @@ paths:
                 2:
                   value:
                     dev: modbus_slave
-                    circuit: 2
+                    circuit: "2"
                     last_comm: 0.0698413684651396
                     slave_id: 2
                     modbus_type: TCP
@@ -881,21 +955,47 @@ paths:
                 3:
                   value:
                     dev: modbus_slave
-                    circuit: 3
+                    circuit: "3"
                     last_comm: 0.0324178964541674
                     slave_id: 3
                     modbus_type: TCP
                     modbus_spec: 127.0.0.1
                     scan_interval: 0.02
+                all:
+                  value:
+                    - dev: modbus_slave
+                      circuit: "1"
+                      last_comm: 0.0296688079833984
+                      slave_id: 1
+                      modbus_type: TCP
+                      modbus_spec: 127.0.0.1
+                      scan_interval: 0.02
+                    - dev: modbus_slave
+                      circuit: "2"
+                      last_comm: 0.0698413684651396
+                      slave_id: 2
+                      modbus_type: TCP
+                      modbus_spec: 127.0.0.1
+                      scan_interval: 0.02
+                    - dev: modbus_slave
+                      circuit: "3"
+                      last_comm: 0.0324178964541674
+                      slave_id: 3
+                      modbus_type: TCP
+                      modbus_spec: 127.0.0.1
+                      scan_interval: 0.02
             application/json:
               schema:
-                allOf:
+                anyOf:
                   - $ref: '#/components/schemas/Modbus_slave'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Modbus_slave'
               examples:
                 1:
                   value:
                     dev: modbus_slave
-                    circuit: 1
+                    circuit: "1"
                     last_comm: 0.0296688079833984
                     slave_id: 1
                     modbus_type: TCP
@@ -904,7 +1004,7 @@ paths:
                 2:
                   value:
                     dev: modbus_slave
-                    circuit: 2
+                    circuit: "2"
                     last_comm: 0.0698413684651396
                     slave_id: 2
                     modbus_type: TCP
@@ -913,12 +1013,35 @@ paths:
                 3:
                   value:
                     dev: modbus_slave
-                    circuit: 3
+                    circuit: "3"
                     last_comm: 0.0324178964541674
                     slave_id: 3
                     modbus_type: TCP
                     modbus_spec: 127.0.0.1
                     scan_interval: 0.02
+                all:
+                  value:
+                    - dev: modbus_slave
+                      circuit: "1"
+                      last_comm: 0.0296688079833984
+                      slave_id: 1
+                      modbus_type: TCP
+                      modbus_spec: 127.0.0.1
+                      scan_interval: 0.02
+                    - dev: modbus_slave
+                      circuit: "2"
+                      last_comm: 0.0698413684651396
+                      slave_id: 2
+                      modbus_type: TCP
+                      modbus_spec: 127.0.0.1
+                      scan_interval: 0.02
+                    - dev: modbus_slave
+                      circuit: "3"
+                      last_comm: 0.0324178964541674
+                      slave_id: 3
+                      modbus_type: TCP
+                      modbus_spec: 127.0.0.1
+                      scan_interval: 0.02
       description: Get all properties of a single modbus slave.
       operationId: read-modbus_slave-object
       x-stoplight:
@@ -954,9 +1077,11 @@ paths:
           content:
             text/html:
               schema:
-                schema:
-                  allOf:
-                    - $ref: '#/components/schemas/Device_info'
+                anyOf:
+                  - $ref: '#/components/schemas/Device_info'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Device_info'
               examples:
                 Neuron_L533_0:
                   value:
@@ -965,7 +1090,7 @@ paths:
                     model: L533
                     sn: 0
                     board_count: 3
-                    circuit: Neuron_L533_0
+                    circuit: "L533"
                 Patron_S167_81:
                   value:
                     dev: device_info
@@ -973,28 +1098,59 @@ paths:
                     model: S167
                     sn: 81
                     board_count: 1
-                    circuit: Patron_S167_81
+                    circuit: "S167"
+                all:
+                  value:
+                    - dev: device_info
+                      family: Neuron
+                      model: L533
+                      sn: 0
+                      board_count: 3
+                      circuit: "L533"
+                    - dev: device_info
+                      family: Patron
+                      model: S167
+                      sn: 81
+                      board_count: 1
+                      circuit: "S167"
             application/json:
               schema:
-                allOf:
+                anyOf:
                   - $ref: '#/components/schemas/Device_info'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Device_info'
               examples:
-                Neuron_L533_0:
+                L533:
                   value:
                     dev: device_info
                     family: Neuron
                     model: L533
                     sn: 0
                     board_count: 3
-                    circuit: Neuron_L533_0
-                Patron_S167_81:
+                    circuit: "L533"
+                S167:
                   value:
                     dev: device_info
                     family: Patron
                     model: S167
                     sn: 81
                     board_count: 1
-                    circuit: Patron_S167_81
+                    circuit: "S167"
+                all:
+                  value:
+                    - dev: device_info
+                      family: Neuron
+                      model: L533
+                      sn: 0
+                      board_count: 3
+                      circuit: "L533"
+                    - dev: device_info
+                      family: Patron
+                      model: S167
+                      sn: 81
+                      board_count: 1
+                      circuit: "S167"
       description: Get all properties of a single modbus slave.
       operationId: read-device_info-object
       x-stoplight:
@@ -1030,22 +1186,40 @@ paths:
           content:
             text/html:
               schema:
-                $ref: '#/components/schemas/Register'
+                anyOf:
+                  - $ref: '#/components/schemas/Register'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Register'
               examples:
-                Example:
+                1_1000:
                   value:
                     dev: register
                     circuit: '1_1000'
                     value: 1556
+                all:
+                  value:
+                    - dev: register
+                      circuit: '1_1000'
+                      value: 1556
             application/json:
               schema:
-                $ref: '#/components/schemas/Register'
+                anyOf:
+                  - $ref: '#/components/schemas/Register'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Register'
               examples:
-                Example:
+                1_1000:
                   value:
                     dev: register
                     circuit: '1_1000'
                     value: 1556
+                all:
+                  value:
+                    - dev: register
+                      circuit: '1_1000'
+                      value: 1556
       description: Get RAW modbus register value. Used for custom user-defined Modbus devices.
       operationId: read-register-object
       tags:
@@ -1113,7 +1287,11 @@ paths:
           content:
             text/html:
               schema:
-                $ref: '#/components/schemas/Data_point'
+                anyOf:
+                  - $ref: '#/components/schemas/Data_point'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Data_point'
               examples:
                 IAQ_0:
                   value:
@@ -1143,9 +1321,35 @@ paths:
                     name: ambient_light
                     unit: "lux"
                     value: 46.81760025024414
+                all:
+                  value:
+                    - dev: data_point
+                      circuit: IAQ_0
+                      name: temperature
+                      unit: "˚C"
+                      value: 23.34367891052246
+                    - dev: data_point
+                      circuit: IAQ_6
+                      name: rel_humid
+                      unit: "%"
+                      value: 32.44678497314453
+                    - dev: data_point
+                      circuit: IAQ_18
+                      name: CO2
+                      unit: "ppm"
+                      value: 579.7908935546875
+                    - dev: data_point
+                      circuit: IAQ_42
+                      name: ambient_light
+                      unit: "lux"
+                      value: 46.81760025024414
             application/json:
               schema:
-                $ref: '#/components/schemas/Data_point'
+                anyOf:
+                  - $ref: '#/components/schemas/Data_point'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Data_point'
               examples:
                 IAQ_0:
                   value:
@@ -1175,6 +1379,28 @@ paths:
                     name: ambient_light
                     unit: "lux"
                     value: 46.81760025024414
+                all:
+                  value:
+                    - dev: data_point
+                      circuit: IAQ_0
+                      name: temperature
+                      unit: "˚C"
+                      value: 23.34367891052246
+                    - dev: data_point
+                      circuit: IAQ_6
+                      name: rel_humid
+                      unit: "%"
+                      value: 32.44678497314453
+                    - dev: data_point
+                      circuit: IAQ_18
+                      name: CO2
+                      unit: "ppm"
+                      value: 579.7908935546875
+                    - dev: data_point
+                      circuit: IAQ_42
+                      name: ambient_light
+                      unit: "lux"
+                      value: 46.81760025024414
       description: Get unit modbus register value. Used for custom user-defined Modbus devices.
       operationId: read-unit_register-object
       tags:
@@ -1495,10 +1721,140 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Digital_output'
+                anyOf:
+                  - $ref: '#/components/schemas/Digital_output'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Digital_output'
+              examples:
+                1_01:
+                  value:
+                    dev: do
+                    circuit: '1_01'
+                    mode: "Simple"
+                    modes:
+                      - "Simple"
+                      - "PWM"
+                    pwm_freq: 4800
+                    pwm_duty: 0
+                    value: 0
+                1_02:
+                  value:
+                    dev: do
+                    circuit: '1_02'
+                    mode: "PWM"
+                    modes:
+                      - "Simple"
+                      - "PWM"
+                    pwm_freq: 4800
+                    pwm_duty: 10
+                    value: 0
+                all:
+                  value:
+                    - dev: do
+                      circuit: '1_01'
+                      mode: "Simple"
+                      modes:
+                        - "Simple"
+                        - "PWM"
+                      pwm_freq: 4800
+                      pwm_duty: 0
+                      value: 0
+                    - dev: do
+                      circuit: '1_02'
+                      mode: "PWM"
+                      modes:
+                        - "Simple"
+                        - "PWM"
+                      pwm_freq: 4800
+                      pwm_duty: 10
+                      value: 0
+                    - dev: do
+                      circuit: '1_03'
+                      mode: "Simple"
+                      modes:
+                        - "Simple"
+                        - "PWM"
+                      pwm_freq: 4800
+                      pwm_duty: 0
+                      value: 0
+                    - dev: do
+                      circuit: '1_04'
+                      mode: "Simple"
+                      modes:
+                        - "Simple"
+                        - "PWM"
+                      pwm_freq: 4800
+                      pwm_duty: 0
+                      value: 1
             text/html:
               schema:
-                $ref: '#/components/schemas/Digital_output'
+                anyOf:
+                  - $ref: '#/components/schemas/Digital_output'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Digital_output'
+              examples:
+                1_01:
+                  value:
+                    dev: do
+                    circuit: '1_01'
+                    mode: "Simple"
+                    modes:
+                      - "Simple"
+                      - "PWM"
+                    pwm_freq: 4800
+                    pwm_duty: 0
+                    value: 0
+                1_02:
+                  value:
+                    dev: do
+                    circuit: '1_02'
+                    mode: "PWM"
+                    modes:
+                      - "Simple"
+                      - "PWM"
+                    pwm_freq: 4800
+                    pwm_duty: 10
+                    value: 0
+                all:
+                  value:
+                    - dev: do
+                      circuit: '1_01'
+                      mode: "Simple"
+                      modes:
+                        - "Simple"
+                        - "PWM"
+                      pwm_freq: 4800
+                      pwm_duty: 0
+                      value: 0
+                    - dev: do
+                      circuit: '1_02'
+                      mode: "PWM"
+                      modes:
+                        - "Simple"
+                        - "PWM"
+                      pwm_freq: 4800
+                      pwm_duty: 10
+                      value: 0
+                    - dev: do
+                      circuit: '1_03'
+                      mode: "Simple"
+                      modes:
+                        - "Simple"
+                        - "PWM"
+                      pwm_freq: 4800
+                      pwm_duty: 0
+                      value: 0
+                    - dev: do
+                      circuit: '1_04'
+                      mode: "Simple"
+                      modes:
+                        - "Simple"
+                        - "PWM"
+                      pwm_freq: 4800
+                      pwm_duty: 0
+                      value: 1
       description: Get **all** properties of digital output including current value and parameters.
       operationId: read-output-object
       x-stoplight:
@@ -1699,15 +2055,16 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
+                anyOf:
                   - $ref: '#/components/schemas/Analog_output'
-                    x-stoplight:
-                      id: qmvk7uifuj10p
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Analog_output'
               examples:
                 2_01:
                   value:
-                    circuit: 2_01
                     dev: ao
+                    circuit: 2_01
                     value: 1.4
                     unit: "V"
                     mode: "Voltage"
@@ -1720,17 +2077,76 @@ paths:
                         range:
                           - 0
                           - 10
+                all:
+                  value:
+                    - dev: ao
+                      circuit: 2_01
+                      value: 1.4
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                    - dev: ao
+                      circuit: 2_02
+                      value: 0
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                    - dev: ao
+                      circuit: 2_03
+                      value: 0
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                    - dev: ao
+                      circuit: 2_04
+                      value: 1.0
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
             text/html:
               schema:
-                allOf:
+                anyOf:
                   - $ref: '#/components/schemas/Analog_output'
-                    x-stoplight:
-                      id: 2j8pg10gvjrg6
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Analog_output'
               examples:
                 2_01:
                   value:
-                    circuit: 2_01
                     dev: ao
+                    circuit: 2_01
                     value: 1.4
                     unit: "V"
                     mode: "Voltage"
@@ -1743,6 +2159,64 @@ paths:
                         range:
                           - 0
                           - 10
+                all:
+                  value:
+                    - dev: ao
+                      circuit: 2_01
+                      value: 1.4
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                    - dev: ao
+                      circuit: 2_02
+                      value: 0
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                    - dev: ao
+                      circuit: 2_03
+                      value: 0
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                    - dev: ao
+                      circuit: 2_04
+                      value: 1.0
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
       operationId: read-analog-output-object
       tags:
         - Analog output
@@ -1809,15 +2283,16 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
+                anyOf:
                   - $ref: '#/components/schemas/Analog_input'
-                    x-stoplight:
-                      id: oizzhu5iefesd
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Analog_input'
               examples:
                 2_01:
                   value:
-                    circuit: 2_01
                     dev: ai
+                    circuit: 2_01
                     value: 2.2
                     unit: "V"
                     mode: "Voltage"
@@ -1838,8 +2313,8 @@ paths:
                           - 10
                 2_02:
                   value:
-                    circuit: 2_02
                     dev: ai
+                    circuit: 2_02
                     value: 10.3
                     unit: "mA"
                     mode: "Current"
@@ -1858,12 +2333,55 @@ paths:
                         range:
                           - 0
                           - 10
+                all:
+                  value:
+                    - dev: ai
+                      circuit: 2_01
+                      value: 2.2
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                        Current:
+                          value: 2
+                          unit: "mA"
+                          range:
+                            - 0
+                            - 10
+                    - dev: ai
+                      circuit: 2_02
+                      value: 10.3
+                      unit: "mA"
+                      mode: "Current"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                        Current:
+                          value: 2
+                          unit: "mA"
+                          range:
+                            - 0
+                            - 10
             text/html:
               schema:
-                allOf:
+                anyOf:
                   - $ref: '#/components/schemas/Analog_input'
-                    x-stoplight:
-                      id: 4opyu9zjx3284
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Analog_input'
               examples:
                 2_01:
                   value:
@@ -1909,6 +2427,48 @@ paths:
                         range:
                           - 0
                           - 10
+                all:
+                  value:
+                    - dev: ai
+                      circuit: 2_01
+                      value: 2.2
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                        Current:
+                          value: 2
+                          unit: "mA"
+                          range:
+                            - 0
+                            - 10
+                    - dev: ai
+                      circuit: 2_02
+                      value: 10.3
+                      unit: "mA"
+                      mode: "Current"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                        Current:
+                          value: 2
+                          unit: "mA"
+                          range:
+                            - 0
+                            - 10
       operationId: read-analog-input-object
       tags:
         - Analog input
