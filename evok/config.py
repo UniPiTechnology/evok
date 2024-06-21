@@ -70,7 +70,7 @@ class SerialBusDevice:
 
 
 class DeviceInfo:
-    def __init__(self, family: str, model: str, sn: Union[None, int], board_count: int):
+    def __init__(self, name: str, family: str, model: str, sn: Union[None, int], board_count: int):
         """
         :param family: [Neuron, Patron, UNIPI1, Iris]
         :param model: [S103, M533, ...]
@@ -81,7 +81,7 @@ class DeviceInfo:
         self.model: str = model
         self.sn: Union[None, int] = sn
         self.board_count: int = board_count
-        self.circuit: str = f"{family}_{model}_{sn}"
+        self.circuit: str = f"{name}"
 
     def full(self):
         return {
@@ -224,7 +224,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                 model = bus_device_info_data.get("model", 'unknown')
                 sn = bus_device_info_data.get("sn", None)
                 board_count = bus_device_info_data.get("board_count", 1)
-                bus_device_info = DeviceInfo(family=family, model=model, sn=sn, board_count=board_count)
+                bus_device_info = DeviceInfo(name=model, family=family, model=model, sn=sn, board_count=board_count)
                 Devices.register_device(DEVICE_INFO, bus_device_info)
 
         if 'devices' not in bus_data:
@@ -264,7 +264,7 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                     Devices.register_device(MODBUS_SLAVE, slave)
 
                     if bus_device_info is None or "device_info" in device_data:
-                        device_info = {'model': device_name}
+                        device_info = {'model': device_data.get("model", device_name)}
                         device_info.update(device_data.get("device_info", {}))
                         family = device_info.get("family", 'unknown')
                         model = device_info.get("model", 'unknown')
@@ -273,7 +273,8 @@ def create_devices(evok_config: EvokConfig, hw_dict):
                         if model[:2].lower() in ['xs', 'xm', 'xl', 'xg'] and family == 'unknown':
                             family = 'Extension'
                         Devices.register_device(DEVICE_INFO,
-                                                DeviceInfo(family=family, model=model, sn=sn, board_count=board_count))
+                                                DeviceInfo(name=device_name, family=family, model=model, sn=sn,
+                                                           board_count=board_count))
 
                 else:
                     logger.error(f"Unknown bus type: '{bus_type}'! skipping...")
