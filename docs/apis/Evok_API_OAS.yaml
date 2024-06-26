@@ -13,7 +13,7 @@ info:
   license:
     name: Apache 2.0
     url: 'https://www.apache.org/licenses/LICENSE-2.0.html'
-  version: 3.0.1
+  version: 3.0.2
   termsOfService: 'https://evok.readthedocs.io/'
 servers:
   - url: 'http://{unipi_device}:{port}'
@@ -922,6 +922,7 @@ paths:
   '/{format}/modbus_slave/{circuit}':
     get:
       summary: Read modbus_slave
+      description: Get all properties of a single (or all) modbus slave device.
       responses:
         '200':
           description: OK
@@ -1042,7 +1043,6 @@ paths:
                       modbus_type: TCP
                       modbus_spec: 127.0.0.1
                       scan_interval: 0.02
-      description: Get all properties of a single modbus slave.
       operationId: read-modbus_slave-object
       x-stoplight:
         id: f40ypdnngywl0
@@ -1071,6 +1071,7 @@ paths:
   '/{format}/device_info/{circuit}':
     get:
       summary: Read device info
+      description: Get all properties of a single (or all) device info device.
       responses:
         '200':
           description: OK
@@ -1083,7 +1084,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/Device_info'
               examples:
-                Neuron_L533_0:
+                L533:
                   value:
                     dev: device_info
                     family: Neuron
@@ -1091,7 +1092,7 @@ paths:
                     sn: 0
                     board_count: 3
                     circuit: "L533"
-                Patron_S167_81:
+                S167:
                   value:
                     dev: device_info
                     family: Patron
@@ -1151,7 +1152,6 @@ paths:
                       sn: 81
                       board_count: 1
                       circuit: "S167"
-      description: Get all properties of a single modbus slave.
       operationId: read-device_info-object
       x-stoplight:
         id: 1fso3pj0wt5or
