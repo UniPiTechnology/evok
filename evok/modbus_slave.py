@@ -681,6 +681,8 @@ class DigitalOutput:
                         await self.arm.modbus_slave.client.write_register(self.pwmpresetreg, pwm_preset_val, slave=self.arm.modbus_address)
                     else:
                         pwm_prescaler = round((1000 / pwm_freq) - 1)
+                        if pwm_prescaler < 0:
+                            raise ValueError(f"Frequency out of range!")
                         self.pwm_freq = round(1000 / (1 + pwm_prescaler),1)
                         await self.arm.modbus_slave.client.write_register(self.pwmpresetreg, 2, slave=self.arm.modbus_address)
                         await self.arm.modbus_slave.client.write_register(self.pwmcustompresc, pwm_prescaler, slave=self.arm.modbus_address)
