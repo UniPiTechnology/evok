@@ -633,7 +633,7 @@ class DigitalOutput:
                 # PWM duty_val handling is almost same for both soft and hard PWM
                 old_duty_val = copy(self.pwm_duty_val)
                 self.pwm_duty_val = (self.arm.modbus_slave.modbus_cache_map.get_register(1, self.pwmdutyreg))[0]
-                if old_duty_val != self.pwm_duty_val :
+                if is_change or old_duty_val != self.pwm_duty_val:
                     is_change = True
                     if self.pwm_duty_val == 0:
                         self.pwm_duty = 0
@@ -645,8 +645,7 @@ class DigitalOutput:
                         self.pwm_duty = round((float(self.pwm_duty_val) / float(self.pwm_cycle_val)) * 100, 1)
                         self.mode = 'PWM'  # Mode field is for backward compatibility, will be deprecated soon
 
-
-        else: # This RELAY instance does not support PWM mode (no pwmdutyreg given)
+        else:  # This RELAY instance does not support PWM mode (no pwmdutyreg given)
             self.mode = 'Simple'
 
         old_value = copy(self.value)
@@ -682,6 +681,8 @@ class DigitalOutput:
                         await self.arm.modbus_slave.client.write_register(self.pwmpresetreg, pwm_preset_val, slave=self.arm.modbus_address)
                     else:
                         pwm_prescaler = round((1000 / pwm_freq) - 1)
+                        if pwm_prescaler < 0:
+                            raise ValueError(f"Frequency out of range!")
                         self.pwm_freq = round(1000 / (1 + pwm_prescaler),1)
                         await self.arm.modbus_slave.client.write_register(self.pwmpresetreg, 2, slave=self.arm.modbus_address)
                         await self.arm.modbus_slave.client.write_register(self.pwmcustompresc, pwm_prescaler, slave=self.arm.modbus_address)
@@ -692,7 +693,6 @@ class DigitalOutput:
                         other_dev.pwm_freq = self.pwm_freq
 
                 else:
-
                     tmp_pwm_delay_val = 48000000 / pwm_freq
                     if ((int(tmp_pwm_delay_val) % 50000) == 0) and ((tmp_pwm_delay_val / 50000) < 65535):
                         tmp_pwm_cycle_val = 50000
@@ -709,8 +709,7 @@ class DigitalOutput:
                     else:
                         tmp_pwm_prescale_val = round(sqrt(tmp_pwm_delay_val))
                         tmp_pwm_cycle_val = round(tmp_pwm_prescale_val)
-
-                    other_devs = {dev: dev.pwm_duty for dev in Devices.by_int(DO, major_group=self.major_group)}
+                    other_devs = {dev: float(dev.pwm_duty) for dev in Devices.by_int(DO, major_group=self.major_group)}
 
                     await self.arm.modbus_slave.client.write_register(self.pwmcyclereg, tmp_pwm_cycle_val - 1, slave=self.arm.modbus_address)
                     await self.arm.modbus_slave.client.write_register(self.pwmprescalereg, tmp_pwm_prescale_val - 1, slave=self.arm.modbus_address)
@@ -751,7 +750,7 @@ class DigitalOutput:
                 else:
                     tmp_pwm_duty_val = round(float(self.pwm_cycle_val) * pwm_duty / 100.0)
                 if self.value != 0:
-                    self.arm.modbus_slave.client.write_coil(self.coil, 0, slave=self.arm.modbus_address)
+                    await self.arm.modbus_slave.client.write_coil(self.coil, 0, slave=self.arm.modbus_address)
                 await self.arm.modbus_slave.client.write_register(self.pwmdutyreg, tmp_pwm_duty_val, slave=self.arm.modbus_address)
                 self.mode = 'PWM'
 
