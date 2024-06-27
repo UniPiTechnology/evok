@@ -686,7 +686,7 @@ class DigitalOutput:
                         await self.arm.modbus_slave.client.write_register(self.pwmpresetreg, 2, slave=self.arm.modbus_address)
                         await self.arm.modbus_slave.client.write_register(self.pwmcustompresc, pwm_prescaler, slave=self.arm.modbus_address)
 
-                    other_devs = {dev: dev.pwm_duty for dev in Devices.by_int(RO, major_group=self.major_group)}
+                    other_devs = {dev: dev.pwm_duty for dev in Devices.by_int(DO, major_group=self.major_group)}
 
                     for other_dev, other_pwm_duty in other_devs.items():
                         other_dev.pwm_freq = self.pwm_freq
@@ -710,7 +710,7 @@ class DigitalOutput:
                         tmp_pwm_prescale_val = round(sqrt(tmp_pwm_delay_val))
                         tmp_pwm_cycle_val = round(tmp_pwm_prescale_val)
 
-                    other_devs = {dev: dev.pwm_duty for dev in Devices.by_int(RO, major_group=self.major_group)}
+                    other_devs = {dev: dev.pwm_duty for dev in Devices.by_int(DO, major_group=self.major_group)}
 
                     await self.arm.modbus_slave.client.write_register(self.pwmcyclereg, tmp_pwm_cycle_val - 1, slave=self.arm.modbus_address)
                     await self.arm.modbus_slave.client.write_register(self.pwmprescalereg, tmp_pwm_prescale_val - 1, slave=self.arm.modbus_address)
@@ -1741,3 +1741,4 @@ class AnalogInput:
     @property
     def voltage(self):
         return self.value
+
