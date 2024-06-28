@@ -6,6 +6,7 @@ import re
 from copy import deepcopy
 from typing import Any, Callable, Union
 
+from .errors import DeviceNotFound
 from .log import logger
 
 """
@@ -181,7 +182,7 @@ class DeviceList(dict):
             if circuit in self.aliases:
                 return self.aliases[circuit]
             else:
-                raise Exception(f'Invalid device circuit number {str(circuit)} with devtypeid {devtype_name}')
+                raise DeviceNotFound(f"Invalid device circuit '{str(circuit)}' with devtypeid '{devtype_name}'")
 
     def by_name(self, devtype, circuit=None):
         try:
@@ -325,3 +326,4 @@ unit_altnames = {
     'mA': 'miliampere',
     'Ohm': 'ohm'
 }
+
