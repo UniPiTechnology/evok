@@ -7,7 +7,7 @@ from typing import Awaitable, Optional
 import tornado.ioloop
 
 from tornado_jsonrpc2 import JSONRPCHandler
-from tornado_jsonrpc2.exceptions import MethodNotFound
+from tornado_jsonrpc2.exceptions import MethodNotFound, InvalidParams
 
 from .devices import *
 
@@ -23,23 +23,26 @@ async def create_response(request, backend):
         awaitable = True
 
     try:
-        params = request.params
-    except AttributeError:
-        if awaitable:
-            return await method()
-        else:
-            return method()
+        try:
+            params = request.params
+        except AttributeError:
+            if awaitable:
+                return await method()
+            else:
+                return method()
 
-    if isinstance(params, list):
-        if awaitable:
-            return await method(*params)
-        else:
-            return method(*params)
-    elif isinstance(params, dict):
-        if awaitable:
-            return await method(**params)
-        else:
-            return method(**params)
+        if isinstance(params, list):
+            if awaitable:
+                return await method(*params)
+            else:
+                return method(*params)
+        elif isinstance(params, dict):
+            if awaitable:
+                return await method(**params)
+            else:
+                return method(**params)
+    except DeviceNotFound as e:
+        raise InvalidParams(e)
 
 
 class UserBasicHelper(JSONRPCHandler):
@@ -178,3 +181,4 @@ class Handler(UserBasicHelper):
     def sensor_get_value(self, circuit):
         sens = Devices.by_int(SENSOR, str(circuit))
         return sens.get_value()
+
