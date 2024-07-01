@@ -13,7 +13,7 @@ info:
   license:
     name: Apache 2.0
     url: 'https://www.apache.org/licenses/LICENSE-2.0.html'
-  version: 3.0.1
+  version: 3.0.2
   termsOfService: 'https://evok.readthedocs.io/'
 servers:
   - url: 'http://{unipi_device}:{port}'
@@ -264,14 +264,7 @@ paths:
         required: true
         schema:
           type: string
-          enum:
-            - di
-            - ai
-            - ao
-            - do
-            - wd
-            - led
-          examples: [di]
+          examples: ['ro', 'do', 'di', 'ai', 'ao', 'temp']
     get:
       summary: Get all circuits of device type
       description: Read all devices of the same type present in the whole system.
@@ -349,7 +342,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
       - $ref: '#/components/parameters/format'
       - schema:
           type: string
@@ -559,7 +552,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
       - name: format
         in: path
         required: true
@@ -599,17 +592,40 @@ paths:
           content:
             text/html:
               schema:
-                $ref: '#/components/schemas/Owpower'
+                anyOf:
+                  - $ref: '#/components/schemas/Owpower'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Owpower'
               examples:
                 1:
                   value:
                     dev: owpower
                     circuit: '1'
                     value: 0
+                all:
+                  value:
+                    - dev: owpower
+                      circuit: '1'
+                      value: 0
             application/json:
               schema:
-                $ref: '#/components/schemas/Owpower'
-              examples: {}
+                anyOf:
+                  - $ref: '#/components/schemas/Owpower'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Owpower'
+              examples:
+                1:
+                  value:
+                    dev: owpower
+                    circuit: '1'
+                    value: 0
+                all:
+                  value:
+                    - dev: owpower
+                      circuit: '1'
+                      value: 0
       description: Get all properties of 1-Wire bus power supply driver.
       operationId: read-owpower-object
       x-stoplight:
@@ -624,7 +640,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
       - name: format
         in: path
         required: true
@@ -679,7 +695,11 @@ paths:
           content:
             text/html:
               schema:
-                $ref: '#/components/schemas/Owbus'
+                anyOf:
+                  - $ref: '#/components/schemas/Owbus'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Owbus'
               examples:
                 OWBUS:
                   value:
@@ -690,9 +710,22 @@ paths:
                     interval: 10
                     do_scan: false
                     do_reset: false
+                all:
+                  value:
+                    - dev: owbus
+                      circuit: OWBUS
+                      bus: OWFS
+                      scan_interval: 60
+                      interval: 10
+                      do_scan: false
+                      do_reset: false
             application/json:
               schema:
-                $ref: '#/components/schemas/Owbus'
+                anyOf:
+                  - $ref: '#/components/schemas/Owbus'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Owbus'
               examples:
                 OWBUS:
                   value:
@@ -703,6 +736,15 @@ paths:
                     interval: 10
                     do_scan: false
                     do_reset: false
+                all:
+                  value:
+                    - dev: owbus
+                      circuit: OWBUS
+                      bus: OWFS
+                      scan_interval: 60
+                      interval: 10
+                      do_scan: false
+                      do_reset: false
       description: Get all properties of 1Wire bus driver.
       operationId: read-owbus-object
       tags:
@@ -717,7 +759,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
       - name: format
         in: path
         required: true
@@ -769,7 +811,11 @@ paths:
           content:
             text/html:
               schema:
-                $ref: '#/components/schemas/Temp'
+                anyOf:
+                  - $ref: '#/components/schemas/Temp'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Temp'
               examples:
                 2895DCD509000035:
                   value:
@@ -780,9 +826,22 @@ paths:
                     lost: false
                     time: 246690.722
                     type: DS18B20
+                all:
+                  value:
+                    - dev: temp
+                      circuit: 2895DCD509000035
+                      address: 28.95DCD5090000.35
+                      value: 22.8
+                      lost: false
+                      time: 246690.722
+                      type: DS18B20
             application/json:
               schema:
-                $ref: '#/components/schemas/Temp'
+                anyOf:
+                  - $ref: '#/components/schemas/Temp'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Temp'
               examples:
                 2895DCD509000035:
                   value:
@@ -793,6 +852,15 @@ paths:
                     lost: false
                     time: 246690.722
                     type: DS18B20
+                all:
+                  value:
+                    - dev: temp
+                      circuit: 2895DCD509000035
+                      address: 28.95DCD5090000.35
+                      value: 22.8
+                      lost: false
+                      time: 246690.722
+                      type: DS18B20
       description: Get all properties of 1-Wire temperature sensor
       operationId: read-temp-object
       tags:
@@ -807,7 +875,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
       - name: format
         in: path
         required: true
@@ -854,18 +922,23 @@ paths:
   '/{format}/modbus_slave/{circuit}':
     get:
       summary: Read modbus_slave
+      description: Get all properties of a single (or all) modbus slave device.
       responses:
         '200':
           description: OK
           content:
             text/html:
               schema:
-                $ref: '#/components/schemas/Modbus_slave'
+                anyOf:
+                  - $ref: '#/components/schemas/Modbus_slave'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Modbus_slave'
               examples:
                 1:
                   value:
                     dev: modbus_slave
-                    circuit: 1
+                    circuit: "1"
                     last_comm: 0.0296688079833984
                     slave_id: 1
                     modbus_type: TCP
@@ -874,7 +947,7 @@ paths:
                 2:
                   value:
                     dev: modbus_slave
-                    circuit: 2
+                    circuit: "2"
                     last_comm: 0.0698413684651396
                     slave_id: 2
                     modbus_type: TCP
@@ -883,21 +956,47 @@ paths:
                 3:
                   value:
                     dev: modbus_slave
-                    circuit: 3
+                    circuit: "3"
                     last_comm: 0.0324178964541674
                     slave_id: 3
                     modbus_type: TCP
                     modbus_spec: 127.0.0.1
                     scan_interval: 0.02
+                all:
+                  value:
+                    - dev: modbus_slave
+                      circuit: "1"
+                      last_comm: 0.0296688079833984
+                      slave_id: 1
+                      modbus_type: TCP
+                      modbus_spec: 127.0.0.1
+                      scan_interval: 0.02
+                    - dev: modbus_slave
+                      circuit: "2"
+                      last_comm: 0.0698413684651396
+                      slave_id: 2
+                      modbus_type: TCP
+                      modbus_spec: 127.0.0.1
+                      scan_interval: 0.02
+                    - dev: modbus_slave
+                      circuit: "3"
+                      last_comm: 0.0324178964541674
+                      slave_id: 3
+                      modbus_type: TCP
+                      modbus_spec: 127.0.0.1
+                      scan_interval: 0.02
             application/json:
               schema:
-                allOf:
+                anyOf:
                   - $ref: '#/components/schemas/Modbus_slave'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Modbus_slave'
               examples:
                 1:
                   value:
                     dev: modbus_slave
-                    circuit: 1
+                    circuit: "1"
                     last_comm: 0.0296688079833984
                     slave_id: 1
                     modbus_type: TCP
@@ -906,7 +1005,7 @@ paths:
                 2:
                   value:
                     dev: modbus_slave
-                    circuit: 2
+                    circuit: "2"
                     last_comm: 0.0698413684651396
                     slave_id: 2
                     modbus_type: TCP
@@ -915,13 +1014,35 @@ paths:
                 3:
                   value:
                     dev: modbus_slave
-                    circuit: 3
+                    circuit: "3"
                     last_comm: 0.0324178964541674
                     slave_id: 3
                     modbus_type: TCP
                     modbus_spec: 127.0.0.1
                     scan_interval: 0.02
-      description: Get all properties of a single modbus slave.
+                all:
+                  value:
+                    - dev: modbus_slave
+                      circuit: "1"
+                      last_comm: 0.0296688079833984
+                      slave_id: 1
+                      modbus_type: TCP
+                      modbus_spec: 127.0.0.1
+                      scan_interval: 0.02
+                    - dev: modbus_slave
+                      circuit: "2"
+                      last_comm: 0.0698413684651396
+                      slave_id: 2
+                      modbus_type: TCP
+                      modbus_spec: 127.0.0.1
+                      scan_interval: 0.02
+                    - dev: modbus_slave
+                      circuit: "3"
+                      last_comm: 0.0324178964541674
+                      slave_id: 3
+                      modbus_type: TCP
+                      modbus_spec: 127.0.0.1
+                      scan_interval: 0.02
       operationId: read-modbus_slave-object
       x-stoplight:
         id: f40ypdnngywl0
@@ -935,7 +1056,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
       - name: format
         in: path
         required: true
@@ -950,56 +1071,87 @@ paths:
   '/{format}/device_info/{circuit}':
     get:
       summary: Read device info
+      description: Get all properties of a single (or all) device info device.
       responses:
         '200':
           description: OK
           content:
             text/html:
               schema:
-                type: object
-                items:
-                  $ref: '#/components/schemas/Device_info'
-                  x-stoplight:
-                    id: fgfocg5p53ifk
+                anyOf:
+                  - $ref: '#/components/schemas/Device_info'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Device_info'
               examples:
-                Neuron_L533_0:
+                L533:
                   value:
                     dev: device_info
                     family: Neuron
                     model: L533
                     sn: 0
                     board_count: 3
-                    circuit: Neuron_L533_0
-                Patron_S167_81:
+                    circuit: "L533"
+                S167:
                   value:
                     dev: device_info
                     family: Patron
                     model: S167
                     sn: 81
                     board_count: 1
-                    circuit: Patron_S167_81
+                    circuit: "S167"
+                all:
+                  value:
+                    - dev: device_info
+                      family: Neuron
+                      model: L533
+                      sn: 0
+                      board_count: 3
+                      circuit: "L533"
+                    - dev: device_info
+                      family: Patron
+                      model: S167
+                      sn: 81
+                      board_count: 1
+                      circuit: "S167"
             application/json:
               schema:
-                allOf:
+                anyOf:
                   - $ref: '#/components/schemas/Device_info'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Device_info'
               examples:
-                Neuron_L533_0:
+                L533:
                   value:
                     dev: device_info
                     family: Neuron
                     model: L533
                     sn: 0
                     board_count: 3
-                    circuit: Neuron_L533_0
-                Patron_S167_81:
+                    circuit: "L533"
+                S167:
                   value:
                     dev: device_info
                     family: Patron
                     model: S167
                     sn: 81
                     board_count: 1
-                    circuit: Patron_S167_81
-      description: Get all properties of a single modbus slave.
+                    circuit: "S167"
+                all:
+                  value:
+                    - dev: device_info
+                      family: Neuron
+                      model: L533
+                      sn: 0
+                      board_count: 3
+                      circuit: "L533"
+                    - dev: device_info
+                      family: Patron
+                      model: S167
+                      sn: 81
+                      board_count: 1
+                      circuit: "S167"
       operationId: read-device_info-object
       x-stoplight:
         id: 1fso3pj0wt5or
@@ -1013,7 +1165,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
       - name: format
         in: path
         required: true
@@ -1034,22 +1186,40 @@ paths:
           content:
             text/html:
               schema:
-                $ref: '#/components/schemas/Register'
+                anyOf:
+                  - $ref: '#/components/schemas/Register'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Register'
               examples:
-                Example:
+                1_1000:
                   value:
                     dev: register
                     circuit: '1_1000'
                     value: 1556
+                all:
+                  value:
+                    - dev: register
+                      circuit: '1_1000'
+                      value: 1556
             application/json:
               schema:
-                $ref: '#/components/schemas/Register'
+                anyOf:
+                  - $ref: '#/components/schemas/Register'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Register'
               examples:
-                Example:
+                1_1000:
                   value:
                     dev: register
                     circuit: '1_1000'
                     value: 1556
+                all:
+                  value:
+                    - dev: register
+                      circuit: '1_1000'
+                      value: 1556
       description: Get RAW modbus register value. Used for custom user-defined Modbus devices.
       operationId: read-register-object
       tags:
@@ -1064,7 +1234,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
       - name: format
         in: path
         required: true
@@ -1117,7 +1287,11 @@ paths:
           content:
             text/html:
               schema:
-                $ref: '#/components/schemas/Data_point'
+                anyOf:
+                  - $ref: '#/components/schemas/Data_point'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Data_point'
               examples:
                 IAQ_0:
                   value:
@@ -1147,9 +1321,35 @@ paths:
                     name: ambient_light
                     unit: "lux"
                     value: 46.81760025024414
+                all:
+                  value:
+                    - dev: data_point
+                      circuit: IAQ_0
+                      name: temperature
+                      unit: "˚C"
+                      value: 23.34367891052246
+                    - dev: data_point
+                      circuit: IAQ_6
+                      name: rel_humid
+                      unit: "%"
+                      value: 32.44678497314453
+                    - dev: data_point
+                      circuit: IAQ_18
+                      name: CO2
+                      unit: "ppm"
+                      value: 579.7908935546875
+                    - dev: data_point
+                      circuit: IAQ_42
+                      name: ambient_light
+                      unit: "lux"
+                      value: 46.81760025024414
             application/json:
               schema:
-                $ref: '#/components/schemas/Data_point'
+                anyOf:
+                  - $ref: '#/components/schemas/Data_point'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Data_point'
               examples:
                 IAQ_0:
                   value:
@@ -1179,6 +1379,28 @@ paths:
                     name: ambient_light
                     unit: "lux"
                     value: 46.81760025024414
+                all:
+                  value:
+                    - dev: data_point
+                      circuit: IAQ_0
+                      name: temperature
+                      unit: "˚C"
+                      value: 23.34367891052246
+                    - dev: data_point
+                      circuit: IAQ_6
+                      name: rel_humid
+                      unit: "%"
+                      value: 32.44678497314453
+                    - dev: data_point
+                      circuit: IAQ_18
+                      name: CO2
+                      unit: "ppm"
+                      value: 579.7908935546875
+                    - dev: data_point
+                      circuit: IAQ_42
+                      name: ambient_light
+                      unit: "lux"
+                      value: 46.81760025024414
       description: Get unit modbus register value. Used for custom user-defined Modbus devices.
       operationId: read-unit_register-object
       tags:
@@ -1193,7 +1415,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
       - name: format
         in: path
         required: true
@@ -1314,7 +1536,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
       - name: format
         in: path
         required: true
@@ -1445,7 +1667,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
       - name: format
         in: path
         required: true
@@ -1499,10 +1721,140 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Digital_output'
+                anyOf:
+                  - $ref: '#/components/schemas/Digital_output'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Digital_output'
+              examples:
+                1_01:
+                  value:
+                    dev: do
+                    circuit: '1_01'
+                    mode: "Simple"
+                    modes:
+                      - "Simple"
+                      - "PWM"
+                    pwm_freq: 4800
+                    pwm_duty: 0
+                    value: 0
+                1_02:
+                  value:
+                    dev: do
+                    circuit: '1_02'
+                    mode: "PWM"
+                    modes:
+                      - "Simple"
+                      - "PWM"
+                    pwm_freq: 4800
+                    pwm_duty: 10
+                    value: 0
+                all:
+                  value:
+                    - dev: do
+                      circuit: '1_01'
+                      mode: "Simple"
+                      modes:
+                        - "Simple"
+                        - "PWM"
+                      pwm_freq: 4800
+                      pwm_duty: 0
+                      value: 0
+                    - dev: do
+                      circuit: '1_02'
+                      mode: "PWM"
+                      modes:
+                        - "Simple"
+                        - "PWM"
+                      pwm_freq: 4800
+                      pwm_duty: 10
+                      value: 0
+                    - dev: do
+                      circuit: '1_03'
+                      mode: "Simple"
+                      modes:
+                        - "Simple"
+                        - "PWM"
+                      pwm_freq: 4800
+                      pwm_duty: 0
+                      value: 0
+                    - dev: do
+                      circuit: '1_04'
+                      mode: "Simple"
+                      modes:
+                        - "Simple"
+                        - "PWM"
+                      pwm_freq: 4800
+                      pwm_duty: 0
+                      value: 1
             text/html:
               schema:
-                $ref: '#/components/schemas/Digital_output'
+                anyOf:
+                  - $ref: '#/components/schemas/Digital_output'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Digital_output'
+              examples:
+                1_01:
+                  value:
+                    dev: do
+                    circuit: '1_01'
+                    mode: "Simple"
+                    modes:
+                      - "Simple"
+                      - "PWM"
+                    pwm_freq: 4800
+                    pwm_duty: 0
+                    value: 0
+                1_02:
+                  value:
+                    dev: do
+                    circuit: '1_02'
+                    mode: "PWM"
+                    modes:
+                      - "Simple"
+                      - "PWM"
+                    pwm_freq: 4800
+                    pwm_duty: 10
+                    value: 0
+                all:
+                  value:
+                    - dev: do
+                      circuit: '1_01'
+                      mode: "Simple"
+                      modes:
+                        - "Simple"
+                        - "PWM"
+                      pwm_freq: 4800
+                      pwm_duty: 0
+                      value: 0
+                    - dev: do
+                      circuit: '1_02'
+                      mode: "PWM"
+                      modes:
+                        - "Simple"
+                        - "PWM"
+                      pwm_freq: 4800
+                      pwm_duty: 10
+                      value: 0
+                    - dev: do
+                      circuit: '1_03'
+                      mode: "Simple"
+                      modes:
+                        - "Simple"
+                        - "PWM"
+                      pwm_freq: 4800
+                      pwm_duty: 0
+                      value: 0
+                    - dev: do
+                      circuit: '1_04'
+                      mode: "Simple"
+                      modes:
+                        - "Simple"
+                        - "PWM"
+                      pwm_freq: 4800
+                      pwm_duty: 0
+                      value: 1
       description: Get **all** properties of digital output including current value and parameters.
       operationId: read-output-object
       x-stoplight:
@@ -1517,7 +1869,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
       - name: format
         in: path
         required: true
@@ -1649,7 +2001,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
       - name: format
         in: path
         required: true
@@ -1703,15 +2055,16 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
+                anyOf:
                   - $ref: '#/components/schemas/Analog_output'
-                    x-stoplight:
-                      id: qmvk7uifuj10p
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Analog_output'
               examples:
                 2_01:
                   value:
-                    circuit: 2_01
                     dev: ao
+                    circuit: 2_01
                     value: 1.4
                     unit: "V"
                     mode: "Voltage"
@@ -1724,17 +2077,76 @@ paths:
                         range:
                           - 0
                           - 10
+                all:
+                  value:
+                    - dev: ao
+                      circuit: 2_01
+                      value: 1.4
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                    - dev: ao
+                      circuit: 2_02
+                      value: 0
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                    - dev: ao
+                      circuit: 2_03
+                      value: 0
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                    - dev: ao
+                      circuit: 2_04
+                      value: 1.0
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
             text/html:
               schema:
-                allOf:
+                anyOf:
                   - $ref: '#/components/schemas/Analog_output'
-                    x-stoplight:
-                      id: 2j8pg10gvjrg6
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Analog_output'
               examples:
                 2_01:
                   value:
-                    circuit: 2_01
                     dev: ao
+                    circuit: 2_01
                     value: 1.4
                     unit: "V"
                     mode: "Voltage"
@@ -1747,6 +2159,64 @@ paths:
                         range:
                           - 0
                           - 10
+                all:
+                  value:
+                    - dev: ao
+                      circuit: 2_01
+                      value: 1.4
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                    - dev: ao
+                      circuit: 2_02
+                      value: 0
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                    - dev: ao
+                      circuit: 2_03
+                      value: 0
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                    - dev: ao
+                      circuit: 2_04
+                      value: 1.0
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
       operationId: read-analog-output-object
       tags:
         - Analog output
@@ -1760,7 +2230,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
       - name: format
         in: path
         required: true
@@ -1813,15 +2283,16 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
+                anyOf:
                   - $ref: '#/components/schemas/Analog_input'
-                    x-stoplight:
-                      id: oizzhu5iefesd
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Analog_input'
               examples:
                 2_01:
                   value:
-                    circuit: 2_01
                     dev: ai
+                    circuit: 2_01
                     value: 2.2
                     unit: "V"
                     mode: "Voltage"
@@ -1842,8 +2313,8 @@ paths:
                           - 10
                 2_02:
                   value:
-                    circuit: 2_02
                     dev: ai
+                    circuit: 2_02
                     value: 10.3
                     unit: "mA"
                     mode: "Current"
@@ -1862,12 +2333,55 @@ paths:
                         range:
                           - 0
                           - 10
+                all:
+                  value:
+                    - dev: ai
+                      circuit: 2_01
+                      value: 2.2
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                        Current:
+                          value: 2
+                          unit: "mA"
+                          range:
+                            - 0
+                            - 10
+                    - dev: ai
+                      circuit: 2_02
+                      value: 10.3
+                      unit: "mA"
+                      mode: "Current"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                        Current:
+                          value: 2
+                          unit: "mA"
+                          range:
+                            - 0
+                            - 10
             text/html:
               schema:
-                allOf:
+                anyOf:
                   - $ref: '#/components/schemas/Analog_input'
-                    x-stoplight:
-                      id: 4opyu9zjx3284
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Analog_input'
               examples:
                 2_01:
                   value:
@@ -1913,6 +2427,48 @@ paths:
                         range:
                           - 0
                           - 10
+                all:
+                  value:
+                    - dev: ai
+                      circuit: 2_01
+                      value: 2.2
+                      unit: "V"
+                      mode: "Voltage"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                        Current:
+                          value: 2
+                          unit: "mA"
+                          range:
+                            - 0
+                            - 10
+                    - dev: ai
+                      circuit: 2_02
+                      value: 10.3
+                      unit: "mA"
+                      mode: "Current"
+                      modes:
+                        Disabled:
+                          value: 0
+                        Voltage:
+                          value: 1
+                          unit: "V"
+                          range:
+                            - 0
+                            - 10
+                        Current:
+                          value: 2
+                          unit: "mA"
+                          range:
+                            - 0
+                            - 10
       operationId: read-analog-input-object
       tags:
         - Analog input
@@ -1926,7 +2482,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
       - name: format
         in: path
         required: true
@@ -2024,11 +2580,11 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
   '/{format}/run/alias':
     get:
       summary: Read aliases
-      description: Read more [here](https://evok.readthedocs.io/en/latest/configs/aliases/).
+      description: Read more [here](https://evok.readthedocs.io/en/stable/configs/aliases/).
       responses:
         '200':
           description: OK
@@ -2097,7 +2653,7 @@ paths:
         description: Content type - use "json" for application/json OR "rest" for text/html.
     post:
       summary: Force save aliases
-      description: Read more [here](https://evok.readthedocs.io/en/latest/configs/aliases/).
+      description: Read more [here](https://evok.readthedocs.io/en/stable/configs/aliases/).
       tags:
         - Aliases
         - Setter
@@ -2148,7 +2704,7 @@ paths:
   '/{format}/{device_type}/{circuit}/alias':
     post:
       summary: Set alias
-      description: Read more [here](https://evok.readthedocs.io/en/latest/configs/aliases/).
+      description: Read more [here](https://evok.readthedocs.io/en/stable/configs/aliases/).
       responses:
         '200':
           description: OK
@@ -2222,7 +2778,7 @@ paths:
         name: circuit
         in: path
         required: true
-        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/latest/circuit/).
+        description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
       - $ref: '#/components/parameters/format'
       - schema:
           type: string
@@ -2237,6 +2793,18 @@ components:
     Relay_output:
       title: Relay output
       allOf:
+        - type: object
+          properties:
+            dev:
+              type: string
+              examples: ['ro']
+              description: Device type.
+              readOnly: true
+            circuit:
+              type: string
+              examples: ['2_01', '2_02', '2_03', '2_04']
+              description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
+              readOnly: true
         - $ref: '#/components/schemas/Relay_output_params'
           x-stoplight:
             id: 2b4dkqf8rzvj3
@@ -2266,6 +2834,16 @@ components:
       allOf:
         - type: object
           properties:
+            dev:
+              type: string
+              examples: ['do']
+              description: Device type.
+              readOnly: true
+            circuit:
+              type: string
+              examples: ['1_01', '1_02', '1_03', '1_04']
+              description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
+              readOnly: true
             modes:
               readOnly: true
               type: array
@@ -2328,6 +2906,16 @@ components:
       allOf:
         - type: object
           properties:
+            dev:
+              type: string
+              examples: ['di']
+              description: Device type.
+              readOnly: true
+            circuit:
+              type: string
+              examples: ['1_01', '1_02', '1_03', '1_04']
+              description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
+              readOnly: true
             counter_modes:
               description: Supported counter modes
               type: array
@@ -2384,7 +2972,7 @@ components:
       properties:
         debounce:
           type: integer
-          description: Debounce time in miliseconds/10 (10 == 1ms).
+          description: Debounce time in milliseconds/10 (10 == 1ms).
           examples: [100]
           default: 50
         counter:
@@ -2449,11 +3037,18 @@ components:
       x-stoplight:
         id: 2ovrjp93gjanf
       allOf:
-        - $ref: '#/components/schemas/Analog_output_params'
-          x-stoplight:
-            id: g7ylrfaz0x44y
         - type: object
           properties:
+            dev:
+              type: string
+              examples: ['ao']
+              description: Device type.
+              readOnly: true
+            circuit:
+              type: string
+              examples: ['1_01', '2_01', '2_02']
+              description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
+              readOnly: true
             modes:
               readOnly: true
               description: All modes supported by this analog output.
@@ -2491,6 +3086,9 @@ components:
                     maxItems: 2
                     items:
                       type: integer
+        - $ref: '#/components/schemas/Analog_output_params'
+          x-stoplight:
+            id: g7ylrfaz0x44y
       examples:
         - circuit: 2_01
           dev: ao
@@ -2509,13 +3107,22 @@ components:
       x-stoplight:
         id: vbqyhhnguvagi
       allOf:
-        - $ref: '#/components/schemas/Analog_input_params'
         - type: object
           properties:
+            dev:
+              type: string
+              examples: ['ai']
+              description: Device type.
+              readOnly: true
+            circuit:
+              type: string
+              examples: ['1_01', '2_01', '2_02']
+              description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
+              readOnly: true
             modes:
               readOnly: true
               description: Supported modes is specify for analog input device.
-                It is defined in [HW configuration](https://evok.readthedocs.io/en/latest/configs/hw_definitions/).
+                It is defined in [HW configuration](https://evok.readthedocs.io/en/stable/configs/hw_definitions/).
               type: object
               examples:
                 - Disabled:
@@ -2560,6 +3167,7 @@ components:
                     maxItems: 2
                     items:
                       type: integer
+        - $ref: '#/components/schemas/Analog_input_params'
       examples:
         - circuit: 2_01
           dev: ai
@@ -2620,6 +3228,20 @@ components:
       x-stoplight:
         id: gpgqdqty1w38v
       allOf:
+        - type: object
+          x-stoplight:
+            id: sasd65sd5267f
+          properties:
+            dev:
+              type: string
+              examples: ['led']
+              description: Device type.
+              readOnly: true
+            circuit:
+              type: string
+              examples: ['1_01', '1_02', '1_03']
+              description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
+              readOnly: true
         - $ref: '#/components/schemas/Led_params'
           x-stoplight:
             id: c5mebewyuho7p
@@ -2665,13 +3287,20 @@ components:
       x-stoplight:
         id: i7k79ibsmvl2b
       allOf:
-        - $ref: '#/components/schemas/Watchdog_params'
-          x-stoplight:
-            id: lofdk31xjd1q9
         - type: object
           x-stoplight:
             id: szaxon6pdw26f
           properties:
+            dev:
+              type: string
+              examples: ['wd']
+              description: Device type.
+              readOnly: true
+            circuit:
+              type: string
+              examples: ['1', '2', '3']
+              description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
+              readOnly: true
             was_wd_reset:
               x-stoplight:
                 id: sn8fk80k264qi
@@ -2680,6 +3309,9 @@ components:
                 - 0
                 - 1
               readOnly: true
+        - $ref: '#/components/schemas/Watchdog_params'
+          x-stoplight:
+            id: lofdk31xjd1q9
     Modbus_slave:
       title: Modbus slave
       x-stoplight:
@@ -2689,16 +3321,22 @@ components:
           x-stoplight:
             id: xjt8iszwhxdck
           properties:
+            dev:
+              type: string
+              examples: ['modbus_slave']
+              description: Device type.
+              readOnly: true
+            circuit:
+              type: string
+              examples: ['1', '2']
+              description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
+              readOnly: true
             last_comm:
               type: number
               x-stoplight:
                 id: 2na0zkc0mlsal
               description: 'Time elapsed since last successful communication [seconds]'
               readOnly: true
-        - x-stoplight:
-            id: lm332uskonncg
-          type: object
-          properties:
             modbus_type:
               x-stoplight:
                 id: 02gk2dvaahhmb
@@ -2706,20 +3344,12 @@ components:
                 - TCP
                 - RTU
               readOnly: true
-        - type: object
-          x-stoplight:
-            id: hgjpe1k4bbzt6
-          properties:
             slave_id:
               type: integer
               x-stoplight:
                 id: hyjcu9yzunw7k
               description: Modbus address (unit-ID)
               readOnly: true
-        - type: object
-          x-stoplight:
-            id: xus426q465pld
-          properties:
             scan_interval:
               type: number
               x-stoplight:
@@ -2741,45 +3371,40 @@ components:
           x-stoplight:
             id: 4dtnzmvgrs8e3
           properties:
+            dev:
+              type: string
+              examples: ['device_info']
+              description: Device type.
+              readOnly: true
+            circuit:
+              type: string
+              examples: ['Patron_S167_81']
+              description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
+              readOnly: true
             family:
               type: string
               x-stoplight:
                 id: 54l2sfykxwq3e
               examples: [Patron, Neuron, UNIPI1]
               default: Patron
-        - type: object
-          x-stoplight:
-            id: 28yeqjeg54xc6
-          properties:
             model:
               type: string
               x-stoplight:
                 id: quurag6l2ko4g
               examples: [S103, S167, L533]
               default: S167
-        - type: object
-          x-stoplight:
-            id: nupcxu4ejgfr0
-          properties:
             sn:
               type: integer
               x-stoplight:
                 id: jht5fxwjjthbz
               examples: [81, 44, 685]
               default: 81
-        - type: object
-          x-stoplight:
-            id: ggndd1dn27o1j
-          properties:
             board_count:
               type: integer
               x-stoplight:
                 id: zp1sax4eow7ud
               examples: [1, 2, 3]
               default: 1
-        - type: object
-          x-stoplight:
-            id: ggndd1dn27o1j
       examples:
         - dev: device_info
           circuit: Patron_S167_81
@@ -2793,6 +3418,20 @@ components:
         id: 9b4mib6c28oh8
       description: Power supply of 1-Wire bus.
       allOf:
+        - type: object
+          x-stoplight:
+            id: sasd65sd5267f
+          properties:
+            dev:
+              type: string
+              examples: ['owpower']
+              description: Device type.
+              readOnly: true
+            circuit:
+              type: string
+              examples: ['1']
+              description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
+              readOnly: true
         - $ref: '#/components/schemas/Owpower_params'
           x-stoplight:
             id: v1mjtw820aaz4
@@ -2820,6 +3459,20 @@ components:
       x-stoplight:
         id: 9asdag6c28oh8
       allOf:
+        - type: object
+          x-stoplight:
+            id: sasd65sd5267f
+          properties:
+            dev:
+              type: string
+              examples: ['nvsave']
+              description: Device type.
+              readOnly: true
+            circuit:
+              type: string
+              examples: ['1', '2', '3']
+              description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
+              readOnly: true
         - $ref: '#/components/schemas/NvSave_params'
           x-stoplight:
             id: v1acasdg64az4
@@ -2876,19 +3529,29 @@ components:
       x-stoplight:
         id: r32q0saop7uvf
       allOf:
-        - $ref: '#/components/schemas/Owbus_params'
-          x-stoplight:
-            id: hfhhwrleyptly
         - type: object
           x-stoplight:
             id: zfsp3vqmqh1g1
           properties:
+            dev:
+              type: string
+              examples: ['owbus']
+              description: Device type.
+              readOnly: true
+            circuit:
+              type: string
+              examples: ['1']
+              description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
+              readOnly: true
             bus:
               type: string
               x-stoplight:
                 id: b7ywovg84k036
               examples: [OWFS]
               description: Access method to the bus
+        - $ref: '#/components/schemas/Owbus_params'
+          x-stoplight:
+            id: hfhhwrleyptly
       examples:
         - dev: owbus
           circuit: OWBUS
@@ -2923,13 +3586,20 @@ components:
           interval: 10
           type: DS18S20
       allOf:
-        - $ref: '#/components/schemas/Temp_params'
-          x-stoplight:
-            id: cekw7ugmqypui
         - type: object
           x-stoplight:
             id: wlj3b73nnfhtp
           properties:
+            dev:
+              type: string
+              examples: ['temp']
+              description: Device type.
+              readOnly: true
+            circuit:
+              type: string
+              examples: ['"10.67C6697351FF.8D"']
+              description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
+              readOnly: true
             value:
               type: number
               x-stoplight:
@@ -2965,6 +3635,9 @@ components:
               examples: [DS18B20]
               description: sensor type
               readOnly: true
+        - $ref: '#/components/schemas/Temp_params'
+          x-stoplight:
+            id: cekw7ugmqypui
       examples:
         - dev: temp
           circuit: 2895DCD509000035
@@ -2995,11 +3668,20 @@ components:
         id: ecwet1h8clvtd
       description: Main part of a custom user-defined Modbus device
       allOf:
-        - $ref: '#/components/schemas/Aliases_params'
         - type: object
           x-stoplight:
             id: ajd6yqf4kfve2
           properties:
+            dev:
+              type: string
+              examples: ['register']
+              description: Device type.
+              readOnly: true
+            circuit:
+              type: string
+              examples: ['1_4', '1_5', '1_1000']
+              description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
+              readOnly: true
             value:
               type: integer
               x-stoplight:
@@ -3008,6 +3690,7 @@ components:
               minimum: 0
               maximum: 655535
               description: raw register input
+        - $ref: '#/components/schemas/Aliases_params'
       examples:
         - dev: register
           circuit: 1_4
@@ -3023,6 +3706,16 @@ components:
           required:
             - value
           properties:
+            dev:
+              type: string
+              examples: ['data_point']
+              description: Device type.
+              readOnly: true
+            circuit:
+              type: string
+              examples: ['IAQ_0', 'IAQ_6', 'IAQ_10']
+              description: Device circuit (or "all"). You can learn more about the circuit parameter in [documentation](https://evok.readthedocs.io/en/stable/circuit/).
+              readOnly: true
             value:
               type: number
               x-stoplight:
@@ -3048,7 +3741,7 @@ components:
               description: value is valid (validity mask has to be defined)
       description: |
         Returns information about the data point according to 'circuit' as defined in the configuration 
-        and 'hardware definition' [learn more](https://evok.readthedocs.io/en/latest/).
+        and 'hardware definition' [learn more](https://evok.readthedocs.io/).
         For example, it can be used to read moisture from a device.
     Aliases:
       title: Alias management
@@ -3059,6 +3752,16 @@ components:
           x-stoplight:
             id: nv6fd49tf3azj
           properties:
+            dev:
+              type: string
+              examples: ['run']
+              description: Device type.
+              readOnly: true
+            circuit:
+              type: string
+              examples: ['alias']
+              description: Device circuit for alias manager.
+              readOnly: true
             aliases:
               type: object
               x-stoplight:
@@ -3137,14 +3840,7 @@ components:
       required: true
       schema:
         type: string
-        enum:
-          - ai
-          - ao
-          - di
-          - do
-          - wd
-          - led
-        examples: [di]
+        examples: [ai, ao di, do, wd, led]
 tags:
   - name: General
     description: Other commands not directly couped with any specific device type

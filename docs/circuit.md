@@ -25,6 +25,7 @@ The circuit is created automatically during initialization of Evok according to 
 
 - *<device_name\>*: Name defined in [Evok configuration].
     - examples: `1`, `2`, `3`, `IAQ`, `xS51`, `xS18`.
+    - note: [autogen](./configs/evok_configuration.md#autogen) generates device_name as a section number.
 - *<model_name\>*: Name defined in device_info configuration section.
   - examples: `L523`, `S103`, `S167`.
 - *<number\>*: Sequence number (is based on the 'count' parameter in the [HW definition]).
