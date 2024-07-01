@@ -24,21 +24,25 @@ class HWDict:
         scope = list()
         if dir_paths is not None:
             for dp in dir_paths:
+                if not os.path.exists(dp) or not os.path.isdir(dp):
+                    logger.error(f"HWDict: Entered path is not directory: '{dp}'!")
+                    continue
                 scope.extend([dp + f for f in os.listdir(dp)])
         if paths is not None:
             scope.extend(paths)
         if scope is None or len(scope) == 0:
-            raise ValueError(f"HWDict: no scope!")
-        for file_path in scope:
-            if file_path.endswith(".yaml") and os.path.isfile(file_path):
-                file_name = file_path.split("/")[-1].replace(".yaml", "")
-                with open(file_path, 'r') as yfile:
-                    ydata = yaml.load(yfile, Loader=yaml.SafeLoader)
-                    if ydata is None:
-                        logger.warning(f"Empty Definition file '{file_path}'! skipping...")
-                        continue
-                    self.definitions[file_name] = ydata
-                    logger.debug(f"YAML Definition loaded: {file_path}, definition count {len(self.definitions) - 1}")
+            logger.warning(f"HWDict: no scope!")
+        else:
+            for file_path in scope:
+                if file_path.endswith(".yaml") and os.path.isfile(file_path):
+                    file_name = file_path.split("/")[-1].replace(".yaml", "")
+                    with open(file_path, 'r') as yfile:
+                        ydata = yaml.load(yfile, Loader=yaml.SafeLoader)
+                        if ydata is None:
+                            logger.warning(f"Empty Definition file '{file_path}'! skipping...")
+                            continue
+                        self.definitions[file_name] = ydata
+                        logger.debug(f"YAML Definition loaded: {file_path}, definition count {len(self.definitions) - 1}")
 
 
 class OWSensorDevice:
