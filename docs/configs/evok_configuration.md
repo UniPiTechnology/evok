@@ -135,6 +135,13 @@ You can force the creation of this file using this command:
 /opt/unipi/tools/os-configurator -f
 ```
 
+### Autogen rules
+ - The Bus is always named `LOCAL_TCP`.
+ - A device_info section is generated to describe the device. This information is based on `unipiid`.
+ - The device name is generated based on the `slave-id`. In standard Unipi controllers it is the same as the section number.
+ - The OWFS section is generated only if the device supports 1W and the `owserver` package is installed.
+   - The `owpower` parameter is defined only if Unipi controller supports this feature.
+
 ```yaml title="Autogen example"
 comm_channels:
   LOCAL_TCP:
