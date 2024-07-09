@@ -467,7 +467,7 @@ class Board(object):
             _valid_mask_reg = m_feature.get('valid_mask_reg')
             _post_write_action = m_feature.get('post_write')
             _datatype = m_feature.get('datatype')
-            _reg_type = m_feature.get("reg_type", "input")
+            _reg_type = m_feature.get("reg_type", None)
 
             _xgt = DataPoint("{}_{}".format(self.circuit, board_val_reg + counter), self,
                              board_val_reg + counter, reg_type=_reg_type, datatype=_datatype,
@@ -1075,9 +1075,9 @@ class Watchdog(object):
         return self.full()
 
 
-class DataPoint():
+class DataPoint:
 
-    def __init__(self, circuit, arm, reg, reg_type="input", major_group=0, datatype=None, unit=None, offset=0, factor=1, valid_mask_reg=None, valid_mask=None, name=None, post_write=None):
+    def __init__(self, circuit, arm, reg, reg_type=None, major_group=0, datatype=None, unit=None, offset=0, factor=1, valid_mask_reg=None, valid_mask=None, name=None, post_write=None):
         # TODO - valid mask reg
         self.alias = ""
         self.devtype = DATA_POINT
