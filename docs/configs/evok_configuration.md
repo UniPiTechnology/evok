@@ -110,7 +110,7 @@ TCP_EXT:
       model: IAQ
 ```
 
-#### 1Wire device
+#### 1-Wire device
 
 ```yaml title="1W thermometer"
 TEMPM:
