@@ -1,6 +1,6 @@
 # HW definitions
 
-HW definitions is in '/etc/evok/hw_definitions/'. Each file represents one modbus device.
+HW definitions are in `/etc/evok/hw_definitions/`. Each file represents one Modbus device.
 
 ## File structure
 
@@ -8,7 +8,7 @@ Name of the file is the device code, which is then entered into the Evok configu
 
 ### modbus_register_blocks
 
-Contains a list of modbus register groups. These registers must be placed consecutively. When reading the device, it is read in one command. Each element contains the following parameters:
+Contains a list of Modbus register groups. These registers must be placed consecutively. When reading the device, it is read in one command. Each element contains the following parameters:
 
 - start_reg
 - count
@@ -20,7 +20,7 @@ Contains a list of modbus register groups. These registers must be placed consec
 Contains a list of devices and their required parameters. Each element contains the following parameters:
 
 - type - device type, supported devices are listed below.
-- count - number of devicesof the type, register addresses incremented based on this number
+- count - number of devices of the type, register addresses incremented based on this number
 
 Other commands depend on the specific type of device.
 
@@ -268,7 +268,7 @@ modbus_features:
 ##### Parameters
 
 - start_reg
-    - Start modbus register address
+    - Start Modbus register address
 
 ##### Example
 
