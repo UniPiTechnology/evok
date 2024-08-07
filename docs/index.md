@@ -14,6 +14,22 @@ Besides that, Evok also supports sending notifications via webhook.
 
 [evok-web](https://github.com/UniPiTechnology/evok-web-jq) is a simple demo web application using Evok demonstrating its usage and allowing easy control of the devices configured in Evok.
 
+## First steps
+
+Quickly start using Evok:
+
+- In order to use Evok, you need any [Unipi controller](https://www.unipi.technology/shop/).
+- Obtain an OS for controller of your choice, either [Base OS or Node-RED OS](https://kb.unipi.technology/en:files:software:os-images:00-start).
+- Use service mode to flash [Patron](https://kb.unipi.technology/en:hw:007-patron:service-mode) or [Gate](https://kb.unipi.technology/en:hw:025-gate:service-mode), for Neuron, [flash an SD card](https://kb.unipi.technology/en:hw:02-neuron:image).
+- Install Evok, you can skip this step if you do not need Evok-web on Node-RED OS:
+    - Connect to the unit via [ssh](https://kb.unipi.technology/en:automation:unipi-ssh-connect-hidden#selecting_a_suitable_communication_software)
+    - Run `apt update` command, then install Evok by `apt install -y evok`, if you want also the demo web inteface, execute `apt install -y evok-web`, for detailed walktrough see the [detailed article](./installation.md)
+- If you installed the web, you can try opening `http://<unit-IP-adrress>/` in your web browser and you can turn on and off relays or digital outputs.
+- You can try to use the API in bash ([more information about API](./apis.md)):
+    - Returning the state of digital input DI 1_01 `curl --request GET --url http://<your-ip>:8080/json/di/1_01 --header 'Accept: text/html, application/json'`
+    - Switch on the RO 2_01 relay: `curl --request POST --url http://192.168.1.2:8080/json/ro/2_01 --header 'Accept: application/json' --header 'Content-Type: application/json' --data '{"value": 1}'`
+    - Switch off the RO 2_01 relay: `curl --request POST --url http://192.168.1.2:8080/json/ro/2_01 --header 'Accept: application/json' --header 'Content-Type: application/json' --data '{"value": 0}'`
+
 [NEURON]:https://www.unipi.technology/products/unipi-neuron-3?categoryId=2
 [PATRON]:https://www.unipi.technology/products/unipi-patron-374
 [GATE]:https://www.unipi.technology/products/unipi-gate-388
