@@ -73,8 +73,8 @@ comm_channels:
 
 #### OWBUS
 
-- `type` - 1W sensor type, options: [`DS18B20`, `DS18S20`, `DS2438`, `DS2408`, `DS2406`, `DS2404`, `DS2413`]
-- `address` - 1W device address
+- `type` - 1-Wire sensor type, options: [`DS18B20`, `DS18S20`, `DS2438`, `DS2408`, `DS2406`, `DS2404`, `DS2413`]
+- `address` - 1-Wire device address
 
 !!! Note
     It is better to use automatic device search, rather than defining devices manually.
@@ -112,7 +112,7 @@ TCP_EXT:
 
 #### 1-Wire device
 
-```yaml title="1W thermometer"
+```yaml title="1-Wire thermometer"
 TEMPM:
   type: OWBUS
   interval: 10
@@ -139,7 +139,7 @@ You can force the creation of this file using this command:
  - The Bus is always named `LOCAL_TCP`.
  - A device_info section is generated to describe the device. This information is based on `unipiid`.
  - The device name is generated based on the `slave-id`. In standard Unipi controllers it is the same as the section number.
- - The OWFS section is generated only if the device supports 1W and the `owserver` package is installed.
+ - The OWFS section is generated only if the device supports 1-Wire and the `owserver` package is installed.
    - The `owpower` parameter is defined only if Unipi controller supports this feature.
 
 ```yaml title="Autogen example"
