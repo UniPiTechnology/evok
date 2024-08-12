@@ -23,12 +23,24 @@ Quickly start using Evok:
 - Use service mode to flash [Patron](https://kb.unipi.technology/en:hw:007-patron:service-mode) or [Gate](https://kb.unipi.technology/en:hw:025-gate:service-mode), for Neuron, [flash an SD card](https://kb.unipi.technology/en:hw:02-neuron:image).
 - Install Evok, you can skip this step if you do not need Evok-web on Node-RED OS:
     - Connect to the unit via [ssh](https://kb.unipi.technology/en:automation:unipi-ssh-connect-hidden#selecting_a_suitable_communication_software)
-    - Run `apt update` command, then install Evok by `apt install -y evok`, if you want also the demo web inteface, execute `apt install -y evok-web`, for detailed walktrough see the [detailed article](./installation.md)
-- If you installed the web, you can try opening `http://<unit-IP-adrress>/` in your web browser and you can turn on and off relays or digital outputs.
-- You can try to use the API in bash ([more information about API](./apis.md)):
+    - Run `apt update` command, then install Evok by `apt install -y evok`, if you want also the demo web inteface, execute `apt install -y evok-web`, for detailed walktrough see the [detailed article](./installation.md).
+- You can try to use the API using bash or Node-RED, ([more information about API](./apis.md)):
+
+=== "Bash"
+
+    Following commands will work only via SSH, executed on the unit itself. If you wish to open the API from elsewhere, edit [configuration of Evok](./configs/evok_configuration.md#api-settings).
+
     - Returning the state of digital input DI 1_01 `curl --request GET --url http://<your-ip>:8080/json/di/1_01 --header 'Accept: text/html, application/json'`
-    - Switch on the RO 2_01 relay: `curl --request POST --url http://192.168.1.2:8080/json/ro/2_01 --header 'Accept: application/json' --header 'Content-Type: application/json' --data '{"value": 1}'`
-    - Switch off the RO 2_01 relay: `curl --request POST --url http://192.168.1.2:8080/json/ro/2_01 --header 'Accept: application/json' --header 'Content-Type: application/json' --data '{"value": 0}'`
+    - Switch on the DO 1_01 relay: `curl --request POST --url http://192.168.1.2:8080/json/do/1_01 --header 'Accept: application/json' --header 'Content-Type: application/json' --data '{"value": 1}'`
+    - Switch off the DO 1_01 relay: `curl --request POST --url http://192.168.1.2:8080/json/do/1_01 --header 'Accept: application/json' --header 'Content-Type: application/json' --data '{"value": 0}'`
+
+=== "Evok web"
+
+    Open `http://<unit-IP-adrress>/` and toggle some outputs.
+
+=== "Node-RED"
+
+    Open `http://<unit-IP-adrress>:1880/` and try the default Node-RED project.
 
 [NEURON]:https://www.unipi.technology/products/unipi-neuron-3?categoryId=2
 [PATRON]:https://www.unipi.technology/products/unipi-patron-374
