@@ -4,18 +4,10 @@ Evok configuration is located in `/etc/evok/config.yaml`. The default configurat
 
 ## API settings
 
-In this section you can configure address and port for APIs listening. This setting will be applied to protocols:
+In this section you can configure address and port for API listening. These settings will be applied to protocols [REST](../apis/rest.md), [JSON](../apis/json.md), [BULK](../apis/bulk.md), [RPC](../apis/rpc.md), [Webhook](../apis/webhook.md), [WebSocket](../apis/websocket.md).
 
-- [REST](../apis/rest.md)
-- [JSON](../apis/json.md)
-- [BULK](../apis/bulk.md)
-- [RPC](../apis/rpc.md)
-- [Webhook](../apis/webhook.md)
-- [WebSocket](../apis/websocket.md)
-
-!!! info
-
-    More detailed settings of individual protocols can be found in their separate section.
+- `port` - port for API listening, needs to be changed in `etc/nginx/sites-available/evok` too
+- `address` - adress of the interface for API listening, clear or remove the parameter to listen on all interfaces
 
 ### Websocket
 
