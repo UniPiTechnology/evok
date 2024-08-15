@@ -36,11 +36,13 @@ Quickly start using Evok:
 
 === "Evok web"
 
-    Open `http://<unit-IP-adrress>/` and toggle some outputs.
+    Open `http://<unit-IP-adrress>/` and toggle some outputs:
+    ![Evok-web interface](./img/evok-web.png)
 
 === "Node-RED"
 
     Open `http://<unit-IP-adrress>:1880/` and try the default Node-RED project.
+    ![Node-RED interface](./img/node-red-editor.png)
 
 [NEURON]:https://www.unipi.technology/products/unipi-neuron-3?categoryId=2
 [PATRON]:https://www.unipi.technology/products/unipi-patron-374
