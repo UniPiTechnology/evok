@@ -41,7 +41,7 @@ Quickly start using Evok:
 
 === "Node-RED"
 
-    Open `http://<unit-IP-adrress>:1880/` and try the default Node-RED project.
+    Open `http://<unit-IP-adrress>:1880/` and try the default Node-RED project:
     ![Node-RED interface](./img/node-red-editor.png)
 
 [NEURON]:https://www.unipi.technology/products/unipi-neuron-3?categoryId=2
