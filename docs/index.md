@@ -31,8 +31,8 @@ Quickly start using Evok:
     Following commands will work only via SSH, executed on the unit itself. If you wish to open the API from elsewhere, edit [configuration of Evok](./configs/evok_configuration.md#api-settings).
 
     - Returning the state of digital input DI 1_01 `curl --request GET --url http://<your-ip>:8080/json/di/1_01 --header 'Accept: text/html, application/json'`
-    - Switch on the DO 1_01 relay: `curl --request POST --url http://192.168.1.2:8080/json/do/1_01 --header 'Accept: application/json' --header 'Content-Type: application/json' --data '{"value": 1}'`
-    - Switch off the DO 1_01 relay: `curl --request POST --url http://192.168.1.2:8080/json/do/1_01 --header 'Accept: application/json' --header 'Content-Type: application/json' --data '{"value": 0}'`
+    - Switch on the DO 1_01: `curl --request POST --url http://192.168.1.2:8080/json/do/1_01 --header 'Accept: application/json' --header 'Content-Type: application/json' --data '{"value": 1}'`
+    - Switch off the DO 1_01: `curl --request POST --url http://192.168.1.2:8080/json/do/1_01 --header 'Accept: application/json' --header 'Content-Type: application/json' --data '{"value": 0}'`
 
 === "Evok web"
 
