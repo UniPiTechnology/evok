@@ -24,7 +24,7 @@ Quickly start using Evok:
 - Install Evok, you can skip this step if you do not need Evok-web on Node-RED OS:
     - Connect to the unit via [ssh](https://kb.unipi.technology/en:automation:unipi-ssh-connect-hidden#selecting_a_suitable_communication_software)
     - Run `apt update` command, then install Evok by `apt install -y evok`, if you want also the demo web inteface, execute `apt install -y evok-web`, for detailed walktrough see the [detailed article](./installation.md).
-- You can try to use the API using bash or Node-RED, ([more information about API](./apis.md)):
+- You can try to use the API using bash or Node-RED, ([more information about API](./apis/json#Examples)):
 
 === "Bash"
 
