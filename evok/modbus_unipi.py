@@ -3,13 +3,20 @@ import time
 from typing import Any, Callable, Type, Tuple
 
 from pymodbus.client import AsyncModbusSerialClient, AsyncModbusTcpClient
-from pymodbus.exceptions import ConnectionException
+from pymodbus.exceptions import ConnectionException, ModbusIOException
+from pymodbus.pdu import ExceptionResponse
 from pymodbus.framer import ModbusRtuFramer, ModbusFramer, ModbusSocketFramer
 
 #---------------------------------------------------------------------------#
 # Logging
 #---------------------------------------------------------------------------#
 from .log import *
+
+
+class ModbusException(Exception):
+    pass
+
+exception_classes = [ExceptionResponse, ModbusIOException]
 
 
 class EvokModbusSerialClient(AsyncModbusSerialClient):
@@ -32,6 +39,8 @@ class EvokModbusSerialClient(AsyncModbusSerialClient):
             async with self.lock:
                 try:
                     aret = await operation(*args, **kwargs)
+                    if type(aret) in exception_classes:
+                        raise ModbusException(f"{type(aret)}: {aret}")
                     return aret
                 except ConnectionException:
                     await asyncio.sleep(self.reconnect_delay_current)
@@ -56,5 +65,8 @@ class EvokModbusTcpClient(AsyncModbusTcpClient):
         async def ret(*args, **kwargs):
             while not self.connected:
                 await asyncio.sleep(0.001)
-            return await operation(*args, **kwargs)
+            aret = await operation(*args, **kwargs)
+            if type(aret) in exception_classes:
+                raise ModbusException(f"{type(aret)}: {aret}")
+            return aret
         return ret
