@@ -98,33 +98,6 @@ There are several ways of getting beta version.
 
 You can proceed to [Installing and updating Evok](#installing-and-updating-evok) section.
 
-### Installing beta OS image
-
-You can install Unipi image with beta repositories from below.
-We recommend updating evok after beta image installation, see [Installing and updating Evok] section.
-
-#### Node-RED OS images
-
-!!! note
-
-    These images have Evok pre-installed.
-
-- [Neuron 32-bit](https://kb.unipi.technology/files:software:os-images:neuron-node-red-hidden)
-- [Neuron 64-bit](https://kb.unipi.technology/files:software:os-images:neuron64-node-red-hidden)
-- [Patron](https://kb.unipi.technology/files:software:os-images:patron-node-red-hidden)
-- [Gate](https://kb.unipi.technology/files:software:os-images:g1-node-red-hidden)
-- [Unipi1 32-bit](https://kb.unipi.technology/files:software:os-images:unipi1-node-red-hidden)
-- [Unipi1 64-bit](https://kb.unipi.technology/files:software:os-images:unipi1x64-node-red-hidden)
-  
-#### Base OS images
-
-- [Neuron 32-bit](https://kb.unipi.technology/files:software:os-images:neuron-base-os-hidden)
-- [Neuron 64-bit](https://kb.unipi.technology/files:software:os-images:neuron64-base-os-hidden)
-- [Patron](https://kb.unipi.technology/files:software:os-images:patron-base-os-hidden)
-- [Gate](https://kb.unipi.technology/files:software:os-images:g1-base-os-hidden)
-- [Unipi1 32-bit](https://kb.unipi.technology/files:software:os-images:unipi1-base-os-hidden)
-- [Unipi1 64-bit](https://kb.unipi.technology/files:software:os-images:unipi1x64-base-os-hidden)
-
 ## Uninstallation
 
 ```bash title="Uninstalling Evok"
