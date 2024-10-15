@@ -178,7 +178,7 @@ class ModbusSlave(object):
 
     def switch_to_async(self, loop: IOLoop):
         self.loop = loop
-        loop.add_callback(lambda: self.readboards())
+        self.readboards()
 
     async def set(self, print_log=None):
         if print_log is not None and print_log != 0:
@@ -187,7 +187,7 @@ class ModbusSlave(object):
         else:
             return ""
 
-    async def readboards(self):
+    def readboards(self):
         logger.info(f"Initial reading the Modbus board on Modbus address {self.modbus_address}\t({self.circuit})")
         self.boards = list()
         try:
@@ -195,7 +195,7 @@ class ModbusSlave(object):
                 raise KeyError(f"readboards: Unsupported device model {self.device_model}! (check HW definitions)")
             self.hw_board_dict = self.hw_dict.definitions[self.device_model]
             board = Board(self.evok_config, self.circuit, self.modbus_address, self)
-            await board.parse_definition(self.hw_dict)
+            board.parse_definition(self.hw_dict)
             self.boards.append(board)
         except ConnectionException as E:
             logger.error(f"No board detected on Modbus {self.modbus_address}\t({type(E).__name__}:{E})")
@@ -508,11 +508,10 @@ class Board(object):
         else:
             logging.warning("Unknown feature: " + str(m_feature['type']) + " at board: " + str(self.major_group))
 
-    async def parse_definition(self, hw_dict):
+    def parse_definition(self, hw_dict):
         try:
             for defin_name, defin in hw_dict.definitions.items():
                 if defin and (self.modbus_slave.device_model == defin_name):
-                    await self.initialise_cache(defin)
                     for m_feature in defin['modbus_features']:
                         self.parse_feature(m_feature)
                     return
