@@ -39,10 +39,11 @@ class ModbusCacheMap(object):
         self.modbus_slave: ModbusSlave = modbus_slave
         self.sem = Semaphore(1)
         self.frequency = {}
-        self.initial_read = True
+        self._initialized = False
         for m_reg_group in self.modbus_reg_map:
             self.frequency[m_reg_group['start_reg']] = 10000001  # frequency less than 1/10 million are not read on start
             m_reg_group['values'] = [None for i in range(m_reg_group['count'])]
+            m_reg_group['initialised'] = False
 
     def __get_reg_group(self, index: int, is_input: bool):
         group = None
@@ -81,8 +82,8 @@ class ModbusCacheMap(object):
             group[group_index + i] = val.registers[i]
         return val.registers
 
-    async def do_scan(self, slave=0, initial=False) -> bool:
-        if initial:
+    async def do_scan(self, slave=0) -> bool:
+        if not self._initialized:
             await self.sem.acquire()
         changeset = []
 
@@ -105,7 +106,7 @@ class ModbusCacheMap(object):
                         m_reg_group['values'] = vals.registers
 
                         # call force update callbacks in registered devices and check differences
-                        if not initial:
+                        if self._initialized:
                             for device in self.modbus_slave.eventable_devices:
                                 try:
                                     if await device.check_new_data() is True:
@@ -116,6 +117,8 @@ class ModbusCacheMap(object):
                                     logger.error(m)
                                     if logger.level == logging.DEBUG:
                                         traceback.print_exc()
+                        else:
+                            m_reg_group['initialised'] = True
 
                         # reset communication flags
                         self.last_comm_time = time.time()
@@ -128,7 +131,8 @@ class ModbusCacheMap(object):
             proxy = Proxy(set(changeset))
             # print(f"changeset: {changeset}")
             devents.status(proxy)
-        if initial:
+        if not self._initialized:
+            self._initialized = all([m['initialised'] for m in self.modbus_reg_map])
             self.sem.release()
         return scanned
 
@@ -165,7 +169,6 @@ class ModbusSlave(object):
         self.circuit: Union[None, str] = circuit
         self.modbus_type = 'UNKNOWN'
         self.modbus_spec = 'UNKNOWN'
-        self._initialized = False
         if type(self.client) in [EvokModbusTcpClient]:
             self.client: EvokModbusTcpClient
             self.modbus_type = 'TCP'
@@ -222,11 +225,10 @@ class ModbusSlave(object):
             return
         try:
             if self.modbus_cache_map is not None:
-                if await self.modbus_cache_map.do_scan(slave=self.modbus_address, initial=not self._initialized) is True:
+                if await self.modbus_cache_map.do_scan(slave=self.modbus_address) is True:
                     if self.scan_errors:
                         logger.info(f"Communication with device is back: '{self.circuit}'")
                     self.scan_errors = 0
-                    self._initialized = True
         except Exception as E:
             if not self.scan_errors:
                 logger.error(f"{self.circuit}: Error while scanning: {E}")
