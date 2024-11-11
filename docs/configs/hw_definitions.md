@@ -200,18 +200,6 @@ Allows you to add a watchdog for the Modbus device.
     reset_coil  : 1002
 ```
 
-### REGISTER (Modbus register)
-
-A raw Modbus register, not recommended to use.
-
-- `start_reg` - Modbus register starting address
-
-```yaml title="Example"
-  - type        : REGISTER
-    count       : 21
-    start_reg   : 0
-```
-
 ### DATA_POINT (data point)
 
 If no other type is viable, data point may be used.
