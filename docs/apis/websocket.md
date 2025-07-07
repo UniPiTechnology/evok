@@ -25,7 +25,7 @@ def on_open(ws):
 
     
 if __name__ == "__main__":
-    url = 'ws://127.0.0.1/ws'
+    url = 'ws://127.0.0.1:8080/ws'
     ws = websocket.WebSocketApp(url, on_message=on_message, on_close=on_close, on_open=on_open)
     ws.run_forever()
 ```
@@ -63,7 +63,7 @@ def on_open(ws):
 
     
 if __name__ == "__main__":
-    url = 'ws://127.0.0.1/ws'
+    url = 'ws://127.0.0.1:8080/ws'
     ws = websocket.WebSocketApp(url, on_message=on_message, on_close=on_close, on_open=on_open)
     ws.run_forever()
 ```
@@ -104,7 +104,7 @@ def on_open(ws):
 
     
 if __name__ == "__main__":
-    url = 'ws://127.0.0.1/ws'
+    url = 'ws://127.0.0.1:8080/ws'
     ws = websocket.WebSocketApp(url, on_message=on_message, on_close=on_close, on_open=on_open)
     ws.run_forever()
 ```

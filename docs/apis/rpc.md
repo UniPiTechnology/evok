@@ -20,7 +20,7 @@ payload = {
     "id": 0,
 }
 
-url = 'http://127.0.0.1/rpc'
+url = 'http://127.0.0.1:8080/rpc'
 response = requests.post(url, json=payload).json()
 print(response)
 ```
@@ -43,7 +43,7 @@ payload = {
     "id": 0,
 }
 
-url = 'http://127.0.0.1/rpc'
+url = 'http://127.0.0.1:8080/rpc'
 response = requests.post(url, json=payload).json()
 print(response)
 ```
