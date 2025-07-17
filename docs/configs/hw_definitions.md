@@ -4,12 +4,12 @@ Hardware definitions specify the communication with Modbus devices. They are loc
 
 ## modbus_register_blocks
 
-Contains a list that defines the Modbus register groups. These registers must be placed consecutively. Each block is read in a separate request. All elements contain the following parameters:
+Contains a list that defines the Modbus register groups. These registers must be placed consecutively. Each block is read in a separate request. Parameters:
 
-- `start_reg` - starting Modbus register address of the block
-- `count` - number of registers to be read
-- `frequency` - denominator of the scanning frequency set in [Evok configuration](./evok_configuration.md#modbustcp-modbusrtu) for this block
-- `type` - register type, defaults to `holding`, may be also `input`
+- `start_reg` - first Modbus register address of the block
+- `count` - number of Modbus registers to read
+- `frequency` - denominator of the scanning frequency. The block will be read each [scan_frequency](./evok_configuration.md#modbustcp-modbusrtu)÷`frequency` seconds (division).
+- `type` - Modbus register type, set to `holding` (default) or `input`
 
 ```yaml title="Example"
 # This key defines which Modbus registers will be periodically read. Each block (also sometimes referred to as "group") is read once every ["frequency"] read cycles.
@@ -34,6 +34,7 @@ Contains a list that defines devices and their required parameters. Each element
 
 - `type` - device type, supported devices are listed below.
 - `count` - number of devices of the type, register addresses increment based on this number
+- `reg_type`- Modbus register type, set to `holding` (default) or `input`
 
 Other parameters depend on the specific type of device.
 
