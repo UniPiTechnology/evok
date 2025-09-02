@@ -19,7 +19,7 @@ for circuit in ['1_01', '1_02', '1_03', '1_04']:
     cmd = {"device_type": "do", "device_circuit": circuit, "assigned_values": {'value': 1}}
     payload['individual_assignments'].append(cmd)
 
-url = 'http://127.0.0.1/bulk'
+url = 'http://127.0.0.1:8080/bulk'
 print(requests.post(url, json=payload).json())
 ```
 
@@ -40,7 +40,7 @@ for circuit in ['1_01', '1_02', '1_03', '1_04']:
     cmd = {"device_type": "do", "device_circuit": circuit, "assigned_values": {'value': 0}}
     payload['individual_assignments'].append(cmd)
 
-url = 'http://127.0.0.1/bulk'
+url = 'http://127.0.0.1:8080/bulk'
 print(requests.post(url, json=payload).json())
 ```
 
