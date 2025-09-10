@@ -39,6 +39,7 @@ class EvokModbusSerialClient(AsyncModbusSerialClient):
         async def ret(*args, **kwargs):
             async with self.lock:
                 try:
+                    await asyncio.sleep(0.00005)  # TODO: THIS IS HOTFIX !!! REMOVE IT !!!
                     aret = await operation(*args, **kwargs)
                     if type(aret) in exception_classes:
                         raise ModbusException(f"{type(aret)}: {aret}")
